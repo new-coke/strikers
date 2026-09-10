@@ -1,0 +1,63 @@
+// The executable's icon on Windows: Explorer, the taskbar and the window
+// class all take it from here. Added to the strikers target in
+// CMakeLists.txt when WIN32. IDI_ICON1 is what SDL looks for by default.
+#define IDI_ICON1 101
+IDI_ICON1 ICON "strikers.ico"
+
+// ...and what Windows *calls* the program, which is a separate question from
+// what the file is called.
+//
+// Without a VERSIONINFO block Windows has no answer to it at all: the exe's
+// Properties has no Details tab, and Task Manager's Name column falls back to
+// the file name -- so the game appears as `strikers.exe` in the one list a
+// player opens when something has gone wrong. FileDescription is the string
+// both of those read; ProductName is what the rest of the shell reads. The
+// game is called Super Mario Strikers, so they say that.
+//
+// The file *name* stays `strikers.exe`, and OriginalFilename has to agree with
+// it or Windows reports the binary as renamed. Every tool in this tree,
+// tools/package.sh's is-this-a-Windows-build test, the release workflow and the
+// settings application's Play button all find the game by that name, and a
+// name with spaces in it is one every shell here would have to quote. The name
+// a person reads and the name a script types are allowed to differ, and this is
+// the block that lets them.
+//
+// 1.0.0 is the port's own version, not the game's. There is no tag in the
+// repository to derive it from yet; the only other place it is written is
+// settings/CMakeLists.txt, and the two are meant to move together.
+#ifndef VS_VERSION_INFO
+#define VS_VERSION_INFO 1
+#endif
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION    1,0,0,0
+PRODUCTVERSION 1,0,0,0
+FILEFLAGSMASK  0x3fL
+FILEFLAGS      0x0L
+FILEOS         0x40004L   // VOS_NT_WINDOWS32
+FILETYPE       0x1L       // VFT_APP
+FILESUBTYPE    0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        // 0409 is US English, 04B0 the Unicode code page -- and the pair has to
+        // match the Translation value below, which is the same two numbers in
+        // decimal. A block whose name does not appear in VarFileInfo is one
+        // Windows will not read.
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "FileDescription",  "Super Mario Strikers"
+            VALUE "ProductName",      "Super Mario Strikers"
+            VALUE "FileVersion",      "1.0.0"
+            VALUE "ProductVersion",   "1.0.0"
+            VALUE "InternalName",     "strikers"
+            VALUE "OriginalFilename", "strikers.exe"
+            // Said here because this is the one description of the program that travels inside the program.
+            VALUE "Comments",         "Unofficial native port, built from the Super Mario Strikers decompilation. Not affiliated with, authorised by or endorsed by Nintendo."
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

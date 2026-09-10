@@ -1,0 +1,60 @@
+#ifndef _DOLPHIN_ARQ
+#define _DOLPHIN_ARQ
+
+// PORT: Aurora owns this surface; see <dolphin/ar.h>.
+#if defined(PORT_USE_AURORA)
+#include <dolphin/ar.h>
+#else
+
+#include "types.h"
+
+#include "dolphin/ar.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "dolphin/ar.h"
+
+#define ARQ_DMA_ALIGNMENT 32
+#define ARQ_CHUNK_SIZE_DEFAULT 4096
+
+#define ARQ_TYPE_MRAM_TO_ARAM ARAM_DIR_MRAM_TO_ARAM
+#define ARQ_TYPE_ARAM_TO_MRAM ARAM_DIR_ARAM_TO_MRAM
+
+#define ARQ_PRIORITY_LOW 0
+#define ARQ_PRIORITY_HIGH 1
+
+typedef void (*ARQCallback)(u32 pointerToARQRequest);
+
+// typedef struct ARQRequest {
+
+//   struct ARQRequest* next;
+//   u32 owner;
+//   u32 type;
+//   u32 priority;
+//   u32 source;
+//   u32 dest;
+//   u32 length;
+//   ARQCallback callback;
+
+// } ARQRequest;
+
+void ARQInit(void);
+void ARQReset(void);
+void ARQPostRequest(ARQRequest* task, u32 owner, u32 type, u32 priority, u32 source, u32 dest,
+                    u32 length, ARQCallback callback);
+void ARQRemoveRequest(ARQRequest* task);
+void ARQRemoveOwnerRequest(u32 owner);
+void ARQFlushQueue(void);
+void ARQSetChunkSize(u32 size);
+u32 ARQGetChunkSize(void);
+BOOL ARQCheckInit(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+
+#endif // PORT_USE_AURORA
+#endif

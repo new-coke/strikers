@@ -1,0 +1,42 @@
+# The style for the port's own code; the vendored trees keep upstream's and are excluded.
+
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 100
+PointerAlignment: Left
+ReferenceAlignment: Left
+Cpp11BracedListStyle: false
+
+# Include order is meaningful here: port/prelude.h, then the game's headers, then the host's.
+SortIncludes: Never
+
+IndentCaseLabels: false
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: All
+AlignEscapedNewlines: Left
+AlignConsecutiveShortCaseStatements:
+  Enabled: true
+
+SpacesBeforeTrailingComments: 3
+AlignTrailingComments:
+  Kind: Always
+  OverEmptyLines: 0
+
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: true
+  AfterClass: true
+  AfterControlStatement: Always
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+  AfterUnion: true
+  AfterExternBlock: false
+  BeforeCatch: true
+  BeforeElse: true
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+IndentExternBlock: NoIndent

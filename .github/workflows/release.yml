@@ -1,0 +1,151 @@
+name: release
+
+# Build and package all four targets before drafting a release.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Build and upload artifacts, but do not create a release'
+        type: boolean
+        default: true
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build (${{ matrix.name }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macos-arm64
+            runner: macos-15
+            archive: tar.gz
+          - name: linux-x86_64
+            runner: ubuntu-24.04
+            archive: tar.gz
+          - name: linux-arm64
+            runner: ubuntu-24.04-arm
+            archive: tar.gz
+          - name: windows-x86_64
+            runner: windows-2022
+            archive: zip
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain (Linux)
+        if: runner.os == 'Linux'
+        working-directory: smstrikers-port
+        run: ./tools/install-linux-deps.sh
+
+      - name: Install Rust (linux-arm64 only)
+        if: matrix.name == 'linux-arm64'
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install toolchain (Windows)
+        if: runner.os == 'Windows'
+        run: choco install -y ninja llvm
+
+      - name: Install toolchain (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ninja ffmpeg
+
+      - name: Install ffmpeg (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y --no-install-recommends libavcodec-dev libavutil-dev
+
+      - name: Install Qt (settings app)
+        if: runner.os != 'Linux'
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.*'
+          cache: true
+
+      - name: Install Qt (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y --no-install-recommends qt6-base-dev
+      - name: Point package.sh at the distro Qt (Linux)
+        if: runner.os == 'Linux'
+        run: echo "QT_PREFIX=/usr" >> "$GITHUB_ENV"
+
+      - name: Tool tests
+        working-directory: smstrikers-port
+        shell: bash
+        # Seconds, and nothing to build first. They guard the two failures that
+        # are silent: a stub written over a real host symbol, and a disc image
+        # whose file table names `../x` and so writes outside the extraction
+        # directory.
+        run: |
+          python3 tools/test_genstubs.py
+          python3 tools/test_extract_disc.py
+
+      - name: Configure
+        working-directory: smstrikers-port
+        shell: bash
+        run: ./tools/configure.sh build-aur Release
+
+      - name: Build
+        working-directory: smstrikers-port
+        shell: bash
+        run: ./tools/rebuild.sh build-aur
+
+      - name: Package
+        working-directory: smstrikers-port
+        shell: bash
+        run: ./tools/package.sh build-aur "strikers-${{ matrix.name }}" "${{ matrix.archive }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: strikers-${{ matrix.name }}
+          path: smstrikers-port/dist/*.${{ matrix.archive }}
+          if-no-files-found: error
+
+  release:
+    name: draft release
+    needs: build
+    if: >-
+      success() && startsWith(github.ref, 'refs/tags/v') &&
+      (github.event_name != 'workflow_dispatch' || !inputs.dry_run)
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: strikers-*
+          path: artifacts
+          merge-multiple: true
+
+      - name: Verify archives and write checksums
+        working-directory: artifacts
+        run: |
+          set -eu
+          for archive in strikers-macos-arm64.tar.gz strikers-linux-x86_64.tar.gz strikers-linux-arm64.tar.gz strikers-windows-x86_64.zip; do
+            test -s "$archive"
+          done
+          sha256sum *.tar.gz *.zip > SHA256SUMS
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          fail_on_unmatched_files: true
+          draft: true
+          generate_release_notes: true
+          body: |
+            Built from ${{ github.sha }}.
+
+            Disc data is not bundled. Unpack an archive, put the extracted
+            disc's `files/` directory beside the executable, and run it.
+            The player instructions are included in the archive.
+
+            These are experimental builds for macOS arm64, Linux x86-64,
+            Linux arm64 and Windows x86-64. Windows builds omit movie playback.
+            Verify downloads against SHA256SUMS. Test the packaged builds
+            before publishing this draft.

@@ -1,0 +1,19 @@
+# Everything tools/vendor.py generates, and everything vendored from someone
+# else. See the comment at the top of .clang-format.
+src/Game/**
+src/NL/**
+src/ode/**
+src/Dolphin/**
+src/SDK/**
+src/PowerPC_EABI_Support/**
+include/Game/**
+include/NL/**
+include/ode/**
+include/PowerPC_EABI_Support/**
+include/TRK_MINNOW_DOLPHIN/**
+include/dolphin/**
+include/msl/**
+include/types.h
+include/dolphin.h
+extern/**
+build*/**

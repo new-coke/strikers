@@ -1,0 +1,349 @@
+#include "Game/Audio/WorldAudio.h"
+
+extern unsigned int nlDefaultSeed;
+
+const Audio::eWorldSFX ohBigSFX[3] = { Audio::CROWDSFX_EVENT_OH_SMALL4, Audio::CROWDSFX_EVENT_CLAP_BIG, Audio::CROWDSFX_EVENT_CLAP_SMALL };
+const Audio::eWorldSFX ohSmallSFX[4] = { Audio::CROWDSFX_EVENT_JEER_BIG, Audio::CROWDSFX_EVENT_JEER_SMALL, Audio::CROWDSFX_EVENT_BOO_SMALL1, Audio::CROWDSFX_EVENT_BOO_SMALL2 };
+const Audio::eWorldSFX yeahSmallSFX[3] = { Audio::CROWDSFX_EVENT_OH_BIG2, Audio::CROWDSFX_EVENT_OH_BIG3, Audio::CROWDSFX_EVENT_OH_SMALL1 };
+const Audio::eWorldSFX booSmallSFX[3] = { Audio::BALLSFX_HEADER, Audio::BALLSFX_CHEST, Audio::BALLSFX_KICK };
+const Audio::eWorldSFX booBigSFX[3] = { Audio::BALLSFX_KICK_ONETIMER, Audio::BALLSFX_KICK_S2S_CAPT, Audio::BALLSFX_PASS };
+
+namespace Audio
+{
+cWorldSFX gWorldSFX;
+cWorldSFX gPowerupSFX;
+cWorldSFX gStadGenSFX;
+cWorldSFX gCrowdSFX;
+
+int gWorldSoundTypeEnumMap[211];
+SoundStrToIDNode gWorldSFXInfo[211];
+
+const char* gWorldSoundTable[212] = {
+    "WORLDSFX_NONE",
+    "WORLDSFX_FE_TOGGLE",
+    "WORLDSFX_FE_TOGGLE_02",
+    "WORLDSFX_FE_TOGGLE_03",
+    "WORLDSFX_FE_TOGGLE_04",
+    "WORLDSFX_FE_TOGGLE_PULSE_01",
+    "WORLDSFX_FE_BUTTON_GEN_SELECT_ACCEPT",
+    "WORLDSFX_FE_SCREEN_GEN_BEGIN",
+    "WORLDSFX_FE_BUTTON_GEN_SELECT_BACK",
+    "WORLDSFX_FE_SCREEN_GEN_END",
+    "WORLDSFX_FE_FLASH",
+    "WORLDSFX_FE_LETTER_FLY_IN",
+    "WORLDSFX_FE_LETTER_HIT",
+    "WORLDSFX_FE_LIGHT_TEXT_FLY_IN",
+    "WORLDSFX_FE_LIGHT_TEXT_FLY_IN_LEFT",
+    "WORLDSFX_FE_LIGHT_TEXT_FLY_IN_RIGHT",
+    "WORLDSFX_FE_MENU_OVERLAY_DROP",
+    "WORLDSFX_FE_LETTER_ROTATE_LOOP",
+    "WORLDSFX_FE_DENY",
+    "WORLDSFX_FE_USER_QUESTION",
+    "WORLDSFX_FE_USER_POPUP",
+    "WORLDSFX_FE_TOGGLE_STADIUM",
+    "WORLDSFX_FE_ACCEPT_STADIUM",
+    "WORLDSFX_FE_STADIUM_LETTER_HIT",
+    "WORLDSFX_FE_STADIUM_LETTER_FLY_IN",
+    "WORLDSFX_FE_STINGER_SFX_01",
+    "WORLDSFX_FE_STINGER_SFX_02",
+    "WORLDSFX_FE_STINGER_SFX_03",
+    "WORLDSFX_FE_STINGER_SFX_04",
+    "WORLDSFX_FE_ACCEPT_MARIO",
+    "WORLDSFX_FE_ACCEPT_WARIO",
+    "WORLDSFX_FE_ACCEPT_LUIGI",
+    "WORLDSFX_FE_ACCEPT_WALUIGI",
+    "WORLDSFX_FE_ACCEPT_PEACH",
+    "WORLDSFX_FE_ACCEPT_DAISY",
+    "WORLDSFX_FE_ACCEPT_DK",
+    "WORLDSFX_FE_ACCEPT_YOSHI",
+    "WORLDSFX_FE_ACCEPT_TOAD",
+    "WORLDSFX_FE_ACCEPT_KOOPA",
+    "WORLDSFX_FE_ACCEPT_BIRDO",
+    "WORLDSFX_FE_ACCEPT_HAM",
+    "WORLDSFX_FE_ACCEPT_MYSTERY",
+    "WORLDSFX_FE_NLG_MARIO",
+    "WORLDSFX_FE_NLG_WARIO",
+    "WORLDSFX_FE_NLG_LUIGI",
+    "WORLDSFX_FE_NLG_WALUIGI",
+    "WORLDSFX_FE_NLG_PEACH",
+    "WORLDSFX_FE_NLG_DAISY",
+    "WORLDSFX_FE_NLG_DK",
+    "WORLDSFX_FE_NLG_YOSHI",
+    "WORLDSFX_FE_NLG_TOAD",
+    "WORLDSFX_FE_NLG_KOOPA",
+    "WORLDSFX_FE_NLG_BIRDO",
+    "WORLDSFX_FE_NLG_HAM",
+    "WORLDSFX_FE_NLG_CRITTER",
+    "WORLDSFX_FE_NLG_MYSTERY",
+    "WORLDSFX_FE_NINTENDO_MARIO",
+    "WORLDSFX_FE_NINTENDO_WARIO",
+    "WORLDSFX_FE_NINTENDO_LUIGI",
+    "WORLDSFX_FE_NINTENDO_WALUIGI",
+    "WORLDSFX_FE_NINTENDO_PEACH",
+    "WORLDSFX_FE_NINTENDO_DAISY",
+    "WORLDSFX_FE_NINTENDO_DK",
+    "WORLDSFX_FE_NINTENDO_YOSHI",
+    "WORLDSFX_FE_NINTENDO_TOAD",
+    "WORLDSFX_FE_NINTENDO_KOOPA",
+    "WORLDSFX_FE_NINTENDO_BIRDO",
+    "WORLDSFX_FE_NINTENDO_HAM",
+    "WORLDSFX_FE_NINTENDO_CRITTER",
+    "WORLDSFX_FE_NINTENDO_MYSTERY",
+    "WORLDSFX_FE_FOCUS_MARIO",
+    "WORLDSFX_FE_FOCUS_WARIO",
+    "WORLDSFX_FE_FOCUS_LUIGI",
+    "WORLDSFX_FE_FOCUS_WALUIGI",
+    "WORLDSFX_FE_FOCUS_PEACH",
+    "WORLDSFX_FE_FOCUS_DAISY",
+    "WORLDSFX_FE_FOCUS_DK",
+    "WORLDSFX_FE_FOCUS_YOSHI",
+    "WORLDSFX_FE_FOCUS_MYSTERY",
+    "WORLDSFX_HUD_WHISTLE_PLAY_START",
+    "WORLDSFX_HUD_WHISTLE_PLAY_STOP",
+    "WORLDSFX_HUD_REPLAY_SWIPE",
+    "WORLDSFX_HUD_BALL_HIT_CAMERA",
+    "WORLDSFX_HUD_CLOCK_COUNT",
+    "WORLDSFX_HUD_TOGGLE_UP",
+    "WORLDSFX_HUD_TOGGLE_DOWN",
+    "WORLDSFX_HUD_ACCEPT",
+    "WORLDSFX_FILTER_START",
+    "WORLDSFX_FILTER_END",
+    "REPLAYSFX_CAMERA_ZOOM_IN",
+    "REPLAYSFX_CAMERA_ZOOM_OUT",
+    "REPLAYSFX_CAMERA_SPEED_UP",
+    "REPLAYSFX_CAMERA_SLOW_DOWN",
+    "NISSFX_STOS_GEN_HAMMER",
+    "PWRUPSFX_SHELL_GEN_MOVE",
+    "PWRUPSFX_SHELL_GEN_SHATTER",
+    "PWRUPSFX_SHELL_GEN_ACQUIRE",
+    "PWRUPSFX_SHELL_GEN_ACQUIRE_02",
+    "PWRUPSFX_SHELL_GEN_ACQUIRE_03",
+    "PWRUPSFX_SHELL_GEN_ACQUIRE_04",
+    "PWRUPSFX_SHELL_RED_ACQUIRE",
+    "PWRUPSFX_SHELL_RED_ACTIVATE",
+    "PWRUPSFX_SHELL_RED_MOVE",
+    "PWRUPSFX_SHELL_RED_HIT",
+    "PWRUPSFX_SHELL_RED_BOUNCE_WALL",
+    "PWRUPSFX_SHELL_RED_BOUNCE_GROUND",
+    "PWRUPSFX_SHELL_GREEN_ACQUIRE",
+    "PWRUPSFX_SHELL_GREEN_ACTIVATE",
+    "PWRUPSFX_SHELL_GREEN_MOVE",
+    "PWRUPSFX_SHELL_GREEN_HIT",
+    "PWRUPSFX_SHELL_GREEN_BOUNCE_WALL",
+    "PWRUPSFX_SHELL_GREEN_BOUNCE_GROUND",
+    "PWRUPSFX_SHELL_FREEZE_ACQUIRE",
+    "PWRUPSFX_SHELL_FREEZE_ACTIVATE",
+    "PWRUPSFX_SHELL_FREEZE_MOVE",
+    "PWRUPSFX_SHELL_FREEZE_HIT",
+    "PWRUPSFX_SHELL_FREEZE_BOUNCE_WALL",
+    "PWRUPSFX_SHELL_FREEZE_BOUNCE_GROUND",
+    "PWRUPSFX_SHELL_SPINY_ACQUIRE",
+    "PWRUPSFX_SHELL_SPINY_ACTIVATE",
+    "PWRUPSFX_SHELL_SPINY_MOVE",
+    "PWRUPSFX_SHELL_SPINY_HIT",
+    "PWRUPSFX_SHELL_SPINY_BOUNCE_WALL",
+    "PWRUPSFX_SHELL_SPINY_BOUNCE_GROUND",
+    "PWRUPSFX_MUSH_ACQUIRE",
+    "PWRUPSFX_MUSH_ACTIVATE",
+    "PWRUPSFX_MUSH_END",
+    "PWRUPSFX_BANA_ACQUIRE",
+    "PWRUPSFX_BANA_ACTIVATE",
+    "PWRUPSFX_BANA_BOUNCE",
+    "PWRUPSFX_BANA_HIT",
+    "PWRUPSFX_STAR_ACQUIRE",
+    "PWRUPSFX_STAR_ACTIVATE",
+    "PWRUPSFX_STAR_HIT",
+    "PWRUPSFX_STAR_END",
+    "PWRUPSFX_BOMB_ACQUIRE",
+    "PWRUPSFX_BOMB_ACTIVATE",
+    "PWRUPSFX_BOMB_MOVE",
+    "PWRUPSFX_BOMB_HIT",
+    "PWRUPSFX_BOMB_END",
+    "PWRUPSFX_CHOMP_ACQUIRE",
+    "PWRUPSFX_CHOMP_ACTIVATE",
+    "PWRUPSFX_CHOMP_MOVE",
+    "PWRUPSFX_CHOMP_HIT",
+    "PWRUPSFX_CHOMP_BOUNCE",
+    "PWRUPSFX_CHOMP_BARK",
+    "CROWDSFX_GOAL_HOME",
+    "CROWDSFX_GOAL_AWAY",
+    "CROWDSFX_LOOP_POS",
+    "CROWDSFX_LOOP_NEU",
+    "CROWDSFX_LOOP_NEG",
+    "CROWDSFX_LOOP_BOO",
+    "CROWDSFX_LOOP_ANT",
+    "CROWDSFX_LOOP_WHISTLE",
+    "CROWDSFX_EVENT_YEAH_BIG",
+    "CROWDSFX_EVENT_YEAH_SMALL1",
+    "CROWDSFX_EVENT_YEAH_SMALL2",
+    "CROWDSFX_EVENT_YEAH_SMALL3",
+    "CROWDSFX_EVENT_ANT_BIG",
+    "CROWDSFX_EVENT_ANT_SMALL",
+    "CROWDSFX_EVENT_OH_BIG1",
+    "CROWDSFX_EVENT_OH_BIG2",
+    "CROWDSFX_EVENT_OH_BIG3",
+    "CROWDSFX_EVENT_OH_SMALL1",
+    "CROWDSFX_EVENT_OH_SMALL2",
+    "CROWDSFX_EVENT_OH_SMALL3",
+    "CROWDSFX_EVENT_OH_SMALL4",
+    "CROWDSFX_EVENT_CLAP_BIG",
+    "CROWDSFX_EVENT_CLAP_SMALL",
+    "CROWDSFX_EVENT_JEER_BIG",
+    "CROWDSFX_EVENT_JEER_SMALL",
+    "CROWDSFX_EVENT_BOO_SMALL1",
+    "CROWDSFX_EVENT_BOO_SMALL2",
+    "CROWDSFX_EVENT_BOO_SMALL3",
+    "CROWDSFX_EVENT_BOO_BIG1",
+    "CROWDSFX_EVENT_BOO_BIG2",
+    "CROWDSFX_EVENT_BOO_BIG3",
+    "BALLSFX_HEADER",
+    "BALLSFX_CHEST",
+    "BALLSFX_KICK",
+    "BALLSFX_KICK_ONETIMER",
+    "BALLSFX_KICK_S2S_CAPT",
+    "BALLSFX_PASS",
+    "BALLSFX_PASS_RECEIVE",
+    "BALLSFX_PASS_VOLLEY",
+    "BALLSFX_PASS_VOLLEY_FLY",
+    "BALLSFX_PASS_PERFECT_FLY",
+    "BALLSFX_KICK_HARD",
+    "BALLSFX_KICK_S2S_REG",
+    "BALLSFX_KICK_S2S_FLAME",
+    "BALLSFX_THROW",
+    "BALLSFX_SLAP",
+    "BALLSFX_CATCH",
+    "BALLSFX_CATCH_MOUTH",
+    "BALLSFX_DRIBBLE_WALK",
+    "BALLSFX_DRIBBLE_RUN",
+    "STADSFX_BALL_HITS_NET_HARD",
+    "STADSFX_BALL_HITS_NET_SOFT",
+    "STADSFX_BALL_HITS_POST",
+    "STADSFX_BALL_HITS_FORCE_FIELD",
+    "STADSFX_BALL_BOUNCE",
+    "STADSFX_BALL_ROLL",
+    "STADSFX_GEN_HORN_GOAL",
+    "STADSFX_GEN_HALF_END_WARNING",
+    "STADSFX_GEN_FIREWORKS_FLOOR",
+    "STADSFX_GEN_FIREWORKS_CEILING",
+    "STADSFX_GEN_CAMERA_SHAKE",
+    "STADSFX_GEN_SIDELINE_EXPLODE",
+    "STADSFX_GEN_NIS_FORCE_FIELD",
+    "STADSFX_STRIKE_HYPER_SFX",
+    "STADSFX_STRIKE_CAPT_SFX",
+    "NUM_WORLDSFX"
+};
+
+/**
+ * Offset/Address/Size: 0x2B8 | 0x80154BFC | size: 0x60
+ */
+cWorldSFX::~cWorldSFX()
+{
+}
+
+/**
+ * Offset/Address/Size: 0x270 | 0x80154BB4 | size: 0x48
+ */
+void cWorldSFX::Init()
+{
+    mpSFX = gWorldSFXInfo;
+    mpSoundStrTable = gWorldSoundTable;
+    mNumSFXTypes = 0xd3;
+    meClassType = WORLD;
+    cGameSFX::Init();
+}
+
+/**
+ * Offset/Address/Size: 0x1D8 | 0x80154B1C | size: 0x98
+ */
+unsigned long cWorldSFX::Play(Audio::eWorldSFX sfx, float volume, float delayTime, bool keepTrack, float panning)
+{
+    Audio::SoundAttributes attributes;
+    attributes.Init();
+    attributes.mu_Type = sfx;
+    attributes.mf_Volume = volume;
+    attributes.mf_DelayTime = delayTime;
+    attributes.mf_Panning = panning;
+    attributes.mb_KeepTrack = keepTrack;
+    return Play(attributes);
+}
+
+/**
+ * Offset/Address/Size: 0x19C | 0x80154AE0 | size: 0x3C
+ */
+uintptr_t cWorldSFX::Play(Audio::SoundAttributes& attributes)
+{
+    attributes.me_ClassType = WORLD;
+    if (attributes.mu_Type == 0)
+    {
+        return Audio::GetSndIDError();
+    }
+    return cGameSFX::Play(attributes);
+}
+
+/**
+ * Offset/Address/Size: 0x17C | 0x80154AC0 | size: 0x20
+ */
+void cWorldSFX::SetSFX(SoundPropAccessor* pSoundPropAccessor)
+{
+    cGameSFX::SetSFX(pSoundPropAccessor);
+}
+
+inline const eWorldSFX* GetRandomReactionSize(cWorldSFX::CrowdReactionType dType, unsigned int& tableSize)
+{
+    switch (dType)
+    {
+    case cWorldSFX::CROWD_REACTION_OH_BIG:
+        tableSize = 3;
+        return ohBigSFX;
+    case cWorldSFX::CROWD_REACTION_OH_SMALL:
+        tableSize = 4;
+        return ohSmallSFX;
+    case cWorldSFX::CROWD_REACTION_YEAH_SMALL:
+        tableSize = 3;
+        return yeahSmallSFX;
+    case cWorldSFX::CROWD_REACTION_BOO_SMALL:
+        tableSize = 3;
+        return booSmallSFX;
+    case cWorldSFX::CROWD_REACTION_BOO_BIG:
+        tableSize = 3;
+        return booBigSFX;
+    }
+    return nullptr;
+}
+
+/**
+ * Offset/Address/Size: 0x20 | 0x80154964 | size: 0x15C
+ */
+unsigned long cWorldSFX::PlayRandomReaction(Audio::cWorldSFX::CrowdReactionType dType, float volume, float delayTime, int groupPriority, float fDefaultVolAdjustment)
+{
+    const eWorldSFX* pSFXArray;
+    unsigned int tableSize;
+
+    if (!Audio::IsInited() || !Audio::IsWorldSFXLoaded())
+    {
+        return Audio::GetSndIDError();
+    }
+
+    pSFXArray = GetRandomReactionSize(dType, tableSize);
+
+    Audio::SoundAttributes attributes;
+    attributes.Init();
+
+    attributes.SetSoundType(pSFXArray[nlRandom(tableSize, &nlDefaultSeed)], false);
+    attributes.mi_GroupPriority = groupPriority;
+    attributes.mf_Volume = volume;
+    attributes.mf_VolAdjustment = fDefaultVolAdjustment;
+    attributes.mf_DelayTime = delayTime;
+
+    return Play(attributes);
+}
+
+/**
+ * Offset/Address/Size: 0x0 | 0x80154944 | size: 0x20
+ */
+void cWorldSFX::Stop(Audio::eWorldSFX sfx, cGameSFX::StopFlag flag)
+{
+    cGameSFX::Stop(sfx, flag);
+}
+
+} // namespace Audio

@@ -1,0 +1,255 @@
+/*  Metrowerks Standard Library  */
+
+/*  $Date: 1999/07/30 00:42:25 $
+ *  $Revision: 1.9.4.1 $
+ *  $NoKeywords: $
+ *
+ *		Copyright 1995-1999 Metrowerks, Inc.
+ *		All rights reserved.
+ */
+
+/*
+ *	cwctype
+ */
+
+#ifndef __cwctype
+#define __cwctype
+#ifndef __NO_WIDE_CHAR                          /* mm 981020 */
+
+// #include <ansi_parms.h>
+#include <eof.h>                                /* vss 980817 */
+#include <wchar_t.h>
+/* #include <cstdio>        */ /* vss 980817 */ /* mm 970918*/
+/*#include <cstddef>*/                          /* mm 990217 */
+/* #include <wchar.h> */
+
+#ifndef RC_INVOKED
+
+#pragma options align = native
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+#pragma import on
+#endif
+
+#ifdef __cplusplus
+#ifdef _MSL_USING_NAMESPACE
+namespace std
+{
+#endif
+extern "C"
+{
+#endif
+
+#ifndef _WCTYPE_T_DEFINED
+#define _WCTYPE_T_DEFINED
+
+typedef wchar_t wint_t;
+typedef wchar_t wctype_t;
+typedef int     mbstate_t; /* mm 980627 */
+typedef wchar_t Wint_t;    /* mm 980627 */
+
+#endif                     /* ifndef _WCTYPE_T_DEFINED */
+
+#ifndef WEOF
+#define WEOF (wint_t) (0xFFFF)
+#endif
+                
+#ifndef _MSL_DLLDATA
+#define _MSL_DLLDATA
+#endif     /* ifndef WEOF */
+
+extern _MSL_DLLDATA wchar_t __wctype_map[];
+extern _MSL_DLLDATA wchar_t __wlower_map[];
+extern _MSL_DLLDATA wchar_t __wupper_map[];
+
+#define __wcontrol_char 0x01
+#define __wmotion_char  0x02
+#define __wspace_char   0x04
+#define __wpunctuation  0x08
+#define __wdigit        0x10
+#define __whex_digit    0x20
+#define __wlower_case   0x40
+#define __wupper_case   0x80
+
+#define __wletter       (__wlower_case | __wupper_case)
+#define __walphanumeric (__wletter | __wdigit)
+#define __wgraphic      (__walphanumeric | __wpunctuation)
+#define __wprintable    (__wgraphic | __wspace_char)
+#define __wwhitespace   (__wmotion_char | __wspace_char)
+#define __wcontrol      (__wmotion_char | __wcontrol_char)
+#define __wz_fill(c)    ((wchar_t)(wchar_t)(c))
+#define __WCMAP_SIZE    256
+
+#ifdef __cplusplus
+} // extern "C"  // hh 981221
+
+/* begin mm 980626 */
+inline int
+iswalnum (wint_t c)
+{
+    return ((c < __WCMAP_SIZE) ? (__wctype_map[__wz_fill (c)] & __walphanumeric) : 0);
+}
+
+inline int
+iswalpha (wint_t c)
+{
+    return ((c < __WCMAP_SIZE) ? (__wctype_map[__wz_fill (c)] & __wletter) : 0);
+}
+
+inline int
+iswcntrl (wint_t c)
+{
+    return ((c < __WCMAP_SIZE) ? (__wctype_map[__wz_fill (c)] & __wcontrol) : 0);
+}
+
+inline int
+iswdigit (wint_t c)
+{
+    return ((c < __WCMAP_SIZE) ? (__wctype_map[__wz_fill (c)] & __wdigit) : 0);
+}
+
+inline int
+iswgraph (wint_t c)
+{
+    return ((c < __WCMAP_SIZE) ? (__wctype_map[__wz_fill (c)] & __wgraphic) : 0);
+}
+
+inline int
+iswlower (wint_t c)
+{
+    return ((c < __WCMAP_SIZE) ? (__wctype_map[__wz_fill (c)] & __wlower_case) : 0);
+}
+
+inline int
+iswprint (wint_t c)
+{
+    return ((c < __WCMAP_SIZE) ? (__wctype_map[__wz_fill (c)] & __wprintable) : 0);
+}
+
+inline int
+iswpunct (wint_t c)
+{
+    return ((c < __WCMAP_SIZE) ? (__wctype_map[__wz_fill (c)] & __wpunctuation) : 0);
+}
+
+inline int
+iswspace (wint_t c)
+{
+    return ((c < __WCMAP_SIZE) ? (__wctype_map[__wz_fill (c)] & __wwhitespace) : 0);
+}
+
+inline int
+iswupper (wint_t c)
+{
+    return ((c < __WCMAP_SIZE) ? (__wctype_map[__wz_fill (c)] & __wupper_case) : 0);
+}
+
+inline int
+iswxdigit (wint_t c)
+{
+    return ((c < __WCMAP_SIZE) ? (__wctype_map[__wz_fill (c)] & __whex_digit) : 0);
+}
+
+/* begin mm 970918*/
+inline wint_t
+towlower (wint_t c)
+{
+    return ((c >= __WCMAP_SIZE) ? c : ((wint_t)__wlower_map[__wz_fill (c)]));
+} /* mm 980205 */
+
+inline wint_t
+towupper (wint_t c)
+{
+    return ((c >= __WCMAP_SIZE) ? c : ((wint_t)__wupper_map[__wz_fill (c)]));
+} /* mm 980205 */
+
+/* end mm 970918*/
+inline int
+wctob (wint_t c)
+{
+    return ((c & 0xFF00) ? EOF : (int)c);
+}                                             /* mm 980625 */
+
+extern "C"
+{                                             // hh 981221
+
+#else                                         /* !__cplusplus */
+
+int     iswalnum (wint_t);
+int     iswalpha (wint_t);
+int     iswcntrl (wint_t);
+int     iswdigit (wint_t);
+int     iswgraph (wint_t);
+int     iswlower (wint_t);
+int     iswprint (wint_t);
+int     iswpunct (wint_t);
+int     iswspace (wint_t);
+int     iswupper (wint_t);
+int     iswxdigit (wint_t);
+wchar_t towlower (wint_t);
+wchar_t towupper (wint_t);
+int     wctob (wint_t); /* mm 980625 */
+
+#define iswalnum(c)                                                                            \
+    ((int)(((c < __WCMAP_SIZE) ? (__wctype_map[__wz_fill (c)] & __walphanumeric) : 0)))
+#define iswalpha(c)                                                                            \
+    ((int)(((c < __WCMAP_SIZE) ? (__wctype_map[__wz_fill (c)] & __wletter) : 0)))
+#define iswcntrl(c)                                                                            \
+    ((int)(((c < __WCMAP_SIZE) ? (__wctype_map[__wz_fill (c)] & __wcontrol) : 0)))
+#define iswdigit(c) ((int)(((c < __WCMAP_SIZE) ? (__wctype_map[__wz_fill (c)] & __wdigit) : 0)))
+#define iswgraph(c)                                                                            \
+    ((int)(((c < __WCMAP_SIZE) ? (__wctype_map[__wz_fill (c)] & __wgraphic) : 0)))
+#define iswlower(c)                                                                            \
+    ((int)(((c < __WCMAP_SIZE) ? (__wctype_map[__wz_fill (c)] & __wlower_case) : 0)))
+#define iswprint(c)                                                                            \
+    ((int)(((c < __WCMAP_SIZE) ? (__wctype_map[__wz_fill (c)] & __wprintable) : 0)))
+#define iswpunct(c)                                                                            \
+    ((int)(((c < __WCMAP_SIZE) ? (__wctype_map[__wz_fill (c)] & __wpunctuation) : 0)))
+#define iswspace(c)                                                                            \
+    ((int)(((c < __WCMAP_SIZE) ? (__wctype_map[__wz_fill (c)] & __wwhitespace) : 0)))
+#define iswupper(c)                                                                            \
+    ((int)(((c < __WCMAP_SIZE) ? (__wctype_map[__wz_fill (c)] & __wupper_case) : 0)))
+#define iswxdigit(c)                                                                           \
+    ((int)(((c < __WCMAP_SIZE) ? (__wctype_map[__wz_fill (c)] & __whex_digit) : 0)))
+/* end mm 980626 */
+#define towlower(c)                                                                            \
+    (((c) >= __WCMAP_SIZE) ? (c) : ((wint_t)__wlower_map[__wz_fill (c)]))
+#define towupper(c)                                                                            \
+    (((c) >= __WCMAP_SIZE) ? (c) : ((wint_t)__wupper_map[__wz_fill (c)]))
+
+#endif /* __cplusplus */                      /* mm 990401 */
+
+wctype_t wctype (const char* property);       /* mm 980629 */
+int      iswctype (wint_t wc, wctype_t desc); /* mm 980629 */
+
+#ifdef __cplusplus
+}
+#ifdef _MSL_USING_NAMESPACE
+}
+#endif
+#endif
+
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+#pragma import reset
+#endif
+#pragma options align = reset
+
+#endif                                        /* RC_INVOKED */
+
+#endif /*#ifndef __NO_WIDE_CHAR		*/        /* mm 981020 */
+
+#endif                                        /* __cwctype__ */
+
+/*  Change Record
+ *	980121 	JCM  First code release.
+ *  rjk 980313 added _MSL_DLLDATA
+ *  mm 980625  Added declarations for wctob.
+ *  mm 980626  Considerable rewrite of the wc classification functions, towlower and towupper to
+ *             match C9x
+ *  mm 980627  Inserted missing typedefs for mbstate_t and Wint_t
+ *  mm 980629  Added prototypes for wctype() and iswctype().
+ * vss 980817  Added eof.h to get EOF defined, removed <cstdio> because of circular dependency
+ *  mm 981020  Added #ifndef __NO_WIDE_CHAR wrappers
+ *  hh 981221  Made inline methods extern "C++"
+ *  mm 990217  Replaced include of cstddef with one of  wchar_t.h
+ *  mm 990401	Moved #endif to include defines of iswalnum()... inside !__cplusplus
+ */

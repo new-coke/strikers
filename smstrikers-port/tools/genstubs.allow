@@ -1,0 +1,35 @@
+# The stubs tools/genstubs.py may write: one anchored regular expression per line, matched against
+# each symbol with the object format's C prefix removed. Every entry is an exact symbol, signature
+# included; anything else fails the build. STRIKERS_ACCEPT_NEW_STUBS=1 links anyway.
+
+# Aurora has no EFB peek or poke; nothing reads the result on this host.
+^GXPeekARGB$
+^GXPokeARGB$
+^GXPokeBlendMode$
+^GXPokeColorUpdate$
+
+# ODE's LCP solver, src/ode/lcp.cpp, which the source list leaves out.
+^_Z9dSolveLCPiPfS_S_S_iS_S_Pi$
+^\?dSolveLCP@@YAXHPEAM000H00PEAH@Z$
+
+# Debug classes whose definitions the decompilation excludes from its build. The two thunks are
+# Itanium's multiple-inheritance adjustors; MSVC generates its own beside the vtable.
+^_ZN13StatsGatherer14DoFunctionCallEj$
+^_ZN13StatsGatherer3RunEf$
+^_ZN13StatsGatherer7GetNameEv$
+^_ZThn72_N13StatsGatherer3RunEf$
+^_ZThn72_N13StatsGatherer7GetNameEv$
+^\?DoFunctionCall@StatsGatherer@@UEAAXI@Z$
+^\?Run@StatsGatherer@@UEAAXM@Z$
+^\?GetName@StatsGatherer@@UEAAPEBDXZ$
+^_ZN14cFuzzyDebugger13ClearAllTreesEv$
+^_ZN14cFuzzyDebugger8WriteXMLEv$
+^\?ClearAllTrees@cFuzzyDebugger@@SAXXZ$
+^\?WriteXML@cFuzzyDebugger@@SAXXZ$
+^_ZN16TMAnimControllerC1EPKcP5World$
+^\?\?0TMAnimController@@QEAA@PEBDPEAVWorld@@@Z$
+^_ZN21SkinnedAnimControllerC1EPKcP5World$
+^_ZN21SkinnedAnimController16CreateGLSkinMeshEP7glModel$
+^\?\?0SkinnedAnimController@@QEAA@PEBDPEAVWorld@@@Z$
+# glModel is a struct, which MSVC spells U where a class is V.
+^\?CreateGLSkinMesh@SkinnedAnimController@@QEAAXPEAUglModel@@@Z$

@@ -1,0 +1,44 @@
+// strikers-settings.exe's icon on Windows. Same mechanism as
+// strikers.rc, a different picture: the game's, with a cog on it, so the
+// two executables in one folder are not the same icon twice.
+#define IDI_ICON1 101
+IDI_ICON1 ICON "settings.ico"
+
+// And the same version block, for the same reason: without one, the second
+// executable in the archive is a file called `strikers-settings.exe` with
+// nothing anywhere to say what it belongs to. See strikers.rc for what each
+// field is read by and why OriginalFilename is not the display name.
+#ifndef VS_VERSION_INFO
+#define VS_VERSION_INFO 1
+#endif
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION    1,0,0,0
+PRODUCTVERSION 1,0,0,0
+FILEFLAGSMASK  0x3fL
+FILEFLAGS      0x0L
+FILEOS         0x40004L   // VOS_NT_WINDOWS32
+FILETYPE       0x1L       // VFT_APP
+FILESUBTYPE    0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "FileDescription",  "Super Mario Strikers Settings"
+            // The same product as the game, deliberately: the two executables
+            // are one thing that happens to ship as two files, and Windows
+            // groups by this string.
+            VALUE "ProductName",      "Super Mario Strikers"
+            VALUE "FileVersion",      "1.0.0"
+            VALUE "ProductVersion",   "1.0.0"
+            VALUE "InternalName",     "strikers-settings"
+            VALUE "OriginalFilename", "strikers-settings.exe"
+            VALUE "Comments",         "Settings for the Super Mario Strikers native port. Not affiliated with, authorised by or endorsed by Nintendo."
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

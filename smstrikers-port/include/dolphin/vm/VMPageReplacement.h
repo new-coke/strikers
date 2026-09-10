@@ -1,0 +1,6 @@
+#ifndef _VMPAGEREPLACEMENT_H_
+#define _VMPAGEREPLACEMENT_H_
+
+// void 0x803735F0..0x803735F8 | size: 0x8;
+
+#endif // _VMPAGEREPLACEMENT_H_

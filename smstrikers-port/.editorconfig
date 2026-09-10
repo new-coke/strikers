@@ -1,0 +1,20 @@
+# The C and C++ style itself is in .clang-format.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 4
+
+# Port-owned files only: a trimmed space in a vendored tree is a diff against the manifest.
+[{src/platform,include/port,tools,docs}/**]
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.md]
+# Two trailing spaces are a line break in Markdown.
+trim_trailing_whitespace = false
+
+[*.{yml,yaml}]
+indent_size = 2

@@ -1,0 +1,137 @@
+# strikers.ini, rename or copy this to strikers.ini beside the executable.
+
+# Handheld / battery: uncomment these three together on a Steam Deck or any machine running on one.
+#   fps_limit = 40
+# vsync = 1 # Fifo blocks and lets the GPU idle; Mailbox renders frames the panel never shows, which
+# on a battery is heat.
+#   msaa      = 1
+# res_scale is deliberately absent: the default already renders one pixel per display pixel.
+
+[display]
+# Internal render resolution, as a multiple of the console's 448 rows.
+# res_scale = 2.0
+
+# Multisampling. Init-time only. 1 is the default and 4 is the only other value worth setting.
+# msaa = 1
+
+# Anisotropic texture filtering: 1, 2, 4, 8 or 16.
+# aniso = 16
+
+# Frame rate cap in Hz, or 0 for unlimited.
+# fps_limit = 59.94
+
+# 1 blocks on the vblank (Fifo). 0 selects Mailbox where the driver has it, which is still tear-free
+# but does not drop to half rate when a frame lands late, worth ~10 fps on a GPU that is close to
+# its limit.
+# vsync = 1
+
+# Aspect ratio: auto, 16:9, 4:3, 21:9, any W:H, or a decimal.
+# aspect = auto
+
+# Open fullscreen instead of in a 1920x1080 window.
+# fullscreen = 1
+
+# Stop the game when its window loses focus. 0 by default and deliberately: the attract mode and the
+# demo match are worth leaving to run, and a benchmark that stopped would report nothing.
+# pause_on_focus_lost = 1
+
+# Graphics backend: auto, d3d12, vulkan, metal.
+# backend = vulkan
+
+[audio]
+# Sound: music, effects, the stadium reverb and the movies' own tracks.
+# audio = 0
+
+# Master level, 0 to 2, in front of the limiter.
+# audio_volume = 1.0
+
+# Report at exit: ticks rendered, underruns, and whether any non-silent sample was produced; plus
+# the mixer's state every two seconds.
+# log_audio = 1
+
+[input]
+# Controls. Everything here is commented out and the defaults below are what you get without the
+# file.
+# STRIKERS_PROBE_PAD=1 prints the whole effective table at startup, which is
+# also the answer to "what are my controls".
+
+# keyboard = 1            ; 0 disables the keyboard pad
+
+# Keyboard, player 1. SDL scancode names as SDL_GetScancodeName spells them: "A", "Return", "Space",
+# "Left Shift", "F1", "Keypad 0". STRIKERS_PROBE_PAD=1 prints the whole effective table.
+# key_a = X
+# key_b = Z
+# key_x = C
+# key_y = V
+# key_z = Space
+# key_start = Return
+# key_l = Q
+# key_r = E
+# key_dpad_up = Up
+# key_dpad_down = Down
+# key_dpad_left = Left
+# key_dpad_right = Right
+# key_stick_up = W
+# key_stick_down = S
+# key_stick_left = A
+# key_stick_right = D
+# key_cstick_up = I
+# key_cstick_down = K
+# key_cstick_left = J
+# key_cstick_right = L
+
+# Gamepad (all ports). Values are SDL gamepad button names: a b x y back guide start leftstick
+# rightstick leftshoulder rightshoulder dpup dpdown dpleft dpright, and for triggers: lefttrigger
+# righttrigger.
+# pad_a = a
+# pad_b = b
+# pad_x = x
+# pad_y = y
+# pad_z = rightshoulder
+# pad_start = start
+# pad_l = lefttrigger
+# pad_r = righttrigger
+# pad_dpad_up = dpup
+# pad_dpad_down = dpdown
+# pad_dpad_left = dpleft
+# pad_dpad_right = dpright
+# pad_swap_sticks = 0     ; 1 swaps the main stick and the C-stick
+# pad_deadzone = 0.15     ; 0.0 .. 0.9, fraction of stick radius
+# pad_trigger_threshold = 0.5
+# pad_rumble = 1          ; 0 turns rumble off on every port
+# pad_rumble_strength = 100   ; 0..100
+
+[paths]
+# Where the game data is: either the `files` folder of an extracted disc, or a disc image.
+# data = C:/games/strikers/files
+# data = C:/games/strikers/Super Mario Strikers.iso
+
+# Send everything the game reports to a file instead of the terminal.
+# log = 1
+
+# The console's own language setting, which only a European disc reads.
+# language = german
+
+[game]
+# The settings window on a first run. When there is no strikers.ini at all, the game opens this
+# window once before it starts and waits for it, which is how anyone finds out these settings exist.
+# first_run = 0
+
+# Which disc the data came from, when the data cannot say: the id is read from sys/boot.bin
+# beside `files` or from an image's first bytes, and an extraction of `files` alone is taken
+# as the USA disc. usa, europe or japan, or a disc id (G4QE01, G4QP01, G4QJ01).
+# region = europe
+
+# Every stadium, team and cup mode available.
+# unlock_all = 1
+
+[debug]
+# The debug overlay and menu. `menu` opens the menu straight away, `1` draws only the compact
+# heads-up form.
+# overlay = menu
+
+# Force a stadium instead of letting the demo pick at random.
+# force_stadium = mario_stadium
+
+# Pin the RNG seed, so a run is reproducible.
+# seed = 3

@@ -1,0 +1,1710 @@
+diff --git a/include/aurora/aurora.h b/include/aurora/aurora.h
+index 56c7aae..49a29c3 100644
+--- a/include/aurora/aurora.h
++++ b/include/aurora/aurora.h
+@@ -128,6 +128,18 @@ typedef struct {
+ 
+ AuroraInfo aurora_initialize(int argc, char* argv[], const AuroraConfig* config);
+ void aurora_shutdown();
++/* smstrikers-port: write the next presented frame to `path` as a binary PPM. */
++void aurora_capture_frame(const char* path);
++/* smstrikers-port: queue submit to OnSubmittedWorkDone, which is not GPU
++ * execution time on Metal: the MSAA sample count does not move it. */
++void aurora_gpu_frame_time(uint64_t* lastNs, uint64_t* meanNs, uint64_t* maxNs, uint64_t* count);
++/* smstrikers-port: size the GX framebuffer from the VI render mode times
++ * `scale` rather than from the window. 0 restores the default. */
++void aurora_set_frame_buffer_scale(float scale);
++/* smstrikers-port: the window as it is right now, polled, because macOS reports a move between displays of different backing scale through a scale change, a resize, both or neither. */
++AuroraWindowSize aurora_window_size();
++/* smstrikers-port: rebuild the framebuffer from the window and the locked aspect now rather than on the next event pump. Safe between frames only; idempotent. */
++void aurora_apply_frame_buffer_resize();
+ const AuroraEvent* aurora_update();
+ bool aurora_begin_frame();
+ void aurora_end_frame();
+diff --git a/include/dolphin/ai.h b/include/dolphin/ai.h
+index 52975e7..0a4b6dc 100644
+--- a/include/dolphin/ai.h
++++ b/include/dolphin/ai.h
+@@ -26,7 +26,11 @@ BOOL AIGetDMAEnableFlag(void);
+ void AIStartDMA(void);
+ void AIStopDMA(void);
+ u32 AIGetDMABytesLeft(void);
++#ifdef TARGET_PC
++uintptr_t AIGetDMAStartAddr(void);
++#else
+ u32 AIGetDMAStartAddr(void);
++#endif
+ u32 AIGetDMALength(void);
+ BOOL AICheckInit(void);
+ AISCallback AIRegisterStreamCallback(AISCallback callback);
+diff --git a/lib/aurora.cpp b/lib/aurora.cpp
+index 9430842..c750c10 100644
+--- a/lib/aurora.cpp
++++ b/lib/aurora.cpp
+@@ -1,4 +1,8 @@
+ #include <aurora/aurora.h>
++#include <chrono>
++#include <cstdio>
++#include <string>
++#include <vector>
+ #include <aurora/time.hpp>
+ 
+ #ifdef AURORA_ENABLE_GX
+@@ -233,6 +237,134 @@ const AuroraEvent* update() noexcept {
+   return window::poll_events();
+ }
+ 
++// smstrikers-port: GPU frame time without timestamp queries, which read back zero
++// on a tile-based deferred renderer. An upper bound: the submit-to-callback
++// interval includes any wait behind previously queued work.
++namespace gpu_time {
++std::atomic<uint64_t> g_totalNs{0};
++std::atomic<uint64_t> g_count{0};
++std::atomic<uint64_t> g_maxNs{0};
++std::atomic<uint64_t> g_lastNs{0};
++
++uint64_t now_ns() {
++  return static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(
++                                   std::chrono::steady_clock::now().time_since_epoch())
++                                   .count());
++}
++
++void record(uint64_t ns) {
++  g_lastNs.store(ns, std::memory_order_relaxed);
++  g_totalNs.fetch_add(ns, std::memory_order_relaxed);
++  g_count.fetch_add(1, std::memory_order_relaxed);
++  uint64_t prev = g_maxNs.load(std::memory_order_relaxed);
++  while (ns > prev && !g_maxNs.compare_exchange_weak(prev, ns, std::memory_order_relaxed)) {
++  }
++}
++} // namespace gpu_time
++
++// smstrikers-port: read the presented frame back as a binary PPM, on the encoder
++// Aurora is already using. A blit from another encoder trips Metal's "A command
++// encoder is already encoding to this command buffer".
++namespace capture {
++std::string g_path;
++bool g_pending = false;
++
++// WebGPU requires bytes-per-row of a texture copy to be a multiple of 256.
++constexpr uint32_t kRowAlign = 256;
++constexpr uint32_t align_up(uint32_t v, uint32_t a) { return (v + a - 1) & ~(a - 1); }
++
++wgpu::Buffer g_buffer;
++uint32_t g_width = 0, g_height = 0, g_paddedRow = 0;
++bool g_bgra = false;
++
++// Called with Aurora's encoder, before it is finished.
++void record(const wgpu::CommandEncoder& encoder) {
++  if (!g_pending) {
++    return;
++  }
++  const auto& src = webgpu::present_source();
++  if (src.texture == nullptr) {
++    g_pending = false;
++    return;
++  }
++  g_width = src.size.width;
++  g_height = src.size.height;
++  g_paddedRow = align_up(g_width * 4, kRowAlign);
++  g_bgra = src.format == wgpu::TextureFormat::BGRA8Unorm ||
++           src.format == wgpu::TextureFormat::BGRA8UnormSrgb;
++
++  const uint64_t total = static_cast<uint64_t>(g_paddedRow) * g_height;
++  const wgpu::BufferDescriptor bufDesc{
++      .label = "Frame capture readback",
++      .usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::MapRead,
++      .size = total,
++  };
++  g_buffer = webgpu::g_device.CreateBuffer(&bufDesc);
++  if (g_buffer == nullptr) {
++    g_pending = false;
++    return;
++  }
++
++  const wgpu::TexelCopyTextureInfo copySrc{
++      .texture = src.texture,
++      .mipLevel = 0,
++      .origin = {0, 0, 0},
++      .aspect = wgpu::TextureAspect::All,
++  };
++  const wgpu::TexelCopyBufferInfo copyDst{
++      .layout = {.offset = 0, .bytesPerRow = g_paddedRow, .rowsPerImage = g_height},
++      .buffer = g_buffer,
++  };
++  const wgpu::Extent3D extent{g_width, g_height, 1};
++  encoder.CopyTextureToBuffer(&copySrc, &copyDst, &extent);
++}
++
++// Called after the frame has been submitted.
++void resolve() {
++  if (!g_pending || g_buffer == nullptr) {
++    return;
++  }
++  g_pending = false;
++
++  const uint64_t total = static_cast<uint64_t>(g_paddedRow) * g_height;
++  bool ok = false;
++  const wgpu::Future future = g_buffer.MapAsync(
++      wgpu::MapMode::Read, 0, static_cast<size_t>(total), wgpu::CallbackMode::WaitAnyOnly,
++      [&ok](wgpu::MapAsyncStatus status, wgpu::StringView) { ok = status == wgpu::MapAsyncStatus::Success; });
++  wgpu::FutureWaitInfo wait{};
++  wait.future = future;
++  webgpu::g_instance.WaitAny(1, &wait, UINT64_MAX);
++
++  if (ok) {
++    const auto* mapped = static_cast<const uint8_t*>(g_buffer.GetConstMappedRange(0, static_cast<size_t>(total)));
++    FILE* f = mapped != nullptr ? std::fopen(g_path.c_str(), "wb") : nullptr;
++    if (f != nullptr) {
++      std::fprintf(f, "P6\n%u %u\n255\n", g_width, g_height);
++      std::vector<uint8_t> row(static_cast<size_t>(g_width) * 3);
++      for (uint32_t y = 0; y < g_height; ++y) {
++        const uint8_t* srcRow = mapped + static_cast<size_t>(y) * g_paddedRow;
++        for (uint32_t x = 0; x < g_width; ++x) {
++          const uint8_t* px = srcRow + x * 4;
++          row[x * 3 + 0] = g_bgra ? px[2] : px[0];
++          row[x * 3 + 1] = px[1];
++          row[x * 3 + 2] = g_bgra ? px[0] : px[2];
++        }
++        std::fwrite(row.data(), 1, row.size(), f);
++      }
++      std::fclose(f);
++      Log.info("Wrote frame capture to {}", g_path);
++    } else {
++      Log.warn("Frame capture: could not open {}", g_path);
++    }
++    g_buffer.Unmap();
++  } else {
++    Log.warn("Frame capture: buffer map failed");
++  }
++  g_buffer.Destroy();
++  g_buffer = nullptr;
++}
++} // namespace capture
++
+ bool begin_frame() noexcept {
+   ZoneScoped;
+ #ifdef AURORA_ENABLE_GX
+@@ -366,6 +498,7 @@ void end_frame() noexcept {
+     } else {
+       Log.info("Skipping present; window not presentable");
+     }
++    capture::record(encoder);   // smstrikers-port
+     webgpu::gpu_prof::frame_end(encoder);
+     const wgpu::CommandBufferDescriptor cmdBufDescriptor{.label = "Redraw command buffer"};
+     const auto buffer = encoder.Finish(&cmdBufDescriptor);
+@@ -373,6 +506,18 @@ void end_frame() noexcept {
+       ZoneScopedN("Queue Submit");
+       g_queue.Submit(1, &buffer);
+     }
++    {
++      // smstrikers-port: see namespace gpu_time above.
++      const uint64_t submitNs = gpu_time::now_ns();
++      g_queue.OnSubmittedWorkDone(
++          wgpu::CallbackMode::AllowSpontaneous,
++          [submitNs](wgpu::QueueWorkDoneStatus status, wgpu::StringView) {
++            if (status == wgpu::QueueWorkDoneStatus::Success) {
++              gpu_time::record(gpu_time::now_ns() - submitNs);
++            }
++          });
++    }
++    capture::resolve();
+     webgpu::gpu_prof::after_submit();
+     if (canPresent && g_surface) {
+       ZoneScopedN("Present");
+@@ -441,6 +586,10 @@ void end_frame() noexcept {
+     TracyPlot("aurora: lastTextureUploadSize", static_cast<int64_t>(stats.lastTextureUploadSize));
+   });
+ 
++  // smstrikers-port: mark the frame boundary, so Tracy's zones group by frame.
++  // FrameMark expands to nothing unless TRACY_ENABLE is set.
++  FrameMark;
++
+ #endif
+ }
+ } // namespace
+@@ -451,6 +600,36 @@ AuroraInfo aurora_initialize(int argc, char* argv[], const AuroraConfig* config)
+   return aurora::initialize(argc, argv, *config);
+ }
+ void aurora_shutdown() { aurora::shutdown(); }
++void aurora_set_frame_buffer_scale(float scale) {
++  // smstrikers-port: window::set_frame_buffer_scale was not reachable from the
++  // public API.
++  aurora::window::set_frame_buffer_scale(scale);
++}
++AuroraWindowSize aurora_window_size() {
++  // smstrikers-port: see aurora.h. get_window_size() reads the window every time it is called, which is what makes it usable as a poll.
++  return aurora::window::get_window_size();
++}
++void aurora_apply_frame_buffer_resize() {
++  // smstrikers-port: see aurora.h. resize_swapchain() is what the deferred FutureResize event ends up calling, without the round trip.
++  aurora::window::resize_frame_buffer_now();
++}
++void aurora_gpu_frame_time(uint64_t* lastNs, uint64_t* meanNs, uint64_t* maxNs, uint64_t* count) {
++  // smstrikers-port: see namespace gpu_time in this file.
++  const uint64_t n = aurora::gpu_time::g_count.load(std::memory_order_relaxed);
++  if (lastNs != nullptr) *lastNs = aurora::gpu_time::g_lastNs.load(std::memory_order_relaxed);
++  if (maxNs != nullptr) *maxNs = aurora::gpu_time::g_maxNs.load(std::memory_order_relaxed);
++  if (count != nullptr) *count = n;
++  if (meanNs != nullptr) {
++    *meanNs = n ? aurora::gpu_time::g_totalNs.load(std::memory_order_relaxed) / n : 0;
++  }
++}
++void aurora_capture_frame(const char* path) {
++  // smstrikers-port: recorded during the next end_frame.
++  if (path != nullptr) {
++    aurora::capture::g_path = path;
++    aurora::capture::g_pending = true;
++  }
++}
+ const AuroraEvent* aurora_update() { return aurora::update(); }
+ bool aurora_begin_frame() { return aurora::begin_frame(); }
+ void aurora_end_frame() { aurora::end_frame(); }
+diff --git a/lib/card/CardGciFolder.cpp b/lib/card/CardGciFolder.cpp
+index e845254..e110866 100644
+--- a/lib/card/CardGciFolder.cpp
++++ b/lib/card/CardGciFolder.cpp
+@@ -82,7 +82,8 @@ ECardResult CardGciFolder::openFile(const char* filename, FileHandle& handleOut)
+     idx++;
+   }
+ 
+-  return ECardResult::NOCARD;
++  /* smstrikers-port: NOFILE, not NOCARD. The card is mounted and readable; the one thing that is missing is this file, which is what CARD_RESULT_NOFILE means and what CardRawFile::openFile already returns for it. */
++  return ECardResult::NOFILE;
+ }
+ 
+ ECardResult CardGciFolder::openFile(uint32_t fileno, FileHandle& handleOut) {
+@@ -96,7 +97,8 @@ ECardResult CardGciFolder::openFile(uint32_t fileno, FileHandle& handleOut) {
+     return ECardResult::READY;
+   }
+ 
+-  return ECardResult::NOCARD;
++  /* smstrikers-port: NOFILE, as above; an index past the end is a file that is not there, not an absent card. */
++  return ECardResult::NOFILE;
+ }
+ 
+ ECardResult CardGciFolder::createFile(const char* filename, size_t size, FileHandle& handleOut) {
+@@ -151,9 +153,39 @@ void CardGciFolder::deleteFile(const FileHandle& fh) {
+     fileIO.deleteFile();
+ }
+ 
+-ECardResult CardGciFolder::deleteFile(const char* filename) { return ECardResult::NOCARD; }
++/* smstrikers-port: delete the file, instead of reporting a card that is not there. Both overloads were stubs returning NOCARD, so no save could be deleted at all on the folder-of-.gci backend a desktop build uses; neither name nor index matching is NOFILE, and an open file is BUSY, which is what the SDK's own CARDDeleteAsync answers for it. */
++ECardResult CardGciFolder::deleteFile(const char* filename) {
++  uint32_t fileno = 0;
++  for (const auto& gciFile : m_files) {
++    if (strcmp(filename, gciFile.file.m_filename) == 0) {
++      return deleteFile(fileno);
++    }
++    fileno++;
++  }
++
++  return ECardResult::NOFILE;
++}
+ 
+-ECardResult CardGciFolder::deleteFile(uint32_t fileno) { return ECardResult::NOCARD; }
++ECardResult CardGciFolder::deleteFile(uint32_t fileno) {
++  auto* gciFile = get_file(fileno);
++  if (gciFile == nullptr) {
++    return ECardResult::NOFILE;
++  }
++  if (gciFile->opened) {
++    return ECardResult::BUSY;
++  }
++
++  const auto path = m_folderPath / gciFile->filename;
++  FileIO fileIO(path, true);
++  if (!fileIO || !fileIO.deleteFile()) {
++    Log.error("Failed to delete GCI file '{}'", io::fs_path_to_string(path));
++    return ECardResult::IOERROR;
++  }
++
++  /* m_files *is* this card's listing, and the index into it is the file number: an entry left behind is a file getStatus still describes with nothing on disk behind it. */
++  m_files.erase(m_files.begin() + static_cast<std::ptrdiff_t>(fileno));
++  return ECardResult::READY;
++}
+ 
+ ECardResult CardGciFolder::renameFile(const char* oldName, const char* newName) {
+   for (auto& gciFile : m_files) {
+diff --git a/lib/dolphin/card.cpp b/lib/dolphin/card.cpp
+index 25f74df..c4aff02 100644
+--- a/lib/dolphin/card.cpp
++++ b/lib/dolphin/card.cpp
+@@ -39,6 +39,45 @@ bool Initialized = false;
+ CARDFileType SelectedFileType = CARD_GCIFOLDER;
+ bool UseFastMode = false;
+ 
++/* smstrikers-port: a completion callback must not run inside a card call that another completion made; the outermost call is the one draining, so it still runs its own completion before returning. */
++constexpr size_t MaxPendingCallbacks = 32;
++
++struct PendingCallback {
++  CARDCallback fn;
++  s32 chan;
++  s32 result;
++};
++
++std::array<PendingCallback, MaxPendingCallbacks> PendingCallbacks{};
++size_t PendingHead = 0;  /* monotonic; index with % MaxPendingCallbacks */
++size_t PendingTail = 0;
++bool RunningCallbacks = false;
++
++/* Queue `fn`, then, unless an outer call is already draining, run everything queued. */
++s32 FinishAsync(const CARDCallback fn, const s32 chan, const s32 result) {
++  if (fn != nullptr) {
++    if (PendingTail - PendingHead >= MaxPendingCallbacks) {
++      /* Unreachable with the game's own chains, which are three deep. */
++      Log.error("card completion queue full ({}); running one inline", MaxPendingCallbacks);
++      fn(chan, result);
++    } else {
++      PendingCallbacks[PendingTail % MaxPendingCallbacks] = {fn, chan, result};
++      ++PendingTail;
++    }
++  }
++
++  if (!RunningCallbacks) {
++    RunningCallbacks = true;
++    while (PendingHead != PendingTail) {
++      const PendingCallback next = PendingCallbacks[PendingHead % MaxPendingCallbacks];
++      ++PendingHead;
++      next.fn(next.chan, next.result);
++    }
++    RunningCallbacks = false;
++  }
++  return result;
++}
++
+ void CopyKabuFileHandleToDolphin(const s32 chan, const aurora::card::FileHandle& handle, CARDFileInfo* fileInfo) {
+   fileInfo->chan = chan;
+   fileInfo->fileNo = handle.getFileNo();
+@@ -247,7 +286,7 @@ s32 CARDCheckAsync(const s32 chan, const CARDCallback callback) {
+ 
+   const auto& card = GET_CARD(chan);
+   const auto res = static_cast<s32>(card->getError());
+-  callback(chan, res);
++  FinishAsync(callback, chan, res);
+   return static_cast<s32>(card->getError());
+ }
+ 
+@@ -269,7 +308,7 @@ s32 CARDCheckExAsync(const s32 chan, s32* xferBytes [[maybe_unused]], const CARD
+   }
+   const auto& card = GET_CARD(chan);
+   const auto res = static_cast<s32>(card->getError());
+-  callback(chan, res);
++  FinishAsync(callback, chan, res);
+   return static_cast<s32>(card->getError());
+ }
+ 
+@@ -298,8 +337,7 @@ s32 CARDCreateAsync(const s32 chan, const char* fileName, const u32 size, CARDFi
+     return CARD_RESULT_FATAL_ERROR;
+   }
+   const auto res = CARDCreate(chan, fileName, size, fileInfo);
+-  callback(chan, res);
+-  return res;
++  return FinishAsync(callback, chan, res);
+ }
+ 
+ s32 CARDDelete(const s32 chan, const char* fileName) {
+@@ -326,8 +364,7 @@ s32 CARDDeleteAsync(const s32 chan, const char* fileName, const CARDCallback cal
+     return CARD_RESULT_FATAL_ERROR;
+   }
+   const auto res = CARDDelete(chan, fileName);
+-  callback(chan, res);
+-  return res;
++  return FinishAsync(callback, chan, res);
+ }
+ 
+ s32 CARDFastDelete(const s32 chan, const s32 fileNo) {
+@@ -353,8 +390,7 @@ s32 CARDFastDeleteAsync(const s32 chan, const s32 fileNo, const CARDCallback cal
+     return CARD_RESULT_FATAL_ERROR;
+   }
+   const auto res = CARDFastDelete(chan, fileNo);
+-  callback(chan, res);
+-  return res;
++  return FinishAsync(callback, chan, res);
+ }
+ 
+ s32 CARDFastOpen(const s32 chan, const s32 fileNo, CARDFileInfo* fileInfo) {
+@@ -394,8 +430,7 @@ s32 CARDFormatAsync(const s32 chan, const CARDCallback callback) {
+     return CARD_RESULT_FATAL_ERROR;
+   }
+   const auto res = CARDFormat(chan);
+-  callback(chan, res);
+-  return res;
++  return FinishAsync(callback, chan, res);
+ }
+ 
+ s32 CARDFreeBlocks(const s32 chan, s32* byteNotUsed, s32* filesNotUsed) {
+@@ -520,10 +555,16 @@ s32 CARDMount(const s32 chan, void* workArea [[maybe_unused]], CARDCallback deta
+   return CARD_RESULT_READY;
+ }
+ s32 CARDMountAsync(const s32 chan, void* workArea [[maybe_unused]], const CARDCallback detachCallback [[maybe_unused]],
+-                   const CARDCallback attachCallback [[maybe_unused]]) {
++                   const CARDCallback attachCallback) {
++  // smstrikers-port: invoke the attach callback, as every other CARD*Async here does.
+   if (chan < 0 || chan >= 2) {
+     return CARD_RESULT_FATAL_ERROR;
+   }
++  if (!CARD_READY(chan)) {
++    FinishAsync(attachCallback, chan, CARD_RESULT_NOCARD);
++    return CARD_RESULT_NOCARD;
++  }
++  FinishAsync(attachCallback, chan, CARD_RESULT_READY);
+   return CARD_RESULT_READY;
+ }
+ 
+@@ -585,8 +626,7 @@ s32 CARDRenameAsync(const s32 chan, const char* oldName, const char* newName, co
+     return CARD_RESULT_FATAL_ERROR;
+   }
+   const auto res = CARDRename(chan, oldName, newName);
+-  callback(chan, res);
+-  return res;
++  return FinishAsync(callback, chan, res);
+ }
+ 
+ s32 CARDSetAttributesAsync(const s32 chan, s32 fileNo [[maybe_unused]], u8 attr [[maybe_unused]],
+@@ -642,8 +682,7 @@ s32 CARDSetStatusAsync(const s32 chan, const s32 fileNo, const CARDStat* stat, c
+     return CARD_RESULT_FATAL_ERROR;
+   }
+   const auto res = CARDSetStatus(chan, fileNo, stat);
+-  callback(chan, res);
+-  return res;
++  return FinishAsync(callback, chan, res);
+ }
+ 
+ s32 CARDUnmount(const s32 chan) {
+@@ -706,8 +745,7 @@ s32 CARDRead(const CARDFileInfo* fileInfo, void* addr, s32 length, const s32 off
+ s32 CARDReadAsync(const CARDFileInfo* fileInfo, void* addr, const s32 length, const s32 offset,
+                   const CARDCallback callback) {
+   const auto res = CARDRead(fileInfo, addr, length, offset);
+-  callback(fileInfo->chan, res);
+-  return res;
++  return FinishAsync(callback, fileInfo->chan, res);
+ }
+ 
+ s32 CARDWrite(const CARDFileInfo* fileInfo, const void* addr, const s32 length, const s32 offset) {
+@@ -735,7 +773,6 @@ s32 CARDWrite(const CARDFileInfo* fileInfo, const void* addr, const s32 length,
+ s32 CARDWriteAsync(const CARDFileInfo* fileInfo, const void* addr, const s32 length, const s32 offset,
+                    const CARDCallback callback) {
+   const auto res = CARDWrite(fileInfo, addr, length, offset);
+-  callback(fileInfo->chan, res);
+-  return res;
++  return FinishAsync(callback, fileInfo->chan, res);
+ }
+ }
+diff --git a/lib/dolphin/gx/GXDispList.cpp b/lib/dolphin/gx/GXDispList.cpp
+index 5bf9460..7ddb476 100644
+--- a/lib/dolphin/gx/GXDispList.cpp
++++ b/lib/dolphin/gx/GXDispList.cpp
+@@ -58,6 +58,9 @@ void GXCallDisplayList(const void* data, u32 nbytes) {
+   }
+ 
+   // Write display list contents to the FIFO
++  // smstrikers-port: record where they land first, because once copied nothing
++  // downstream can tell this list's bytes from the surrounding stream.
++  aurora::gx::fifo::note_display_list(data, nbytes);
+   aurora::gx::fifo::write_data(data, nbytes);
+   aurora::gx::fifo::publish();
+ }
+diff --git a/lib/dolphin/gx/GXFrameBuffer.cpp b/lib/dolphin/gx/GXFrameBuffer.cpp
+index 470f038..7f010e2 100644
+--- a/lib/dolphin/gx/GXFrameBuffer.cpp
++++ b/lib/dolphin/gx/GXFrameBuffer.cpp
+@@ -149,6 +149,26 @@ GXRenderModeObj GXMpal480IntDf = {
+ 
+ void GXAdjustForOverscan(GXRenderModeObj* rmin, GXRenderModeObj* rmout, u16 hor, u16 ver) {
+   *rmout = *rmin;
++  // smstrikers-port: the window is the wrong EFB size once the render target is
++  // pinned to the VI mode, because this answer feeds VIConfigure and becomes the
++  // logical framebuffer. Do the SDK's own arithmetic in that case.
++  if (aurora::window::get_frame_buffer_scale() > 0.f) {
++    const u16 hor2 = static_cast<u16>(hor * 2);
++    const u16 ver2 = static_cast<u16>(ver * 2);
++    const u32 mode = rmin->viTVmode & 3;
++    rmout->fbWidth = static_cast<u16>(rmin->fbWidth - hor2);
++    if (rmin->xfbHeight != 0) {
++      const u32 verf = (static_cast<u32>(ver2) * rmin->efbHeight) / rmin->xfbHeight;
++      rmout->efbHeight = static_cast<u16>(rmin->efbHeight - verf);
++    }
++    rmout->xfbHeight = static_cast<u16>(rmin->xfbHeight -
++                                        ((rmin->xFBmode == VI_XFBMODE_SF && mode == 0) ? ver2 / 2 : ver2));
++    rmout->viWidth = static_cast<u16>(rmin->viWidth - hor2);
++    rmout->viHeight = static_cast<u16>(rmin->viHeight - (mode == 1 ? ver2 * 2 : ver2));
++    rmout->viXOrigin = static_cast<u16>(rmin->viXOrigin + hor);
++    rmout->viYOrigin = static_cast<u16>(rmin->viYOrigin + ver);
++    return;
++  }
+   const auto size = aurora::window::get_window_size();
+   rmout->fbWidth = size.fb_width;
+   rmout->efbHeight = size.fb_height;
+diff --git a/lib/dolphin/gx/GXManage.cpp b/lib/dolphin/gx/GXManage.cpp
+index 7e62821..f98e4a6 100644
+--- a/lib/dolphin/gx/GXManage.cpp
++++ b/lib/dolphin/gx/GXManage.cpp
+@@ -16,7 +16,9 @@ extern "C" {
+ GXFifoObj* GXInit(void* base, u32 size) {
+   GXRenderModeObj* rmode;
+   f32 identity_mtx[3][4];
+-  GXColor clear = {64, 64, 64, 255};
++  // smstrikers-port: black, not Aurora's grey. Any region no scissor ever covers
++  // keeps this for the rest of the run.
++  GXColor clear = {0, 0, 0, 255};
+   GXColor black = {0, 0, 0, 0};
+   GXColor white = {255, 255, 255, 255};
+   u32 i;
+diff --git a/lib/dolphin/gx/GXTransform.cpp b/lib/dolphin/gx/GXTransform.cpp
+index f443204..066e004 100644
+--- a/lib/dolphin/gx/GXTransform.cpp
++++ b/lib/dolphin/gx/GXTransform.cpp
+@@ -54,7 +54,9 @@ void GXSetProjectionv(const f32* ptr) {
+ }
+ 
+ void GXLoadPosMtxImm(const void* mtx_, u32 id) {
+-  CHECK(id >= GX_PNMTX0 && id <= GX_PNMTX9, "invalid pn mtx {}", static_cast<int>(id));
++  // smstrikers-port: skinning may address any row of matrix memory, not just the
++  // ten named pairs. See MaxPnMtx in gx.hpp.
++  CHECK(id <= (aurora::gx::MaxPnMtx - 1) * 3, "invalid pn mtx {}", static_cast<int>(id));
+   const auto* mtx = reinterpret_cast<const f32*>(mtx_);
+ 
+   GX_WRITE_U8(0x10);
+@@ -73,7 +75,8 @@ void GXLoadPosMtxIndx(u16 mtxIndx, u32 id) {
+ }
+ 
+ void GXLoadNrmMtxImm(const void* mtx_, u32 id) {
+-  CHECK(id >= GX_PNMTX0 && id <= GX_PNMTX9, "invalid pn mtx {}", static_cast<int>(id));
++  // smstrikers-port: see GXLoadPosMtxImm above.
++  CHECK(id <= (aurora::gx::MaxPnMtx - 1) * 3, "invalid pn mtx {}", static_cast<int>(id));
+   const auto* mtx = reinterpret_cast<const f32*>(mtx_);
+ 
+   GX_WRITE_U8(0x10);
+diff --git a/lib/dolphin/vi/vi.cpp b/lib/dolphin/vi/vi.cpp
+index 4c8dddc..b5de94d 100644
+--- a/lib/dolphin/vi/vi.cpp
++++ b/lib/dolphin/vi/vi.cpp
+@@ -31,6 +31,13 @@ void configure(const GXRenderModeObj* rm) noexcept {
+ Vec2<uint32_t> configured_fb_size() noexcept {
+   return render_mode_size();
+ }
++
++// smstrikers-port: VILockAspectRatio, which dolphin/vi.h declares and nothing
++// defined. A GameCube framebuffer's pixels are not square: 640x448 is a 1.4286
++// rectangle of pixels a television showed as 4:3, 7% wider than the shape wanted.
++float g_lockedAspect = 0.f;
++
++float locked_aspect() noexcept { return g_lockedAspect; }
+ } // namespace aurora::vi
+ 
+ extern "C" {
+@@ -52,4 +59,17 @@ void VISetWindowSize(uint32_t width, uint32_t height) { aurora::window::set_wind
+ void VISetWindowPosition(uint32_t x, uint32_t y) { aurora::window::set_window_position(x, y); }
+ void VICenterWindow() { aurora::window::center_window(); }
+ void VISetFrameBufferScale(float scale) { aurora::window::set_frame_buffer_scale(scale); }
++
++// smstrikers-port
++void VILockAspectRatio(int width, int height) {
++  const float aspect = (width > 0 && height > 0) ? static_cast<float>(width) / static_cast<float>(height) : 0.f;
++  if (aspect == aurora::vi::g_lockedAspect) {
++    return;
++  }
++  aurora::vi::g_lockedAspect = aspect;
++  aurora::window::request_frame_buffer_resize();
++}
++
++// smstrikers-port
++void VIUnlockAspectRatio() { VILockAspectRatio(0, 0); }
+ }
+diff --git a/lib/dolphin/vi/vi_internal.hpp b/lib/dolphin/vi/vi_internal.hpp
+index a711c3f..e2403e1 100644
+--- a/lib/dolphin/vi/vi_internal.hpp
++++ b/lib/dolphin/vi/vi_internal.hpp
+@@ -9,4 +9,6 @@
+ namespace aurora::vi {
+ void configure(const GXRenderModeObj* rm) noexcept;
+ Vec2<uint32_t> configured_fb_size() noexcept;
++// smstrikers-port: the display aspect VILockAspectRatio was given; 0 is unlocked.
++float locked_aspect() noexcept;
+ } // namespace aurora::vi
+diff --git a/lib/gfx/encoding.cpp b/lib/gfx/encoding.cpp
+index b3054be..c4f4a36 100644
+--- a/lib/gfx/encoding.cpp
++++ b/lib/gfx/encoding.cpp
+@@ -1,3 +1,7 @@
++#include <atomic>
++#include <iterator>
++#include <cstdio>
++#include <cstdlib>
+ #include "encoding.hpp"
+ 
+ #include "frame.hpp"
+@@ -324,6 +328,88 @@ constexpr uint64_t TextureUploadStagingOffset = StorageStagingOffset + StorageBu
+ 
+ constexpr uint32_t align_down_copy_offset(uint32_t value) noexcept { return value & ~3u; }
+ 
++// smstrikers-port: STRIKERS_LOG_GPUMEM prints each fixed pool's per-frame peak
++// against what resources.hpp reserved for it, which nothing else reports.
++namespace {
++struct PoolPeak {
++  std::atomic<uint32_t> verts{0}, uniforms{0}, indices{0}, storage{0}, textureUpload{0};
++};
++PoolPeak g_poolPeak;
++
++void bump(std::atomic<uint32_t>& slot, uint32_t v) {
++  uint32_t prev = slot.load(std::memory_order_relaxed);
++  while (v > prev && !slot.compare_exchange_weak(prev, v, std::memory_order_relaxed)) {
++  }
++}
++
++void pool_peak_report() {
++  const auto row = [](const char* name, uint64_t peak, uint64_t reserved, uint64_t copies) {
++    fprintf(stderr, "%-14s %10.2f %12.2f %12.2f  %6.2f%%\n", name, peak / 1048576.0, reserved / 1048576.0,
++            (reserved * copies) / 1048576.0, reserved ? 100.0 * (double)peak / (double)reserved : 0.0);
++  };
++  fprintf(stderr, "\n=== GPU pool usage (peak per frame vs reserved) ===\n");
++  fprintf(stderr, "%-14s %10s %12s %12s  %s\n", "pool", "peak MiB", "reserved MiB", "total MiB", "used");
++  // Each pool exists once device-side and once inside every staging buffer.
++  const uint64_t copies = 1 + StagingBufferCount;
++  row("vertex", g_poolPeak.verts.load(), VertexBufferSize, copies);
++  row("uniform", g_poolPeak.uniforms.load(), UniformBufferSize, copies);
++  row("index", g_poolPeak.indices.load(), IndexBufferSize, copies);
++  row("storage", g_poolPeak.storage.load(), StorageBufferSize, copies);
++  if constexpr (UseTextureBuffer) {
++    row("textureUpload", g_poolPeak.textureUpload.load(), TextureUploadSize, copies);
++  }
++  const uint64_t reservedTotal =
++      (VertexBufferSize + UniformBufferSize + IndexBufferSize + StorageBufferSize +
++       (UseTextureBuffer ? TextureUploadSize : 0)) * copies;
++  fprintf(stderr, "staging slots: %zu + 1 device-side copy = %llu x %.2f MiB reserved = %.2f MiB\n",
++          StagingBufferCount, (unsigned long long)copies, StagingBufferSize / 1048576.0,
++          reservedTotal / 1048576.0);
++  fprintf(stderr, "==================================================\n\n");
++}
++
++bool pool_peak_enabled() {
++  static const bool on = [] {
++    const bool v = getenv("STRIKERS_LOG_GPUMEM") != nullptr;
++    if (v) std::atexit(pool_peak_report);
++    return v;
++  }();
++  return on;
++}
++
++void pool_peak_record(const StagingHighWater& hw) {
++  // Unconditional: five relaxed atomic maxes a frame, and the debug overlay
++  // reads the number every frame whether or not a run asked to measure it.
++  pool_peak_enabled();
++  bump(g_poolPeak.verts, hw.verts);
++  bump(g_poolPeak.uniforms, hw.uniforms);
++  bump(g_poolPeak.indices, hw.indices);
++  bump(g_poolPeak.storage, hw.storage);
++  bump(g_poolPeak.textureUpload, hw.textureUpload);
++}
++} // namespace
++
++// smstrikers-port: read the staging pool peaks from outside Aurora. Order matches
++// kPoolNames in src/platform/overlay.cpp.
++extern "C" void aurora_gfx_pool_stats(uint32_t* peakBytes, uint32_t* reservedBytes, size_t count) {
++  const uint32_t peaks[] = {
++      g_poolPeak.verts.load(std::memory_order_relaxed),
++      g_poolPeak.uniforms.load(std::memory_order_relaxed),
++      g_poolPeak.indices.load(std::memory_order_relaxed),
++      g_poolPeak.storage.load(std::memory_order_relaxed),
++      g_poolPeak.textureUpload.load(std::memory_order_relaxed),
++  };
++  const uint32_t reserved[] = {
++      static_cast<uint32_t>(VertexBufferSize),  static_cast<uint32_t>(UniformBufferSize),
++      static_cast<uint32_t>(IndexBufferSize),   static_cast<uint32_t>(StorageBufferSize),
++      static_cast<uint32_t>(UseTextureBuffer ? TextureUploadSize : 0),
++  };
++  const size_t n = count < std::size(peaks) ? count : std::size(peaks);
++  for (size_t i = 0; i < n; ++i) {
++    if (peakBytes != nullptr) peakBytes[i] = peaks[i];
++    if (reservedBytes != nullptr) reservedBytes[i] = reserved[i];
++  }
++}
++
+ void copy_staging_buffer_range(wgpu::CommandEncoder& cmd, const FramePacket& frame, uint32_t& copied,
+                                uint32_t highWater, uint64_t stagingOffset, const wgpu::Buffer& dst) {
+   if (highWater <= copied) {
+@@ -338,6 +424,7 @@ void copy_staging_buffer_range(wgpu::CommandEncoder& cmd, const FramePacket& fra
+ 
+ bool needs_staging_copy(const FramePacket& frame, const FrameOp& op) {
+   const auto& highWater = op.highWater;
++  pool_peak_record(highWater);
+   if (highWater.verts > frame.copied.verts || highWater.uniforms > frame.copied.uniforms ||
+       highWater.indices > frame.copied.indices || highWater.storage > frame.copied.storage) {
+     return true;
+diff --git a/lib/gfx/resources.hpp b/lib/gfx/resources.hpp
+index 3fdc0ee..ce4716e 100644
+--- a/lib/gfx/resources.hpp
++++ b/lib/gfx/resources.hpp
+@@ -4,11 +4,15 @@
+ 
+ namespace aurora::gfx {
+ inline constexpr bool UseTextureBuffer = true;
+-inline constexpr uint64_t UniformBufferSize = 25165824; // 24 MiB
+-inline constexpr uint64_t VertexBufferSize = 5242880;   // 5 MiB
+-inline constexpr uint64_t IndexBufferSize = 2097152;    // 2 MiB
+-inline constexpr uint64_t StorageBufferSize = 8388608;  // 8 MiB
+-inline constexpr uint64_t TextureUploadSize = 25165824; // 24 MiB
++// smstrikers-port: sized from this game's measured peaks rather than upstream's
++// defaults (uniform 24, storage 8 MiB). Measured worst case is 1.92, 1.95, 0.52,
++// 8.10 and 19.45 MiB in the order below; overflow of the first four is a bare
++// abort(), so each carries 2-4x margin. Storage is grown, not shrunk.
++inline constexpr uint64_t UniformBufferSize = 8388608;   // 8 MiB
++inline constexpr uint64_t VertexBufferSize = 5242880;    // 5 MiB
++inline constexpr uint64_t IndexBufferSize = 2097152;     // 2 MiB
++inline constexpr uint64_t StorageBufferSize = 16777216;  // 16 MiB
++inline constexpr uint64_t TextureUploadSize = 25165824;  // 24 MiB
+ 
+ namespace detail {
+ struct Resources {
+diff --git a/lib/gfx/texture_convert.cpp b/lib/gfx/texture_convert.cpp
+index b2f791b..915b382 100644
+--- a/lib/gfx/texture_convert.cpp
++++ b/lib/gfx/texture_convert.cpp
+@@ -1,5 +1,7 @@
+ #include "texture_convert.hpp"
+ 
++#include <atomic>
++
+ #include "../internal.hpp"
+ #include "../gx/gx_fmt.hpp"
+ 
+@@ -30,9 +32,7 @@ size_t calc_offset_rgba8(uint32_t x, uint32_t y, uint32_t width) {
+   return (static_cast<size_t>(y) * static_cast<size_t>(width) + static_cast<size_t>(x)) * sizeof(RGBA8);
+ }
+ 
+-/**
+- * Downscales RGBA8 data using a simple box filter.
+- */
++/* Downscales RGBA8 data using a simple box filter. */
+ ByteBuffer downscale(const uint8_t* src, uint32_t srcWidth, uint32_t srcHeight, uint32_t dstWidth, uint32_t dstHeight) {
+   ByteBuffer dst{calc_size_rgba8(dstWidth, dstHeight)};
+   auto* dstPixels = dst.data();
+@@ -72,11 +72,7 @@ float avg_diff(const uint8_t* lhs, const uint8_t* rhs, uint32_t width, uint32_t
+   return static_cast<float>(std::sqrt(diffSum / sampleCount) / 2.56);
+ }
+ 
+-/**
+- * Attempts to detect whether the mipmaps of a texture are manually-authored, which is sometimes used for mipmap-based
+- * distance effects. This is achieved by downscaling the mipmaps using a box filter and comparing the average pixel
+- * difference between the original and downscaled mipmaps.
+- */
++/* Attempts to detect whether the mipmaps of a texture are manually-authored, which is sometimes used for mipmap-based distance effects. */
+ bool arb_mip_check(uint32_t width, uint32_t height, uint32_t mips, ArrayRef<uint8_t> data) {
+   if (mips < 2) {
+     return false;
+@@ -572,6 +568,34 @@ static ByteBuffer BuildRGBA8FromBC1(uint32_t width, uint32_t height, uint32_t mi
+   return buf;
+ }
+ 
++// PORT-PROBE: what the console's textures cost after conversion.
++namespace {
++struct TexTally {
++  std::atomic<uint64_t> count{0};
++  std::atomic<uint64_t> srcBytes{0};
++  std::atomic<uint64_t> dstBytes{0};
++};
++TexTally g_texTally[64];
++
++// smstrikers-port: read the texture tally from outside Aurora. src/platform/overlay.cpp draws it; see aurora_gfx_pool_stats for the reason these accessors exist at all.
++void tex_tally_totals(uint64_t* src, uint64_t* dst, uint64_t* count) {
++  uint64_t s = 0, d = 0, n = 0;
++  for (u32 f = 0; f < 64; ++f) {
++    n += g_texTally[f].count.load(std::memory_order_relaxed);
++    s += g_texTally[f].srcBytes.load(std::memory_order_relaxed);
++    d += g_texTally[f].dstBytes.load(std::memory_order_relaxed);
++  }
++  if (src != nullptr) *src = s;
++  if (dst != nullptr) *dst = d;
++  if (count != nullptr) *count = n;
++}
++} // namespace
++
++extern "C" void aurora_gfx_texture_stats(uint64_t* srcBytes, uint64_t* uploadedBytes,
++                                         uint64_t* count) {
++  tex_tally_totals(srcBytes, uploadedBytes, count);
++}
++
+ ConvertedTexture convert_texture(u32 format, uint32_t width, uint32_t height, uint32_t mips, ArrayRef<uint8_t> data) {
+   ZoneScoped;
+   ByteBuffer converted;
+@@ -638,6 +662,12 @@ ConvertedTexture convert_texture(u32 format, uint32_t width, uint32_t height, ui
+   if (!is_pc_texture_format(format) && wgpuFormat == wgpu::TextureFormat::RGBA8Unorm && mips > 1) {
+     hasArbitraryMips = arb_mip_check(width, height, mips, converted);
+   }
++  // Tallied unconditionally, for the same reason as the pool peaks: the debug overlay reads this every frame.
++  if (format < 64) {
++    g_texTally[format].count.fetch_add(1);
++    g_texTally[format].srcBytes.fetch_add(data.size());
++    g_texTally[format].dstBytes.fetch_add(converted.size());
++  }
+   return {
+       .format = wgpuFormat,
+       .width = width,
+diff --git a/lib/gx/command_processor.cpp b/lib/gx/command_processor.cpp
+index 11450eb..152cf0d 100644
+--- a/lib/gx/command_processor.cpp
++++ b/lib/gx/command_processor.cpp
+@@ -3,6 +3,7 @@
+ #include "../gfx/depth_peek.hpp"
+ #include "../gfx/recording.hpp"
+ #include "../internal.hpp"
++#include "fifo.hpp" // smstrikers-port: display list provenance
+ #include "dolphin/gd/GDGeometry.h"
+ #include "dolphin/gx/GXAurora.h"
+ #include "gx.hpp"
+@@ -14,9 +15,11 @@
+ #include <tracy/Tracy.hpp>
+ 
+ #include <algorithm>
++#include <array>
+ #include <cmath>
+ #include <cstdint>
+ #include <span>
++#include <string>
+ #include <vector>
+ 
+ namespace aurora::gx::fifo {
+@@ -237,6 +240,55 @@ gfx::Range push_fog_range_lut(const FogRangeLutKey& key) {
+   return gfx::push_storage(reinterpret_cast<const u8*>(lut.data()), lut.size() * sizeof(f32));
+ }
+ 
++// smstrikers-port: state for report_prim_desync. By the time prepare_idx_buffer
++// aborts, nothing on the stack remembers which byte was rejected. Touched only
++// from the FIFO processor, under the buffer mutex.
++struct CmdTrace {
++  size_t offset;
++  u8 cmd;
++};
++constexpr size_t kCmdTraceLen = 12;
++std::array<CmdTrace, kCmdTraceLen> sCmdTrace{};
++size_t sCmdTraceCount = 0;
++
++struct LastDrawTrace {
++  size_t cmdOffset;
++  size_t payloadStart;
++  u32 vtxCount;
++  u32 vtxSize;
++  u8 prim;
++  u8 fmt;
++  bool valid;
++};
++LastDrawTrace sLastDraw{};
++
++// The opcodes prepare_idx_buffer can build indices for. 0x88 (GX_QUADS2) is a
++// real GX opcode that is not among them, so this is not "is a draw command".
++bool is_supported_prim(const u8 opcode) noexcept {
++  switch (opcode) {
++  case GX_DRAW_QUADS:
++  case GX_DRAW_TRIANGLES:
++  case GX_DRAW_TRIANGLE_STRIP:
++  case GX_DRAW_TRIANGLE_FAN:
++  case GX_DRAW_LINES:
++  case GX_DRAW_LINE_STRIP:
++  case GX_DRAW_POINTS:
++    return true;
++  default:
++    return false;
++  }
++}
++
++std::string hex_window(const u8* data, size_t size, size_t centre, size_t before, size_t after) {
++  const size_t start = centre > before ? centre - before : 0;
++  const size_t end = std::min(size, centre + after);
++  std::string hex;
++  for (size_t i = start; i < end; ++i) {
++    hex += i == centre ? fmt::format("[{:02x}]", data[i]) : fmt::format(" {:02x}", data[i]);
++  }
++  return fmt::format("({}-{}){}", start, end == 0 ? 0 : end - 1, hex);
++}
++
+ u8 line_mode_for_prim(GXPrimitive prim) noexcept {
+   switch (prim) {
+   case GX_LINES:
+@@ -253,14 +305,22 @@ u8 line_mode_for_prim(GXPrimitive prim) noexcept {
+ 
+ static void handle_draw(u8 cmd, Reader& reader) noexcept;
+ static void handle_aurora(Reader& reader) noexcept;
++// smstrikers-port: see report_prim_desync.
++[[noreturn]] static void report_prim_desync(u8 cmd, const Reader& reader, uint64_t streamPos) noexcept;
+ 
+-ProcessResult process(const u8* data, u32 size) noexcept {
++ProcessResult process(const u8* data, u32 size, uint64_t streamPos) noexcept {
+   ZoneScoped;
+   Reader reader{{data, size}};
+ 
++  // smstrikers-port: offsets are chunk-relative, so the trace is too.
++  sCmdTraceCount = 0;
++  sLastDraw = {};
++
+   while (!reader.empty()) {
++    const size_t cmdOffset = reader.offset();
+     const u8 cmd = reader.read<u8>();
+     u8 opcode = cmd & CP_OPCODE_MASK;
++    sCmdTrace[sCmdTraceCount++ % kCmdTraceLen] = {cmdOffset, cmd}; // smstrikers-port
+ 
+     switch (opcode) {
+     case CP_CMD_NOP:
+@@ -348,6 +408,11 @@ ProcessResult process(const u8* data, u32 size) noexcept {
+     default:
+       // Check if it's a draw command (0x80-0xBF range)
+       if (cmd >= 0x80) {
++        // smstrikers-port: prepare_idx_buffer aborts on an opcode it cannot
++        // build indices for, with the Reader already past the evidence. Reject
++        // it here, where the byte's offset is still in hand.
++        if (!is_supported_prim(opcode))
++          UNLIKELY { report_prim_desync(cmd, reader, streamPos); }
+         handle_draw(cmd, reader);
+       } else {
+         // Hex dump surrounding bytes for debugging
+@@ -417,6 +482,133 @@ static u32 calc_vtx_size(GXVtxFmt fmt) noexcept {
+   return vtxSize;
+ }
+ 
++// smstrikers-port: where the rejected byte sits inside the display list it came
++// from. Mid-payload means the reader desynced, and the offset over the vertex
++// count is the stride the data really had. Diagnostic only, on an aborting path.
++[[noreturn]] static void report_prim_desync(const u8 cmd, const Reader& reader, const uint64_t streamPos) noexcept {
++  const u8* data = reader.data();
++  const size_t size = reader.size();
++  const size_t pos = reader.offset() - 1; // the rejected byte itself
++  const uint64_t absPos = streamPos + pos;
++
++  Log.error("[prim248] rejected opcode 0x{:02X} (primitive {}, vat {}) at chunk offset {} of {}, stream position {}",
++            cmd, static_cast<u32>(cmd & CP_OPCODE_MASK), static_cast<u32>(cmd & CP_VAT_MASK), pos, size, absPos);
++
++  // Where the byte came from.
++  const auto* splice = find_display_list(absPos);
++  size_t listOffset = 0;
++  const u8* listData = nullptr;
++  u32 listCount = 0;
++  if (splice == nullptr) {
++    Log.error("[prim248] not inside any called display list: this is the immediate-mode stream");
++  } else {
++    listOffset = static_cast<size_t>(absPos - splice->streamPos);
++    Log.error("[prim248] display list src={} size={} -> offset {} within it, {} bytes before its end", fmt::ptr(splice->src),
++              splice->size, listOffset, splice->size - listOffset);
++    // Prefer the copy in the FIFO: it is the bytes actually being read. Fall
++    // back to the caller's buffer when the list began in an earlier chunk.
++    if (splice->streamPos >= streamPos && splice->streamPos - streamPos + 3 <= size) {
++      listData = data + (splice->streamPos - streamPos);
++    } else {
++      listData = static_cast<const u8*>(splice->src);
++    }
++  }
++
++  // The list's own header, which is what dlMakeDisplayList committed to.
++  if (listData != nullptr) {
++    const u8 hdr = listData[0];
++    listCount = static_cast<u32>(listData[1]) << 8 | listData[2];
++    Log.error("[prim248] list header: opcode 0x{:02X} (primitive {}, vat {}), {} vertices", hdr,
++              static_cast<u32>(hdr & CP_OPCODE_MASK), static_cast<u32>(hdr & CP_VAT_MASK), listCount);
++    if (listCount != 0 && listOffset > 3) {
++      const size_t payload = listOffset - 3;
++      Log.error("[prim248] payload consumed {} bytes over {} vertices -> implied stride {}, remainder {}", payload,
++                listCount, payload / listCount, payload % listCount);
++      Log.error("[prim248] list size {} implies a written stride of about {} (padded to 32)", splice->size,
++                (splice->size - 3) / listCount);
++    }
++  }
++
++  // What the reader believed the vertices looked like.
++  if (sLastDraw.valid) {
++    Log.error("[prim248] last draw: primitive {} vat {}, {} vertices x {} bytes = {}, payload at chunk offset {}..{}",
++              static_cast<u32>(sLastDraw.prim), static_cast<u32>(sLastDraw.fmt), sLastDraw.vtxCount, sLastDraw.vtxSize,
++              sLastDraw.vtxCount * sLastDraw.vtxSize, sLastDraw.payloadStart,
++              sLastDraw.payloadStart + sLastDraw.vtxCount * sLastDraw.vtxSize);
++  } else {
++    Log.error("[prim248] no draw has been read in this chunk");
++  }
++  {
++    std::string desc;
++    u32 stride = 0;
++    const auto& vtxFmt = g_gxState.vtxFmts[sLastDraw.valid ? static_cast<GXVtxFmt>(sLastDraw.fmt) : g_gxState.lastVtxFmt];
++    for (int i = GX_VA_PNMTXIDX; i <= GX_VA_TEX7; ++i) {
++      const auto attr = static_cast<GXAttr>(i);
++      u32 sz = 0;
++      const char* mode = nullptr;
++      switch (g_gxState.vtxDesc[i]) {
++      case GX_NONE:
++        continue;
++      case GX_DIRECT:
++        mode = "direct";
++        sz = comp_type_size(attr, vtxFmt.attrs[i].type) * comp_cnt_count(attr, vtxFmt.attrs[i].cnt);
++        break;
++      case GX_INDEX8:
++        mode = "idx8";
++        sz = i == GX_VA_NRM && vtxFmt.attrs[i].cnt == GX_NRM_NBT3 ? 3 : 1;
++        break;
++      case GX_INDEX16:
++        mode = "idx16";
++        sz = i == GX_VA_NRM && vtxFmt.attrs[i].cnt == GX_NRM_NBT3 ? 6 : 2;
++        break;
++      default:
++        mode = "?";
++        break;
++      }
++      desc += fmt::format(" attr{}={}({})", i, mode, sz);
++      stride += sz;
++    }
++    Log.error("[prim248] descriptor stride {}:{}", stride, desc);
++    Log.error("[prim248] PNMTXIDX is {}; a list built for the other answer desyncs one byte per vertex",
++              g_gxState.vtxDesc[GX_VA_PNMTXIDX] == GX_DIRECT ? "direct (stitched)" : "absent (unstitched)");
++  }
++
++  // The commands immediately before it, oldest first.
++  {
++    const size_t seen = std::min(sCmdTraceCount, kCmdTraceLen);
++    std::string trace;
++    for (size_t i = seen; i-- > 1;) {
++      const auto& entry = sCmdTrace[(sCmdTraceCount - 1 - i) % kCmdTraceLen];
++      trace += splice != nullptr
++                   ? fmt::format(" 0x{:02X}@{}(list+{})", entry.cmd, entry.offset,
++                                 static_cast<int64_t>(streamPos + entry.offset) - static_cast<int64_t>(splice->streamPos))
++                   : fmt::format(" 0x{:02X}@{}", entry.cmd, entry.offset);
++    }
++    Log.error("[prim248] preceding commands (oldest first):{}", trace);
++  }
++
++  Log.error("[prim248] hex around the rejected byte {}", hex_window(data, size, pos, 32, 32));
++  if (listData != nullptr && listData >= data && listData < data + size) {
++    Log.error("[prim248] hex at the list header {}", hex_window(data, size, static_cast<size_t>(listData - data), 0, 32));
++  }
++
++  // Last, because it dereferences a pointer the game owns and may have freed.
++  // Both model loaders patch indices into their lists in place, so a difference
++  // here is late mutation rather than corruption.
++  if (splice != nullptr && splice->src != nullptr && listData != nullptr && listData != splice->src) {
++    const auto* src = static_cast<const u8*>(splice->src);
++    u32 differing = 0;
++    for (u32 i = 0; i < splice->size; ++i) {
++      if (src[i] != listData[i]) {
++        ++differing;
++      }
++    }
++    Log.error("[prim248] {} of {} bytes differ between the FIFO copy and the caller's list", differing, splice->size);
++  }
++
++  FATAL("unsupported primitive type {}", static_cast<u32>(cmd & CP_OPCODE_MASK));
++}
++
+ static void push_gx_draw(GXPrimitive prim, GXVtxFmt fmt, u16 vtxCount, gfx::Range vertRange, gfx::Range idxRange,
+                          u32 numIndices) noexcept {
+   auto& state = g_gxState;
+@@ -524,6 +716,64 @@ static void handle_draw_unmerged(GXPrimitive prim, GXVtxFmt fmt, u16 vtxCount, g
+   push_gx_draw(prim, fmt, vtxCount, vertRange, idxRange, numIndices);
+ }
+ 
++
++// smstrikers-port: report indexed reads that fall outside their array. Console
++// GXSetArray takes no length, so an index past what Aurora copied to the GPU
++// reads the rest of the storage buffer and only the positions are wrong.
++// AURORA_DIAG_IDX=1 names the first two dozen.
++static void diag_check_indices(const uint8_t* verts, u32 vtxCount, GXVtxFmt fmt, u32 vtxSize) noexcept {
++  static const bool enabled = getenv("AURORA_DIAG_IDX") != nullptr;
++  static int reported = 0;
++  if (!enabled || vtxCount == 0 || verts == nullptr || reported >= 24) {
++    return;
++  }
++  const auto& vtxFmt = g_gxState.vtxFmts[fmt];
++  u32 off = 0;
++  for (int i = GX_VA_PNMTXIDX; i <= GX_VA_TEX7; ++i) {
++    const auto attr = static_cast<GXAttr>(i);
++    const auto& attrFmt = vtxFmt.attrs[i];
++    const auto type = g_gxState.vtxDesc[i];
++    u32 sz = 0;
++    bool idx8 = false;
++    bool idx16 = false;
++    switch (type) {
++    case GX_NONE:
++      continue;
++    case GX_DIRECT:
++      sz = comp_type_size(attr, attrFmt.type) * comp_cnt_count(attr, attrFmt.cnt);
++      break;
++    case GX_INDEX8:
++      sz = (i == GX_VA_NRM && attrFmt.cnt == GX_NRM_NBT3) ? 3 : 1;
++      idx8 = true;
++      break;
++    case GX_INDEX16:
++      sz = (i == GX_VA_NRM && attrFmt.cnt == GX_NRM_NBT3) ? 6 : 2;
++      idx16 = true;
++      break;
++    default:
++      return;
++    }
++    if ((idx8 || idx16) && i >= GX_VA_POS) {
++      const auto& array = g_gxState.arrays[i];
++      u32 maxIdx = 0;
++      for (u32 v = 0; v < vtxCount; ++v) {
++        const uint8_t* p = verts + static_cast<size_t>(v) * vtxSize + off;
++        const u32 val = idx16 ? (static_cast<u32>(p[0]) << 8 | p[1]) : p[0];
++        if (val > maxIdx) {
++          maxIdx = val;
++        }
++      }
++      const u32 capacity = array.stride != 0 ? array.size / array.stride : 0;
++      if (maxIdx >= capacity) {
++        ++reported;
++        Log.error("[idxdiag] attr {} maxIdx {} >= capacity {} (array size {} stride {}, {} vertices)", i, maxIdx,
++                  capacity, array.size, array.stride, vtxCount);
++      }
++    }
++    off += sz;
++  }
++}
++
+ static void draw_prim(GXPrimitive prim, GXVtxFmt fmt, u16 vtxCount, Reader& reader) noexcept {
+   ZoneScoped;
+   u32 vtxSize;
+@@ -533,6 +783,14 @@ static void draw_prim(GXPrimitive prim, GXVtxFmt fmt, u16 vtxCount, Reader& read
+     UNLIKELY { vtxSize = calc_vtx_size(fmt); }
+ 
+   u32 totalVtxBytes = vtxCount * vtxSize;
++  // smstrikers-port: see report_prim_desync.
++  sLastDraw = {.cmdOffset = reader.offset() >= 3 ? reader.offset() - 3 : 0,
++               .payloadStart = reader.offset(),
++               .vtxCount = vtxCount,
++               .vtxSize = vtxSize,
++               .prim = static_cast<u8>(prim),
++               .fmt = static_cast<u8>(fmt),
++               .valid = true};
+   if (totalVtxBytes > reader.remaining())
+     UNLIKELY { handle_draw_overrun(totalVtxBytes, reader); }
+ 
+@@ -543,6 +801,7 @@ static void draw_prim(GXPrimitive prim, GXVtxFmt fmt, u16 vtxCount, Reader& read
+ 
+   // Push raw vertex data to buffer. Merged draws must remain contiguous with the previous range.
+   const auto vertexData = reader.take(totalVtxBytes);
++  diag_check_indices(vertexData.data(), vtxCount, fmt, vtxSize);   // smstrikers-port
+   gfx::Range vertRange = gfx::push_verts(vertexData.data(), vertexData.size(), canMerge ? 0 : 4);
+ 
+   // Try to merge with previous draw call
+@@ -780,6 +1039,7 @@ void handle_aurora(Reader& reader) noexcept {
+     }
+     const u32 totalVtxBytes = vtxCount * vtxSize;
+     const auto vertexData = reader.take(totalVtxBytes);
++    diag_check_indices(vertexData.data(), vtxCount, fmt, vtxSize);   // smstrikers-port
+     const gfx::Range vertRange = gfx::push_verts(vertexData.data(), vertexData.size(), 4);
+     if (indexCount != 0) {
+       push_gx_draw(prim, fmt, vtxCount, vertRange, idxRange, indexCount);
+diff --git a/lib/gx/command_processor.hpp b/lib/gx/command_processor.hpp
+index fb9fe15..47279c8 100644
+--- a/lib/gx/command_processor.hpp
++++ b/lib/gx/command_processor.hpp
+@@ -11,8 +11,10 @@ struct ProcessResult {
+   bool drawDone;
+ };
+ 
+-// Process GX FIFO commands until the next draw done event or end of buffer
+-ProcessResult process(const uint8_t* data, uint32_t size) noexcept;
++// Process GX FIFO commands until the next draw done event or end of buffer.
++// smstrikers-port: streamPos is the absolute FIFO position of data[0], used only
++// to name the display list a fatal byte came from.
++ProcessResult process(const uint8_t* data, uint32_t size, uint64_t streamPos = 0) noexcept;
+ void clear_draw_cache() noexcept;
+ 
+ } // namespace aurora::gx::fifo
+diff --git a/lib/gx/fifo.cpp b/lib/gx/fifo.cpp
+index bcaba60..593e842 100644
+--- a/lib/gx/fifo.cpp
++++ b/lib/gx/fifo.cpp
+@@ -4,6 +4,7 @@
+ #include "command_processor.hpp"
+ 
+ #include <algorithm>
++#include <array>
+ #include <atomic>
+ #include <cstring>
+ #include <limits>
+@@ -37,6 +38,11 @@ std::atomic<uint32_t> sWorkerWake{0};
+ thread::Thread sWorkerThread;
+ std::atomic<DrawDoneCallback> sDrawDoneCallback{nullptr};
+ 
++// smstrikers-port: see DisplayListSplice in fifo.hpp.
++constexpr size_t kSpliceRing = 512;
++std::array<DisplayListSplice, kSpliceRing> sSplices{};
++std::atomic<uint64_t> sSpliceCount{0};
++
+ void dispatch_draw_done() noexcept {
+   if (const auto callback = sDrawDoneCallback.load(std::memory_order_acquire); callback != nullptr) {
+     callback();
+@@ -59,7 +65,9 @@ void process_to(uint64_t target, std::memory_order order) noexcept {
+                     sStreamBase + detail::sBufferSize);
+       const auto start = static_cast<uint32_t>(processed - sStreamBase);
+       const auto size = static_cast<uint32_t>(target - processed);
+-      result = process(detail::sBufferData + start, size);
++      // smstrikers-port: `processed` turns a chunk-relative offset into a stream
++      // position, and so into a display list.
++      result = process(detail::sBufferData + start, size, processed);
+     }
+     AURORA_ASSERT(result.bytesProcessed > 0 && result.bytesProcessed <= target - processed,
+                   "FIFO processor made invalid progress: processed {} of {} remaining bytes", result.bytesProcessed,
+@@ -127,6 +135,8 @@ void init() {
+   detail::sDlSize = 0;
+   detail::sDlWritePos = 0;
+ 
++  sSpliceCount.store(0, std::memory_order_relaxed);
++
+   sFrameActive = false;
+   sPendingDraws = 0;
+   sStreamBase = 0;
+@@ -231,6 +241,31 @@ uint32_t end_display_list() {
+ 
+ bool in_display_list() { return detail::sInDisplayList; }
+ 
++// smstrikers-port: called on the GX thread immediately before the list's bytes
++// are appended, so sBufferSize is still the offset they will land at. Lock-free:
++// its only reader is a processor that is already aborting.
++void note_display_list(const void* src, const uint32_t size) noexcept {
++  const uint64_t seq = sSpliceCount.load(std::memory_order_relaxed);
++  sSplices[seq % kSpliceRing] = {
++      .streamPos = sStreamBase + detail::sBufferSize,
++      .size = size,
++      .src = src,
++  };
++  sSpliceCount.store(seq + 1, std::memory_order_release);
++}
++
++const DisplayListSplice* find_display_list(const uint64_t streamPos) noexcept {
++  const uint64_t count = sSpliceCount.load(std::memory_order_acquire);
++  const uint64_t oldest = count > kSpliceRing ? count - kSpliceRing : 0;
++  for (uint64_t seq = count; seq-- > oldest;) {
++    const auto& splice = sSplices[seq % kSpliceRing];
++    if (streamPos >= splice.streamPos && streamPos < splice.streamPos + splice.size) {
++      return &splice;
++    }
++  }
++  return nullptr;
++}
++
+ void drain() {
+   if (detail::sBufferSize == 0) {
+     return;
+diff --git a/lib/gx/fifo.hpp b/lib/gx/fifo.hpp
+index 0d6a5d8..ebeb46f 100644
+--- a/lib/gx/fifo.hpp
++++ b/lib/gx/fifo.hpp
+@@ -104,6 +104,19 @@ void begin_display_list(uint8_t* buf, uint32_t size);
+ uint32_t end_display_list();
+ bool in_display_list();
+ 
++// smstrikers-port: display list provenance. GXCallDisplayList splices a list's
++// bytes into the FIFO stream and nothing afterwards remembers that it did, so an
++// abort names an offset into a 64KB buffer and not the list the byte came from.
++struct DisplayListSplice {
++  uint64_t streamPos; // absolute stream offset of the list's first byte
++  uint32_t size;      // nbytes as passed to GXCallDisplayList
++  const void* src;    // the caller's buffer, before the copy into the FIFO
++};
++void note_display_list(const void* src, uint32_t size) noexcept;
++// Returns the splice containing an absolute stream position, or null when the
++// position is in immediate-mode stream rather than in a called list.
++const DisplayListSplice* find_display_list(uint64_t streamPos) noexcept;
++
+ // Ensure all buffered commands have been processed.
+ void drain();
+ 
+diff --git a/lib/gx/gx.cpp b/lib/gx/gx.cpp
+index b12b327..b1100ae 100644
+--- a/lib/gx/gx.cpp
++++ b/lib/gx/gx.cpp
+@@ -198,6 +198,12 @@ wgpu::PrimitiveState to_primitive_state(GXCullMode gx_cullMode) {
+   case GX_CULL_BACK:
+     cullMode = wgpu::CullMode::Back;
+     break;
++  case GX_CULL_ALL:
++    // smstrikers-port: no wgpu cull mode discards both faces, so GX_CULL_ALL is
++    // handled in populate_pipeline_config by turning off every write mask. The
++    // value here is then arbitrary.
++    cullMode = wgpu::CullMode::Back;
++    break;
+   case GX_CULL_NONE:
+     break;
+   }
+@@ -461,9 +467,11 @@ void populate_pipeline_config(PipelineConfig& config, GXPrimitive primitive, GXV
+       .polygonOffsetScaleBits = std::bit_cast<uint32_t>(polygonOffsetScale),
+       .polygonOffsetClampBits = std::bit_cast<uint32_t>(g_gxState.clamp),
+       .depthCompare = g_gxState.depthCompare,
+-      .depthUpdate = g_gxState.depthUpdate,
+-      .alphaUpdate = g_gxState.alphaUpdate,
+-      .colorUpdate = g_gxState.colorUpdate,
++      // GX_CULL_ALL discards every triangle. wgpu cannot say that, so the draw
++      // is made to write nothing instead; see to_primitive_state.
++      .depthUpdate = cullMode == GX_CULL_ALL ? false : g_gxState.depthUpdate,
++      .alphaUpdate = cullMode == GX_CULL_ALL ? false : g_gxState.alphaUpdate,
++      .colorUpdate = cullMode == GX_CULL_ALL ? false : g_gxState.colorUpdate,
+   };
+ }
+ 
+diff --git a/lib/gx/gx.hpp b/lib/gx/gx.hpp
+index a97b987..db16c61 100644
+--- a/lib/gx/gx.hpp
++++ b/lib/gx/gx.hpp
+@@ -64,7 +64,11 @@ constexpr u32 MaxTevSwap = GX_MAX_TEVSWAP;
+ constexpr u32 MaxIndStages = GX_MAX_INDTEXSTAGE;
+ constexpr u32 MaxIndTexMtxs = 3;
+ constexpr u32 MaxVtxFmt = GX_MAX_VTXFMT;
+-constexpr u32 MaxPnMtx = (GX_PNMTX9 / 3) + 1;
++// smstrikers-port: 13, not the 10 GX_PNMTX0..9 names. Matrix memory is one
++// 64-row block and PNMTXIDX may point anywhere in it, so this game parks bone
++// matrices as high as row 36; its texture matrices sit at 54 and 57, well clear.
++// This moves texMtxs[0] to uniform slot MaxPnMtx, which texgen must follow.
++constexpr u32 MaxPnMtx = 13;
+ constexpr u32 MaxIndexAttr = 12; // VA_POS -> VA_TEX7
+ constexpr u32 MaxUniformSize = 3840;
+ constexpr u32 XfRegCount = 0x58; // 0x1000-0x1057
+diff --git a/lib/gx/regs.cpp b/lib/gx/regs.cpp
+index 0c3925b..5858904 100644
+--- a/lib/gx/regs.cpp
++++ b/lib/gx/regs.cpp
+@@ -1011,12 +1011,21 @@ bool copy_xf_data(u32 addr, const u8* data, u32 len, std::endian e) noexcept {
+     for (u32 i = 0; i < len; i++) {
+       changed |= store_xf_f32(flat[i], read_bits<u32>(data + i * 4, e));
+     }
++    // smstrikers-port: rows 30+ are texture matrix memory and addressable as
++    // position matrices, so mirror the write. See MaxPnMtx.
++    const u32 pnIdx = addr / 12;
++    if (len == 12 && pnIdx < MaxPnMtx) {
++      f32* pnFlat = reinterpret_cast<f32*>(&g_gxState.pnMtx[pnIdx].pos);
++      for (u32 i = 0; i < len; i++) {
++        changed |= store_xf_f32(pnFlat[i], read_bits<u32>(data + i * 4, e));
++      }
++    }
+     if (changed) {
+       g_gxState.dirty |= DirtyUniform;
+     }
+     return true;
+   }
+-  if (addr >= 0x400 && addr < 0x45A) {
++  if (addr >= 0x400 && addr < 0x400 + MaxPnMtx * 9) {
+     // Normal matrices (0x400-0x459)
+     u32 nrmBase = addr - 0x400;
+     u32 mtxIdx = nrmBase / 9;
+diff --git a/lib/gx/shader.cpp b/lib/gx/shader.cpp
+index 92f358b..b68b165 100644
+--- a/lib/gx/shader.cpp
++++ b/lib/gx/shader.cpp
+@@ -814,8 +814,12 @@ auto lighting_func(const ShaderConfig& config, const ColorChannelConfig& cc, u8
+   if (cc.attnFn == GX_AF_NONE) {
+     lightAttnFn = "attn = 1.0;"s;
+   } else if (cc.attnFn == GX_AF_SPOT) {
++    // smstrikers-port: clamp the spot cosine to [0,1], NaN-safe. A point light
++    // leaves the direction words uninitialized, which the hardware annihilates
++    // with a zero coefficient; in f32, cosine*cosine overflows and 0.0*inf is NaN.
+     lightAttnFn = fmt::format(R"""(
+-          var cosine = max(0.0, dot(ldir, light.dir));
++          var cosraw = dot(ldir, light.dir);
++          var cosine = select(0.0, min(cosraw, 1.0), cosraw > 0.0);
+           var cos_attn = dot(light.cos_att, vec3f(1.0, cosine, cosine * cosine));
+           var dist_attn = dot(light.dist_att, vec3f(1.0, dist, dist2));
+           attn = max(0.0, cos_attn / dist_attn);)""");
+@@ -824,8 +828,10 @@ auto lighting_func(const ShaderConfig& config, const ColorChannelConfig& cc, u8
+     std::string dist_attn = diffFn != GX_DF_NONE
+                                 ? "max(0.0, dot(normalize(light.dist_att), vec3f(1.0, attn, attn * attn)));"
+                                 : "max(0.0, dot(light.dist_att, vec3f(1.0, attn, attn * attn)));";
++    // smstrikers-port: the same [0,1] NaN-safe clamp as the GX_AF_SPOT branch.
+     lightAttnFn = fmt::format(R"""(
+-          attn = select(0.0, max(0.0, dot({0}, light.dir)), dot({0}, ldir) >= 0.0);
++          var cosraw = dot({0}, light.dir);
++          attn = select(0.0, min(cosraw, 1.0), cosraw > 0.0 && dot({0}, ldir) >= 0.0);
+           var cos_attn = dot(light.cos_att, vec3f(1.0, attn, attn * attn));
+           var dist_attn = {1};
+           attn = max(0.0, cos_attn / dist_attn);)""",
+@@ -1234,10 +1240,18 @@ std::string build_shader_source(const ShaderConfig& config) noexcept {
+       vtxXfrAttrs += fmt::format("\n    var tc{} = vec4f({}, 1.0);", i, vtx_attr(config, GX_VA_POS));
+     } else if (tcg.src == GX_TG_NRM) {
+       vtxXfrAttrs += fmt::format("\n    var tc{} = vec4f({}, 1.0);", i, vtx_attr(config, GX_VA_NRM));
+-    } else if (tcg.src == GX_TG_COLOR0) {
+-      vtxXfrAttrs += fmt::format("\n    var tc{} = {};", i, vtx_attr(config, GX_VA_CLR0));
+-    } else if (tcg.src == GX_TG_COLOR1) {
+-      vtxXfrAttrs += fmt::format("\n    var tc{} = {};", i, vtx_attr(config, GX_VA_CLR1));
++    } else if (tcg.src == GX_TG_COLOR0 || tcg.src == GX_TG_COLOR1) {
++      // smstrikers-port: a colour-source texgen takes the channel's rasterized
++      // output, the lit result, and not the raw vertex colour.
++      const u32 ch = tcg.src == GX_TG_COLOR0 ? 0 : 1;
++      const auto vtxSrc = vtx_attr(config, static_cast<GXAttr>(GX_VA_CLR0 + ch));
++      // Per-pixel lighting computes the channel in the fragment stage, where a
++      // vertex-stage texgen cannot reach it; fall back to the attribute there.
++      if (!UsePerPixelLighting && info.sampledColorChannels.test(ch)) {
++        vtxXfrAttrs += fmt::format("\n    var tc{} = out.cc{};", i, ch);
++      } else {
++        vtxXfrAttrs += fmt::format("\n    var tc{} = {};", i, vtxSrc);
++      }
+     } else if (tcg.src == GX_TG_BINRM) {
+       vtxXfrAttrs += fmt::format("\n    var tc{} = vec4f({}, 1.0);", i, nbt_slice_local(NbtSlice::B));
+     } else if (tcg.src == GX_TG_TANGENT) {
+@@ -1245,12 +1259,16 @@ std::string build_shader_source(const ShaderConfig& config) noexcept {
+     } else
+       UNLIKELY FATAL("unhandled tcg src {}", underlying(tcg.src));
+     if (tcg.type == GX_TG_MTX2x4 || tcg.type == GX_TG_MTX3x4) {
++      // smstrikers-port: postex_mtx is pnMtx[0..MaxPnMtx) then texMtxs, so a
++      // texture matrix indexed as row/3 is only right while MaxPnMtx is 10.
+       if (info.indexAttr.test(GX_VA_TEX0MTXIDX + i)) {
+-        vtxXfrAttrs += fmt::format("\n    var tc{0}_tmp = tc{0} * ubuf.postex_mtx[in_texmtxidx{0} / 3u];", i);
++        vtxXfrAttrs += fmt::format("\n    var tc{0}_tmp = tc{0} * ubuf.postex_mtx[select(in_texmtxidx{0} / 3u, "
++                                   "{1}u + (in_texmtxidx{0} - {2}u) / 3u, in_texmtxidx{0} >= {2}u)];",
++                                   i, MaxPnMtx, static_cast<u32>(GX_TEXMTX0));
+       } else if (tcg.mtx == GX_IDENTITY) {
+         vtxXfrAttrs += fmt::format("\n    var tc{0}_tmp = tc{0}.xyz;", i);
+       } else {
+-        u32 texMtxIdx = (tcg.mtx) / 3;
++        const u32 texMtxIdx = tcg.mtx >= GX_TEXMTX0 ? MaxPnMtx + (tcg.mtx - GX_TEXMTX0) / 3 : tcg.mtx / 3;
+         vtxXfrAttrs += fmt::format("\n    var tc{0}_tmp = tc{0} * ubuf.postex_mtx[{1}];", i, texMtxIdx);
+       }
+       if (tcg.type == GX_TG_MTX2x4) {
+diff --git a/lib/gx/shader_info.cpp b/lib/gx/shader_info.cpp
+index c74bd6d..4c2ffde 100644
+--- a/lib/gx/shader_info.cpp
++++ b/lib/gx/shader_info.cpp
+@@ -307,6 +307,18 @@ ShaderInfo build_shader_info(const ShaderConfig& config) noexcept {
+     }
+   }
+ 
++  // smstrikers-port: GX_TG_SRTG reads a colour channel's rasterized output, so
++  // that channel is computed even when no TEV stage samples it.
++  for (int i = 0; i < info.sampledTexCoords.size(); ++i) {
++    if (!info.sampledTexCoords.test(i)) {
++      continue;
++    }
++    const auto& tcg = config.tcgs[i];
++    if (tcg.type == GX_TG_SRTG && (tcg.src == GX_TG_COLOR0 || tcg.src == GX_TG_COLOR1)) {
++      info.sampledColorChannels.set(tcg.src == GX_TG_COLOR0 ? 0 : 1);
++    }
++  }
++
+   info.uniformSize += info.loadsTevReg.count() * sizeof(Vec4<float>);
+   for (int i = 0; i < info.sampledColorChannels.size(); ++i) {
+     if (info.sampledColorChannels.test(i)) {
+diff --git a/lib/internal.hpp b/lib/internal.hpp
+index b446d2c..b65697b 100644
+--- a/lib/internal.hpp
++++ b/lib/internal.hpp
+@@ -7,6 +7,7 @@
+ #include <array>
+ #include <cassert>
+ #include <cstdint>
++#include <cstdio>
+ #include <type_traits>
+ #include <vector>
+ #include <cstring>
+@@ -331,6 +332,15 @@ private:
+       m_owned = true;
+     } else if (size > m_capacity) {
+       if (!m_owned) {
++        // smstrikers-port: name the pool before dying. The bare abort() below
++        // does not raise SIGABRT through any handler, so the process exits 134
++        // with nothing anywhere. Each pool's capacity constant is distinct.
++        fprintf(stderr,
++                "aurora: FATAL: fixed GPU staging pool overflow: need %zu bytes, capacity %zu."
++                " The pool sizes are compile-time constants in lib/gfx/resources.hpp;"
++                " the capacity identifies which one overflowed.\n",
++                size, m_capacity);
++        fflush(stderr);
+         abort();
+       }
+       if (size < m_capacity * 2) {
+diff --git a/lib/webgpu/gpu.cpp b/lib/webgpu/gpu.cpp
+index 592b8ab..63e12d3 100644
+--- a/lib/webgpu/gpu.cpp
++++ b/lib/webgpu/gpu.cpp
+@@ -895,6 +895,16 @@ bool initialize(AuroraBackend auroraBackend, bool allowCpu) {
+     g_textureComponentSwizzleSupported = false;
+     wgpu::SupportedFeatures supportedFeatures;
+     g_adapter.GetFeatures(&supportedFeatures);
++    {
++      std::string all;
++      for (size_t i = 0; i < supportedFeatures.featureCount; ++i) {
++        all += static_cast<char>(10);
++        all += "  ";
++        all += fmt::format("0x{:08X} ", static_cast<uint32_t>(supportedFeatures.features[i]));
++        all += magic_enum::enum_name(supportedFeatures.features[i]);
++      }
++      Log.info("Adapter supports: {}", all);
++    }
+     for (size_t i = 0; i < supportedFeatures.featureCount; ++i) {
+       const auto feature = supportedFeatures.features[i];
+       if (feature == wgpu::FeatureName::CoreFeaturesAndLimits || feature == wgpu::FeatureName::TextureCompressionBC ||
+diff --git a/lib/webgpu/gpu_prof.cpp b/lib/webgpu/gpu_prof.cpp
+index c8c9549..c04bcba 100644
+--- a/lib/webgpu/gpu_prof.cpp
++++ b/lib/webgpu/gpu_prof.cpp
+@@ -196,6 +196,22 @@ void emit_frame(Slot& slot) {
+     frameEnd = ts[FrameEndQuery];
+   }
+   if (frameBegin == 0 || frameEnd <= frameBegin) {
++    // smstrikers-port: say why, once. This return drops the frame silently, so
++    // enabled-and-emitting-nothing reads the same as switched off.
++    static bool s_said = false;
++    if (!s_said) {
++      s_said = true;
++      size_t nonZero = 0;
++      for (size_t i = 0; i < QueryCount; ++i) {
++        if (ts[i] != 0) {
++          ++nonZero;
++        }
++      }
++      Log.warn("no GPU frame emitted: {} events, {}/{} timestamps non-zero, "
++               "frameBegin={} frameEnd={} (ts[0]={} ts[1]={} frameBeginQuery={})",
++               slot.events.size(), nonZero, size_t{QueryCount}, frameBegin, frameEnd,
++               ts[0], ts[1], ts[FrameBeginQuery]);
++    }
+     return;
+   }
+ 
+diff --git a/lib/window.cpp b/lib/window.cpp
+index 037a5fd..01a9151 100644
+--- a/lib/window.cpp
++++ b/lib/window.cpp
+@@ -437,10 +437,18 @@ AuroraWindowSize get_window_size() {
+     fb_h = scaledH;
+   }
+   if (g_frameBufferAspectFit) {
+-    const auto [baseW, baseH] = vi::configured_fb_size();
+-    if (baseW > 0 && baseH > 0) {
+-      const auto [fitW, fitH] =
+-          fit_frame_buffer_to_aspect(fb_w, fb_h, static_cast<float>(baseW) / static_cast<float>(baseH));
++    // smstrikers-port: prefer the aspect VILockAspectRatio was given, which is
++    // the shape the framebuffer is meant to be seen at rather than its pixel
++    // count. Falls back to the mode's own ratio when nothing is locked.
++    float aspect = vi::locked_aspect();
++    if (aspect <= 0.f) {
++      const auto [baseW, baseH] = vi::configured_fb_size();
++      if (baseW > 0 && baseH > 0) {
++        aspect = static_cast<float>(baseW) / static_cast<float>(baseH);
++      }
++    }
++    if (aspect > 0.f) {
++      const auto [fitW, fitH] = fit_frame_buffer_to_aspect(fb_w, fb_h, aspect);
+       fb_w = fitW;
+       fb_h = fitH;
+     }
+@@ -541,6 +549,16 @@ void request_frame_buffer_resize() {
+   }
+ }
+ 
++// smstrikers-port: the same work without the deferral; a deferred rebuild would land a frame late, and that frame has black bars.
++void resize_frame_buffer_now() {
++  if (g_window != nullptr) {
++    resize_swapchain();
++  }
++}
++
++// smstrikers-port: non-zero once the caller has pinned the render target to the VI render mode rather than the window, which GXAdjustForOverscan needs to know.
++float get_frame_buffer_scale() { return g_frameBufferScale; }
++
+ void set_frame_buffer_scale(float scale) {
+   if (scale < 0.f) {
+     scale = 0.f;
+diff --git a/lib/window.hpp b/lib/window.hpp
+index 51257ea..e8c368f 100644
+--- a/lib/window.hpp
++++ b/lib/window.hpp
+@@ -48,7 +48,10 @@ void set_window_size(uint32_t width, uint32_t height);
+ void set_window_position(uint32_t x, uint32_t y);
+ void center_window();
+ void request_frame_buffer_resize();
++// smstrikers-port: the work request_frame_buffer_resize defers to the next event pump, done now; a wrapper because resize_swapchain has internal linkage.
++void resize_frame_buffer_now();
+ void set_frame_buffer_scale(float scale);
++float get_frame_buffer_scale();  // smstrikers-port
+ void set_frame_buffer_aspect_fit(bool fit);
+ void set_background_input(bool value);
+ }; // namespace aurora::window
+diff --git a/tests/CMakeLists.txt b/tests/CMakeLists.txt
+index 8323015..ccac8d0 100644
+--- a/tests/CMakeLists.txt
++++ b/tests/CMakeLists.txt
+@@ -84,6 +84,7 @@ if (AURORA_ENABLE_GX)
+     ../lib/gx/attr_fmt.cpp
+     ../lib/gx/dl.cpp
+     gx_dl_test.cpp
++    gx_overscan_test.cpp
+   )
+ 
+   target_include_directories(gx_fifo_tests PRIVATE
+diff --git a/tests/gx_overscan_test.cpp b/tests/gx_overscan_test.cpp
+new file mode 100644
+index 0000000..6963377
+--- /dev/null
++++ b/tests/gx_overscan_test.cpp
+@@ -0,0 +1,60 @@
++// smstrikers-port: GXAdjustForOverscan has two answers, and which one a game
++// gets depends on whether it pinned the render target to the VI mode.
++#include <gtest/gtest.h>
++
++#include <dolphin/gx.h>
++
++namespace aurora::window::testing {
++extern float g_frameBufferScale;
++}
++
++namespace {
++
++struct OverscanTest : ::testing::Test {
++  void TearDown() override { aurora::window::testing::g_frameBufferScale = 0.f; }
++};
++
++// Stock Aurora: the framebuffer is the window, whatever the mode says.
++TEST_F(OverscanTest, ReportsTheWindowWhenTheRenderTargetIsNotPinned) {
++  aurora::window::testing::g_frameBufferScale = 0.f;
++  GXRenderModeObj out{};
++  GXAdjustForOverscan(&GXNtsc480Int, &out, 8, 16);
++  EXPECT_EQ(out.fbWidth, 640);
++  EXPECT_EQ(out.efbHeight, 480);
++  EXPECT_EQ(out.xfbHeight, 480);
++  // The VI fields come through untouched from the input mode.
++  EXPECT_EQ(out.viWidth, GXNtsc480Int.viWidth);
++  EXPECT_EQ(out.viXOrigin, GXNtsc480Int.viXOrigin);
++}
++
++// Pinned: the SDK's own arithmetic, so the mode describes the console's
++// framebuffer rather than the window. NTSC interlaced, double-strike field
++// buffer, so the vertical trim is applied whole to every height.
++TEST_F(OverscanTest, DoesTheSdkArithmeticWhenTheRenderTargetIsPinned) {
++  aurora::window::testing::g_frameBufferScale = 1.f;
++  GXRenderModeObj out{};
++  GXAdjustForOverscan(&GXNtsc480Int, &out, 8, 16);
++  EXPECT_EQ(out.fbWidth, 640 - 16);
++  EXPECT_EQ(out.efbHeight, 480 - 32);
++  EXPECT_EQ(out.xfbHeight, 480 - 32);
++  EXPECT_EQ(out.viWidth, 640 - 16);
++  EXPECT_EQ(out.viHeight, 480 - 32);
++  EXPECT_EQ(out.viXOrigin, GXNtsc480Int.viXOrigin + 8);
++  EXPECT_EQ(out.viYOrigin, GXNtsc480Int.viYOrigin + 16);
++  EXPECT_EQ(out.xFBmode, GXNtsc480Int.xFBmode);
++}
++
++// A single-strike field buffer at 240 lines trims the XFB by half the amount,
++// which is the one place the SDK's formula is not uniform.
++TEST_F(OverscanTest, HalvesTheXfbTrimForASingleStrikeFieldBuffer) {
++  aurora::window::testing::g_frameBufferScale = 1.f;
++  GXRenderModeObj in = GXNtsc480Int;
++  in.xFBmode = VI_XFBMODE_SF;
++  in.xfbHeight = 240;
++  GXRenderModeObj out{};
++  GXAdjustForOverscan(&in, &out, 0, 16);
++  EXPECT_EQ(out.xfbHeight, 240 - 16);
++  EXPECT_EQ(out.efbHeight, 480 - (32 * 480) / 240);
++}
++
++} // namespace
+diff --git a/tests/gx_test_stubs.cpp b/tests/gx_test_stubs.cpp
+index 6268a0c..26abb0d 100644
+--- a/tests/gx_test_stubs.cpp
++++ b/tests/gx_test_stubs.cpp
+@@ -291,8 +291,15 @@ bool has_replacement(const GXTexObj_&, const GXTlutObj_&) noexcept { return fals
+ // --- Window stub ---
+ #include "../lib/window.hpp"
+ namespace aurora::window {
++namespace testing {
++// smstrikers-port: GXAdjustForOverscan takes the SDK arithmetic when a game
++// has pinned the render target (set_frame_buffer_scale > 0). 0 is the stock
++// behaviour; gx_overscan_test.cpp sets it to exercise the other branch.
++float g_frameBufferScale = 0.f;
++} // namespace testing
+ AuroraWindowSize get_window_size() { return {640, 480, 640, 480, 640, 480, 1.0f}; }
+ void set_frame_buffer_aspect_fit(bool) {}
++float get_frame_buffer_scale() { return testing::g_frameBufferScale; }
+ } // namespace aurora::window
+ 
+ // --- WebGPU C API stubs (prevent linker errors from wgpu:: destructors) ---
