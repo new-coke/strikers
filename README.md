@@ -1,4 +1,4 @@
-# Strikers - A native PC Port of Super Mario Strikers
+# Strikers - A native multi-platform port of Super Mario Strikers
 
 ![](media/strikers-gameplay.webp)
 
@@ -44,6 +44,10 @@ Download your platform's archive above or from [Releases](https://github.com/new
 
 The wiki also lists the supported discs and how to report a problem. [Troubleshooting](https://github.com/new-coke/strikers/wiki/Troubleshooting) covers issues you may have playing or installing the game.
 
+## Roadmap
+
+The [roadmap board](https://miro.com/app/board/uXjVEelphdQ=/?share_link_id=275053969981 ) lists planned features and how far along each one is.
+
 ## Building from source
 
 [Development](https://github.com/new-coke/strikers/wiki/Development) on the wiki covers building, running from a checkout and debugging:
@@ -62,7 +66,7 @@ This has been a solo effort. I am releasing this on what is effectively a 'burne
 
 Thanks also to [devkitPro](https://devkitpro.org) and [switchbrew](https://switchbrew.org) for the Switch toolchain and libnx, [danfromtico](https://github.com/danfromtico) for NVK on Switch, and [Dolphin](https://dolphin-emu.org) for the texture pack format.
 
-Pull requests are welcome, but it's more than likely this project will be forked by people more invested than I, as I feel like my job is done.
+Pull requests are welcome.
 
 ## Licensing
 
