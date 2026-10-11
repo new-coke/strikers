@@ -13,6 +13,8 @@
     "native_package": "sealed Release build CRC and eboot identity verified",
     "diff_check": "Source and documentation pass; archived exact patches, compiler logs and historical source snapshots preserve original whitespace"
   },
-  "device_status": "Update package uploaded, full readback verified; VitaShell opened; manual package installation pending",
-  "fps_claim": "No hardware FPS measurement for cleanup build"
+  "device_status": "Package transferred and verified, VitaShell opened; installed SELF still control at last readback; manual installation required",
+  "fps_claim": "No hardware FPS measurement for cleanup build",
+  "git_status": "Both runtime commits published and verified on origin",
+  "updated_unix": 1791731795.193989
 }

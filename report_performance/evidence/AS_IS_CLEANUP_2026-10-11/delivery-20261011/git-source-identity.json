@@ -1,0 +1,12 @@
+{
+  "parent_commit": "bad6e2e6a7ec36d1c84b5c285a805fd7da00f35a",
+  "parent_tree": "153b1097e56c417c1668c4630a317db8de1d8c00",
+  "aurora_commit": "be08d453b852df6b25e2a0a841cf7a431d13201b",
+  "aurora_tree": "b2db276f5c091afad532e044cb725d2734c150e3",
+  "artifact_source_note": "Sealed artifacts built before commit; no runtime sources changed since successful build; source manifest matches current files",
+  "self_sha256": "a9e5b3bc2fc1eb701344c879cb4885ecc04b33af76aab3b16e64ee0940638b2d",
+  "vpk_sha256": "cc933e6744785ac47874e47578ec9ddfac49f73b8726540c8c517a2033cfb022",
+  "remote_verification_time_unix": 1791731691.338717,
+  "parent_commit_remote_verified": true,
+  "aurora_commit_remote_verified": true
+}
