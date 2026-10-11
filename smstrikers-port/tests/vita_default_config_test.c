@@ -11,9 +11,10 @@
 #define CHECK(c) do { if (!(c)) { fprintf(stderr, "FAIL line %d: %s\n", __LINE__, #c); exit(1); } } while (0)
 #define DEFAULTS_BEGIN "# --- STRIKERS VALIDATED DEFAULTS BEGIN ---"
 #define DEFAULTS_END "# --- STRIKERS VALIDATED DEFAULTS END ---"
-#define DEFAULT_CONFIG_KEY_COUNT 63
+#define DEFAULT_CONFIG_KEY_COUNT 67
 
 static char s_data_dir[1024];
+static const char* s_default_template;
 
 int port_executable_dir(char* out, size_t size)
 {
@@ -35,7 +36,10 @@ static void write_ini(const char* path, const char* profile, const char* disable
     CHECK(f != NULL);
     fprintf(f, "gxm_shader_profile = %s\n", profile);
     fprintf(f, "gxm_disable = %s\n", disable);
-    fprintf(f, "vita_debug_menu = 1\n");
+    fprintf(f, "vita_test_match = 0\n");
+    fprintf(f, "vita_debug_menu = 0\n");
+    fprintf(f, "gxm_native_gpu_static = 0\n");
+    fprintf(f, "native_asset_archive = ux0:data/strikersVita/custom-native.psarc\n");
     fprintf(f, "gxm_native_model_draw = 2\n");
     fprintf(f, "gxm_native_model_cache = 1\n");
     fprintf(f, "gxm_native_model_uniform_build = 1\n");
@@ -84,6 +88,22 @@ static unsigned int file_count(const char* path, const char* needle)
         p += strlen(needle);
     }
     return count;
+}
+
+static void check_default_template(const char* path)
+{
+    FILE* actual = fopen(path, "rb");
+    FILE* expected = fopen(s_default_template, "rb");
+    int a, e;
+    CHECK(actual != NULL && expected != NULL);
+    do
+    {
+        a = fgetc(actual);
+        e = fgetc(expected);
+        CHECK(a == e);
+    } while (a != EOF);
+    CHECK(!ferror(actual) && !ferror(expected));
+    CHECK(fclose(actual) == 0 && fclose(expected) == 0);
 }
 
 static void write_stale_managed_ini(const char* path)
@@ -154,6 +174,7 @@ static void run_case(const char* root, int mode)
             CHECK(applied == DEFAULT_CONFIG_KEY_COUNT);
             CHECK(strcmp(PortConfigPath(), user_ini) == 0);
             CHECK(stat(user_ini, &info) == 0 && info.st_size > 0);
+            check_default_template(user_ini);
             CHECK(strcmp(getenv("STRIKERS_CPU_MHZ"), "500") == 0);
             CHECK(strcmp(getenv("STRIKERS_GPU_MHZ"), "222") == 0);
             CHECK(strcmp(getenv("STRIKERS_GXM_FRAGMENT_PREPARE_CACHE"), "1") == 0);
@@ -162,7 +183,7 @@ static void run_case(const char* root, int mode)
             CHECK(strcmp(getenv("STRIKERS_GXM_XF_EQUAL_MATRIX_WRITES"), "0") == 0);
             CHECK(strcmp(getenv("STRIKERS_GXM_TEV_DECODED_WRITE_GATE"), "0") == 0);
             CHECK(strcmp(getenv("STRIKERS_GXM_PREPARED_DL"), "0") == 0);
-            CHECK(strcmp(getenv("STRIKERS_GXM_NATIVE_GPU_STATIC"), "0") == 0);
+            CHECK(strcmp(getenv("STRIKERS_GXM_NATIVE_GPU_STATIC"), "1") == 0);
             CHECK(strcmp(getenv("STRIKERS_GXM_NATIVE_DRAW_REPLAY"), "0") == 0);
             CHECK(strcmp(getenv("STRIKERS_GXM_FIXED_UNIFORM_POOL"), "1") == 0);
             CHECK(strcmp(getenv("STRIKERS_GXM_GEOMETRY_PREFLIGHT"), "1") == 0);
@@ -170,7 +191,8 @@ static void run_case(const char* root, int mode)
             CHECK(strcmp(getenv("STRIKERS_VITA_CORE3_MAX_TOTAL_PCT"), "70") == 0);
         }
         CHECK(strcmp(getenv("STRIKERS_VITA_FRAMESKIP"), "0") == 0);
-        CHECK(strcmp(getenv("STRIKERS_VITA_DEBUG_MENU"), mode == 1 ? "1" : "0") == 0);
+        CHECK(strcmp(getenv("STRIKERS_VITA_DEBUG_MENU"), mode == 1 ? "0" : "1") == 0);
+        CHECK(strcmp(getenv("STRIKERS_VITA_TEST_MATCH"), mode == 1 ? "0" : "1") == 0);
         CHECK(strcmp(getenv("STRIKERS_VITA_VIEW_DRAW_CAPTURE"), "0") == 0);
         CHECK(strcmp(getenv("STRIKERS_VITA_VIEW_DRAW_PAYLOADS"), "0") == 0);
         CHECK(strcmp(getenv("STRIKERS_GXM_XF_EQUAL_POS_WRITES"), "0") == 0);
@@ -197,12 +219,22 @@ static void run_case(const char* root, int mode)
             CHECK(PortConfigVitaRenderSize(NULL, &height) == -1);
         }
         CHECK(strcmp(getenv("STRIKERS_GXM_PREPARED_DL"), "0") == 0);
-        CHECK(strcmp(getenv("STRIKERS_GXM_NATIVE_GPU_STATIC"), "0") == 0);
+        CHECK(strcmp(getenv("STRIKERS_GXM_NATIVE_GPU_STATIC"), mode == 1 ? "0" : "1") == 0);
+        CHECK(strcmp(getenv("STRIKERS_NATIVE_ASSET_ARCHIVE"), mode == 1
+            ? "ux0:data/strikersVita/custom-native.psarc"
+            : "ux0:data/strikersVita/sms-native-gxm-static.psarc") == 0);
+        CHECK(strcmp(getenv("STRIKERS_FRAME_CAPTURE"), "ux0:data/strikersVita/r3a_quiet_gx.csv") == 0);
+        CHECK(strcmp(getenv("STRIKERS_FRAME_CAPTURE_MATCH_ONLY"), "1") == 0);
+        CHECK(strcmp(getenv("STRIKERS_FRAME_CAPTURE_PLAY_ONLY"), "1") == 0);
+        CHECK(strcmp(getenv("STRIKERS_FRAME_CAPTURE_SKIP"), "600") == 0);
+        CHECK(strcmp(getenv("STRIKERS_VITA_VIEW_DRAW_SKIP"), "600") == 0);
+        CHECK(strcmp(getenv("STRIKERS_VITA_VIEW_DRAW_FRAMES"), "12") == 0);
+        CHECK(strcmp(getenv("STRIKERS_VITA_VIEW_DRAW_CAPACITY"), "8192") == 0);
         CHECK(strcmp(getenv("STRIKERS_GXM_NATIVE_DRAW_REPLAY"), "0") == 0);
         CHECK(strcmp(getenv("STRIKERS_GXM_NATIVE_MODEL_DRAW"), mode == 1 ? "2" : "0") == 0);
         CHECK(strcmp(getenv("STRIKERS_GXM_NATIVE_MODEL_CENSUS"), "0") == 0);
         if (mode == 1)
-            CHECK(file_contains(user_ini, "vita_debug_menu = 1"));
+            CHECK(file_contains(user_ini, "vita_debug_menu = 0"));
         CHECK(strcmp(getenv("STRIKERS_FIXED_DT"), "0") == 0);
         CHECK(strcmp(getenv("STRIKERS_GXM_NATIVE_ASSETS"), "1") == 0);
         CHECK(strcmp(getenv("STRIKERS_VITA_NATIVE_AUDIO"), "1") == 0);
@@ -213,7 +245,7 @@ static void run_case(const char* root, int mode)
         CHECK(strcmp(getenv("STRIKERS_ASSET_ARCHIVE"), "ux0:data/strikersVita/sms.psarc") == 0);
         CHECK(file_count(user_ini, DEFAULTS_BEGIN) == 1);
         CHECK(file_count(user_ini, DEFAULTS_END) == 1);
-        CHECK(file_contains(user_ini, "profile_revision = 2026-10-08-native-assets-frameskip-off"));
+        CHECK(file_contains(user_ini, "profile_revision = 2026-10-11-current-gxm-baseline"));
         exit(0);
     }
 
@@ -222,8 +254,10 @@ static void run_case(const char* root, int mode)
     CHECK(WIFEXITED(status) && WEXITSTATUS(status) == 0);
 }
 
-int main(void)
+int main(int argc, char** argv)
 {
+    CHECK(argc == 2);
+    s_default_template = argv[1];
     char root[] = "/tmp/strikers-vita-config-test-XXXXXX";
     char data[1200];
     CHECK(mkdtemp(root) != NULL);
@@ -260,6 +294,6 @@ int main(void)
     CHECK(rmdir(data) == 0);
     CHECK(chdir("/") == 0);
     CHECK(rmdir(root) == 0);
-    puts("vita default config: first-run generation, managed refresh, and user override preservation");
+    puts("vita default config: device baseline template, first-run generation, no redundant rewrite, managed refresh and user overrides");
     return 0;
 }

@@ -26,7 +26,7 @@
 #if defined(PORT_VITA)
 #define PORT_VITA_DEFAULTS_BEGIN "# --- STRIKERS VALIDATED DEFAULTS BEGIN ---"
 #define PORT_VITA_DEFAULTS_END "# --- STRIKERS VALIDATED DEFAULTS END ---"
-#define PORT_VITA_DEFAULTS_REVISION "2026-10-08-native-assets-frameskip-off"
+#define PORT_VITA_DEFAULTS_REVISION "2026-10-11-current-gxm-baseline"
 
 typedef struct VitaDefaultConfigEntry
 {
@@ -34,33 +34,37 @@ typedef struct VitaDefaultConfigEntry
     const char* value;
 } VitaDefaultConfigEntry;
 
-// Single source of truth for hardware-validated Vita defaults. When a setting
-// is validated on hardware, update it here; the managed strikers.ini block is
-// regenerated from this table on every launch.
+// Single source of truth for the selected Vita runtime baseline. Generate the
+// INI from this table when missing and refresh an outdated managed block;
+// leave an already current file untouched to avoid redundant storage writes.
 static const VitaDefaultConfigEntry s_vita_defaults[] = {
     // Confirmed runtime baseline; keep these in sync with the device INI.
     { "gxm_disable", "0x8" },
     { "gxm_shader_profile", "WARM" },
     { "diagnostics", "0" },
     { "fps_overlay", "0" },
-    { "vita_test_match", "0" },
+    { "vita_test_match", "1" },
     { "vita_frameskip", "0" },
-    { "vita_debug_menu", "0" },
+    { "vita_debug_menu", "1" },
     { "vita_view_draw_capture", "0" },
     { "vita_view_draw_payloads", "0" },
+    { "vita_view_draw_skip", "600" },
+    { "vita_view_draw_frames", "12" },
+    { "vita_view_draw_capacity", "8192" },
     { "seed", "0x53545249" },
     { "fixed_dt", "0" },
-    { "frame_capture", "ux0:data/strikersVita/native08-diagnostic.csv" },
+    { "frame_capture", "ux0:data/strikersVita/r3a_quiet_gx.csv" },
     { "frame_capture_frames", "300" },
-    { "frame_capture_match_only", "0" },
-    { "frame_capture_play_only", "0" },
-    { "frame_capture_skip", "60" },
+    { "frame_capture_match_only", "1" },
+    { "frame_capture_play_only", "1" },
+    { "frame_capture_skip", "600" },
     { "vita_snapshot_match_frame", "0" },
     { "vita_snapshot_play_frame", "0" },
-    { "log", "ux0:data/strikersVita/native08-diagnostic.log" },
+    { "log", "ux0:data/strikersVita/r3a_quiet_gx.log" },
     { "asset_archive", "ux0:data/strikersVita/sms.psarc" },
+    { "native_asset_archive", "ux0:data/strikersVita/sms-native-gxm-static.psarc" },
     { "gxm_native_assets", "1" },
-    { "gxm_native_gpu_static", "0" },
+    { "gxm_native_gpu_static", "1" },
     { "gxm_native_draw_replay", "0" },
     { "gxm_native_model_draw", "0" },
     { "gxm_native_model_cache", "0" },

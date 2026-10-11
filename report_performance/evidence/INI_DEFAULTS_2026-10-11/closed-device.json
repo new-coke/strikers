@@ -1,0 +1,16 @@
+{
+  "time_unix": 1791732376.391851,
+  "close_apps": "Apps destroyed.",
+  "data_files": [
+    "strikers.ini",
+    "aurora-vita",
+    "cardA",
+    "cardB",
+    "r3a_quiet_gx.csv",
+    "sms-native-gxm-static.psarc",
+    "sms.psarc",
+    "sms-native-20261006-cache.psarc",
+    "sms-native-balanced-20261008.psarc"
+  ],
+  "ini_sha256": "db238344af91d2652cc693b2190d6b06c9aaacaffa73b0062f7c85c8d89d2050"
+}

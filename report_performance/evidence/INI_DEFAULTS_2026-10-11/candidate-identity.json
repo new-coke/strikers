@@ -1,0 +1,64 @@
+{
+  "baseline_parent_commit": "9d1a0e6dc52f9c2cae885024d2e2bde840933067",
+  "aurora_commit": "be08d453b852df6b25e2a0a841cf7a431d13201b",
+  "artifacts": {
+    "strikers": {
+      "sha256": "0110ddc9076a86613fa7c427143289f0763d6eef6f96d4a115a941710359b226",
+      "bytes": 19929852
+    },
+    "strikers.map": {
+      "sha256": "a19fc994acec554d51fdd5c95476a911ea34599310e361c61956a06fa4d79dca",
+      "bytes": 11273761
+    },
+    "strikers.velf": {
+      "sha256": "7eb02cdd6944d8e956bc96d7c1766b8bd2eb2652ff91cc36d9cda1c65b590339",
+      "bytes": 22026702
+    },
+    "strikers_vita.self": {
+      "sha256": "25963510ff28f4ab8eaaf79e2550f21dc6c85e160229a5ddc0e8d93c9b879e54",
+      "bytes": 3605124
+    },
+    "strikers_vita.vpk": {
+      "sha256": "e49a3606f0852466d3fd36d85a8f2b12a80a82e1a381da5c3dfbddd37ec1bf02",
+      "bytes": 3585369
+    },
+    "CMakeCache.txt": {
+      "sha256": "2a85146a15f4ceac927c40dc54de5170ef3c4bca1e82eab88606c4c015009a89",
+      "bytes": 28807
+    },
+    "compile_commands.json": {
+      "sha256": "67ad6446d9a1b48da6fd92f97b5aa972ce8413b460ec032d6454bcf0781b7698",
+      "bytes": 1592637
+    }
+  },
+  "changes": "Default table matches all 67 effective Vita INI values; canonical one-block INI",
+  "sfo": {
+    "APP_VER": "01.00",
+    "ATTRIBUTE": 32768,
+    "ATTRIBUTE2": 12,
+    "ATTRIBUTE_MINOR": 16,
+    "BOOT_FILE": "",
+    "CATEGORY": "gd",
+    "CONTENT_ID": "",
+    "EBOOT_APP_MEMSIZE": 0,
+    "EBOOT_ATTRIBUTE": 0,
+    "EBOOT_PHY_MEMSIZE": 0,
+    "LAREA_TYPE": 0,
+    "NP_COMMUNICATION_ID": "",
+    "PARENTAL_LEVEL": 0,
+    "PSP2_DISP_VER": "00.000",
+    "PSP2_SYSTEM_VER": 0,
+    "STITLE": "Super Mario Strikers Vita",
+    "TITLE": "Super Mario Strikers Vita",
+    "TITLE_ID": "SMSVITA01",
+    "VERSION": "00.00"
+  },
+  "source_sha256": {
+    "smstrikers-port/src/platform/config.c": "205e70f00f2e358b07bbb1f4a7a7f1b87d96af0ddc979091b7df06af6394c086",
+    "smstrikers-port/strikers-vita.ini.example": "300651a644c7e4e3f0400d54a6a8c09e0a151776258af24a3c0ecdd090588db4",
+    "smstrikers-port/strikers.ini.example": "d842f58cc28f57cbf5593f2f446a2bd5b4a69c2af41f7529b381f9daac135e55",
+    "smstrikers-port/tests/vita_default_config_test.c": "5043d082348be3f89ec14b755ae91aa94f8bbd0db46365623fd163c4ae765450",
+    "smstrikers-port/tests/CMakeLists.txt": "9899a72be27a5b392dac9b5790e00a33010eb78e50bccb925aa970f16ad4eb7b"
+  },
+  "binary_audit": "PASS: 12862 executable symbols inspected; native GXM draw/present found; no GL/vgl/vita2d entry points or libraries."
+}

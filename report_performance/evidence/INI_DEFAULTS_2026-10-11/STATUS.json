@@ -1,0 +1,32 @@
+{
+  "updated_unix": 1791732610.55279,
+  "request": "Make current Vita INI configuration the creation default and clean the device INI",
+  "status": "Source and host validation complete; updated GXM binary packaged; hardware config regeneration pending",
+  "changes": {
+    "old_ini_bytes": 4071,
+    "old_ini_lines": 162,
+    "old_assignments": 119,
+    "old_unique_keys": 67,
+    "old_duplicated_keys": 39,
+    "new_ini_bytes": 2033,
+    "new_ini_lines": 71,
+    "new_assignments": 67,
+    "new_unique_keys": 67,
+    "new_duplicated_keys": 0,
+    "effective_values_changed": 0,
+    "generator_keys_added": 4,
+    "generator_values_updated": 8,
+    "profile_revision": "2026-10-11-current-gxm-baseline"
+  },
+  "scope": "Preserve current automatic match, debug menu, native static assets and finite gameplay capture settings exactly; remove historical override blocks and duplicate assignments on this Vita only",
+  "validation": {
+    "host": "2/2 PASS diagnostics/config tests including creation, current template byte equality, repeated load inode preservation and custom overrides",
+    "effective_values": "all 67 canonical keys equal first effective values from device",
+    "binary_audit": "PASS 12862 executable symbols; native GXM only",
+    "package": "PASS ZIP CRC, eboot byte identity, TITLE_ID SMSVITA01, ATTRIBUTE2=12",
+    "normal_frontend_override": "PASS vita_test_match=0 remains effective before generated defaults"
+  },
+  "device_status": "New package fully uploaded and readback verified; VitaShell opened; manual installation pending; original INI unchanged",
+  "candidate_self_sha256": "25963510ff28f4ab8eaaf79e2550f21dc6c85e160229a5ddc0e8d93c9b879e54",
+  "canonical_ini_sha256": "300651a644c7e4e3f0400d54a6a8c09e0a151776258af24a3c0ecdd090588db4"
+}
