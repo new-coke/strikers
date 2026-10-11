@@ -13,8 +13,13 @@
     "native_package": "sealed Release build CRC and eboot identity verified",
     "diff_check": "Source and documentation pass; archived exact patches, compiler logs and historical source snapshots preserve original whitespace"
   },
-  "device_status": "Package transferred and verified, VitaShell opened; installed SELF still control at last readback; manual installation required",
+  "device_status": "Cleaned GXM SELF and SFO installed and verified. Remote launch accepted; startup only added two default-off managed settings, all effective preexisting INI settings unchanged. Update package removed; no coredumps at post-launch check; no FPS/visual/stability claim.",
   "fps_claim": "No hardware FPS measurement for cleanup build",
   "git_status": "Both runtime commits published and verified on origin",
-  "updated_unix": 1791731795.193989
+  "updated_unix": 1791732023.472311,
+  "final_ini_sha256": "db238344af91d2652cc693b2190d6b06c9aaacaffa73b0062f7c85c8d89d2050",
+  "new_managed_defaults": {
+    "gxm_raster_uniform_reuse": "0",
+    "gxm_native_pn_palette": "0"
+  }
 }

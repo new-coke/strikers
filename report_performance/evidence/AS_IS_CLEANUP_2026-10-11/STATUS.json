@@ -1,7 +1,7 @@
 {
-  "updated_unix": 1791731043.2290618,
+  "updated_unix": 1791731952.6733902,
   "request": "Pulizia del codice morto e rifattorizzazione di giri confermati troppo lunghi, mantenendo il comportamento as-is",
-  "status": "Local validation complete; native GXM candidate packaged; hardware performance comparison not performed",
+  "status": "Local validation complete; cleaned native GXM candidate installed and byte-verified on Vita; hardware performance comparison not performed",
   "baseline_git_head": "7014a61e3060dcd1ea73e275df90f290ac2f8a99",
   "baseline_includes_preexisting_uncommitted_changes": true,
   "cleanup_only_patch_sha256": "398c7235d09e7dcb92fb78a2fb4e2ee7fb266cda7eea3e6fb20c401080f0ddfc",
@@ -142,5 +142,24 @@
     "skin-hoist-oracle.log",
     "draw-indices-oracle.log",
     "binary-audit.log"
-  ]
+  ],
+  "delivery": {
+    "runtime_source_commit": "bad6e2e6a7ec36d1c84b5c285a805fd7da00f35a",
+    "aurora_commit": "be08d453b852df6b25e2a0a841cf7a431d13201b",
+    "remote_commits_verified": true,
+    "installed_self_sha256": "a9e5b3bc2fc1eb701344c879cb4885ecc04b33af76aab3b16e64ee0940638b2d",
+    "original_ini_sha256": "e903fbc96bcff24029076f0ba6e6ce7e28ac088bc437cfe9fb646237abd99493",
+    "package_temporary_file_removed": true,
+    "installed_sfo_attribute2": 12,
+    "device_measurements": "Remote launch accepted and managed INI initialization observed; no cleanup FPS/visual/stability measurement",
+    "receipt_directory": "delivery-20261011",
+    "final_ini_sha256": "db238344af91d2652cc693b2190d6b06c9aaacaffa73b0062f7c85c8d89d2050",
+    "effective_original_settings_unchanged": true,
+    "new_managed_defaults": {
+      "gxm_raster_uniform_reuse": "0",
+      "gxm_native_pn_palette": "0"
+    },
+    "remote_launch": "Launched",
+    "post_launch_coredumps": []
+  }
 }

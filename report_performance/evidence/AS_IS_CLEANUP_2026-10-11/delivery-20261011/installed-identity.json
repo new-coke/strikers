@@ -1,0 +1,50 @@
+{
+  "time_unix": 1791731877.238979,
+  "user_report": "Installation completed; Strikers closed",
+  "installed_self": {
+    "sha256": "a9e5b3bc2fc1eb701344c879cb4885ecc04b33af76aab3b16e64ee0940638b2d",
+    "bytes": 3605105,
+    "byte_identical_to_candidate": true
+  },
+  "config": {
+    "sha256": "e903fbc96bcff24029076f0ba6e6ce7e28ac088bc437cfe9fb646237abd99493",
+    "byte_identical_to_preflight": true
+  },
+  "installed_sfo": {
+    "sha256": "1122c6666849b3f7a4f0b6a3b358bd160521ba20371b8fd612576c532bbe8c12",
+    "byte_identical_to_candidate": true,
+    "TITLE_ID": "SMSVITA01",
+    "ATTRIBUTE2": 12
+  },
+  "removed_update_package": {
+    "sha256": "cc933e6744785ac47874e47578ec9ddfac49f73b8726540c8c517a2033cfb022",
+    "readback_verified": true,
+    "file": "strikers-update.vpk"
+  },
+  "ux0:/app/SMSVITA01": [
+    "sce_sys",
+    "eboot.bin"
+  ],
+  "ux0:/data/strikersVita": [
+    "strikers.ini",
+    "aurora-vita",
+    "cardA",
+    "cardB",
+    "sms-native-gxm-static.psarc",
+    "sms.psarc",
+    "sms-native-20261006-cache.psarc",
+    "sms-native-balanced-20261008.psarc"
+  ],
+  "ux0:/data": [
+    "battleship",
+    "System12Vita",
+    "wiicompiled-vita",
+    "shader_cache",
+    "wiicompiled-vita-game.vpk",
+    "wiicompiled-vita-input-memory.vpk",
+    "VitaDB",
+    "strikersVita",
+    "aurora-vita"
+  ],
+  "coredumps": []
+}
