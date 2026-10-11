@@ -1,0 +1,5 @@
+cd /Users/robin994/Documents/Code/strikersVita/smstrikers-port
+STRIKERS_GX_THREAD=ON STRIKERS_GXM_LEAN_RENDER=OFF STRIKERS_GC_NATIVE_RES=OFF \
+STRIKERS_GXM_DIRECT_DRAW_SUBMIT=ON STRIKERS_GXM_DIRECT_STREAM_WRITE=OFF \
+STRIKERS_GXM_BUILD_DIR=/Users/robin994/Documents/Code/strikersVita/smstrikers-port/build-vita-gxm-resolution-20261010 \
+./build-vita-native-gxm.sh

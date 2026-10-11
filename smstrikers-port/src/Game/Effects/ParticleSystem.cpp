@@ -1158,8 +1158,3 @@ bool fxParticleShutdown()
     FreeParticles();
     return true;
 }
-
-static int fxNumParticlesActive()
-{
-    return MaxNumParticles - freeParticles.m_numNodes;
-}

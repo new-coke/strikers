@@ -1,0 +1,59 @@
+{
+  "root_head": "7014a61e3060dcd1ea73e275df90f290ac2f8a99",
+  "aurora_head": "dec0a58028972f3c4eb295235cd94ba3c24aabc6",
+  "dirty_checkout": true,
+  "host_tests": "37/37 PASS",
+  "frontend_sanitizers": "ASan/UBSan 140850 checks, 0 failures; leak detection unavailable on this macOS platform",
+  "config_tests": "PASS default OFF, explicit first-value ON preserved over duplicate/default OFF",
+  "gxm_standalone_build": "PASS",
+  "strikers_gxm_build": "PASS",
+  "native_binary_audit": "PASS 12855 executable symbols, native GXM without GL/vgl/vita2d",
+  "flags": {
+    "CMAKE_BUILD_TYPE": {
+      "control": "Release",
+      "candidate": "Release"
+    },
+    "STRIKERS_VITA_GX_THREAD": {
+      "control": "ON",
+      "candidate": "ON"
+    },
+    "STRIKERS_VITA_GXM_LEAN_RENDER": {
+      "control": "OFF",
+      "candidate": "OFF"
+    },
+    "STRIKERS_VITA_GXM_DIRECT_STREAM_WRITE": {
+      "control": "OFF",
+      "candidate": "OFF"
+    },
+    "STRIKERS_VITA_GXM_DIRECT_DRAW_SUBMIT": {
+      "control": "ON",
+      "candidate": "ON"
+    },
+    "AURORA_VITA_DISTINCT_CPU_CORES": {
+      "control": "OFF",
+      "candidate": "OFF"
+    },
+    "AURORA_VITA_GXM_IMMEDIATE_DRAW_VIEW": {
+      "control": "OFF",
+      "candidate": "OFF"
+    },
+    "STRIKERS_VITA_LTO_JOBS": {
+      "control": "auto",
+      "candidate": "auto"
+    },
+    "STRIKERS_VITA_SHADER_PROFILE": {
+      "control": "SEALED",
+      "candidate": "SEALED"
+    },
+    "STRIKERS_VITA_NATIVE_CMPR": {
+      "control": "OFF",
+      "candidate": "OFF"
+    },
+    "STRIKERS_VITA_NATIVE_GX_TEXTURES": {
+      "control": "ON",
+      "candidate": "ON"
+    }
+  },
+  "default_flag": 0,
+  "native_mkw_code_imported": false
+}

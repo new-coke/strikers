@@ -1,0 +1,9 @@
+{
+  "time_unix": 1791724918.466772,
+  "host": "192.168.1.79",
+  "note": "User confirmed VitaShell FTP active; Strikers closed; do not destroy VitaShell before transfer",
+  "ftp_welcome": "220 FTPVita Server ready.",
+  "previous_self_sha256": "ebbc7f2b42973d4f6528e01fb6fecc682483f82dd38d547db26deab404cf2117",
+  "previous_ini_sha256": "e903fbc96bcff24029076f0ba6e6ce7e28ac088bc437cfe9fb646237abd99493",
+  "error": "error_perm('550 File not found.')"
+}

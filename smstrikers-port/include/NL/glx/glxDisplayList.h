@@ -8,7 +8,7 @@ struct DisplayList
     /* 0x00 */ u32 magic;
     /* 0x04 */ void* list;
     /* 0x08 */ u32 size;
-    // PORT: two inline u16s overlaying DisplayListEx's m_numStreams/m_hasColorStream.
+    // PORT: inline stream count and direct-color flag; retain the console layout.
     /* 0x0C */ unsigned short indices[2];
 }; // total size: 0x10
 

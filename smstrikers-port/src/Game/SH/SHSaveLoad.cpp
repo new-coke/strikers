@@ -254,13 +254,6 @@ void FormatCB()
     PushSceneType(SaveLoadScene::ST_FORMAT);
 }
 
-static void DiffCardProceedAnywayCB()
-{
-    SaveLoad::RememberCurrentMemCardSerialID(0);
-    gSceneTypeStackDepth = 1;
-    gSaveLoadStarted = false;
-    gSaveLoadFinished = true;
-}
 
 /**
  * Offset/Address/Size: 0x24E0 | 0x800B2A68 | size: 0x20

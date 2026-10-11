@@ -1,0 +1,25 @@
+[
+  {
+    "path": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/vitagl-ab-20261010/vg-v120-vitagl-fix/vg-v120-vitagl-fix.csv",
+    "sha256": "225e31b0e49e86b44ff7054c14fb9ca6d313989aafd19914ce380030317a7e86",
+    "metadata": [
+      "# strikers-frame-capture-v1 diagnostics=1 fps_overlay=0",
+      "# play_only=1 counter=live_play",
+      "# actual_cpu_mhz=444 actual_gpu_mhz=222 actual_bus_mhz=222 actual_xbar_mhz=166"
+    ],
+    "samples": 120,
+    "all_gameplay": true,
+    "live_play_only": true,
+    "match_frame_first": 60,
+    "match_frame_last": 179,
+    "elapsed_fps": 4.1509733928831976,
+    "mean_ms": 240.90735,
+    "median_ms": 203.3955,
+    "p95_ms": 258.681,
+    "p99_ms": 310.419,
+    "deadline_60_pct": 0.0,
+    "deadline_30_pct": 0.0,
+    "tasks_median_ms": 202.034,
+    "present_median_ms": 0.721
+  }
+]

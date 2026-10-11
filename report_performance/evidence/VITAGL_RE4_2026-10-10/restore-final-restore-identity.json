@@ -1,0 +1,19 @@
+{
+  "host": "192.168.1.79",
+  "action": "restore",
+  "time_unix": 1791629725.650502,
+  "label": "candidate",
+  "kill": "Error: cannot kill the app. Is the TITLEID correct?",
+  "binary": {
+    "path": "ux0:/app/SMSVITA01/eboot.bin",
+    "sha256": "0de405e4fa3891e04b298d6e8b8198ca8fda7e7ddb3b57d08444f635337e45f3",
+    "previous_sha256": "35ecaa023b25a975041080ce66d47726cf39fbfbab41e0a79ae57e6b3a439bf4",
+    "remote_backup": "eboot.bin.backup-fc6315f43579"
+  },
+  "ini": {
+    "path": "ux0:/data/strikersVita/strikers.ini",
+    "sha256": "efb59a686ba0c3e0ffca1fbbb952d053859361ef556e0d59872fe2ff7bb0a40c",
+    "previous_sha256": "efb59a686ba0c3e0ffca1fbbb952d053859361ef556e0d59872fe2ff7bb0a40c",
+    "remote_backup": "strikers.ini.backup-deca3c234f53"
+  }
+}

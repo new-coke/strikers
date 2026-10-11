@@ -1,0 +1,55 @@
+{
+  "self_sha256": "dbc5a1a5914d3e2096cbc23a0b3f4f5beceb513e6193d81cabf661cf3d988735",
+  "changed_config_keys": [
+    "gxm_raster_uniform_reuse"
+  ],
+  "off": {
+    "path": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/frontend-raster-reuse-20261011/off-run/perf-test.csv",
+    "sha256": "57fabef2821d576978516c8132ac0b987b0ca7dae047e65c70801d16cd451714",
+    "metadata": [
+      "# strikers-frame-capture-v1 diagnostics=0 fps_overlay=0",
+      "# play_only=1 counter=live_play",
+      "# actual_cpu_mhz=444 actual_gpu_mhz=222 actual_bus_mhz=222 actual_xbar_mhz=166"
+    ],
+    "samples": 300,
+    "all_gameplay": true,
+    "live_play_only": true,
+    "match_frame_first": 600,
+    "match_frame_last": 899,
+    "elapsed_fps": 18.896252268495086,
+    "mean_ms": 52.92054666666667,
+    "median_ms": 50.2125,
+    "p95_ms": 68.159,
+    "p99_ms": 93.321,
+    "deadline_60_pct": 0.0,
+    "deadline_30_pct": 0.0,
+    "tasks_median_ms": 49.8895,
+    "present_median_ms": 0.329
+  },
+  "on": {
+    "path": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/frontend-raster-reuse-20261011/on-run/perf-test.csv",
+    "sha256": "83f289818300058cb99699c93b94df4b57fe9b3728d8e8998df610290d9f0162",
+    "metadata": [
+      "# strikers-frame-capture-v1 diagnostics=0 fps_overlay=0",
+      "# play_only=1 counter=live_play",
+      "# actual_cpu_mhz=444 actual_gpu_mhz=222 actual_bus_mhz=222 actual_xbar_mhz=166"
+    ],
+    "samples": 300,
+    "all_gameplay": true,
+    "live_play_only": true,
+    "match_frame_first": 600,
+    "match_frame_last": 899,
+    "elapsed_fps": 18.269079053897986,
+    "mean_ms": 54.737296666666666,
+    "median_ms": 52.0695,
+    "p95_ms": 70.346,
+    "p99_ms": 94.916,
+    "deadline_60_pct": 0.0,
+    "deadline_30_pct": 0.0,
+    "tasks_median_ms": 51.706,
+    "present_median_ms": 0.327
+  },
+  "fps_change_pct": -3.319034937116916,
+  "mean_frame_reduction_pct": -3.432976630878848,
+  "limitation": "One sequential matched quiet OFF/ON pair; no independent full visual/input/audio certification. No guarantee of repeatable FPS improvement or 60 FPS."
+}

@@ -445,18 +445,6 @@ bool Replay::LockReel(float numSeconds, int idx, int quality)
  * renderMemoryLayout above is the "draw_replay_bar" flag that gated it and is
  * otherwise unread here.
  */
-static float ReplayLayoutBarWidth(const Replay::Frame* frame, int memorySize)
-{
-    float width = 0.0f;
-
-    while (frame != nullptr)
-    {
-        width += (float)frame->mSize;
-        frame = frame->mNext;
-    }
-
-    return width / (float)memorySize;
-}
 
 /**
  * Offset/Address/Size: 0x20 | 0x802138CC | size: 0x18

@@ -1,0 +1,36 @@
+-- Version: 1.3.0-assets-20261005
+-- Aurora Vita renderer: GXM (compile-time selection)
+-- xxHash build type: Release
+-- Architecture: arm64
+CMake Warning (deprecated) at build-vita-gxm-latest/_deps/robin_hood-src/CMakeLists.txt:1 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+This warning is for project developers.  Use -Wno-author or -Wno-deprecated
+to suppress it.
+
+-- Disc images: .iso/.gcm, .ciso and .gcz (zlib)
+-- in scope: 498 game/engine + 26 ODE translation units
+-- Configuring done (0.6s)
+-- Generating done (0.3s)
+-- Build files have been written to: /Users/robin994/Documents/Code/strikersVita/smstrikers-port/build-vita-gxm-latest
+[ 12%] Built target xxhash
+[ 25%] Built target aurora_vita_common
+[ 25%] Building CXX object CMakeFiles/aurora_vita_gxm_backend.dir/extern/aurora-vita/platforms/vita/gxm/gxm_facade.cpp.obj
+[ 25%] Building CXX object CMakeFiles/aurora_vita_gxm_backend.dir/extern/aurora-vita/platforms/vita/gxm/gxm_renderer.cpp.obj
+[ 25%] Building CXX object CMakeFiles/aurora_vita_gxm_backend.dir/extern/aurora-vita/platforms/vita/gxm/gxm_program_cache.cpp.obj
+[ 25%] Building CXX object CMakeFiles/aurora_vita_gxm_backend.dir/extern/aurora-vita/platforms/vita/aurora_vita_backend.cpp.obj
+[ 25%] Building CXX object CMakeFiles/aurora_vita_gxm_backend.dir/extern/aurora-vita/platforms/vita/gx/aurora_vita_draw_sink.cpp.obj
+[ 37%] Building CXX object CMakeFiles/aurora_vita_gxm_backend.dir/extern/aurora-vita/platforms/vita/gfx/vita_draw_adapter.cpp.obj
+[ 37%] Building CXX object CMakeFiles/aurora_vita_gxm_backend.dir/extern/aurora-vita/platforms/vita/integration/vita_gx_backend.cpp.obj
+[ 37%] Building CXX object CMakeFiles/aurora_vita_gxm_backend.dir/extern/aurora-vita/platforms/vita/gfx/vita_native_assets.cpp.obj
+[ 37%] Building CXX object CMakeFiles/aurora_vita_gxm_backend.dir/extern/aurora-vita/platforms/vita/gx/aurora_gx_bridge.cpp.obj
+[ 37%] Building CXX object CMakeFiles/aurora_vita_gxm_backend.dir/extern/aurora-vita/lib/vita/gx_frontend_state.cpp.obj
+[ 37%] Building CXX object CMakeFiles/aurora_vita_gxm_backend.dir/extern/aurora-vita/lib/gx/fifo.cpp.obj
+[ 50%] Building CXX object CMakeFiles/aurora_vita_gxm_backend.dir/extern/aurora-vita/lib/gx/command_processor.cpp.obj
+[ 50%] Building CXX object CMakeFiles/aurora_vita_gxm_backend.dir/extern/aurora-vita/lib/dolphin/gx/GXFrameBuffer.cpp.obj
+[ 50%] Linking CXX static library libaurora_vita_gxm_backend.a
+[100%] Built target aurora_vita_gxm_backend

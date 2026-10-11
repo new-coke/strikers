@@ -1,0 +1,146 @@
+{
+  "date": "2026-10-11",
+  "historical_diagnostic_source": "report_performance/evidence/NATIVE_MODEL_UNIFORMS_2026-10-09/nu-d-gx-consumer.csv",
+  "historical_diagnostic_sha256": "e3b725109118e683663bab8bf6f5a9af9576d8bbde5ae70e1e69a3880ea4ea2f",
+  "diagnostic_frame_first": 618,
+  "diagnostic_frame_last": 737,
+  "samples": 120,
+  "units": "microseconds for time columns; counts for other columns",
+  "historical_diagnostic_metrics": {
+    "frame_us": {
+      "median": 53248.0,
+      "mean": 57569.833333333336
+    },
+    "draw_frontend_us": {
+      "median": 26797.5,
+      "mean": 28176.241666666665
+    },
+    "state_translate_us": {
+      "median": 6993.5,
+      "mean": 7005.608333333334
+    },
+    "state_pipeline_us": {
+      "median": 2522.5,
+      "mean": 2548.7166666666667
+    },
+    "state_layout_us": {
+      "median": 996.0,
+      "mean": 992.4416666666667
+    },
+    "state_vertex_us": {
+      "median": 1279.0,
+      "mean": 1281.9083333333333
+    },
+    "state_key_us": {
+      "median": 671.0,
+      "mean": 676.25
+    },
+    "submit_us": {
+      "median": 5124.5,
+      "mean": 5169.266666666666
+    },
+    "vertex_decode_us": {
+      "median": 2915.0,
+      "mean": 3219.2916666666665
+    },
+    "geometry_cache_us": {
+      "median": 1931.5,
+      "mean": 2178.8083333333334
+    },
+    "texture_resolve_us": {
+      "median": 990.0,
+      "mean": 2050.733333333333
+    },
+    "command_build_us": {
+      "median": 2895.5,
+      "mean": 2927.4666666666667
+    },
+    "fixed_uniform_build_us": {
+      "median": 727.0,
+      "mean": 731.1333333333333
+    },
+    "fixed_uniform_publish_us": {
+      "median": 916.5,
+      "mean": 941.8
+    },
+    "producer_wait_us": {
+      "median": 19513.0,
+      "mean": 21257.091666666667
+    },
+    "consumer_wait_us": {
+      "median": 1060.0,
+      "mean": 1597.7916666666667
+    },
+    "display_queue_us": {
+      "median": 32.0,
+      "mean": 34.90833333333333
+    },
+    "draws": {
+      "median": 272.0,
+      "mean": 274.64166666666665
+    },
+    "vertices": {
+      "median": 64722.0,
+      "mean": 66809.51666666666
+    },
+    "gpu_vertices": {
+      "median": 62744.0,
+      "mean": 64621.558333333334
+    },
+    "texture_uploads": {
+      "median": 0.0,
+      "mean": 0.058333333333333334
+    },
+    "texture_upload_bytes": {
+      "median": 0.0,
+      "mean": 894.1333333333333
+    }
+  },
+  "current_quiet_candidate": {
+    "path": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/decoder-install-20261011-8965defa/candidate-run/perf-test.csv",
+    "sha256": "16f6446fd42c0ee22fd0a3300c69c6368a86e906f9af0436c7008b4788fbfde8",
+    "metadata": [
+      "# strikers-frame-capture-v1 diagnostics=0 fps_overlay=0",
+      "# play_only=1 counter=live_play",
+      "# actual_cpu_mhz=444 actual_gpu_mhz=222 actual_bus_mhz=222 actual_xbar_mhz=166"
+    ],
+    "samples": 300,
+    "all_gameplay": true,
+    "live_play_only": true,
+    "match_frame_first": 600,
+    "match_frame_last": 899,
+    "elapsed_fps": 18.757062033855746,
+    "mean_ms": 53.313253333333336,
+    "median_ms": 50.6905,
+    "p95_ms": 70.947,
+    "p99_ms": 93.255,
+    "deadline_60_pct": 0.0,
+    "deadline_30_pct": 0.0,
+    "tasks_median_ms": 50.348,
+    "present_median_ms": 0.328
+  },
+  "gpu_geometry_ratio_from_median_counts_pct": 96.94385216773277,
+  "limits": [
+    "Historical diagnostic scopes are inclusive and nested, and producer/consumer threads overlap. Do not sum them.",
+    "Historical diagnostic times are not a breakdown of the current quiet SELF.",
+    "Geometry GPU counters do not prove offline origin or eliminate live GX state processing."
+  ],
+  "priority": "Reduce per-draw producer and consumer preparation for Characters/Shadowed; identify exclusive CPU and waits before attributing savings. No new renderer optimization or Vita mutation performed in this inspection.",
+  "wait_counter_semantics": {
+    "producer_wait_us": "enqueue_job caller waits for free queue space",
+    "consumer_wait_us": "wait_serial caller waits for job completion; does not measure idle consumer worker time",
+    "source": "smstrikers-port/extern/aurora-vita/lib/gx/fifo.cpp:341 and 378"
+  },
+  "timer_semantics": {
+    "clock": "sceKernelGetProcessTimeWide; elapsed wall time, not active CPU cycles or GPU timestamps",
+    "submit_us": "Elapsed time around Renderer execute/draw, including bindings, driver calls and possible waits/barriers; accumulated over the frame",
+    "vertex_decode_us": "With split_vertex_phases=0, CPU fallback can fuse vertex decode, transform and final packing; fixed-vertex GPU stream path fuses decode and packing",
+    "historical_split_vertex_phases": 0,
+    "source": [
+      "platforms/vita/gfx/vita_telemetry.cpp:13",
+      "platforms/vita/gx/aurora_vita_draw_sink.cpp:242",
+      "platforms/vita/gfx/vita_draw_adapter.cpp:400",
+      "platforms/vita/gxm/gxm_facade.cpp:587"
+    ]
+  }
+}

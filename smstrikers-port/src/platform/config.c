@@ -65,7 +65,11 @@ static const VitaDefaultConfigEntry s_vita_defaults[] = {
     { "gxm_native_model_draw", "0" },
     { "gxm_native_model_cache", "0" },
     { "gxm_native_model_uniform_build", "0" },
+    { "gxm_native_model_prepared", "0" },
+    { "gxm_native_model_early", "0" },
     { "gxm_native_model_census", "0" },
+    { "gxm_native_model_metrics", "0" },
+    { "gxm_internal_resolution", "auto" },
     { "vita_native_audio", "1" },
     { "vita_native_video", "1" },
     { "task_profile", "1" },
@@ -90,6 +94,8 @@ static const VitaDefaultConfigEntry s_vita_defaults[] = {
     { "gxm_xf_equal_pos_writes", "0" },
     { "gxm_xf_equal_matrix_writes", "0" },
     { "gxm_tev_decoded_write_gate", "0" },
+    { "gxm_raster_uniform_reuse", "0" },
+    { "gxm_native_pn_palette", "0" },
     { "gxm_fragment_prepare_cache", "1" },
     { "gxm_uniform_delta_upload", "0" },
     { "gxm_a4_fragment_opt", "0" },
@@ -156,6 +162,28 @@ static void configure_diagnostics(void)
 
 const char* PortConfigPath(void) { return s_path[0] != '\0' ? s_path : NULL; }
 
+int PortConfigVitaRenderSize(unsigned int* width, unsigned int* height)
+{
+    const char* value = getenv("STRIKERS_GXM_INTERNAL_RESOLUTION");
+    if (value == NULL || strcmp(value, "auto") == 0)
+        return 0;
+    if (width == NULL || height == NULL)
+        return -1;
+    if (strcmp(value, "960x544") == 0)
+    {
+        *width = 960;
+        *height = 544;
+        return 1;
+    }
+    if (strcmp(value, "640x480") == 0)
+    {
+        *width = 640;
+        *height = 480;
+        return 1;
+    }
+    return -1;
+}
+
 static int exists(const char* path)
 {
     FILE* f = fopen(path, "rb");
@@ -191,15 +219,56 @@ static int write_vita_default_block(FILE* f)
     return fprintf(f, "%s\n", PORT_VITA_DEFAULTS_END) < 0 ? -1 : 0;
 }
 
+static int vita_default_block_current(const char* path)
+{
+    FILE* in = fopen(path, "rb");
+    char line[1024], expected[256];
+    int found = 0, valid = 0;
+    if (in == NULL)
+        return 0;
+    while (fgets(line, sizeof line, in) != NULL)
+    {
+        if (line_is_marker(line, PORT_VITA_DEFAULTS_BEGIN))
+        {
+            found = strcmp(line, PORT_VITA_DEFAULTS_BEGIN "\n") == 0;
+            break;
+        }
+    }
+    if (!found)
+        goto done;
+    snprintf(expected, sizeof expected, "# profile_revision = %s\n", PORT_VITA_DEFAULTS_REVISION);
+    if (fgets(line, sizeof line, in) == NULL || strcmp(line, expected) != 0 ||
+        fgets(line, sizeof line, in) == NULL ||
+        strcmp(line, "# Managed automatically. Put custom overrides outside this block.\n") != 0)
+        goto done;
+    for (size_t i = 0; i < sizeof s_vita_defaults / sizeof s_vita_defaults[0]; ++i)
+    {
+        snprintf(expected, sizeof expected, "%s = %s\n", s_vita_defaults[i].key, s_vita_defaults[i].value);
+        if (fgets(line, sizeof line, in) == NULL || strcmp(line, expected) != 0)
+            goto done;
+    }
+    // Overrides after the managed block must still move before defaults. Only
+    // an exact current block at EOF is safe to keep without rewriting.
+    if (fgets(line, sizeof line, in) != NULL && strcmp(line, PORT_VITA_DEFAULTS_END "\n") == 0 &&
+        fgetc(in) == EOF && !ferror(in))
+        valid = 1;
+done:
+    fclose(in);
+    return valid;
+}
+
 static int refresh_vita_default_config(const char* path)
 {
     char temp[1100];
     char line[1024];
-    FILE* in = fopen(path, "rb");
+    FILE* in;
     FILE* out;
     int managed = 0;
     int copied = 0;
 
+    if (vita_default_block_current(path))
+        return 0;
+    in = fopen(path, "rb");
     if (snprintf(temp, sizeof temp, "%s.tmp", path) >= (int)sizeof temp)
         return -1;
     remove(temp);

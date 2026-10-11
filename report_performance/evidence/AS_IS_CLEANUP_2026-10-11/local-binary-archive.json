@@ -1,0 +1,53 @@
+{
+  "reason": "Generated executable backups and host debug symbols retained on PC instead of versioning generated binaries",
+  "files": [
+    {
+      "original_repository_path": "report_performance/evidence/ASSET_IO_2026-10-11/failed-package-install/eboot.bin",
+      "local_archive_path": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/as-is-cleanup-20261011/repository-binary-archive/ASSET_IO_2026-10-11/failed-package-install/eboot.bin",
+      "sha256": "ebbc7f2b42973d4f6528e01fb6fecc682483f82dd38d547db26deab404cf2117",
+      "bytes": 3603207
+    },
+    {
+      "original_repository_path": "report_performance/evidence/ASSET_IO_2026-10-11/final-install/eboot.bin.before",
+      "local_archive_path": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/as-is-cleanup-20261011/repository-binary-archive/ASSET_IO_2026-10-11/final-install/eboot.bin.before",
+      "sha256": "ebbc7f2b42973d4f6528e01fb6fecc682483f82dd38d547db26deab404cf2117",
+      "bytes": 3603207
+    },
+    {
+      "original_repository_path": "report_performance/evidence/AS_IS_CLEANUP_2026-10-11/draw-indices-oracle.dSYM/Contents/Info.plist",
+      "local_archive_path": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/as-is-cleanup-20261011/repository-binary-archive/AS_IS_CLEANUP_2026-10-11/draw-indices-oracle.dSYM/Contents/Info.plist",
+      "sha256": "062b1b11b45f363fd24a7a211e60bfe2f502b355fba89c2eada66200d788510e",
+      "bytes": 648
+    },
+    {
+      "original_repository_path": "report_performance/evidence/AS_IS_CLEANUP_2026-10-11/draw-indices-oracle.dSYM/Contents/Resources/Relocations/aarch64/draw-indices-oracle.yml",
+      "local_archive_path": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/as-is-cleanup-20261011/repository-binary-archive/AS_IS_CLEANUP_2026-10-11/draw-indices-oracle.dSYM/Contents/Resources/Relocations/aarch64/draw-indices-oracle.yml",
+      "sha256": "8751187b694da883ede12d2a38912fe92041d27fa879ab5dd87761b92710ac2a",
+      "bytes": 202
+    },
+    {
+      "original_repository_path": "report_performance/evidence/AS_IS_CLEANUP_2026-10-11/draw-indices-oracle.dSYM/Contents/Resources/DWARF/draw-indices-oracle",
+      "local_archive_path": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/as-is-cleanup-20261011/repository-binary-archive/AS_IS_CLEANUP_2026-10-11/draw-indices-oracle.dSYM/Contents/Resources/DWARF/draw-indices-oracle",
+      "sha256": "7b55022ac89e1f23b75efdd55baa01e519b3d40b735a15c29f53b10015fb237b",
+      "bytes": 218836
+    },
+    {
+      "original_repository_path": "report_performance/evidence/AS_IS_CLEANUP_2026-10-11/skin-hoist-oracle.dSYM/Contents/Info.plist",
+      "local_archive_path": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/as-is-cleanup-20261011/repository-binary-archive/AS_IS_CLEANUP_2026-10-11/skin-hoist-oracle.dSYM/Contents/Info.plist",
+      "sha256": "1110da96b6d62d439fa69c348fda72d297ce89aa1ac0c6b28f22802bfac41816",
+      "bytes": 646
+    },
+    {
+      "original_repository_path": "report_performance/evidence/AS_IS_CLEANUP_2026-10-11/skin-hoist-oracle.dSYM/Contents/Resources/Relocations/aarch64/skin-hoist-oracle.yml",
+      "local_archive_path": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/as-is-cleanup-20261011/repository-binary-archive/AS_IS_CLEANUP_2026-10-11/skin-hoist-oracle.dSYM/Contents/Resources/Relocations/aarch64/skin-hoist-oracle.yml",
+      "sha256": "2c610c97a31a78ffb56ef0aa9b9daaf65f154e8c8cea2c7d7e2a0cf3576ec083",
+      "bytes": 200
+    },
+    {
+      "original_repository_path": "report_performance/evidence/AS_IS_CLEANUP_2026-10-11/skin-hoist-oracle.dSYM/Contents/Resources/DWARF/skin-hoist-oracle",
+      "local_archive_path": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/as-is-cleanup-20261011/repository-binary-archive/AS_IS_CLEANUP_2026-10-11/skin-hoist-oracle.dSYM/Contents/Resources/DWARF/skin-hoist-oracle",
+      "sha256": "9d32f9a3827d6dca286d476e45dd8568d328b2dea91e7c1a25b36d2b414621c6",
+      "bytes": 242796
+    }
+  ]
+}

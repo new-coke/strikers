@@ -536,47 +536,6 @@ cBaseCamera* cCameraManager::PopCameraWithTransition(float fDuration, eCameraTra
     return cCameraManager::PerformCameraPop();
 }
 
-static void DrawBoundingSphere(const DrawableObject* drawable)
-{
-    const nlMatrix4& worldMatrix = drawable->GetWorldMatrix();
-    nlVector3 centre = *(const nlVector3*)&worldMatrix.m41;
-    const nlColour yellow = { 0xFF, 0xFF, 0, 0 };
-    const nlColour blue = { 0, 0, 0xFF, 0 };
-
-    nlMatrix4 viewMatrix = cCameraManager::PeekCamera()->GetViewMatrix();
-    nlVector4 xVector;
-    nlVector4 yVector;
-    nlVec4Set(xVector, viewMatrix.m11, viewMatrix.m12, viewMatrix.m13, 0.0f);
-    nlVec4Set(yVector, viewMatrix.m21, viewMatrix.m22, viewMatrix.m23, 0.0f);
-
-    u16 startAngle = (u16)(s32)(10430.378f * nlATan2f(xVector.y, xVector.x));
-    nlVector3 lastPoint;
-    nlVector3 firstPoint;
-    int i;
-    for (i = 0; i < 16; i++)
-    {
-        nlVector3 p;
-        nlVector3 v;
-        nlSinCos(&v.x, &v.y, (u16)(startAngle + (i << 12)));
-        v.z = 0.0f;
-        p.x = centre.x + drawable->m_fBoundingRadius * (xVector.x * v.x + yVector.x * v.y);
-        p.y = centre.y + drawable->m_fBoundingRadius * (xVector.y * v.x + yVector.y * v.y);
-        p.z = centre.z + drawable->m_fBoundingRadius * (xVector.z * v.x + yVector.z * v.y);
-
-        if (i == 0)
-        {
-            firstPoint = p;
-        }
-        else
-        {
-            g_ShapeRenderer.DrawLine3D(lastPoint, p, blue, true);
-        }
-        lastPoint = p;
-    }
-
-    g_ShapeRenderer.DrawLine3D(lastPoint, firstPoint, blue, true);
-    g_ShapeRenderer.DrawSpherePrimitive(worldMatrix, drawable->m_fBoundingRadius, yellow);
-}
 
 /**
  * Offset/Address/Size: 0x200 | 0x801A6888 | size: 0x390

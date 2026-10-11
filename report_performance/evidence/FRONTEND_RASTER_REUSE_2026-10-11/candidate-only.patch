@@ -1,0 +1,381 @@
+--- a/smstrikers-port/extern/aurora-vita/lib/gx/command_processor.cpp
++++ b/smstrikers-port/extern/aurora-vita/lib/gx/command_processor.cpp
+@@ -45,6 +45,7 @@
+ XfEqualMatrixStats sXfEqualMatrixStats{};
+ bool sTevDecodedWriteGate=false;
+ TevDecodedWriteStats sTevDecodedWriteStats{};
++bool sRasterUniformReuse=false;
+ }
+ 
+ void set_xf_equal_position_writes(bool enabled) noexcept {
+@@ -62,6 +63,8 @@
+   sTevDecodedWriteStats={};
+ }
+ TevDecodedWriteStats tev_decoded_write_stats() noexcept {return sTevDecodedWriteStats;}
++void set_raster_uniform_reuse(bool enabled) noexcept {sRasterUniformReuse=enabled;}
++bool raster_uniform_reuse_enabled() noexcept {return sRasterUniformReuse;}
+ 
+ using IndexBuffer = std::vector<u16>;
+ 
+@@ -308,17 +311,21 @@
+ }
+ 
+ // Marks draw state dirty *and* invalidates the resolved-pipeline memo.
+-static inline void mark_pipeline_state_dirty_at(unsigned line) noexcept {
++static inline void mark_pipeline_state_dirty_at(unsigned line, bool rasterOnly = false) noexcept {
+ #if defined(AURORA_VITA_FIFO_PROFILE)
+   if (aurora::vita::gfx::g_fifoProfileEnabled || aurora::vita::gfx::gxm_disabled(aurora::vita::gfx::GxmDiagPhases))
+     aurora::vita::gfx::note_pipeline_invalidation(line);
+ #else
+   (void)line;
+ #endif
+-  g_gxState.mark_dirty();
++  const bool narrow = rasterOnly && sRasterUniformReuse;
++  g_gxState.mark_dirty(narrow ? StateDomain::Raster : StateDomain::All);
+   g_gxState.pipelineStateGeneration = next_gx_state_epoch();
++  g_gxState.pipelineRasterGeneration = narrow ? g_gxState.pipelineStateGeneration : 0;
++  if (!narrow) g_gxState.pipelineUniformGeneration = g_gxState.pipelineStateGeneration;
+ }
+ #define mark_pipeline_state_dirty() mark_pipeline_state_dirty_at(__LINE__)
++#define mark_raster_pipeline_state_dirty() mark_pipeline_state_dirty_at(__LINE__, true)
+ 
+ // Byte snapshot of decoded state taken before a register write is applied.
+ // Many writes re-store values that decode to the same pipeline fields, or
+@@ -1158,7 +1165,7 @@
+     g_gxState.depthCompare = bp_get(value, 1, 0) != 0;
+     g_gxState.depthFunc = static_cast<GXCompare>(bp_get(value, 3, 1));
+     g_gxState.depthUpdate = bp_get(value, 1, 4) != 0;
+-    mark_pipeline_state_dirty();
++    mark_raster_pipeline_state_dirty();
+     break;
+   }
+ 
+@@ -1183,7 +1190,7 @@
+     } else {
+       g_gxState.blendMode = GX_BM_NONE;
+     }
+-    mark_pipeline_state_dirty();
++    mark_raster_pipeline_state_dirty();
+     break;
+   }
+ 
+--- a/smstrikers-port/extern/aurora-vita/lib/gx/command_processor.hpp
++++ b/smstrikers-port/extern/aurora-vita/lib/gx/command_processor.hpp
+@@ -34,6 +34,11 @@
+ void set_tev_decoded_write_gate(bool enabled) noexcept;
+ TevDecodedWriteStats tev_decoded_write_stats() noexcept;
+ 
++// BP depth/blend writes still translate their pipeline; only unrelated CPU
++// uniform preparation may be reused. Configure before starting the worker.
++void set_raster_uniform_reuse(bool enabled) noexcept;
++bool raster_uniform_reuse_enabled() noexcept;
++
+ // Reset the CP write-deduplication state whenever the GX shadow state is reinitialized.
+ void reset_cp_register_cache();
+ 
+--- a/smstrikers-port/extern/aurora-vita/lib/gx/gx.hpp
++++ b/smstrikers-port/extern/aurora-vita/lib/gx/gx.hpp
+@@ -483,6 +483,11 @@
+   }
+   // Bumped by the decoded register writes that feed populate_pipeline_config, and by nothing else.
+   u32 pipelineStateGeneration = next_gx_state_epoch();
++  // Raster-only BP transitions may keep CPU uniform snapshots. Every other
++  // pipeline invalidation advances the dependency epoch as well. The raster
++  // epoch proves that the latest pipeline change used that explicit path.
++  u32 pipelineUniformGeneration = next_gx_state_epoch();
++  u32 pipelineRasterGeneration = 0;
+   // Vita: bumped by indexed-array base/size/stride changes. Those feed only the
+   // vertex decode layout, not the translated pipeline, so the Vita DrawSink
+   // rebuilds the layout without retranslating the whole pipeline.
+--- a/smstrikers-port/extern/aurora-vita/platforms/vita/gx/aurora_vita_draw_sink.cpp
++++ b/smstrikers-port/extern/aurora-vita/platforms/vita/gx/aurora_vita_draw_sink.cpp
+@@ -12,6 +12,7 @@
+ #include "../../../tests/upstream_gx_stub.hpp"
+ #else
+ #include "../../../lib/gx/gx.hpp"
++#include "../../../lib/gx/command_processor.hpp"
+ #endif
+ #endif
+ #include <array>
+@@ -594,6 +595,16 @@
+   const uint32_t vertexProgramGeneration = aurora::gx::g_gxState.vertexProgramStateGeneration;
+   const bool translatedCacheHit = translatedStateValid_ && translatedStateGeneration_ == stateGeneration &&
+                                   translatedPrimitive_ == primitive && translatedFmt_ == fmt;
++  const auto& gxState = aurora::gx::g_gxState;
++  const UniformContract uniformContract{gxState.stateIdentity, gxState.pipelineUniformGeneration,
++                                        layoutGeneration, vertexProgramGeneration, primitive, fmt};
++  // Only the decoder's explicitly classified BP depth/blend transitions can
++  // bypass the pipeline-miss uniform rebuild. The snapshot must have the same
++  // complete contract; revisions below still track matrix/fragment changes.
++  const bool rasterUniformHit = aurora::gx::fifo::raster_uniform_reuse_enabled() &&
++      translatedVertexStateValid_ && !broadDirty && gxState.pipelineRasterGeneration == stateGeneration &&
++      translatedUniformContract_ == uniformContract;
++  const bool uniformPipelineMiss = !translatedCacheHit && !rasterUniformHit;
+   if (translatedCacheHit && translatedLayoutGeneration_ != layoutGeneration) {
+     // Only indexed-array bindings changed: the pipeline, its key and every
+     // flag derived from it stay valid; rebuild the decode layout alone.
+@@ -796,11 +807,11 @@
+   // The GPU vertex path copies only the state its generated shader can consume.
+   // Indexed-PN and lit draws include their position/normal palettes and lights;
+   // unsupported bump/dynamic-tex-matrix cases remain on the CPU path.
+-  const bool rebuildVertex=!translatedVertexStateValid_ || !translatedCacheHit || broadDirty ||
++  const bool rebuildVertex=!translatedVertexStateValid_ || uniformPipelineMiss || broadDirty ||
+       translatedVertexRevision_!=revisions.vertex ||
+       (translatedVertexStateLightweight_&&!fixedCandidate&&!fixedStreamCandidate);
+   const auto fragmentRevision=gfx::fragment_uniform_revision(pipeline,revisions);
+-  const bool rebuildFragment=!translatedVertexStateValid_ || !translatedCacheHit || broadDirty ||
++  const bool rebuildFragment=!translatedVertexStateValid_ || uniformPipelineMiss || broadDirty ||
+       translatedFragmentRevision_!=fragmentRevision;
+   if(rebuildVertex||rebuildFragment){
+     gfx::ScopedTelemetryPhase phase(telemetry_,gfx::TelemetryPhase::StateTranslate);
+@@ -823,6 +834,7 @@
+     translatedVertexRevision_=revisions.vertex;
+     translatedFragmentRevision_=fragmentRevision;
+     translatedVertexStateValid_=true;
++    translatedUniformContract_=uniformContract;
+   }
+   consumedStateSerial_=revisions.serial;
+   const auto& vertexState=translatedVertexState_;
+--- a/smstrikers-port/extern/aurora-vita/platforms/vita/gx/aurora_vita_draw_sink.hpp
++++ b/smstrikers-port/extern/aurora-vita/platforms/vita/gx/aurora_vita_draw_sink.hpp
+@@ -192,6 +192,12 @@
+   gfx::Handle whiteTexture_ = gfx::InvalidHandle;
+ #if defined(AURORA_VITA_UPSTREAM)
+   uint64_t translatedVertexRevision_ = 0, translatedFragmentRevision_ = 0;
++  struct UniformContract {
++    uint32_t stateIdentity = 0, pipeline = 0, layout = 0, vertexProgram = 0;
++    uint8_t primitive = 0, fmt = 0;
++    bool operator==(const UniformContract&) const = default;
++  };
++  UniformContract translatedUniformContract_{};
+   uint64_t resolvedTextureRevision_ = 0, consumedStateSerial_ = 0;
+   uint32_t resolvedTextureStateIdentity_ = 0;
+   uint32_t translatedStateGeneration_ = 0;
+--- a/smstrikers-port/extern/aurora-vita/platforms/vita/aurora_vita_backend.cpp
++++ b/smstrikers-port/extern/aurora-vita/platforms/vita/aurora_vita_backend.cpp
+@@ -436,6 +436,7 @@
+   aurora::gx::fifo::set_xf_equal_position_writes(c.gxm_xf_equal_pos_writes);
+   aurora::gx::fifo::set_xf_equal_matrix_writes(c.gxm_xf_equal_matrix_writes);
+   aurora::gx::fifo::set_tev_decoded_write_gate(c.gxm_tev_decoded_write_gate);
++  aurora::gx::fifo::set_raster_uniform_reuse(c.gxm_raster_uniform_reuse);
+   aurora::gx::fifo::set_display_list_shadow_enabled(c.display_list_shadow&&
+       !gfx::gxm_disabled(gfx::GxmDisableDisplayListShadow));
+ #endif
+--- a/smstrikers-port/extern/aurora-vita/platforms/vita/aurora_vita_backend.hpp
++++ b/smstrikers-port/extern/aurora-vita/platforms/vita/aurora_vita_backend.hpp
+@@ -230,6 +230,8 @@
+   // A5 TEV: inactive or semantically equal decoded stage writes must not
+   // invalidate live pipeline/vertex/fragment revisions.
+   bool gxm_tev_decoded_write_gate=false;
++  // Isolated CPU preparation experiment for BP depth/blend-only transitions.
++  bool gxm_raster_uniform_reuse=false;
+   // Prepared fragment bytes only; each draw still reserves a fresh GXM buffer.
+   bool gxm_fragment_prepare_cache=false;
+   // A3 experimental: copy a CPU-owned GXP vertex buffer image and upload only
+--- a/smstrikers-port/extern/aurora-vita/tests/vita_frontend_translation_test.cpp
++++ b/smstrikers-port/extern/aurora-vita/tests/vita_frontend_translation_test.cpp
+@@ -12,6 +12,7 @@
+ #include <cstdio>
+ #include "../lib/gx/display_list_shadow.hpp"
+ #include "gfx/vita_view_draw_capture.hpp"
++#include "gfx/vita_fixed_vertex.hpp"
+ #include <cstring>
+ #include <vector>
+ #include <dolphin/vi.h>
+@@ -516,6 +517,126 @@
+   }
+   sink.flush();sink.shutdown();renderer.shutdown();
+ }
++// Real BP commands, including masked writes, versus a full uniform translation.
++// Cover lit/indexed-PN CPU and the host backend's unlit resident/streamed GPU
++// contracts independently (lit GPU rendering itself requires Vita GXM).
++void raster_pipeline_uniform_reuse_oracle() {
++  using namespace aurora::gx;
++  using namespace aurora::gx::fifo;
++  for(bool enabled:{false,true})for(unsigned mode=0;mode<3;++mode) {
++    auto& g=g_gxState;g=GXState{};
++    g.proj.m0={1,0,0,0};g.proj.m1={0,1,0,0};g.proj.m2={0,0,1,0};g.proj.m3={0,0,0,1};
++    g.logicalViewport=g.renderViewport={0,0,960,544,0,1};
++    g.logicalScissor=g.renderScissor={0,0,960,544};
++    g.numChans=1;g.numTevStages=1;
++    g.tevStages[0].channelId=GX_COLOR0A0;
++    g.tevStages[0].colorPass.d=GX_CC_RASC;g.tevStages[0].alphaPass.d=GX_CA_RASA;
++    g.colorChannelConfig[GX_COLOR0].lightingEnabled=mode==0;
++    g.colorChannelState[GX_COLOR0].lightMask=1;
++    g.colorChannelState[GX_COLOR0].matColor={1,0.5f,0.25f,1};
++    g.lights[0].color={0.5f,1,0.25f,1};g.lights[0].pos={1,2,3,1};
++    g.vtxDesc[GX_VA_PNMTXIDX]=mode==0?GX_DIRECT:GX_NONE;
++    g.vtxDesc[GX_VA_POS]=GX_DIRECT;g.vtxDesc[GX_VA_NRM]=GX_DIRECT;
++    g.vtxFmts[0].attrs[GX_VA_POS]={GX_POS_XYZ,GX_F32,0};
++    g.vtxFmts[0].attrs[GX_VA_NRM]={GX_NRM_XYZ,GX_F32,0};g.vtxFmts[1]=g.vtxFmts[0];
++    std::array<uint8_t,75> raw{};
++    const unsigned stride=mode==0?25:24,positionOffset=mode==0?1:0;
++    for(unsigned v=0;v<3;++v) {
++      if(mode==0)raw[v*stride]=uint8_t(v*3);
++      const std::array<float,6> values{float(v==1),float(v==2),0,0,0,1};
++      for(unsigned i=0;i<values.size();++i) {
++        const auto bits=std::bit_cast<uint32_t>(values[i]);
++        for(unsigned b=0;b<4;++b)raw[v*stride+positionOffset+i*4+b]=uint8_t(bits>>(24-8*b));
++      }
++    }
++    gfx::note_memory_write(raw.data(),raw.size());set_raster_uniform_reuse(enabled);
++    gfx::Renderer renderer;CHECK(renderer.initialize());renderer.begin_frame();
++    gfx::Telemetry telemetry;telemetry.begin_frame(0);
++    gxbridge::DrawSink sink;gxbridge::DrawSinkConfig config{};config.telemetry=&telemetry;
++    config.staticGeometryBudget=mode?1024*1024:0;config.staticGeometryMinVertices=3;
++    config.staticGeometryStableOnly=mode==2;config.allowStreamedFixedVertexGpu=mode==2;
++    config.allowLitFixedVertexGpu=true;config.fixedUniformPoolBytes=gfx::FixedUniformPool::MaxRetainedBytes;
++    CHECK(sink.initialize(renderer,config));sink.begin_frame(0);
++    const auto bp=[&](uint8_t reg,uint32_t value) {
++      const std::array<uint8_t,5> command{0x61,reg,uint8_t(value>>16),uint8_t(value>>8),uint8_t(value)};
++      process(command.data(),command.size(),true);
++    };
++    const auto submit=[&](uint8_t fmt=0) {
++      const auto before=telemetry.frame().counters.draws;
++      CHECK(sink.submit(GX_TRIANGLES,fmt,raw.data(),3*stride,3,nullptr,0,mode==1?raw.data():nullptr).ok);
++      g.stateDirty=false;CHECK(telemetry.frame().counters.draws==before+1);
++      const auto* draw=sink.stream().tail_draw();CHECK(draw);if(!draw)return;
++      const auto* compiled=renderer.pipelines().find(draw->pipelineKey);CHECK(compiled);if(!compiled)return;
++      CHECK(compiled->desc.depthTest==g.depthCompare);
++      CHECK(compiled->desc.depthWrite==(g.depthCompare&&g.depthUpdate));
++      CHECK(compiled->desc.colorWrite==g.colorUpdate&&compiled->desc.alphaWrite==g.alphaUpdate);
++      CHECK(bool(draw->fixedVertexUniforms)==bool(mode));
++      gfx::VertexTransformState vertex{};gfx::DrawUniforms uniforms{};
++      if(mode)gxbridge::translate_fixed_vertex_state(vertex,uniforms,compiled->desc,true);
++      else gxbridge::translate_vertex_state(vertex,uniforms,compiled->desc,
++                                            gxbridge::translate_current_vertex_layout(fmt),true);
++      const gfx::GpuDrawUniforms expected(uniforms);
++      CHECK(!std::memcmp(&draw->gpu_uniforms(),&expected,sizeof(expected)));
++      if(draw->fixedVertexUniforms) {
++        auto expectedFixed=gfx::fixed_vertex_uniforms(compiled->desc,vertex);auto actual=*draw->fixedVertexUniforms;
++        actual.revision=expectedFixed.revision=0;
++        CHECK(!std::memcmp(&actual,&expectedFixed,sizeof(actual)));
++      }
++    };
++    submit();const auto before=telemetry.frame().counters;
++    const auto* frozen=sink.stream().tail_draw();const auto firstUniforms=frozen->gpu_uniforms();
++    uint32_t random=0x31415926;
++    for(unsigned i=0;i<128;++i) {
++      random=random*1664525u+1013904223u;
++      const auto revisions=g.stateRevisions;const auto contract=g.pipelineUniformGeneration;
++      if(i%5==0)bp(0xfe,0x00000f);
++      bp(i&1?0x40:0x41,random&0x00ffff);
++      CHECK(g.stateRevisions.raster>revisions.raster);
++      if(enabled) {
++        CHECK(g.stateRevisions.vertex==revisions.vertex&&g.stateRevisions.fragment==revisions.fragment);
++        CHECK(g.stateRevisions.textures==revisions.textures);CHECK(g.pipelineUniformGeneration==contract);
++      }else CHECK(g.pipelineUniformGeneration!=contract);
++      submit();
++    }
++    CHECK(telemetry.frame().counters.vertexTranslations==before.vertexTranslations+(enabled?0:128));
++    CHECK(telemetry.frame().counters.fragmentTranslations==before.fragmentTranslations+(enabled?0:128));
++    CHECK(!std::memcmp(&frozen->gpu_uniforms(),&firstUniforms,sizeof(firstUniforms)));
++    const auto rebuild=[&](auto&& change,uint8_t fmt=0) {
++      const auto counters=telemetry.frame().counters;change();submit(fmt);
++      CHECK(telemetry.frame().counters.vertexTranslations==counters.vertexTranslations+1);
++    };
++    // Interposed full changes cannot be hidden by a later raster write.
++    rebuild([&]{const auto epoch=g.pipelineUniformGeneration;bp(0x42,0x180);bp(0x41,0x0318);
++      CHECK(g.pipelineUniformGeneration!=epoch);});
++    rebuild([&]{g.pnMtx[1].pos.m0[3]=9;g.mark_dirty(StateDomain::Vertex);bp(0x40,0x17);});
++    auto counters=telemetry.frame().counters;
++    g.colorRegs[0]={0.2f,0.4f,0.6f,0.8f};g.mark_dirty(StateDomain::Fragment);bp(0x41,0x0319);submit();
++    CHECK(telemetry.frame().counters.fragmentTranslations==counters.fragmentTranslations+1);
++    rebuild([&]{g.layoutStateGeneration=next_gx_state_epoch();g.mark_dirty(StateDomain::Layout);bp(0x40,0x03);});
++    rebuild([&]{g.vertexProgramStateGeneration=next_gx_state_epoch();g.mark_dirty(StateDomain::Vertex);bp(0x41,0x0318);});
++    rebuild([&]{bp(0x40,0x17);},1);
++    rebuild([&]{g.proj.m0[0]=2;g.stateDirty=true;},1); // Untracked legacy write.
++    rebuild([&]{gfx::gxm_disable_mask()=gfx::GxmDisableStateDomains;bp(0x41,0x0319);});
++    gfx::gxm_disable_mask()=0;
++    rebuild([&]{g.stateIdentity=next_gx_state_epoch();bp(0x40,0x03);});
++    // Fog reads the vertex-domain viewport; indirect TEV reads texture size.
++    // Narrow raster writes must not mask those cross-domain dependencies.
++    g.fog.type=GX_FOG_PERSP_LIN;g.fog.a=0.125f;g.fogRange[0]=1u<<10;
++    g.numIndStages=1;g.pipelineStateGeneration=next_gx_state_epoch();g.mark_dirty();submit();
++    counters=telemetry.frame().counters;
++    g.logicalViewport.left=30;g.renderViewport.width=800;g.mark_dirty(StateDomain::Vertex);
++    bp(0x41,0x0318);submit();
++    CHECK(telemetry.frame().counters.fragmentTranslations==counters.fragmentTranslations+1);
++    counters=telemetry.frame().counters;
++    g.loadedTextures[0].image0=15u|(7u<<10);g.mark_dirty(StateDomain::Textures);
++    bp(0x40,0x17);submit();
++    CHECK(telemetry.frame().counters.fragmentTranslations==counters.fragmentTranslations+1);
++    // An unclassified direct pipeline invalidation must remain conservative.
++    rebuild([&]{g.pipelineStateGeneration=next_gx_state_epoch();g.mark_dirty(StateDomain::Fragment);});
++    sink.flush();sink.shutdown();renderer.shutdown();set_raster_uniform_reuse(false);
++  }
++}
++
+ void fixed_geometry_vertex_program_transitions(bool streamed = false) {
+   using aurora::gx::StateDomain;
+   auto& g=aurora::gx::g_gxState;g=aurora::gx::GXState{};
+@@ -982,5 +1103,5 @@
+ }
+ 
+ }
+-int main(){pooled_snapshot_transitions();layouts();fragment_updates();encoded_xf_matrix_oracles();xf_equal_position_writes_oracle();xf_equal_matrix_writes_oracle();tev_decoded_write_gate_oracle();decoded_snapshot_field_oracle();state_transitions();fixed_geometry_vertex_program_transitions();fixed_geometry_vertex_program_transitions(true);resident_geometry_has_one_draw_per_submission();completed_frame_does_not_fence();internal_resolution_restart_and_efb_mapping();guest_memory_prepare_fences_async_gx();memory_write_notification_does_not_fence_async_gx();multiple_waiters_recheck_completed_serial();async_completion_signal_never_overflows();async_end_frame_is_a_lifetime_barrier();async_worker_rejects_direct_display_list_submit();async_display_list_uses_pinned_segment_without_fifo_copy();prepared_async_display_list_equivalence();native_replay_exact_slot_gx_fallback_and_producer_epoch();async_view_markers_preserve_fifo_order();
++int main(){pooled_snapshot_transitions();layouts();fragment_updates();encoded_xf_matrix_oracles();xf_equal_position_writes_oracle();xf_equal_matrix_writes_oracle();tev_decoded_write_gate_oracle();decoded_snapshot_field_oracle();state_transitions();raster_pipeline_uniform_reuse_oracle();fixed_geometry_vertex_program_transitions();fixed_geometry_vertex_program_transitions(true);resident_geometry_has_one_draw_per_submission();completed_frame_does_not_fence();internal_resolution_restart_and_efb_mapping();guest_memory_prepare_fences_async_gx();memory_write_notification_does_not_fence_async_gx();multiple_waiters_recheck_completed_serial();async_completion_signal_never_overflows();async_end_frame_is_a_lifetime_barrier();async_worker_rejects_direct_display_list_submit();async_display_list_uses_pinned_segment_without_fifo_copy();prepared_async_display_list_equivalence();native_replay_exact_slot_gx_fallback_and_producer_epoch();async_view_markers_preserve_fifo_order();
+   std::printf("frontend translation: %u checks, %u failures\n",checks,failures);return failures?1:0;}
+--- a/smstrikers-port/src/Game/main.cpp
++++ b/smstrikers-port/src/Game/main.cpp
+@@ -1667,6 +1667,11 @@
+                 cfg.gxm_xf_equal_matrix_writes?1u:0u,cfg.gxm_tev_decoded_write_gate?1u:0u);
+         }
+         {
++            const char* value=getenv("STRIKERS_GXM_RASTER_UNIFORM_REUSE");
++            cfg.gxm_raster_uniform_reuse=value && strcmp(value,"1")==0;
++            OSReport("[vita] gxm_raster_uniform_reuse=%u\n",cfg.gxm_raster_uniform_reuse?1u:0u);
++        }
++        {
+             const char* prepareCache = getenv("STRIKERS_GXM_FRAGMENT_PREPARE_CACHE");
+             const bool enablePrepareCache = prepareCache != NULL && prepareCache[0] == '1';
+             [&](auto& config) {
+--- a/smstrikers-port/src/platform/config.c
++++ b/smstrikers-port/src/platform/config.c
+@@ -94,6 +94,7 @@
+     { "gxm_xf_equal_pos_writes", "0" },
+     { "gxm_xf_equal_matrix_writes", "0" },
+     { "gxm_tev_decoded_write_gate", "0" },
++    { "gxm_raster_uniform_reuse", "0" },
+     { "gxm_fragment_prepare_cache", "1" },
+     { "gxm_uniform_delta_upload", "0" },
+     { "gxm_a4_fragment_opt", "0" },
+--- a/smstrikers-port/tests/vita_default_config_test.c
++++ b/smstrikers-port/tests/vita_default_config_test.c
+@@ -11,7 +11,7 @@
+ #define CHECK(c) do { if (!(c)) { fprintf(stderr, "FAIL line %d: %s\n", __LINE__, #c); exit(1); } } while (0)
+ #define DEFAULTS_BEGIN "# --- STRIKERS VALIDATED DEFAULTS BEGIN ---"
+ #define DEFAULTS_END "# --- STRIKERS VALIDATED DEFAULTS END ---"
+-#define DEFAULT_CONFIG_KEY_COUNT 61
++#define DEFAULT_CONFIG_KEY_COUNT 62
+ 
+ static char s_data_dir[1024];
+ 
+@@ -41,6 +41,8 @@
+     fprintf(f, "gxm_native_model_uniform_build = 1\n");
+     fprintf(f, "gxm_native_model_prepared = 1\n");
+     fprintf(f, "gxm_native_model_early = 1\n");
++    fprintf(f, "gxm_raster_uniform_reuse = 1\n");
++    fprintf(f, "gxm_raster_uniform_reuse = 0\n");
+     fprintf(f, "gxm_internal_resolution = 640x480\n");
+     fprintf(f, "gxm_internal_resolution = 960x544\n");
+     fprintf(f, "diagnostics = 0\n");
+@@ -170,6 +172,7 @@
+         CHECK(strcmp(getenv("STRIKERS_VITA_VIEW_DRAW_CAPTURE"), "0") == 0);
+         CHECK(strcmp(getenv("STRIKERS_VITA_VIEW_DRAW_PAYLOADS"), "0") == 0);
+         CHECK(strcmp(getenv("STRIKERS_GXM_XF_EQUAL_POS_WRITES"), "0") == 0);
++        CHECK(strcmp(getenv("STRIKERS_GXM_RASTER_UNIFORM_REUSE"), mode == 1 ? "1" : "0") == 0);
+         CHECK(strcmp(getenv("STRIKERS_GXM_UNIFORM_DELTA_UPLOAD"), "0") == 0);
+         CHECK(strcmp(getenv("STRIKERS_GXM_A4_FRAGMENT_OPT"), "0") == 0);
+         CHECK(strcmp(getenv("STRIKERS_GXM_XF_EQUAL_MATRIX_WRITES"), "0") == 0);
+--- a/smstrikers-port/strikers.ini.example
++++ b/smstrikers-port/strikers.ini.example
+@@ -70,6 +70,8 @@
+ # gxm_xf_equal_matrix_writes = 0
+ # Skip inactive / semantically identical decoded TEV stage invalidations.
+ # gxm_tev_decoded_write_gate = 0
++# Reuse CPU uniform snapshots across BP depth/blend-only pipeline changes.
++# gxm_raster_uniform_reuse = 0
+ # Exact compact CMPR subset as BC1; other textures keep lossless fallback.
+ # gxm_exact_bc1 = 0
+ # Immutable geometry buffers prefer CDRAM, retaining USER allocation fallback.

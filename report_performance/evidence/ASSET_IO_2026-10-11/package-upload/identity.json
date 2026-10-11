@@ -1,0 +1,34 @@
+{
+  "time_unix": 1791725060.417093,
+  "host": "192.168.1.79",
+  "remote_path": "ux0:/data/strikersVita/strikers-update.vpk",
+  "remote_backup": null,
+  "self_sha256_before": "ebbc7f2b42973d4f6528e01fb6fecc682483f82dd38d547db26deab404cf2117",
+  "data_before": [
+    "strikers.ini",
+    "aurora-vita",
+    "cardA",
+    "cardB",
+    "sms-native-gxm-static.psarc",
+    "sms.psarc",
+    "sms-native-20261006-cache.psarc",
+    "sms-native-balanced-20261008.psarc"
+  ],
+  "local_sha256": "e62b0fd1b42dce460a5dede24e3c85ea1ab434fa73c0a578ff970c2d13b91d10",
+  "remote_sha256": "e62b0fd1b42dce460a5dede24e3c85ea1ab434fa73c0a578ff970c2d13b91d10",
+  "bytes": 3585180,
+  "verified": true,
+  "self_sha256_after": "ebbc7f2b42973d4f6528e01fb6fecc682483f82dd38d547db26deab404cf2117",
+  "ini_sha256": "e903fbc96bcff24029076f0ba6e6ce7e28ac088bc437cfe9fb646237abd99493",
+  "data_after": [
+    "strikers.ini",
+    "aurora-vita",
+    "cardA",
+    "cardB",
+    "strikers-update.vpk",
+    "sms-native-gxm-static.psarc",
+    "sms.psarc",
+    "sms-native-20261006-cache.psarc",
+    "sms-native-balanced-20261008.psarc"
+  ]
+}

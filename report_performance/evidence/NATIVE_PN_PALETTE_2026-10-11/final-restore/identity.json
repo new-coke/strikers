@@ -1,0 +1,28 @@
+{
+  "time_unix": 1791716851.701175,
+  "destroy": "Apps destroyed.",
+  "ini": {
+    "path": "ux0:/data/strikersVita/strikers.ini",
+    "sha256": "e903fbc96bcff24029076f0ba6e6ce7e28ac088bc437cfe9fb646237abd99493",
+    "previous_sha256": "309e1da27423fda419515751fa1d7c774b277e721028173722ae25bc7cb8e03e",
+    "remote_backup": null,
+    "local_backup": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/native-pn-palette-20261011/final-restore/strikers.ini.before"
+  },
+  "self_sha256": "ebbc7f2b42973d4f6528e01fb6fecc682483f82dd38d547db26deab404cf2117",
+  "ini_sha256": "e903fbc96bcff24029076f0ba6e6ce7e28ac088bc437cfe9fb646237abd99493",
+  "app_entries": [
+    "sce_sys",
+    "eboot.bin"
+  ],
+  "data_entries": [
+    "strikers.ini",
+    "aurora-vita",
+    "cardA",
+    "cardB",
+    "sms-native-gxm-static.psarc",
+    "sms.psarc",
+    "sms-native-20261006-cache.psarc",
+    "sms-native-balanced-20261008.psarc"
+  ],
+  "coredumps": []
+}

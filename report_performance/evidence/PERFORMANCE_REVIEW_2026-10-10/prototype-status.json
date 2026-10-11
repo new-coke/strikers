@@ -1,0 +1,24 @@
+{
+  "captured_at": "2026-10-10T21:23:51.370370+00:00",
+  "state": "excluded from working source; not built for Vita or deployed",
+  "reason": "fresh full-translation equivalence test failed at line 127; 4 textured integration variants passed but contract transition oracle did not",
+  "restoration_scope": "only four files edited by this turn, after inspecting complete delta to the pre-turn checkpoint; prior unrelated changes preserved",
+  "files": {
+    "smstrikers-port/extern/aurora-vita/platforms/vita/gfx/vita_native_model_uniform_cache.hpp": {
+      "checkpoint_sha256": "c36285bd6118317b6b9d1dccda07c953b4de64d1b1ada335404054a993fb0c15",
+      "excluded_prototype_sha256": "a70426bd32535fd91697e3c30bd6c87e1c0a273793611936688650b95e4259bc"
+    },
+    "smstrikers-port/extern/aurora-vita/platforms/vita/gx/aurora_vita_draw_sink.hpp": {
+      "checkpoint_sha256": "cb60d45d60c40dc9462344cfa3a65bd76fb0183f510a3cd7b1f242cc58e36a27",
+      "excluded_prototype_sha256": "a9d1c419cec5cb0a1aed8c18dc3512628283d38cdb42dd34a29d0ae1959a8e3b"
+    },
+    "smstrikers-port/extern/aurora-vita/platforms/vita/gx/aurora_vita_draw_sink.cpp": {
+      "checkpoint_sha256": "7520f054ef7f2f82065009036c5c084af38bcc22be1a73ee145f26bfdecf7123",
+      "excluded_prototype_sha256": "badc554c1786875ab606dce01aa1f48b5ef098a7bf1b48569dda32290076337d"
+    },
+    "smstrikers-port/extern/aurora-vita/tests/vita_native_model_prepared_test.cpp": {
+      "checkpoint_sha256": "2e90311b018d7c1af223b8ba1a02912b09fb8e5a2b206840b8dfdfb1c078adc8",
+      "excluded_prototype_sha256": "ed3c9e1a278755d5d3593756d3771568c236c024405bb7d5e58cdec7e6845fdc"
+    }
+  }
+}

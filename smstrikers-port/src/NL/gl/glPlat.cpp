@@ -1159,12 +1159,6 @@ u32 glx_GetResetCode()
     return glx_bProgressiveMode ? 0x17 : 0;
 }
 
-static inline void glx_SetVIWidth(const s32 currentWidth, const s32 maxWidth)
-{
-    const s32 diff = maxWidth - currentWidth;
-    glx_rmode.viWidth = (s16)currentWidth;
-    glx_rmode.viXOrigin = (s16)(((s32)((u32)diff >> 31) + diff) >> 1);
-}
 
 /**
  * Offset/Address/Size: 0x1008 | 0x801B55FC | size: 0x18C

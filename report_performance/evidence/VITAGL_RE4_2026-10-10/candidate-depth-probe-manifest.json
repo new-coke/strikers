@@ -1,0 +1,19 @@
+{
+  "purpose": "Isolated scene depth load/store attribution; no production integration",
+  "base_manifest": "../candidate-addressing-fix/manifest.json",
+  "source_changed_in_normal_cmake_targets": false,
+  "new_gpu_allocations": 0,
+  "vitagl_library_sha256": "53aba7dbbef39026959f78091c1023c49c2af033bb6d3a514e12e8a4564255ae",
+  "sha256": {
+    "strikers": "4a5bd129621c761ad8761c2197ca5c7d353dd85a43d94b08395a5fde3740ebea",
+    "strikers_vita.self": "f0b456577c55a3942a7b79900dfe5fb21e7428c7e69f3e2908fdb52fe729784c",
+    "depth-probe.cpp": "1e174a5211e3db15e73023a7165ec0b393446f1cf2d2f283b7b820197c4921ef",
+    "strikers_vita.vpk": "b571bb03a1599543e2ee45419b830ed4533bc1a4098791a7a645e968a1b4de81",
+    "depth-probe.o": "6b9db57bc6222216f672c4efb2105832d038850a155bdc7bb546ae03fa97681b",
+    "strikers.map": "3fd1078d49b3d34f92c02ecbc6f77bebcbda8d540cd2fb18370dc073b5d29c31",
+    "link-argv.json": "3bbd251652559db3b228d94f9d80ac03578f23d4186a371ec119a2361d0ff869",
+    "strikers.velf": "42170080218f002e097c582c4159831f3f24b9751392629ef247a1fc93851484",
+    "CMakeCache.txt": "f6275f08a4d0685e6366509b5103b6918d60fe1ebd6a30ae214f1a3c576b38bc",
+    "build.log": "cca8a893e959849d5eeba0f6e2fab96a74e00c109b13325f7b9130a50427c347"
+  }
+}

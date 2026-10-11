@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bounded Strikers-only delivery/capture, with staged readback and local backup.
+"""Bounded Strikers-only delivery/capture, with readback and PC-only backups.
 
 Does not touch saves, disc data, plugins or other applications. Logs installed
 content hashes; hardware measurements come only from downloaded runtime CSV.
@@ -11,7 +11,6 @@ import json
 from pathlib import Path
 import socket
 import time
-import uuid
 from ftplib import FTP, error_perm
 
 APP = "ux0:/app/SMSVITA01"
@@ -48,27 +47,36 @@ def read(ftp, directory, name):
     return out.getvalue()
 
 def promote(ftp, directory, name, content, out):
+    # Retain rollback history on the PC. Previous remote backup/stage files
+    # accumulated in the Vita app/data directories on every test run.
     old = read(ftp, directory, name)
-    (out / (name + ".before")).write_bytes(old)
-    token = uuid.uuid4().hex[:12]
-    stage, backup = name + ".stage-" + token, name + ".backup-" + token
-    ftp.cwd(directory)
-    ftp.storbinary("STOR " + stage, io.BytesIO(content))
-    if read(ftp, directory, stage) != content:
-        raise RuntimeError("Staged readback differs: " + name)
+    backup = out / (name + ".before")
+    if backup.exists() and backup.read_bytes() != old:
+        raise RuntimeError("Refusing to overwrite a different local backup: " + str(backup))
+    backup.write_bytes(old)
     if read(ftp, directory, name) != old:
         raise RuntimeError("Remote source changed: " + name)
-    ftp.rename(name, backup)
     try:
-        ftp.rename(stage, name)
-    except Exception:
-        ftp.rename(backup, name)
+        if content != old:
+            ftp.cwd(directory)
+            ftp.storbinary("STOR " + name, io.BytesIO(content))
+        actual = read(ftp, directory, name)
+        if actual != content:
+            raise RuntimeError("Updated readback differs: " + name)
+    except Exception as update_error:
+        try:
+            if read(ftp, directory, name) != old:
+                ftp.cwd(directory)
+                ftp.storbinary("STOR " + name, io.BytesIO(old))
+                if read(ftp, directory, name) != old:
+                    raise RuntimeError("Original readback differs")
+        except Exception as rollback_error:
+            raise RuntimeError("Update failed and remote rollback could not be verified; "
+                               "original is saved at " + str(backup)) from rollback_error
         raise
-    actual = read(ftp, directory, name)
-    if actual != content:
-        raise RuntimeError("Promoted readback differs: " + name)
     return {"path": directory + "/" + name, "sha256": sha(actual),
-            "previous_sha256": sha(old), "remote_backup": backup}
+            "previous_sha256": sha(old), "remote_backup": None,
+            "local_backup": str(backup.resolve())}
 
 def ini(original, overrides):
     # The runtime uses first-value-wins and preserves custom lines before the

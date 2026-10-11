@@ -1,0 +1,8 @@
+{
+  "source_sha256": {
+    "smstrikers-port/extern/aurora-vita/lib/gx/command_processor.cpp": "ee68c3d72481e8ad1b0eb1b959992711cb0a2c6268ea5d263bffb805371bb887",
+    "smstrikers-port/extern/aurora-vita/tests/vita_frontend_translation_test.cpp": "e2e77bd49ccd31670fe776c65b9a5f493b522e17735f2a2087eb8f4c46e1171f"
+  },
+  "root_head": "7014a61e3060dcd1ea73e275df90f290ac2f8a99",
+  "aurora_head": "dec0a58028972f3c4eb295235cd94ba3c24aabc6"
+}

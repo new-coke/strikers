@@ -1,0 +1,23 @@
+{
+  "path": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/native-pn-palette-20261011/hardware-diagnostic-on/perf-test.csv",
+  "sha256": "10dafafca4658687691b2716a92206c16eaf4ee501408d25c4df7475a10611f9",
+  "metadata": [
+    "# strikers-frame-capture-v1 diagnostics=1 fps_overlay=0",
+    "# play_only=1 counter=live_play",
+    "# actual_cpu_mhz=444 actual_gpu_mhz=222 actual_bus_mhz=222 actual_xbar_mhz=166"
+  ],
+  "samples": 120,
+  "all_gameplay": true,
+  "live_play_only": true,
+  "match_frame_first": 600,
+  "match_frame_last": 719,
+  "elapsed_fps": 18.852116613537735,
+  "mean_ms": 53.044441666666664,
+  "median_ms": 48.037,
+  "p95_ms": 55.627,
+  "p99_ms": 101.434,
+  "deadline_60_pct": 0.0,
+  "deadline_30_pct": 0.0,
+  "tasks_median_ms": 47.4495,
+  "present_median_ms": 0.41
+}

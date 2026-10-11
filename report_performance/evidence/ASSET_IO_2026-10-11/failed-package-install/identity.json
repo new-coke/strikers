@@ -1,0 +1,56 @@
+{
+  "time_unix": 1791725539.4942038,
+  "host": "192.168.1.79",
+  "scope": "Read-only verification after user reported VPK installation error",
+  "welcome": "220 FTPVita Server ready.",
+  "app_entries": [
+    "sce_sys",
+    "eboot.bin"
+  ],
+  "self": {
+    "sha256": "ebbc7f2b42973d4f6528e01fb6fecc682483f82dd38d547db26deab404cf2117",
+    "bytes": 3603207
+  },
+  "ini": {
+    "sha256": "e903fbc96bcff24029076f0ba6e6ce7e28ac088bc437cfe9fb646237abd99493",
+    "bytes": 4015
+  },
+  "sfo": {
+    "sha256": "1122c6666849b3f7a4f0b6a3b358bd160521ba20371b8fd612576c532bbe8c12",
+    "bytes": 912
+  },
+  "package": {
+    "sha256": "e62b0fd1b42dce460a5dede24e3c85ea1ab434fa73c0a578ff970c2d13b91d10",
+    "bytes": 3585180,
+    "matches_local": true
+  },
+  "data_entries": [
+    "strikers.ini",
+    "aurora-vita",
+    "cardA",
+    "cardB",
+    "strikers-update.vpk",
+    "sms-native-gxm-static.psarc",
+    "sms.psarc",
+    "sms-native-20261006-cache.psarc",
+    "sms-native-balanced-20261008.psarc"
+  ],
+  "coredumps": [],
+  "ux0:/temp": [
+    "auto_delete",
+    "game"
+  ],
+  "ux0:/temp/app": {
+    "error": "error_perm('550 Invalid directory.')"
+  },
+  "ux0:/temp/app/sce_sys": {
+    "error": "error_perm('550 Invalid directory.')"
+  },
+  "ux0:/app/SMSVITA01/sce_sys": [
+    "param.sfo",
+    "package"
+  ],
+  "installed_sfo_matches_package": true,
+  "self_header_old": "5343450003000000c0000100000600000010000000000000baf64f010000000007fb3600000000000000000000000000",
+  "self_header_new": "5343450003000000c00001000006000000100000000000009a1a50010000000019023700000000000000000000000000"
+}

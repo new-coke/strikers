@@ -1309,16 +1309,3 @@ void CrowdMood::RestartLoops()
  * g_Initd and g_CrowdState. Its real SetMood and AdjustMood calls also restore
  * the retail literal chronology without synthetic pool declarations.
  */
-static void CrowdMoodTest()
-{
-    long long Frame = OSGetTime();
-    long long StopAt = Frame + OSSecondsToTicks(5);
-
-    do
-    {
-        UpdateTiming(5.0f);
-        CrowdMood::SetMood((CrowdMood::CROWD_MOOD)g_CrowdState.DestMood, g_CrowdState.DestMoodLevel);
-        CrowdMood::AdjustMood((CrowdMood::CROWD_MOOD)g_CrowdState.DestMood, g_CrowdState.DestMoodLevel);
-        Frame = OSGetTime();
-    } while (Frame < StopAt);
-}

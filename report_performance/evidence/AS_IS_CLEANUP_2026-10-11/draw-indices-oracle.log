@@ -1,0 +1,1 @@
+PASS: 5040 actual old/new draw blocks; identical GX opcode/attribute/Begin/End/DL byte sequences; raw/compiled/decoded DL routes and raster skip

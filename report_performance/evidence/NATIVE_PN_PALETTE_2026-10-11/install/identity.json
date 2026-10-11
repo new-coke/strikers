@@ -1,0 +1,6 @@
+{
+  "time_unix": 1791711779.53284,
+  "welcome": "220 FTPVita Server ready.",
+  "before_sha256": "dbc5a1a5914d3e2096cbc23a0b3f4f5beceb513e6193d81cabf661cf3d988735",
+  "error": "Update failed and remote rollback could not be verified; original is saved at ab-artifacts/native-pn-palette-20261011/install/confirmed-retry/eboot.bin.before"
+}

@@ -1,0 +1,69 @@
+{
+  "date": "2026-10-11",
+  "scope": "Narrow decoded-state snapshots; exact same dirty decisions and emitted draws. Does not implement a full native model/material bypass.",
+  "source_after_sha256": {
+    "smstrikers-port/extern/aurora-vita/lib/gx/command_processor.cpp": "0d101049b24bcf2ace2cbb7441d47e895d7ddf892df807107c6de8bcc241dd5a",
+    "smstrikers-port/extern/aurora-vita/tests/vita_frontend_translation_test.cpp": "67a851d19583c87e9ff45089d811766b58f4694761d616eb947307051d415e5d"
+  },
+  "baseline": {
+    "source_sha256": {
+      "smstrikers-port/extern/aurora-vita/lib/gx/command_processor.cpp": "ee68c3d72481e8ad1b0eb1b959992711cb0a2c6268ea5d263bffb805371bb887",
+      "smstrikers-port/extern/aurora-vita/tests/vita_frontend_translation_test.cpp": "e2e77bd49ccd31670fe776c65b9a5f493b522e17735f2a2087eb8f4c46e1171f"
+    },
+    "root_head": "7014a61e3060dcd1ea73e275df90f290ac2f8a99",
+    "aurora_head": "dec0a58028972f3c4eb295235cd94ba3c24aabc6"
+  },
+  "host_tests": "37/37 PASS",
+  "frontend_oracle": {
+    "reference_checks": 130201,
+    "candidate_checks": 130202,
+    "failures": 0,
+    "baseline_digest": "ab552d3a579e1db2",
+    "candidate_digest": "ab552d3a579e1db2",
+    "coverage": [
+      "16384 randomized TEV color/alpha/order writes, active/inactive stages, BP masks, repeated writes, decoded-gate OFF/ON",
+      "4608 CP/XF matrix-index writes, all active texgen counts 0..8, exact dirty revisions, preserved unrelated fields/padding",
+      "existing draw/layout/GPU snapshot/FIFO/resource/texture/scissor/EFB transition oracles"
+    ]
+  },
+  "source_work_reduction": {
+    "TEV_color_snapshot_bytes_before": 132,
+    "TEV_color_snapshot_bytes_after": 36,
+    "TEV_alpha_snapshot_bytes_before": 132,
+    "TEV_alpha_snapshot_bytes_after": 44,
+    "TEV_order_snapshot_bytes_before": 264,
+    "TEV_order_snapshot_bytes_after": 24,
+    "matrix_index_additional_TcgConfig_snapshot_bytes_before": 160,
+    "matrix_index_additional_TcgConfig_snapshot_bytes_after": 0,
+    "matrix_index_note": "Existing four old matrix selectors are reused, retaining any-change and active-change decisions separately."
+  },
+  "ARM_assembly": {
+    "kind": "same Release TU options except LTO disabled, assembly output only, no application build/link",
+    "callsites_before": {
+      "memcpy": 18,
+      "memcmp": 18
+    },
+    "callsites_after": {
+      "memcpy": 6,
+      "memcmp": 8
+    },
+    "note": "Static call sites, not calls per frame, execution time or device FPS. Original/candidate generated successfully with VitaSDK."
+  },
+  "diff_check": "PASS root and embedded Aurora",
+  "Vita_application_build": "not performed; manual build convention retained",
+  "installed_device_mutation": "none this turn",
+  "hardware_FPS_gain": null,
+  "native_primitives_findings": {
+    "source": "report_performance/NATIVE_MODEL_UNIFORMS_2026-10-09.md",
+    "historical_median_vertices_total": 64722,
+    "historical_median_GPU_geometry_vertices": 62744,
+    "historical_GPU_geometry_pct": 96.94385216773277,
+    "note": "GPU residency coverage is not offline asset provenance or absence of GX producer/consumer work. Data from prior SELF."
+  },
+  "next_structural_work": "Persistent mesh/material/program handles, instance-only pose/camera/color updates and ordered native GXM submission for Characters/Shadowed; preserve fallback and EFB dependencies.",
+  "ASan_UBSan": {
+    "result": "PASS",
+    "checks": 130202,
+    "macOS_leak_detection": false
+  }
+}

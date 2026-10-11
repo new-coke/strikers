@@ -134,68 +134,12 @@ char* GetCharacterName(eCharacterClass cc)
     return (char*)g_GoalieTextureInfo[cc - 13].szCharName;
 }
 
-static char* GetCharacterModelFileName(eCharacterClass cc)
-{
-    if (cc < NUM_FIELDER_CLASSES)
-    {
-        return (char*)g_aCharacterTemplateInfo[cc].szModelFilename;
-    }
-    return (char*)g_GoalieTemplateInfo.szModelFilename;
-}
 
-static char* GetCharacterModelTextureFileName(eCharacterClass cc)
-{
-    if (cc < NUM_FIELDER_CLASSES)
-    {
-        return (char*)g_aCharacterTemplateInfo[cc].szTextureFilename;
-    }
-    return (char*)g_GoalieTextureInfo[cc - NUM_FIELDER_CLASSES].szTextureFilename;
-}
 
-static AnimProperties* GetCharacterModelAnimProperties(eCharacterClass cc)
-{
-    if (cc < NUM_FIELDER_CLASSES)
-    {
-        return (AnimProperties*)g_aCharacterTemplateInfo[cc].pAnimProperties;
-    }
-    return (AnimProperties*)g_GoalieTemplateInfo.pAnimProperties;
-}
 
-static int GetCharacterModelNumAnumProperties(eCharacterClass cc)
-{
-    if (cc < NUM_FIELDER_CLASSES)
-    {
-        return g_aCharacterTemplateInfo[cc].nNumAnimProperties;
-    }
-    return g_GoalieTemplateInfo.nNumAnimProperties;
-}
 
-static char* GetCharacterModelHierarchyFileName(eCharacterClass cc)
-{
-    if (cc < NUM_FIELDER_CLASSES)
-    {
-        return (char*)g_aCharacterTemplateInfo[cc].szHierarchyFilename;
-    }
-    return (char*)g_GoalieTemplateInfo.szHierarchyFilename;
-}
 
-static char* GetCharacterModelHierarchyName(eCharacterClass cc)
-{
-    if (cc < NUM_FIELDER_CLASSES)
-    {
-        return (char*)g_aCharacterTemplateInfo[cc].szHierarchy;
-    }
-    return (char*)g_GoalieTemplateInfo.szHierarchy;
-}
 
-static char* GetCharacterModelAnimFileName(eCharacterClass cc)
-{
-    if (cc < NUM_FIELDER_CLASSES)
-    {
-        return (char*)g_aCharacterTemplateInfo[cc].szAnimFilename;
-    }
-    return (char*)g_GoalieTemplateInfo.szAnimFilename;
-}
 
 static unsigned char IsSidekick(eCharacterClass cc)
 {

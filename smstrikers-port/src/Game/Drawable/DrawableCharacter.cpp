@@ -420,67 +420,7 @@ void DrawableCharacter::Render(cCharacter& character, bool poseSkinMesh) const
     SendToGl(character);
 }
 
-static bool IsVisible(const nlVector3& worldPosition, eCharacterClass cc)
-{
-    if (nlTaskManager::m_pInstance->m_CurrState == 0x100)
-        return 1;
-    if (WorldManager::s_World != nullptr)
-    {
-        float fRadius;
-        if (cc == DONKEYKONG)
-            fRadius = 3.5f;
-        else
-            fRadius = 2.5f;
-        nlMatrix4 mWorld;
-        mWorld.SetIdentity();
-        mWorld.m41 = worldPosition.x;
-        mWorld.m42 = worldPosition.y;
-        mWorld.m43 = worldPosition.z;
-        mWorld.m44 = 1.0f;
-        return WorldManager::s_World->IsSphereInFrustum(mWorld, fRadius);
-    }
-    return 1;
-}
 
-static void DrawSphere(const nlVector3& vCentre, float fRadius, const nlColour& colour)
-{
-    extern GLInventory glInventory;
-
-    glModel* pSphereModel = glModelDup(glInventory.GetModel(nlStringHash("debug/sphere")), true);
-
-    nlMatrix4 sphereWorldMatrix;
-    sphereWorldMatrix.SetIdentity();
-    sphereWorldMatrix.m41 = vCentre.x;
-    sphereWorldMatrix.m42 = vCentre.y;
-    sphereWorldMatrix.m43 = vCentre.z;
-    sphereWorldMatrix.m44 = 1.0f;
-    sphereWorldMatrix.m11 = fRadius;
-    sphereWorldMatrix.m22 = fRadius;
-    sphereWorldMatrix.m33 = fRadius;
-
-    uintptr_t matrix = glAllocMatrix();
-    if (matrix != 0xFFFFFFFF)
-    {
-        glSetMatrix(matrix, sphereWorldMatrix);
-    }
-
-    void* pConstantColour = glUserAlloc(GLUD_ConstantColour, 4, false);
-    nlColour* pDebugColour = (nlColour*)glUserGetData(pConstantColour);
-    u8 alpha = colour.c[3];
-    *pDebugColour = colour;
-    for (glModelPacket* pSpherePacket = pSphereModel->packets; pSpherePacket < pSphereModel->packets + pSphereModel->numPackets; pSpherePacket++)
-    {
-        pSpherePacket->state.matrix = matrix;
-        pSpherePacket->state.texture[GLTT_Diffuse] = (uintptr_t)ResolvedWhiteTexture;
-        if (alpha != 0xFF)
-        {
-            glSetRasterState(pSpherePacket->state.raster, GLS_AlphaBlend, GLB_Standard);
-        }
-        glUserAttach(pConstantColour, pSpherePacket, false);
-    }
-
-    glViewAttachModel(GLV_Characters, 6, pSphereModel);
-}
 
 static const float kBigFloat = 1e30f;
 
@@ -618,21 +558,6 @@ static inline void RenderCharacterBoundingSphere(nlMatrix4& sphereWorldMatrix, c
     glViewAttachModel(GLV_Characters, 6, pSphereModel);
 }
 
-static void FindBoundingSphereSloppy(const nlVector3& vCenter, float* pOutRadius, int numVertices, const nlVector3* pVertices)
-{
-    float maxDistSq = 0.0f;
-
-    for (int i = 0; i < numVertices; i++)
-    {
-        float distSq = nlGetLengthSquared3D(
-            pVertices[i].x - vCenter.x,
-            pVertices[i].y - vCenter.y,
-            pVertices[i].z - vCenter.z);
-        maxDistSq = (maxDistSq >= distSq) ? maxDistSq : distSq;
-    }
-
-    *pOutRadius = nlSqrt(maxDistSq, false);
-}
 
 /**
  * Offset/Address/Size: 0x1AE4 | 0x8011A994 | size: 0x808

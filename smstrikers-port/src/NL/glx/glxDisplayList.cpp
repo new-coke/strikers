@@ -3,10 +3,15 @@
 #include "NL/nlString.h"
 #include "dolphin/os/OSCache.h"
 #include "dolphin/PPCArch.h"
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
+#include "NL/glx/glxMemory.h"
+#include "../../../extern/aurora-vita/lib/gx/native_model_registry.hpp"
+#include "../../../extern/aurora-vita/lib/gx/native_model_options.hpp"
+#endif
 
 #define DISPLAY_LIST_HEADER 0xBA7EF00D
 
-static unsigned char opcodes[6] = {
+static const unsigned char opcodes[6] = {
     0x90,
     0x98,
     0xA0,
@@ -15,122 +20,71 @@ static unsigned char opcodes[6] = {
     0xB0,
 };
 
-struct DisplayListEx
-{
-    /* 0x00 */ u32 m_header;
-    /* 0x04 */ void* m_displayList;
-    /* 0x08 */ u32 m_size;
-    /* 0x0C */ u16 m_numStreams;
-    /* 0x0E */ u16 m_hasColorStream;
-};
-
 /**
  * Offset/Address/Size: 0x0 | 0x801C1E5C | size: 0x2A8
  */
 DisplayList* dlMakeDisplayList(const glModelPacket* packet, bool permanent)
 {
-    DisplayList* pList;
-    u32 actualSize;
-    u32 size;
-    u8* p;
-    u32 i;
-    u32 j;
-    u8 bStitch;
-
-    u32 numStreams = packet->numStreams;
-
-    bStitch = 0;
-    i = 0;
-    for (j = 0; j < numStreams; j++)
+    const u32 numStreams = packet->numStreams;
+    const u32 numVertices = packet->numVertices;
+    bool hasColor = false;
+    for (u32 j = 0; j < numStreams; j++)
     {
         // PORT: was `i += 6` with `[i + 4]`, glModelStream's on-disc layout.
         if (packet->streams[j].id == 0x0C)
         {
-            bStitch = 1;
+            hasColor = true;
             break;
         }
     }
 
-    if (bStitch)
-    {
-        u16 numVertices = packet->numVertices;
-        actualSize = numVertices * ((numStreams - 1) << 1) + 3;
-        actualSize += numVertices;
-    }
-    else
-    {
-        actualSize = packet->numVertices * (numStreams << 1) + 3;
-    }
-
-    size = (actualSize + 0x1F) & ~0x1F;
-    if (permanent)
-    {
-        p = (u8*)glResourceAlloc(size, GLM_VertexData);
-    }
-    else
-    {
-        p = (u8*)glFrameAlloc(size, GLM_VertexData);
-    }
+    // The color stream is one direct byte; all other attributes repeat the
+    // same big-endian index. The stream layout is constant for the entire DL.
+    const u32 indexedStreams = numStreams - (hasColor ? 1u : 0u);
+    const u32 actualSize = 3 + numVertices * (indexedStreams * 2 + (hasColor ? 1u : 0u));
+    const u32 size = (actualSize + 0x1F) & ~0x1F;
+    u8* p = (u8*)(permanent ? glResourceAlloc(size, GLM_VertexData) : glFrameAlloc(size, GLM_VertexData));
 
     nlZeroMemory(p + actualSize, size - actualSize);
 
     u8* p8 = p + 3;
-    u8 hasColor = bStitch;
-    u16* pInd = (u16*)packet->indexBuffer;
+    const u16* pInd = (const u16*)packet->indexBuffer;
 
     p[0] = opcodes[packet->primType];
-    // PORT: the FIFO is a big-endian byte stream; the indices copied below come from the file already in that order.
+    // The source indices are host order; the FIFO header and attributes are BE.
     p[1] = (u8)(packet->numVertices >> 8);
     p[2] = (u8)(packet->numVertices & 0xFF);
-    i = 0;
-
-    // TODO: Remove the const cast once a clean source form preserves the exact register allocation.
-    while (i < ((glModelPacket*)packet)->numVertices)
+    for (u32 i = 0; i < numVertices; i++)
     {
-        // PORT: the FIFO is big-endian and *pInd is host order.
         if (hasColor)
-        {
             *p8++ = 0xFF;
-            for (j = 0; j < packet->numStreams - 1; j++)
-            {
-                p8[0] = (u8)(*pInd >> 8);
-                p8[1] = (u8)(*pInd & 0xFF);
-                p8 += 2;
-            }
-        }
-        else
+        const u16 index = indexedStreams != 0 ? pInd[i] : 0;
+        const u8 high = (u8)(index >> 8);
+        const u8 low = (u8)index;
+        for (u32 j = 0; j < indexedStreams; j++)
         {
-            for (j = 0; j < packet->numStreams; j++)
-            {
-                p8[0] = (u8)(*pInd >> 8);
-                p8[1] = (u8)(*pInd & 0xFF);
-                p8 += 2;
-            }
+            *p8++ = high;
+            *p8++ = low;
         }
-
-        i++;
-        pInd++;
     }
 
-    if (permanent)
-    {
-        pList = (DisplayList*)glResourceAlloc(sizeof(DisplayList), GLM_Header);
-    }
-    else
-    {
-        // PORT: 0x10 is the console sizeof.
-        pList = (DisplayList*)glFrameAlloc(sizeof(DisplayList), GLM_Header);
-    }
-
-    DisplayListEx* pListEx = (DisplayListEx*)pList;
-    pListEx->m_header = DISPLAY_LIST_HEADER;
-    pListEx->m_displayList = p;
-    pListEx->m_size = size;
-    pListEx->m_numStreams = packet->numStreams;
-    pListEx->m_hasColorStream = bStitch != 0;
+    DisplayList* pList = (DisplayList*)(permanent ? glResourceAlloc(sizeof(DisplayList), GLM_Header)
+                                                : glFrameAlloc(sizeof(DisplayList), GLM_Header));
+    pList->magic = DISPLAY_LIST_HEADER;
+    pList->list = p;
+    pList->size = size;
+    pList->indices[0] = numStreams;
+    pList->indices[1] = hasColor;
 
     DCFlushRangeNoSync(pList->list, pList->size);
     PPCSync();
+
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
+    if (permanent && aurora::gx::fifo::native_model_prepared_enabled())
+        aurora::gx::fifo::native_model_registry().register_source(
+            reinterpret_cast<uintptr_t>(pList), pList->list, pList->size,
+            glx_GetResourceMarkerLevel());
+#endif
 
     return pList;
 }
@@ -140,18 +94,8 @@ DisplayList* dlMakeDisplayList(const glModelPacket* packet, bool permanent)
  */
 u32 dlGetSize(uintptr_t addr)
 {
-    DisplayList* dl = (DisplayList*)addr;
-
-    if (dl == NULL)
-    {
-        dl = NULL;
-    }
-    else
-    {
-        dl = (dl->magic == DISPLAY_LIST_HEADER) ? dl : NULL;
-    }
-
-    return dl->size;
+    const DisplayList* dl = dlGetStruct(addr);
+    return dl != NULL ? dl->size : 0;
 }
 
 /**
@@ -159,18 +103,8 @@ u32 dlGetSize(uintptr_t addr)
  */
 void* dlGetDisplayList(uintptr_t addr)
 {
-    DisplayList* dl = (DisplayList*)addr;
-
-    if (dl == NULL)
-    {
-        dl = NULL;
-    }
-    else
-    {
-        dl = (dl->magic == DISPLAY_LIST_HEADER) ? dl : NULL;
-    }
-
-    return dl->list;
+    const DisplayList* dl = dlGetStruct(addr);
+    return dl != NULL ? dl->list : NULL;
 }
 
 /**
@@ -178,18 +112,7 @@ void* dlGetDisplayList(uintptr_t addr)
  */
 bool dlIsDisplayList(uintptr_t addr)
 {
-    DisplayList* dl = (DisplayList*)addr;
-
-    if (dl == NULL)
-    {
-        dl = NULL;
-    }
-    else
-    {
-        dl = (dl->magic == DISPLAY_LIST_HEADER) ? dl : NULL;
-    }
-
-    return dl != NULL;
+    return dlGetStruct(addr) != NULL;
 }
 
 /**

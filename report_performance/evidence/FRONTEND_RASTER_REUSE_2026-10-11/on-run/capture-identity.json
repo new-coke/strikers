@@ -1,0 +1,12 @@
+{
+  "time_unix": 1791709899.2212732,
+  "label": "raster-on",
+  "eboot_sha256": "dbc5a1a5914d3e2096cbc23a0b3f4f5beceb513e6193d81cabf661cf3d988735",
+  "ini_sha256": "c31820588947b7132764b567d778e4fb1fdc6fec181fe2ec1ce08de3d3c8e60f",
+  "csv_sha256": "83f289818300058cb99699c93b94df4b57fe9b3728d8e8998df610290d9f0162",
+  "csv_bytes": 8526,
+  "launch_ini_sha256": "bda85b854ac7ae9e4e1cf38223c9cd9d223233f13e6cd9e5de34085e51a9554f",
+  "ini_startup_blank_line": true,
+  "new_coredumps": [],
+  "attempts": 10
+}

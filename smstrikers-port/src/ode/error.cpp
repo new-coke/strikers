@@ -63,17 +63,6 @@ extern "C" dMessageFunction* dGetMessageHandler()
     return message_function;
 }
 
-static void printMessage(int num, const char* msg1, const char* msg2, va_list ap)
-{
-    if (num)
-        nlPrintf("\n%s %d: ", msg1, num);
-    else
-        nlPrintf("\n%s: ", msg1);
-
-    nlPrintf(msg2, ap);
-
-    nlPrintf("\n");
-}
 
 extern "C" void dError(int num, const char* msg, ...)
 {

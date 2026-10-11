@@ -1,0 +1,23 @@
+{
+  "path": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/native-pn-palette-20261011/quiet-on-1/perf-test.csv",
+  "sha256": "8e04b721b955b57816b5b8c036831942e8614776571da6c86f2ed3c6c8d87d76",
+  "metadata": [
+    "# strikers-frame-capture-v1 diagnostics=0 fps_overlay=0",
+    "# play_only=1 counter=live_play",
+    "# actual_cpu_mhz=444 actual_gpu_mhz=222 actual_bus_mhz=222 actual_xbar_mhz=166"
+  ],
+  "samples": 300,
+  "all_gameplay": true,
+  "live_play_only": true,
+  "match_frame_first": 600,
+  "match_frame_last": 899,
+  "elapsed_fps": 23.42201219443643,
+  "mean_ms": 42.69488,
+  "median_ms": 42.3915,
+  "p95_ms": 50.858,
+  "p99_ms": 58.451,
+  "deadline_60_pct": 0.0,
+  "deadline_30_pct": 0.0,
+  "tasks_median_ms": 42.043,
+  "present_median_ms": 0.324
+}

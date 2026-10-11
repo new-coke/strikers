@@ -20,6 +20,11 @@ void PortSetFpsOverlayEnabled(int enabled);
 // The path actually loaded, or NULL if none was.
 const char* PortConfigPath(void);
 
+// Init-time Vita resolution override: 1 writes an explicit supported size,
+// 0 retains the build's default (auto), -1 rejects an unknown value. No live
+// target changes; width/height remain untouched on 0/-1.
+int PortConfigVitaRenderSize(unsigned int* width, unsigned int* height);
+
 #ifdef __cplusplus
 }
 #endif

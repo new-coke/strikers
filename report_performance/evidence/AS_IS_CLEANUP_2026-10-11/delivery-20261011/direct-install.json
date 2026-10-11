@@ -1,0 +1,7 @@
+{
+  "time_unix": 1791731542.976583,
+  "help": "Command\t\tDescription\nhelp\t\tDisplay this help screen\ndestroy\t\tKill all running applications\nlaunch\t\tLaunch an app by Title ID\nkill\t\tKill an app by Title ID\nnosleep\t\tControl automatic suspend prevention\npress\t\tPress or position a synthetic input\nreboot\t\tReboot the console\nrelease\t\tRelease a synthetic input\nscreen\t\tTurn the screen on or off\nversion\t\tDisplay the Vita Companion version\nwait\t\tWait for a duration such as 100ms or 3s",
+  "destroy": "Apps destroyed.",
+  "direct_install_error": "550 File not found.",
+  "installed_sha256_after_error": "1cd15f8a8a1b3ee79987c666613e91be1e27b1dadb9deefa3ebdc0ab9abee760"
+}

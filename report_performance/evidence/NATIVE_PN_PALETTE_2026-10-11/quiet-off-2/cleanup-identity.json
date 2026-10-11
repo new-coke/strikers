@@ -1,0 +1,23 @@
+{
+  "time_unix": 1791716152.043775,
+  "destroy": "Apps destroyed.",
+  "files": {
+    "perf-test.csv": {
+      "sha256": "624df05162630b738166f54752dd48662d35b2e3d88cfd84f26c51706d66a830",
+      "bytes": 8520
+    }
+  },
+  "deleted": [
+    "perf-test.csv"
+  ],
+  "data_after": [
+    "strikers.ini",
+    "aurora-vita",
+    "cardA",
+    "cardB",
+    "sms-native-gxm-static.psarc",
+    "sms.psarc",
+    "sms-native-20261006-cache.psarc",
+    "sms-native-balanced-20261008.psarc"
+  ]
+}

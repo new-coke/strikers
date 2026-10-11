@@ -1,0 +1,197 @@
+{
+  "pairs": [
+    {
+      "pair": 1,
+      "off": {
+        "path": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/native-pn-palette-20261011/quiet-off-1/perf-test.csv",
+        "sha256": "ebc13a64c5959bfe31aeae7f0b51f58340c05284e5b257e49d3b23cafede5a34",
+        "metadata": [
+          "# strikers-frame-capture-v1 diagnostics=0 fps_overlay=0",
+          "# play_only=1 counter=live_play",
+          "# actual_cpu_mhz=444 actual_gpu_mhz=222 actual_bus_mhz=222 actual_xbar_mhz=166"
+        ],
+        "samples": 300,
+        "all_gameplay": true,
+        "live_play_only": true,
+        "match_frame_first": 600,
+        "match_frame_last": 899,
+        "elapsed_fps": 21.971710543806427,
+        "mean_ms": 45.51307,
+        "median_ms": 42.2315,
+        "p95_ms": 71.728,
+        "p99_ms": 89.238,
+        "deadline_60_pct": 0.0,
+        "deadline_30_pct": 0.0,
+        "tasks_median_ms": 41.914,
+        "present_median_ms": 0.3215
+      },
+      "on": {
+        "path": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/native-pn-palette-20261011/quiet-on-1/perf-test.csv",
+        "sha256": "8e04b721b955b57816b5b8c036831942e8614776571da6c86f2ed3c6c8d87d76",
+        "metadata": [
+          "# strikers-frame-capture-v1 diagnostics=0 fps_overlay=0",
+          "# play_only=1 counter=live_play",
+          "# actual_cpu_mhz=444 actual_gpu_mhz=222 actual_bus_mhz=222 actual_xbar_mhz=166"
+        ],
+        "samples": 300,
+        "all_gameplay": true,
+        "live_play_only": true,
+        "match_frame_first": 600,
+        "match_frame_last": 899,
+        "elapsed_fps": 23.42201219443643,
+        "mean_ms": 42.69488,
+        "median_ms": 42.3915,
+        "p95_ms": 50.858,
+        "p99_ms": 58.451,
+        "deadline_60_pct": 0.0,
+        "deadline_30_pct": 0.0,
+        "tasks_median_ms": 42.043,
+        "present_median_ms": 0.324
+      },
+      "fps_gain_pct": 6.6007680546238845,
+      "mean_ms_saved": 2.8181900000000013
+    },
+    {
+      "pair": 2,
+      "off": {
+        "path": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/native-pn-palette-20261011/quiet-off-2/perf-test.csv",
+        "sha256": "624df05162630b738166f54752dd48662d35b2e3d88cfd84f26c51706d66a830",
+        "metadata": [
+          "# strikers-frame-capture-v1 diagnostics=0 fps_overlay=0",
+          "# play_only=1 counter=live_play",
+          "# actual_cpu_mhz=444 actual_gpu_mhz=222 actual_bus_mhz=222 actual_xbar_mhz=166"
+        ],
+        "samples": 300,
+        "all_gameplay": true,
+        "live_play_only": true,
+        "match_frame_first": 600,
+        "match_frame_last": 899,
+        "elapsed_fps": 22.239799901107023,
+        "mean_ms": 44.96443333333333,
+        "median_ms": 44.91,
+        "p95_ms": 48.423,
+        "p99_ms": 56.057,
+        "deadline_60_pct": 0.0,
+        "deadline_30_pct": 0.0,
+        "tasks_median_ms": 44.587,
+        "present_median_ms": 0.327
+      },
+      "on": {
+        "path": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/native-pn-palette-20261011/quiet-on-2/perf-test.csv",
+        "sha256": "9ff98c21d73c1ff2f51ac5ba8716c7e7cd7f36234012699a60a59d98416d1ef2",
+        "metadata": [
+          "# strikers-frame-capture-v1 diagnostics=0 fps_overlay=0",
+          "# play_only=1 counter=live_play",
+          "# actual_cpu_mhz=444 actual_gpu_mhz=222 actual_bus_mhz=222 actual_xbar_mhz=166"
+        ],
+        "samples": 300,
+        "all_gameplay": true,
+        "live_play_only": true,
+        "match_frame_first": 600,
+        "match_frame_last": 899,
+        "elapsed_fps": 22.3501045537891,
+        "mean_ms": 44.74252,
+        "median_ms": 44.826,
+        "p95_ms": 48.469,
+        "p99_ms": 54.953,
+        "deadline_60_pct": 0.0,
+        "deadline_30_pct": 0.0,
+        "tasks_median_ms": 44.4765,
+        "present_median_ms": 0.325
+      },
+      "fps_gain_pct": 0.49597862018797567,
+      "mean_ms_saved": 0.22191333333333318
+    },
+    {
+      "pair": 3,
+      "off": {
+        "path": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/native-pn-palette-20261011/quiet-off-3/perf-test.csv",
+        "sha256": "ac8e74e2985dcded5edd02b6bea1aefa86c866d4af3119f33e765d24427f38da",
+        "metadata": [
+          "# strikers-frame-capture-v1 diagnostics=0 fps_overlay=0",
+          "# play_only=1 counter=live_play",
+          "# actual_cpu_mhz=444 actual_gpu_mhz=222 actual_bus_mhz=222 actual_xbar_mhz=166"
+        ],
+        "samples": 300,
+        "all_gameplay": true,
+        "live_play_only": true,
+        "match_frame_first": 600,
+        "match_frame_last": 899,
+        "elapsed_fps": 22.3253969771859,
+        "mean_ms": 44.79203666666667,
+        "median_ms": 44.879,
+        "p95_ms": 48.128,
+        "p99_ms": 54.367,
+        "deadline_60_pct": 0.0,
+        "deadline_30_pct": 0.0,
+        "tasks_median_ms": 44.562,
+        "present_median_ms": 0.3245
+      },
+      "on": {
+        "path": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/native-pn-palette-20261011/quiet-on-3/perf-test.csv",
+        "sha256": "e2f52531b07dcfe3245d09d008d4680f9513d65178bf4e87a3cca85ee6d587f1",
+        "metadata": [
+          "# strikers-frame-capture-v1 diagnostics=0 fps_overlay=0",
+          "# play_only=1 counter=live_play",
+          "# actual_cpu_mhz=444 actual_gpu_mhz=222 actual_bus_mhz=222 actual_xbar_mhz=166"
+        ],
+        "samples": 300,
+        "all_gameplay": true,
+        "live_play_only": true,
+        "match_frame_first": 600,
+        "match_frame_last": 899,
+        "elapsed_fps": 22.2894223540171,
+        "mean_ms": 44.86433,
+        "median_ms": 44.9255,
+        "p95_ms": 48.51,
+        "p99_ms": 55.308,
+        "deadline_60_pct": 0.0,
+        "deadline_30_pct": 0.0,
+        "tasks_median_ms": 44.556,
+        "present_median_ms": 0.323
+      },
+      "fps_gain_pct": -0.16113766400465135,
+      "mean_ms_saved": -0.07229333333333443
+    }
+  ],
+  "samples_per_mode": 900,
+  "off_elapsed_fps": 22.17794190769038,
+  "on_elapsed_fps": 22.675440449644917,
+  "mean_ms_saved": 0.9892700000000048,
+  "decision": "Keep default OFF: gain does not repeat consistently; full prepared mesh/material bypass remains outstanding",
+  "limitations": [
+    "Same sealed SELF and clocks; diagnostics and profiling disabled",
+    "Fixed deterministic 16.666666667 ms game timestep differs from original INI",
+    "No visual QA in this experiment",
+    "No proof of 60 FPS"
+  ],
+  "restore": {
+    "time_unix": 1791716851.701175,
+    "destroy": "Apps destroyed.",
+    "ini": {
+      "path": "ux0:/data/strikersVita/strikers.ini",
+      "sha256": "e903fbc96bcff24029076f0ba6e6ce7e28ac088bc437cfe9fb646237abd99493",
+      "previous_sha256": "309e1da27423fda419515751fa1d7c774b277e721028173722ae25bc7cb8e03e",
+      "remote_backup": null,
+      "local_backup": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/native-pn-palette-20261011/final-restore/strikers.ini.before"
+    },
+    "self_sha256": "ebbc7f2b42973d4f6528e01fb6fecc682483f82dd38d547db26deab404cf2117",
+    "ini_sha256": "e903fbc96bcff24029076f0ba6e6ce7e28ac088bc437cfe9fb646237abd99493",
+    "app_entries": [
+      "sce_sys",
+      "eboot.bin"
+    ],
+    "data_entries": [
+      "strikers.ini",
+      "aurora-vita",
+      "cardA",
+      "cardB",
+      "sms-native-gxm-static.psarc",
+      "sms.psarc",
+      "sms-native-20261006-cache.psarc",
+      "sms-native-balanced-20261008.psarc"
+    ],
+    "coredumps": []
+  },
+  "aggregate_fps_gain_pct": 2.2432132973620345
+}

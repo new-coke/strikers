@@ -1,0 +1,99 @@
+glxDisplayList.cpp: PASS
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/src/NL/glx/glxDisplayList.cpp:1:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/include/NL/glx/glxDisplayList.h:4:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/include/NL/gl/glUserData.h:4:
+/Users/robin994/Documents/Code/strikersVita/smstrikers-port/include/types.h:51:9: warning: 'NULL' macro redefined [-Wmacro-redefined]
+   51 | #define NULL 0
+      |         ^
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/include/__stddef_null.h:21:9: note: previous definition is here
+   21 | #define NULL __null
+      |         ^
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/src/NL/glx/glxDisplayList.cpp:3:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/include/NL/nlString.h:6:
+/Users/robin994/Documents/Code/strikersVita/smstrikers-port/include/NL/nlMemory.h:50:6: warning: function previously declared with an explicit exception specification redeclared with an implicit exception specification [-Wimplicit-exception-spec-mismatch]
+   50 | void operator delete[](void* ptr);
+      |      ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__new/global_new_delete.h:42:35: note: previous declaration is here
+   42 | _LIBCPP_OVERRIDABLE_FUNC_VIS void operator delete[](void* __p) _NOEXCEPT;
+      |                                   ^
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/src/NL/glx/glxDisplayList.cpp:3:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/include/NL/nlString.h:6:
+/Users/robin994/Documents/Code/strikersVita/smstrikers-port/include/NL/nlMemory.h:51:6: warning: function previously declared with an explicit exception specification redeclared with an implicit exception specification [-Wimplicit-exception-spec-mismatch]
+   51 | void operator delete(void* ptr);
+      |      ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__new/global_new_delete.h:33:35: note: previous declaration is here
+   33 | _LIBCPP_OVERRIDABLE_FUNC_VIS void operator delete(void* __p) _NOEXCEPT;
+      |                                   ^
+3 warnings generated.
+
+glxMemory.cpp: PASS
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/src/NL/glx/glxMemory.cpp:2:
+/Users/robin994/Documents/Code/strikersVita/smstrikers-port/include/NL/nlMemory.h:50:6: warning: function previously declared with an explicit exception specification redeclared with an implicit exception specification [-Wimplicit-exception-spec-mismatch]
+   50 | void operator delete[](void* ptr);
+      |      ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__new/global_new_delete.h:42:35: note: previous declaration is here
+   42 | _LIBCPP_OVERRIDABLE_FUNC_VIS void operator delete[](void* __p) _NOEXCEPT;
+      |                                   ^
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/src/NL/glx/glxMemory.cpp:2:
+/Users/robin994/Documents/Code/strikersVita/smstrikers-port/include/NL/nlMemory.h:51:6: warning: function previously declared with an explicit exception specification redeclared with an implicit exception specification [-Wimplicit-exception-spec-mismatch]
+   51 | void operator delete(void* ptr);
+      |      ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__new/global_new_delete.h:33:35: note: previous declaration is here
+   33 | _LIBCPP_OVERRIDABLE_FUNC_VIS void operator delete(void* __p) _NOEXCEPT;
+      |                                   ^
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/src/NL/glx/glxMemory.cpp:3:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/include/NL/nlConfig.h:4:
+/Users/robin994/Documents/Code/strikersVita/smstrikers-port/include/types.h:51:9: warning: 'NULL' macro redefined [-Wmacro-redefined]
+   51 | #define NULL 0
+      |         ^
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/include/__stddef_null.h:21:9: note: previous definition is here
+   21 | #define NULL __null
+      |         ^
+3 warnings generated.
+
+glxSend.cpp: PASS
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/src/NL/glx/glxSend.cpp:1:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/include/NL/glx/glxSend.h:5:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/include/NL/gl/glView.h:4:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/include/NL/nlMath.h:4:
+/Users/robin994/Documents/Code/strikersVita/smstrikers-port/include/types.h:51:9: warning: 'NULL' macro redefined [-Wmacro-redefined]
+   51 | #define NULL 0
+      |         ^
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/include/__stddef_null.h:21:9: note: previous definition is here
+   21 | #define NULL __null
+      |         ^
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/src/NL/glx/glxSend.cpp:23:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/include/NL/gl/glState.h:6:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/include/NL/glx/glxTexture.h:8:
+/Users/robin994/Documents/Code/strikersVita/smstrikers-port/include/NL/nlMemory.h:50:6: warning: function previously declared with an explicit exception specification redeclared with an implicit exception specification [-Wimplicit-exception-spec-mismatch]
+   50 | void operator delete[](void* ptr);
+      |      ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__new/global_new_delete.h:42:35: note: previous declaration is here
+   42 | _LIBCPP_OVERRIDABLE_FUNC_VIS void operator delete[](void* __p) _NOEXCEPT;
+      |                                   ^
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/src/NL/glx/glxSend.cpp:23:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/include/NL/gl/glState.h:6:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/include/NL/glx/glxTexture.h:8:
+/Users/robin994/Documents/Code/strikersVita/smstrikers-port/include/NL/nlMemory.h:51:6: warning: function previously declared with an explicit exception specification redeclared with an implicit exception specification [-Wimplicit-exception-spec-mismatch]
+   51 | void operator delete(void* ptr);
+      |      ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__new/global_new_delete.h:33:35: note: previous declaration is here
+   33 | _LIBCPP_OVERRIDABLE_FUNC_VIS void operator delete(void* __p) _NOEXCEPT;
+      |                                   ^
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/src/NL/glx/glxSend.cpp:44:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/platforms/vita/aurora_vita_backend.hpp:7:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/platforms/vita/integration/vita_feature_coverage.hpp:6:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/platforms/vita/integration/../gfx/vita_hash_map.hpp:3:
+/Users/robin994/Documents/Code/strikersVita/smstrikers-port/build-vita-gxm-latest/_deps/robin_hood-src/src/include/robin_hood.h:1445:33: warning: builtin __has_trivial_copy is deprecated; use __is_trivially_copyable instead [-Wdeprecated-builtins]
+ 1445 |         Cloner<Table, IsFlat && ROBIN_HOOD_IS_TRIVIALLY_COPYABLE(Node)>()(o, *this);
+      |                                 ^
+/Users/robin994/Documents/Code/strikersVita/smstrikers-port/build-vita-gxm-latest/_deps/robin_hood-src/src/include/robin_hood.h:210:51: note: expanded from macro 'ROBIN_HOOD_IS_TRIVIALLY_COPYABLE'
+  210 | #    define ROBIN_HOOD_IS_TRIVIALLY_COPYABLE(...) __has_trivial_copy(__VA_ARGS__)
+      |                                                   ^
+/Users/robin994/Documents/Code/strikersVita/smstrikers-port/src/NL/glx/glxSend.cpp:1330:21: warning: enumeration value 'GLTF_Num' not handled in switch [-Wswitch]
+ 1330 |             switch (filter)
+      |                     ^~~~~~
+/Users/robin994/Documents/Code/strikersVita/smstrikers-port/src/NL/glx/glxSend.cpp:1330:21: note: add missing switch cases
+ 1330 |             switch (filter)
+      |                     ^
+5 warnings generated.

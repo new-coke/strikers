@@ -1176,14 +1176,6 @@ void World::UpdateInReplay(float fTimeDelta)
 {
 }
 
-static void nlPlaneNormalize(nlVector4& in, nlVector4& out)
-{
-    float fMag = nlSqrt(in.x * in.x + in.y * in.y + in.z * in.z, true);
-    out.x = in.x / fMag;
-    out.y = in.y / fMag;
-    out.z = in.z / fMag;
-    out.w = in.w / fMag;
-}
 
 /**
  * Offset/Address/Size: 0x1428 | 0x801960EC | size: 0x458

@@ -248,10 +248,6 @@ void InitializeGameObjectLighting()
  * (@684/@685 vs @814/@815) shows the original TU had static code emitted at
  * exactly this position.
  */
-static f32 GameObjectDegToRad(f32 deg)
-{
-    return (3.1415927f * deg) / 180.0f;
-}
 
 /**
  * Offset/Address/Size: 0x34 | 0x8012A870 | size: 0x210
@@ -328,10 +324,6 @@ void UpdateGameObjectLighting()
  * front of .sdata2, matching the target pool order (target symbols
  * @573/@575, created before Update's @653+).
  */
-static f32 GameObjectLightRampT(s32 i)
-{
-    return 0.00390625f * (f32)i;
-}
 
 /**
  * Offset/Address/Size: 0x0 | 0x8012A83C | size: 0x34

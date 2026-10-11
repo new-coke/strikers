@@ -1,0 +1,33 @@
+{
+  "scope": "Descriptive correlation only; concurrent read timing and frame work may overlap. Exclude frame 899 because final capture serialization/write is inside measured frame. This remains an instrumented attribution run, not a quiet FPS baseline.",
+  "final_capture_write_frame": {
+    "sample": 299,
+    "match": 1,
+    "match_frame": 899,
+    "frame_us": 509512,
+    "tasks_us": 39263,
+    "present_us": 470249,
+    "sleep_us": 0
+  },
+  "excluding_final_write": {
+    "samples": 299,
+    "mean_ms": 45.34807023411371,
+    "elapsed_fps": 22.051655006208758
+  },
+  "groups": {
+    "with_archive_reads": {
+      "samples": 54,
+      "mean_ms": 52.089,
+      "median_ms": 47.432500000000005,
+      "min_ms": 36.158,
+      "max_ms": 121.049
+    },
+    "without_archive_reads": {
+      "samples": 245,
+      "mean_ms": 43.862314285714284,
+      "median_ms": 42.048,
+      "min_ms": 34.777,
+      "max_ms": 105.079
+    }
+  }
+}

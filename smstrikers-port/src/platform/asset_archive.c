@@ -6,8 +6,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <time.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <pthread.h>
+#endif
 #ifdef STRIKERS_VITA
 #include <psp2/io/fcntl.h>
+#include <psp2/kernel/processmgr.h>
 #elif defined(_WIN32)
 #include <io.h>
 #endif
@@ -26,6 +33,7 @@ typedef struct ArchiveEntry {
 typedef struct ArchiveName { const char* path; unsigned index; } ArchiveName;
 struct PortAssetArchive {
     FILE* file;
+    int profile;
 #ifdef STRIKERS_VITA
     SceUID fd;
 #endif
@@ -39,6 +47,36 @@ struct PortAssetArchive {
     int ignore_case;
     unsigned char* toc;
 };
+#ifdef _WIN32
+static SRWLOCK s_stats_lock = SRWLOCK_INIT;
+static void stats_lock(void) { AcquireSRWLockExclusive(&s_stats_lock); }
+static void stats_unlock(void) { ReleaseSRWLockExclusive(&s_stats_lock); }
+#else
+static pthread_mutex_t s_stats_lock = PTHREAD_MUTEX_INITIALIZER;
+static void stats_lock(void) { pthread_mutex_lock(&s_stats_lock); }
+static void stats_unlock(void) { pthread_mutex_unlock(&s_stats_lock); }
+#endif
+static PortAssetIoStats s_stats;
+void port_asset_io_snapshot(PortAssetIoStats* out)
+{
+    if (!out) return;
+    stats_lock(); *out = s_stats; stats_unlock();
+}
+static uint64_t io_time_us(void)
+{
+#ifdef STRIKERS_VITA
+    return sceKernelGetProcessTimeWide();
+#elif defined(_WIN32)
+    LARGE_INTEGER ticks, frequency;
+    QueryPerformanceCounter(&ticks); QueryPerformanceFrequency(&frequency);
+    return (uint64_t)(ticks.QuadPart / frequency.QuadPart) * 1000000u +
+           (uint64_t)(ticks.QuadPart % frequency.QuadPart) * 1000000u / frequency.QuadPart;
+#else
+    struct timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    return (uint64_t)t.tv_sec * 1000000u + (uint64_t)t.tv_nsec / 1000u;
+#endif
+}
 static uint64_t be(const unsigned char* p, unsigned n)
 {
     uint64_t v = 0;
@@ -47,12 +85,13 @@ static uint64_t be(const unsigned char* p, unsigned n)
 }
 static size_t read_at(PortAssetArchive* a, void* dst, size_t n, uint64_t pos)
 {
+    const uint64_t start = a->profile ? io_time_us() : 0;
+    size_t got = 0;
 #ifdef STRIKERS_VITA
     if (pos > INT64_MAX || n > INT_MAX) return 0;
-    const int got = sceIoPread(a->fd, dst, (unsigned)n, (SceOff)pos);
-    return got > 0 ? (size_t)got : 0;
+    const int result = sceIoPread(a->fd, dst, (unsigned)n, (SceOff)pos);
+    got = result > 0 ? (size_t)result : 0;
 #else
-    size_t got = 0;
 #ifdef _WIN32
     _lock_file(a->file);
     clearerr(a->file);
@@ -66,8 +105,15 @@ static size_t read_at(PortAssetArchive* a, void* dst, size_t n, uint64_t pos)
         got = fread(dst, 1, n, a->file);
     funlockfile(a->file);
 #endif
-    return got;
 #endif
+    if (a->profile) {
+        const uint64_t elapsed = io_time_us() - start;
+        stats_lock();
+        ++s_stats.physical_reads; s_stats.physical_bytes += got;
+        s_stats.read_us += elapsed; s_stats.read_errors += got != n;
+        stats_unlock();
+    }
+    return got;
 }
 static unsigned stored_size(const PortAssetArchive* a, unsigned block)
 {
@@ -161,14 +207,24 @@ static long read_entry(PortAssetArchive* a, unsigned i, void* dst, size_t bytes,
         if (read_at(a, scratch, physical, a->offsets[k]) != physical) break;
         const unsigned char* data = scratch;
         if (physical < expected) {
+            const uint64_t start = a->profile ? io_time_us() : 0;
             z_stream stream;
             memset(&stream, 0, sizeof stream);
             stream.next_in = scratch; stream.avail_in = physical;
             stream.next_out = scratch + BLOCK_SIZE; stream.avail_out = expected;
-            if (inflateInit(&stream) != Z_OK) break;
-            int rc = inflate(&stream, Z_FINISH);
-            int valid = rc == Z_STREAM_END && stream.total_out == expected && stream.total_in == physical;
-            inflateEnd(&stream);
+            int valid = 0;
+            if (inflateInit(&stream) == Z_OK) {
+                const int rc = inflate(&stream, Z_FINISH);
+                valid = rc == Z_STREAM_END && stream.total_out == expected && stream.total_in == physical;
+                inflateEnd(&stream);
+            }
+            if (a->profile) {
+                const uint64_t elapsed = io_time_us() - start;
+                stats_lock(); ++s_stats.inflates;
+                s_stats.inflated_bytes += valid ? expected : 0;
+                s_stats.inflate_us += elapsed; s_stats.inflate_errors += !valid;
+                stats_unlock();
+            }
             if (!valid) break;
             data = scratch + BLOCK_SIZE;
         }
@@ -186,6 +242,9 @@ static long read_entry(PortAssetArchive* a, unsigned i, void* dst, size_t bytes,
 long port_asset_archive_read(PortAssetArchive* a, unsigned i, void* dst, size_t bytes, uint64_t offset)
 {
     if (!a || i >= a->count - 1) return -1;
+    if (a->profile) {
+        stats_lock(); ++s_stats.requests; s_stats.requested_bytes += bytes; stats_unlock();
+    }
     return read_entry(a, i + 1, dst, bytes, offset);
 }
 PortAssetArchive* port_asset_archive_open(const char* path, char* error, size_t n)
@@ -193,6 +252,8 @@ PortAssetArchive* port_asset_archive_open(const char* path, char* error, size_t 
     unsigned char h[32];
     PortAssetArchive* a = (PortAssetArchive*)calloc(1, sizeof *a);
     if (!a) return fail(NULL, error, n, "out of memory");
+    const char* profile = getenv("STRIKERS_ASSET_IO_PROFILE");
+    a->profile = profile && strcmp(profile, "1") == 0;
 #ifdef STRIKERS_VITA
     a->fd = -1;
 #endif

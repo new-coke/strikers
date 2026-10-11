@@ -225,62 +225,9 @@ static void BlitImage(int offset_x, int offset_y, float scale_x, float scale_y, 
     PPCSync();
 }
 
-static void PutPixel(void* fb, int x, int y, const int yuv[3], const int yuv_p[3], const int yuv_pp[3])
-{
-    u8* fbyte = (u8*)fb + y * 0x500 + (x << 1);
-    fbyte[0] = (u8)yuv[0];
 
-    if ((x & 1) != 0)
-    {
-        fbyte[-1] = (u8)(0.25f * (float)yuv_pp[1] + 0.5f * (float)yuv_p[1] + 0.25f * (float)yuv[1]);
-        fbyte[1] = (u8)(0.25f * (float)yuv_pp[2] + 0.5f * (float)yuv_p[2] + 0.25f * (float)yuv[2]);
-    }
-}
 
-static u16 GetPixelFromTexture(PlatTexture* pTex, int x, int y)
-{
-    u16* pData = (u16*)pTex->m_SwizzledData;
-    return pData[((y / 4) * (pTex->m_Width >> 2) + (x / 4)) * 16 + ((y & 3) << 2) + (x & 3)];
-}
 
-static void RGB5A32RGB32(u8* pRGB, u16 rgb16)
-{
-    if (rgb16 & 0x8000)
-    {
-        pRGB[0] = ((rgb16 >> 10) & 0x1F) * 255 / 31;
-        pRGB[1] = ((rgb16 >> 5) & 0x1F) * 255 / 31;
-        pRGB[2] = (rgb16 & 0x1F) * 255 / 31;
-        pRGB[3] = 0xFF;
-    }
-    else
-    {
-        pRGB[3] = ((rgb16 >> 12) & 0x7) * 255u / 7;
-        pRGB[0] = ((rgb16 >> 8) & 0xF) * 255u / 15;
-        pRGB[1] = ((rgb16 >> 4) & 0xF) * 255u / 15;
-        pRGB[2] = (rgb16 & 0xF) * 255u / 15;
-    }
-}
-
-static void RGB2YUV(u8* pYUV, const u8* pRGB)
-{
-    float r = pRGB[0];
-    float g = pRGB[1];
-    float b = pRGB[2];
-    float y = 0.299 * r + 0.587 * g + 0.114 * b;
-    float u = 128.0 - 0.169 * r - 0.331 * g + 0.5f * b;
-    float v = 128.0 + 0.5f * r - 0.419 * g - 0.081 * b;
-    int iy = (int)(y + 0.5f);
-    int iu = (int)(u + 0.5f);
-    int iv = (int)(v + 0.5f);
-
-    iy = iy < 0 ? 0 : (iy > 255 ? 255 : iy);
-    iu = iu < 0 ? 0 : (iu > 255 ? 255 : iu);
-    iv = iv < 0 ? 0 : (iv > 255 ? 255 : iv);
-
-    pYUV[0] = iy;
-    pYUV[1] = iu;
-    pYUV[2] = iv;
-}
 
 /**
  * Offset/Address/Size: 0x3E8 | 0x801BF138 | size: 0xC0
@@ -601,10 +548,6 @@ void glxSwapLoading(bool bBegin, bool bOtherPosition)
 #endif
 }
 
-static u8 glxSwapAllowDrawSync()
-{
-    return glx_bAllowDrawSync;
-}
 
 /**
  * Offset/Address/Size: 0xB80 | 0x801BF8D0 | size: 0x14

@@ -1,0 +1,79 @@
+Test project /Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/build/vita-host-tests
+      Start  1: vita_backend_contract
+ 1/37 Test  #1: vita_backend_contract .......................   Passed    1.30 sec
+      Start  2: vita_vitagl_cg
+ 2/37 Test  #2: vita_vitagl_cg ..............................   Passed    0.00 sec
+      Start  3: vita_native_material
+ 3/37 Test  #3: vita_native_material ........................   Passed    0.44 sec
+      Start  4: vita_native_assets
+ 4/37 Test  #4: vita_native_assets ..........................   Passed    0.00 sec
+      Start  5: vita_prepared_display_list
+ 5/37 Test  #5: vita_prepared_display_list ..................   Passed    0.00 sec
+      Start  6: vita_compact_texture
+ 6/37 Test  #6: vita_compact_texture ........................   Passed    0.00 sec
+      Start  7: vita_geometry_recipe
+ 7/37 Test  #7: vita_geometry_recipe ........................   Passed    0.00 sec
+      Start  8: vita_vertex_reuse_probe
+ 8/37 Test  #8: vita_vertex_reuse_probe .....................   Passed    0.00 sec
+      Start  9: vita_byte_compare
+ 9/37 Test  #9: vita_byte_compare ...........................   Passed    0.04 sec
+      Start 10: vita_vertex_pack
+10/37 Test #10: vita_vertex_pack ............................   Passed    0.00 sec
+      Start 11: vita_fixed_uniform_builder
+11/37 Test #11: vita_fixed_uniform_builder ..................   Passed    0.01 sec
+      Start 12: vita_regression
+12/37 Test #12: vita_regression .............................   Passed    0.00 sec
+      Start 13: vita_view_draw_capture
+13/37 Test #13: vita_view_draw_capture ......................   Passed    0.00 sec
+      Start 14: vita_draw_payload_hash
+14/37 Test #14: vita_draw_payload_hash ......................   Passed    0.00 sec
+      Start 15: vita_vertex_uniform_delta
+15/37 Test #15: vita_vertex_uniform_delta ...................   Passed    0.00 sec
+      Start 16: vita_tev_opt
+16/37 Test #16: vita_tev_opt ................................   Passed    0.01 sec
+      Start 17: vita_shader_debug_registry
+17/37 Test #17: vita_shader_debug_registry ..................   Passed    0.00 sec
+      Start 18: vita_frontend_translation
+18/37 Test #18: vita_frontend_translation ...................   Passed    0.33 sec
+      Start 19: vita_native_model_recipe
+19/37 Test #19: vita_native_model_recipe ....................   Passed    0.01 sec
+      Start 20: vita_native_model_textured
+20/37 Test #20: vita_native_model_textured ..................   Passed    0.01 sec
+      Start 21: vita_native_model_recipe_cache
+21/37 Test #21: vita_native_model_recipe_cache ..............   Passed    0.00 sec
+      Start 22: vita_native_model_textured_cache
+22/37 Test #22: vita_native_model_textured_cache ............   Passed    0.01 sec
+      Start 23: vita_native_model_textured_uniforms
+23/37 Test #23: vita_native_model_textured_uniforms .........   Passed    0.01 sec
+      Start 24: vita_native_model_textured_prepared
+24/37 Test #24: vita_native_model_textured_prepared .........   Passed    0.01 sec
+      Start 25: vita_native_model_prepared
+25/37 Test #25: vita_native_model_prepared ..................   Passed    0.00 sec
+      Start 26: vita_native_model_cache
+26/37 Test #26: vita_native_model_cache .....................   Passed    0.00 sec
+      Start 27: vita_native_model_registry_cache
+27/37 Test #27: vita_native_model_registry_cache ............   Passed    0.00 sec
+      Start 28: vita_native_model_registry_dispatch
+28/37 Test #28: vita_native_model_registry_dispatch .........   Passed    0.00 sec
+      Start 29: vita_native_model_registry_dispatch_cache
+29/37 Test #29: vita_native_model_registry_dispatch_cache ...   Passed    0.00 sec
+      Start 30: vita_native_model_census
+30/37 Test #30: vita_native_model_census ....................   Passed    0.00 sec
+      Start 31: vita_command_stream
+31/37 Test #31: vita_command_stream .........................   Passed    0.01 sec
+      Start 32: vita_submission
+32/37 Test #32: vita_submission .............................   Passed    0.01 sec
+      Start 33: vita_cpu_workers
+33/37 Test #33: vita_cpu_workers ............................   Passed    0.14 sec
+      Start 34: vita_renderer_selection
+34/37 Test #34: vita_renderer_selection .....................   Passed    0.06 sec
+      Start 35: vita_build_manifest
+35/37 Test #35: vita_build_manifest .........................   Passed    0.87 sec
+      Start 36: vita_performance_compare
+36/37 Test #36: vita_performance_compare ....................   Passed    0.05 sec
+      Start 37: vita_binary_audit_contract
+37/37 Test #37: vita_binary_audit_contract ..................   Passed    0.05 sec
+
+100% tests passed out of 37
+
+Total Test time (real) =   3.44 sec

@@ -1,0 +1,96 @@
+{
+  "time_unix": 1791672413.825055,
+  "root_head": "7014a61e3060dcd1ea73e275df90f290ac2f8a99",
+  "aurora_head": "dec0a58028972f3c4eb295235cd94ba3c24aabc6",
+  "decoder_sha256": "0d101049b24bcf2ace2cbb7441d47e895d7ddf892df807107c6de8bcc241dd5a",
+  "decoder_object_mtime": 1791672315.2014005,
+  "decoder_object_sha256": "c4f47f0f67cdbd51af7754a014d5b43a3d7a656ca5b926f3d5899785dd725537",
+  "semantic_CMake_differences": {},
+  "artifacts": {
+    "strikers": {
+      "sha256": "561574bc37f6af8f145b92dc13b2eb3ea7f6546fcb5852a9094080502fbd93ef",
+      "bytes": 19917188,
+      "mtime": 1791672377.307234
+    },
+    "strikers.map": {
+      "sha256": "8a27cbf432bfd5c4b77f9d270729ff7e1bd3f21eca713a12e98c3deee7f97a79",
+      "bytes": 11267234,
+      "mtime": 1791672377.365258
+    },
+    "strikers.velf": {
+      "sha256": "d60ffecd059b320904f0c976ac21bf08b7a6c327327ac60877e5c13efd139d72",
+      "bytes": 22010750,
+      "mtime": 1791672385.8330193
+    },
+    "strikers_vita.self": {
+      "sha256": "1200ffa8d3a29f988c4636dfb1724d9fcbe09e89e1346ae294ef5bcc2ff571a1",
+      "bytes": 3601050,
+      "mtime": 1791672388.489556
+    },
+    "strikers_vita.vpk": {
+      "sha256": "8bdc0a71667ba3ed1c902d2fd423c7913cb850bfb62543a0809cd7c891336ab8",
+      "bytes": 3581632,
+      "mtime": 1791672388.912919
+    },
+    "CMakeCache.txt": {
+      "sha256": "c7a9a121bb78e80277942b4079f1425cc01dfe01655cf01430abd03357deb51f",
+      "bytes": 28193,
+      "mtime": 1791672301.4205608
+    },
+    "compile_commands.json": {
+      "sha256": "13c3b57c92342f099ace8f593d9c27d7d6e8026b057962c5260769fc1526c916",
+      "bytes": 1618663,
+      "mtime": 1791672301.844004
+    }
+  },
+  "options": {
+    "AURORA_VITA_ASYNC_GX": "ON",
+    "AURORA_VITA_BUILD_BACKEND_TESTS": "OFF",
+    "AURORA_VITA_BUILD_PROBE": "OFF",
+    "AURORA_VITA_BUILD_SDL3_PROBE": "OFF",
+    "AURORA_VITA_DISTINCT_CPU_CORES": "OFF",
+    "AURORA_VITA_GXM_DIRECT_DRAW_SUBMIT": "ON",
+    "AURORA_VITA_GXM_DIRECT_STREAM_WRITE": "OFF",
+    "AURORA_VITA_GXM_IMMEDIATE_DRAW_VIEW": "OFF",
+    "AURORA_VITA_LTO": "ON",
+    "AURORA_VITA_LTO_JOBS": "auto",
+    "AURORA_VITA_NATIVE_CMPR": "OFF",
+    "AURORA_VITA_NATIVE_GX_TEXTURES": "ON",
+    "AURORA_VITA_PORT_ABI": "GAMECUBE",
+    "AURORA_VITA_RENDERER": "GXM",
+    "AURORA_VITA_RUNTIME_LOGGING": "ON",
+    "AURORA_VITA_WITH_GX_FRONTEND": "ON",
+    "AURORA_VITA_WITH_UPSTREAM_GX": "OFF",
+    "CMAKE_BUILD_TYPE": "Release",
+    "STRIKERS_ASAN": "OFF",
+    "STRIKERS_AURORA": "ON",
+    "STRIKERS_AURORA_VITA_ROOT": "/Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita",
+    "STRIKERS_FFMPEG": "OFF",
+    "STRIKERS_FFMPEG_ROOT": "",
+    "STRIKERS_VITA": "ON",
+    "STRIKERS_VITADEBUGGER_ROOT": "",
+    "STRIKERS_VITA_AUDIO_THREAD": "ON",
+    "STRIKERS_VITA_AURORA_LTO": "ON",
+    "STRIKERS_VITA_FAST_PROFILER_BUILD": "OFF",
+    "STRIKERS_VITA_FORCE_60HZ": "ON",
+    "STRIKERS_VITA_GC_NATIVE_RES": "OFF",
+    "STRIKERS_VITA_GXM_DIRECT_DRAW_SUBMIT": "ON",
+    "STRIKERS_VITA_GXM_DIRECT_STREAM_WRITE": "OFF",
+    "STRIKERS_VITA_GXM_LEAN_RENDER": "OFF",
+    "STRIKERS_VITA_GX_THREAD": "ON",
+    "STRIKERS_VITA_HOT_LTO": "ON",
+    "STRIKERS_VITA_LTO_JOBS": "auto",
+    "STRIKERS_VITA_NATIVE_CMPR": "OFF",
+    "STRIKERS_VITA_NATIVE_GX_TEXTURES": "ON",
+    "STRIKERS_VITA_NO_LOGS": "OFF",
+    "STRIKERS_VITA_PROFILER": "OFF",
+    "STRIKERS_VITA_PROFILE_AUTOSTART": "OFF",
+    "STRIKERS_VITA_SHADER_PROFILE": "SEALED",
+    "STRIKERS_VITA_STATIC_GEOMETRY_MB": "8",
+    "AURORA_VITA_PORT_ABI-STRINGS": "SDK;GAMECUBE",
+    "AURORA_VITA_RENDERER-STRINGS": "VITAGL;GXM",
+    "STRIKERS_VITA_SHADER_PROFILE-STRINGS": "CONTROL;WARM;SEALED"
+  },
+  "VPK_eboot_sha256": "1200ffa8d3a29f988c4636dfb1724d9fcbe09e89e1346ae294ef5bcc2ff571a1",
+  "native_binary_audit": "PASS: 12856 executable symbols inspected; native GXM draw/present found; no GL/vgl/vita2d entry points or libraries."
+}

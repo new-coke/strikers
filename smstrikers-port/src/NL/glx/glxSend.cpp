@@ -43,8 +43,12 @@ extern "C" int port_region_owns(const void*);  // src/platform/memalloc.cpp
 #include <vita_cpu_workers.hpp>
 #include <aurora_vita_backend.hpp>
 #include <array>
+#if !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
 #include "../../../extern/aurora-vita/lib/gx/native_model_recipe.hpp"
 #include "../../../extern/aurora-vita/lib/gx/native_model_census.hpp"
+#include "../../../extern/aurora-vita/lib/gx/native_model_registry.hpp"
+#include "../../../extern/aurora-vita/lib/gx/native_model_options.hpp"
+#include "../../../extern/aurora-vita/lib/gx/native_pn_palette.hpp"
 // Keep Aurora's full GX frontend headers out of Strikers' Dolphin GX ABI.
 // These three queue hooks only transport an already-pinned, immutable DL.
 namespace aurora::gx::fifo {
@@ -53,6 +57,7 @@ uint64_t producer_write_epoch() noexcept;
 bool write_native_draw_replay(const void*,uint32_t) noexcept;
 }
 #endif
+#endif
 
 // PORT: linkable, so the debug menu can drive it. Only the keyword changed.
 bool g_bAllowLighting = true;
@@ -60,12 +65,7 @@ bool g_bAllowLighting = true;
 bool g_bAllowSpecular = true;
 static nlColour nlBlack = { { 0, 0, 0, 0xFF } };
 static nlColour nlWhite = { { 0xFF, 0xFF, 0xFF, 0xFF } };
-static bool glx_AlwaysReloadLights = true;
-static bool glx_CompiledDraw = true;
 static u8 glx_InvXpose = 1;
-static bool glx_AllowUncompiledDraws = true;
-static bool g_bFastSkinPath = true;
-static bool g_bMtxSkinMath = true;
 static u32 glx_program = (u32)-1;
 
 static eGLView prev_view;
@@ -218,7 +218,7 @@ void glx_PrepareSkinPackets(eGLView view, GLRenderList* list)
 {
     s_SkinPacketView = -1;
     const int index = SkinPacketViewIndex(view);
-    if (!SkinPacketsEnabled() || index < 0 || !g_bFastSkinPath || !g_bMtxSkinMath)
+    if (!SkinPacketsEnabled() || index < 0)
         return;
     s_SkinPacketView = index;
     SkinPacketStats& stats = s_SkinPacketStats[index];
@@ -274,7 +274,7 @@ enum class PacketProfileStage : unsigned int
     Other, View, Program, TexConfig, UserData, Texture, Raster, Matrix, Streams, Draw, Count
 };
 
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
 struct PacketProfileStats
 {
     unsigned long long frames = 0;
@@ -316,7 +316,7 @@ class PortPacketProfileScope
 public:
     explicit PortPacketProfileScope(eGLView view)
     {
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
         if (!glx_PacketProfileSampledView(view))
             return;
         const int index = PacketProfileViewIndex(view);
@@ -337,7 +337,7 @@ public:
 
     void phase(PacketProfileStage next)
     {
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
         if (stats == nullptr || next == stage)
             return;
         const unsigned long long now = port_monotonic_ns();
@@ -353,7 +353,7 @@ public:
 
     ~PortPacketProfileScope()
     {
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
         if (stats == nullptr)
             return;
         const unsigned long long now = port_monotonic_ns();
@@ -367,7 +367,7 @@ public:
     PortPacketProfileScope& operator=(const PortPacketProfileScope&) = delete;
 
 private:
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
     PacketProfileStats* stats = nullptr;
     PacketProfileStage stage = PacketProfileStage::Other;
     unsigned long long started = 0, previous = 0;
@@ -376,6 +376,12 @@ private:
 } // namespace
 
 #if defined(PORT_VITA)
+#if defined(STRIKERS_VITA_GXM_LEAN_RENDER)
+// Other modules still link the packet profiler's API, but the lean game
+// neither samples GX callbacks nor executes timer/phase bookkeeping.
+bool glx_PacketProfileSampledView(eGLView) { return false; }
+void glx_ReportPacketProfile(FILE*) {}
+#else
 bool glx_PacketProfileSampledView(eGLView view)
 {
     const unsigned int period = PacketProfilePeriod();
@@ -405,6 +411,7 @@ void glx_ReportPacketProfile(FILE* out)
         s_PacketProfileStats[index] = {};
     }
 }
+#endif
 #endif
 
 struct LightData
@@ -1383,18 +1390,18 @@ static inline void glx_SwitchTexture(const glModelPacket* p)
         {
             texhandle = p->state.texture[bit];
             pTex = glx_GetTex(texhandle, false, prev_view != GLV_Debug);
+#if !defined(PORT_VITA) || !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
             // PORT: keep what the packet asked for, the fallback below overwrites texhandle.
             const unsigned long wanted = texhandle;
             const PlatTexture* wantedTex = pTex;
+#endif
             if (pTex == NULL || pTex->m_bMissingTexture)
             {
-                // PORT: this is the quiet one. The fallback usually resolves, so the frame draws the error texture and nothing says why.
-                // Missing model textures are especially destructive on Vita because the
-                // fallback alternates global/white and global/magenta. Keep the existing
-                // opt-in probe on desktop, but always report the bounded unique set on
-                // hardware builds while the native renderer is under active bring-up.
+#if !defined(PORT_VITA) || !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
+                // Avoid a 64-entry probe lookup on each missing texture in a
+                // quiet gameplay run. The fallback behavior stays unchanged.
 #if defined(PORT_VITA)
-                static const bool bProbe = true;
+                static const bool bProbe = PortDiagnosticsEnabled();
 #else
                 static const bool bProbe = getenv("STRIKERS_PROBE_TEX") != NULL;
 #endif
@@ -1422,6 +1429,7 @@ static inline void glx_SwitchTexture(const glModelPacket* p)
                                      ? *(const u32*)wanted : 0u);
                     }
                 }
+#endif
                 texhandle = errorTextures[(glGetCurrentFrame() & 4) >> 2];
                 pTex = glx_GetTex(texhandle, true, false);
             }
@@ -1432,6 +1440,7 @@ static inline void glx_SwitchTexture(const glModelPacket* p)
 
             if (pTex == NULL)
             {
+#if !defined(PORT_VITA) || !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
                 // PORT: even the missing-texture fallback is unresolved.
                 static unsigned long seen[16];
                 static int nSeen = 0;
@@ -1455,6 +1464,7 @@ static inline void glx_SwitchTexture(const glModelPacket* p)
                                         : "no pixel data"),
                              (unsigned long)texhandle, texnum);
                 }
+#endif
                 texnum++;
                 continue;
             }
@@ -2134,7 +2144,69 @@ static void glud_Skin(void* pData, const glModelPacket* pPacket)
     else
         bInvXpose = glx_InvXpose;
 
-    if (g_bFastSkinPath && g_bMtxSkinMath && !glx_IsCoPlanarView && pPacket->state.matrix == glGetIdentityMatrix())
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
+    // First prepared-Characters component: publish native frame parameters at
+    // the original skin slot, before the draw. Other userdata, materials and
+    // passes keep their current callbacks and current GX state dependencies.
+    if (aurora::gx::fifo::can_write_native_pn_palette() && prev_view == GLV_Characters &&
+        (glx_program == prog_3d_pointlit || glx_program == prog_3d_pointlit_dirt) &&
+        !glx_IsCoPlanarView &&
+        pPacket->state.matrix == glGetIdentityMatrix() && numMatrices > 0 &&
+        numMatrices <= aurora::gx::fifo::NativePnPaletteCapacity)
+    {
+        using aurora::gx::fifo::NativePnMatrix;
+        std::array<NativePnMatrix, aurora::gx::fifo::NativePnPaletteCapacity> palette;
+        bool valid = true;
+        for (i = 0; i < numMatrices; ++i)
+        {
+            const int matrixId = pSkin[i].reg + 99;
+            if (matrixId < 0 || matrixId > 27 || matrixId % 3 != 0)
+            {
+                valid = false;
+                break;
+            }
+            palette[i].slot = static_cast<u32>(matrixId / 3);
+        }
+        const port::SkinMatrixResult* prepared = nullptr;
+        if (valid && s_SkinPacketView >= 0 && s_SkinPacketView == SkinPacketViewIndex(prev_view))
+            prepared = s_SkinPackets.find(reinterpret_cast<uintptr_t>(pPacket), pSkin, numMatrices,
+                                          gx_mview, bInvXpose != 0);
+        for (i = 0; valid && i < numMatrices; ++i)
+        {
+            const float* position;
+            const float* normal;
+            if (prepared != nullptr)
+            {
+                position = &prepared[i].position[0][0];
+                normal = bInvXpose ? &prepared[i].normal[0][0] : position;
+            }
+            else
+            {
+                PSMTXConcat(gx_mview, *(const Mtx*)pSkin[i].mat, mSkinConcat);
+                position = &mSkinConcat[0][0];
+                normal = position;
+                if (bInvXpose)
+                {
+                    valid = PSMTXInvXpose(mSkinConcat, mNormFast) != 0;
+                    normal = &mNormFast[0][0];
+                }
+            }
+            if (!valid) break;
+            memcpy(palette[i].position.data(), position, sizeof(Mtx));
+            for (unsigned row = 0; row < 3; ++row)
+                memcpy(palette[i].normal.data() + row * 3, normal + row * 4, 3 * sizeof(float));
+        }
+        if (valid && aurora::gx::fifo::write_native_pn_palette(palette.data(), numMatrices))
+        {
+            if (prepared != nullptr) s_SkinPacketStats[s_SkinPacketView].usedMatrices += numMatrices;
+            return;
+        }
+        // No native write has executed on rejection. Keep the original GX
+        // loads, including unusual matrix IDs, slow math and recording modes.
+    }
+#endif
+
+    if (!glx_IsCoPlanarView && pPacket->state.matrix == glGetIdentityMatrix())
     {
 #if defined(PORT_VITA)
         if (s_SkinPacketView >= 0 && s_SkinPacketView == SkinPacketViewIndex(prev_view))
@@ -2173,20 +2245,24 @@ static void glud_Skin(void* pData, const glModelPacket* pPacket)
     }
     else
     {
-        for (i = 0; i < numMatrices; i++, pSkin++)
+        // These inputs belong to this packet/view and do not change while GX
+        // loads the bones. Retain the original co-planar math path and order.
+        if (numMatrices != 0)
         {
-            if (g_bMtxSkinMath && !glx_IsCoPlanarView)
+            if (!glx_IsCoPlanarView)
             {
                 glxCopyMatrix(gxMat, *(nlMatrix4*)pPacket->state.matrix);
                 PSMTXConcat(gxMat, gx_mview, modelViewMtx);
-                PSMTXConcat(modelViewMtx, *(const Mtx*)pSkin->mat, mSkinConcat);
             }
             else
             {
                 nlMultMatrices(nlMat, *(nlMatrix4*)pPacket->state.matrix, mview);
                 glxCopyMatrix(modelViewMtx, nlMat);
-                PSMTXConcat(modelViewMtx, *(const Mtx*)pSkin->mat, mSkinConcat);
             }
+        }
+        for (i = 0; i < numMatrices; i++, pSkin++)
+        {
+            PSMTXConcat(modelViewMtx, *(const Mtx*)pSkin->mat, mSkinConcat);
             slot = pSkin->reg + 99;
             GXLoadPosMtxImm(mSkinConcat, (u32)slot);
             if (bInvXpose)
@@ -2379,17 +2455,13 @@ static inline void setWorldAmbient()
  */
 static void glx_SwitchUserData(const glModelPacket* p)
 {
-    static bool bDeferredEnvDiffuse = true;
     int i;
     uintptr_t* pTable;   // PORT: void*[GLUD_Num].
     GLViewportUserData* pViewport;
     void* pData;
 
-    if (glx_AlwaysReloadLights)
-    {
-        glx_ReloadPointLights = true;
-        glx_ReloadSpecLights = true;
-    }
+    glx_ReloadPointLights = true;
+    glx_ReloadSpecLights = true;
 
     setWorldAmbient();
 
@@ -2406,15 +2478,7 @@ static void glx_SwitchUserData(const glModelPacket* p)
         glx_prevSpecMask = 0;
     }
 
-    if (bDeferredEnvDiffuse)
-    {
-        glx_envdiffuse = false;
-    }
-    else if (glx_GlossMapStage >= 0)
-    {
-        gxSetTexCoordGen(glx_GlossMapStage, GX_TG_MTX2x4, (_GXTexGenSrc)(glx_GlossMapStage + 4), GX_IDENTITY);
-        glx_DirtyFlags |= glv_TexConfigChanged;
-    }
+    glx_envdiffuse = false;
 
     glx_mobilediffuse = false;
     glx_constantcolour = false;
@@ -2508,14 +2572,7 @@ static void glx_SwitchUserData(const glModelPacket* p)
         case GLUD_EnvDiffuse:
             if (glx_allowSpecular)
             {
-                if (bDeferredEnvDiffuse)
-                {
-                    glx_envdiffuse = true;
-                }
-                else
-                {
-                    glud_EnvDiffuse(true);
-                }
+                glx_envdiffuse = true;
             }
             break;
 
@@ -2584,7 +2641,7 @@ static inline void _Indirect(bool bOn)
 /**
  * Offset/Address/Size: 0x538 | 0x801BA038 | size: 0xB20
  */
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
 namespace { bool native_model_draw_only(const glModelPacket* packet); }
 #endif
 
@@ -2684,6 +2741,7 @@ static void glx_DrawPacket(const glModelPacket* packet)
         AdjustViewport(true);
     }
 
+#if !defined(PORT_VITA) || !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
     static const bool bDrawProbe = getenv("STRIKERS_PROBE_DRAW") != NULL;
     if (bDrawProbe)
     {
@@ -2744,7 +2802,9 @@ static void glx_DrawPacket(const glModelPacket* packet)
         }
     }
 
-#if defined(PORT_VITA)
+#endif
+
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
     {
         const bool is3DProgram = p->state.program == prog_3d_unlit
             || p->state.program == prog_3d_unlit_2x
@@ -2770,9 +2830,9 @@ static void glx_DrawPacket(const glModelPacket* packet)
             {
                 if (glx_NumIndices == 0)
                     route = "display-list/no-indexed-streams";
-                else if (glx_CompiledDraw && glx_NumIndices == p->numStreams && isDl)
+                else if (glx_NumIndices == p->numStreams && isDl)
                     route = "display-list/compiled";
-                else if (glx_AllowUncompiledDraws && raster8 != 1)
+                else if (raster8 != 1)
                     route = "immediate-fallback";
                 else
                     route = "SKIPPED";
@@ -2821,57 +2881,35 @@ static void glx_DrawPacket(const glModelPacket* packet)
     }
     else
     {
-        if (glx_NumIndices == 0)
+        DisplayList* dl = nullptr;
+        if (glx_NumIndices == 0 ||
+            (glx_NumIndices == p->numStreams && (dl = dlGetStruct(p->indexBuffer)) != nullptr))
         {
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
             if (!native_model_draw_only(p))
 #endif
-                GXCallDisplayList(dlGetDisplayList(p->indexBuffer), dlGetSize(p->indexBuffer));
-        }
-        else if (glx_CompiledDraw && (glx_NumIndices == p->numStreams) && dlIsDisplayList(p->indexBuffer))
-        {
-#if defined(PORT_VITA)
-            if (!native_model_draw_only(p))
-#endif
-                GXCallDisplayList(dlGetDisplayList(p->indexBuffer), dlGetSize(p->indexBuffer));
-        }
-        else if (glx_AllowUncompiledDraws && glGetRasterState(p->state.raster, (eGLState)8) != 1)
-        {
-            if (dlIsDisplayList(p->indexBuffer))
             {
-                DisplayList* dl = dlGetStruct(p->indexBuffer);
+                if (dl == nullptr)
+                    dl = dlGetStruct(p->indexBuffer);
+                GXCallDisplayList(dl != nullptr ? dl->list : nullptr, dl != nullptr ? dl->size : 0);
+            }
+        }
+        else if (glGetRasterState(p->state.raster, (eGLState)8) != 1)
+        {
+            if ((dl = dlGetStruct(p->indexBuffer)) != nullptr)
+            {
+                const bool hasColor = dl->indices[1] != 0;
+                const u32 stride = (dl->indices[0] - (hasColor ? 1u : 0u)) * 2u + (hasColor ? 1u : 0u);
+                const u8* indexBytes = (const u8*)dl->list + 3 + (hasColor ? 1 : 0);
                 GXBegin(primitives[p->primType], (_GXVtxFmt)gx_vtxfmt, p->numVertices);
                 for (j = 0; j < p->numVertices; j++)
                 {
+                    // Immutable DL storage: decode once, then emit the same
+                    // index for every indexed attribute in the original order.
+                    const u16 index = (u16)((indexBytes[0] << 8) | indexBytes[1]);
                     for (i = 0; i < glx_NumIndices; i++)
-                    {
-                        u16* ptr;
-                        if (((u16*)&dl->indices)[1] != 0)
-                        {
-                            u16 ns = ((u16*)&dl->indices)[0];
-                            s32 stride = (ns - 1) * 2 + 1;
-                            s32 offset = stride * j;
-                            u8* ptr8 = (u8*)dl->list + offset;
-                            ptr = (u16*)ptr8;
-                            ptr8 = (u8*)ptr;
-                            ptr8 += 4;
-                            ptr = (u16*)ptr8;
-                        }
-                        else
-                        {
-                            u16 ns = ((u16*)&dl->indices)[0];
-                            s32 stride = ns * 2;
-                            s32 offset = j * stride;
-                            u8* ptr8 = (u8*)dl->list + offset;
-                            ptr = (u16*)ptr8;
-                            ptr8 = (u8*)ptr;
-                            ptr8 += 3;
-                            ptr = (u16*)ptr8;
-                        }
-                        // PORT: the display list is big-endian; *ptr would read it host-order and GXPosition1x16 swaps again.
-                        GXPosition1x16((u16)(((const u8*)ptr)[0] << 8
-                                             | ((const u8*)ptr)[1]));
-                    }
+                        GXPosition1x16(index);
+                    indexBytes += stride;
                 }
                 GXEnd();   // PORT: see above
             }
@@ -2881,9 +2919,10 @@ static void glx_DrawPacket(const glModelPacket* packet)
                 GXBegin(primitives[p->primType], (_GXVtxFmt)gx_vtxfmt, p->numVertices);
                 for (i = 0; i < p->numVertices; i++)
                 {
+                    const u16 index = idxPtr[i];
                     for (j = 0; j < glx_NumIndices; j++)
                     {
-                        GXPosition1x16(idxPtr[i]);   // PORT: Aurora's FIFO
+                        GXPosition1x16(index);   // PORT: Aurora's FIFO
                     }
                 }
                 GXEnd();   // PORT: see above
@@ -3026,7 +3065,7 @@ static inline void glx_SwitchMatrix(const glModelPacket* p)
     GXSetCurrentMtx(0);
 }
 
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
 namespace {
 // A6 v0: intentionally narrow. Replaying a static GXM packet without GX state
 // writes is safe only when the previous producer packet is byte-identical and
@@ -3041,15 +3080,6 @@ struct NativeReplayStamp {
     bool valid=false;
 };
 NativeReplayStamp sNativeReplayStamp{};
-struct NativeModelStamp {
-    glModelPacket packet{};
-    std::array<glModelStream,8> streams{};
-    eGLView view=GLV_Num;
-    aurora::gx::fifo::NativeModelRecipeRef recipe{};
-};
-std::array<NativeModelStamp,64> sNativeModels{};
-aurora::gx::fifo::NativeModelCache<NativeModelStamp> sNativeModelCache{};
-unsigned sNativeModelNext=0;
 unsigned native_model_mode()
 {
     static const unsigned mode=[]{
@@ -3061,28 +3091,6 @@ unsigned native_model_mode()
     }();
     return mode;
 }
-bool native_model_eligible(eGLView view,unsigned long flags,const glModelPacket* p)
-{
-    if(!p||!(flags&0x800)||(flags&1)||view!=prev_view||!glx_CompiledDraw||
-       p->userData||!p->streams||!p->indexBuffer||!dlIsDisplayList(p->indexBuffer)||
-       p->state.program!=prog_3d_unlit||p->state.texconfig||p->numVertices<48||
-       p->primType!=0||!p->numStreams||p->numStreams>8||
-       (view!=GLV_UnsortedPerspective&&view!=GLV_FrontEnd)||
-       glx_DirtyFlags||glx_texdirty||
-       glx_IsCoPlanarView||glx_CoPlanar||glx_NoFog||glx_viewport||
-       glx_translucent||glx_norasterizedalpha||glx_constantcolour||glx_envdiffuse||glx_mobilediffuse)return false;
-    for(uintptr_t texture:p->state.texture)if(texture)return false;
-    if(p->state.matrix!=glGetIdentityMatrix()&&!port_region_owns((const void*)p->state.matrix))return false;
-    // The first branch has only independently indexed position/color arrays.
-    // Normals, PN selectors, skinning, texture generators and EFB are excluded.
-    bool position=false;
-    for(unsigned i=0;i<p->numStreams;++i){const auto& s=p->streams[i];
-        if((s.id!=0&&s.id!=2)||!s.address||!s.stride||!s.dataSize)return false;
-        position=position||s.id==0;
-    }
-    const auto bytes=dlGetSize(p->indexBuffer);
-    return position&&bytes>=3&&bytes<=256u*1024u;
-}
 bool native_model_census_enabled()
 {
     static const bool enabled=[]{const char* value=getenv("STRIKERS_GXM_NATIVE_MODEL_CENSUS");
@@ -3091,15 +3099,14 @@ bool native_model_census_enabled()
         return on;}();
     return enabled;
 }
-void native_model_observe(eGLView view,unsigned long flags,const glModelPacket* p)
+aurora::gx::fifo::ModelAdmissionFacts native_model_facts(eGLView view,unsigned long flags,const glModelPacket* p)
 {
     using namespace aurora::gx::fifo;
     ModelAdmissionFacts f{};f.frame=glGetCurrentFrame();f.view=unsigned(view);
     f.previousView=unsigned(prev_view);f.flags=uint32_t(flags);f.packet=p!=nullptr;
     if(flags&0x800){
-        f.transportRejects=native_model_transport_rejections();
         if(p){
-            f.compiled=glx_CompiledDraw;f.userData=p->userData!=0;f.hasStreams=p->streams!=nullptr;
+            f.compiled=true;f.userData=p->userData!=0;f.hasStreams=p->streams!=nullptr;
             f.displayList=p->indexBuffer&&dlIsDisplayList(p->indexBuffer);
             f.program=p->state.program;f.allowedProgram=p->state.program==prog_3d_unlit;
             const u32 programs[]={prog_2d_unlit,prog_2d_movie,prog_3d_unlit,prog_3d_unlit_2x,
@@ -3123,56 +3130,56 @@ void native_model_observe(eGLView view,unsigned long flags,const glModelPacket* 
             if(f.displayList)f.listBytes=dlGetSize(p->indexBuffer);
         }
     }
-    record_native_model_admission(f,native_model_eligible(view,flags,p));
+    return f;
 }
-bool native_model_same(const NativeModelStamp& s,eGLView view,const glModelPacket* p)
+bool native_model_eligible(eGLView view,unsigned long flags,const glModelPacket* p)
 {
-    const auto& q=s.packet;
-    if(!s.recipe||s.view!=view||q.indexBuffer!=p->indexBuffer||q.numVertices!=p->numVertices||
-       q.numStreams!=p->numStreams||q.materialset!=p->materialset||
-       q.state.program!=p->state.program||q.state.raster!=p->state.raster||
-       q.state.materialstate!=p->state.materialstate||q.state.texturestate!=p->state.texturestate||
-       q.state.userStateKey!=p->state.userStateKey||s.recipe->bytes!=dlGetSize(p->indexBuffer))return false;
-    for(unsigned i=0;i<p->numStreams;++i){const auto& a=s.streams[i];const auto& b=p->streams[i];
-        if(a.address!=b.address||a.id!=b.id||a.stride!=b.stride||a.beData!=b.beData||a.dataSize!=b.dataSize)return false;
-    }
-    return true;
+    return aurora::gx::fifo::native_model_static_admissible(native_model_facts(view,flags,p));
 }
-uint64_t native_model_cache_key(eGLView view,const glModelPacket* p)
-{
-    return (uint64_t(reinterpret_cast<uintptr_t>(p->indexBuffer))<<6)|uint64_t(view);
-}
-const NativeModelStamp* native_model_find(eGLView view,const glModelPacket* p)
+void native_model_observe(eGLView view,unsigned long flags,const glModelPacket* p)
 {
     using namespace aurora::gx::fifo;
-    native_model_cache_event(ModelCacheEvent::ProducerLookup);
-    const NativeModelStamp* found=nullptr;
-    if(native_model_cache_enabled()){
-        sNativeModelCache.initialize();
-        found=sNativeModelCache.find(native_model_cache_key(view,p),
-            [&](const NativeModelStamp& s){return native_model_same(s,view,p);});
-    }else for(const auto& model:sNativeModels)if(native_model_same(model,view,p)){found=&model;break;}
-    native_model_cache_event(found?ModelCacheEvent::ProducerHit:ModelCacheEvent::ProducerMiss);
-    return found;
+    auto facts=native_model_facts(view,flags,p);
+    if(flags&0x800)facts.transportRejects=native_model_transport_rejections();
+    record_native_model_admission(facts,native_model_static_admissible(facts));
 }
-void native_model_store(eGLView view,const glModelPacket* p,aurora::gx::fifo::NativeModelRecipeRef recipe)
+aurora::gx::fifo::NativeModelDescriptor native_model_descriptor(eGLView view,const glModelPacket* p)
 {
     using namespace aurora::gx::fifo;
-    NativeModelStamp* model=nullptr;bool replaced=false;size_t slots=0;
-    if(native_model_cache_enabled()){
-        sNativeModelCache.initialize();
-        model=&sNativeModelCache.allocate(native_model_cache_key(view,p),replaced);
-        slots=sNativeModelCache.size();
-    }else{
-        model=&sNativeModels[sNativeModelNext++%sNativeModels.size()];replaced=bool(model->recipe);
-        slots=std::min(size_t(sNativeModelNext),sNativeModels.size());
+    NativeModelDescriptor descriptor{};
+    if(!p)return descriptor;
+    descriptor.displayList=p->indexBuffer;
+    descriptor.sourceGeneration=native_model_registry().source_generation(p->indexBuffer);
+    // Prepared mode only admits assets tracked through loader/unload hooks.
+    // Temporary lists and a full lifetime table retain their original GX draw.
+    if(native_model_prepared_enabled()&&!descriptor.sourceGeneration)return {};
+    if(p->indexBuffer&&dlIsDisplayList(p->indexBuffer))
+        descriptor.displayListBytes=dlGetSize(p->indexBuffer);
+    descriptor.view=unsigned(view);
+    descriptor.program=p->state.program;
+    descriptor.vertexCount=p->numVertices;
+    descriptor.primitive=p->primType;
+    descriptor.streamCount=p->numStreams;
+    descriptor.materialSet=p->materialset;
+    descriptor.materialState=p->state.materialstate;
+    descriptor.rasterState=p->state.raster;
+    descriptor.textureState=p->state.texturestate;
+    descriptor.userStateKey=p->state.userStateKey;
+    descriptor.texConfig=p->state.texconfig;
+    for(unsigned i=0;i<descriptor.textures.size();++i)
+        descriptor.textures[i]=p->state.texture[i];
+    if(p->streams&&p->numStreams<=descriptor.streams.size()){
+        for(unsigned i=0;i<p->numStreams;++i){
+            const auto& stream=p->streams[i];
+            auto& native=descriptor.streams[i];
+            native.address=stream.address;
+            native.dataBytes=stream.dataSize;
+            native.semantic=stream.id;
+            native.stride=stream.stride;
+            native.bigEndian=stream.beData!=0;
+        }
     }
-    model->packet=*p;model->view=view;model->recipe=std::move(recipe);
-    memcpy(model->streams.data(),p->streams,p->numStreams*sizeof(glModelStream));
-    native_model_cache_event(ModelCacheEvent::ProducerInsert);
-    if(replaced)native_model_cache_event(ModelCacheEvent::ProducerReplace);
-    native_model_cache_peak(ModelCachePeak::ProducerSlots,slots);
-    native_model_cache_peak(ModelCachePeak::ProducerMetadataBytes,sizeof(sNativeModels)+sNativeModelCache.storage_bytes());
+    return descriptor;
 }
 // Mode 2 runs only at the actual DL slot, after all original GLX state and
 // per-instance updates and before its original postfix. No userdata is cached.
@@ -3195,40 +3202,33 @@ bool native_model_draw_only(const glModelPacket* p)
                 dl?unsigned(dlGetSize(p->indexBuffer)):0u,aurora::gx::fifo::native_model_transport_rejections());
         }
     }
-    if(!p||!p->streams||!p->indexBuffer||
-       !dlIsDisplayList(p->indexBuffer)||p->numVertices<48||
-       p->primType>3||!p->numStreams||p->numStreams>8||
-       (prev_view!=GLV_Characters&&prev_view!=GLV_Shadowed&&
-        prev_view!=GLV_UnsortedPerspective&&prev_view!=GLV_FrontEnd))return false;
-    const bool program=p->state.program==prog_3d_unlit||p->state.program==prog_3d_unlit_2x||
+    using namespace aurora::gx::fifo;
+    NativeModelRuntimeFacts facts{};
+    facts.packet=p!=nullptr;
+    facts.compiled=true;
+    if(!p)return false;
+    facts.displayList=p->indexBuffer&&dlIsDisplayList(p->indexBuffer);
+    facts.supportedView=prev_view==GLV_Characters||prev_view==GLV_Shadowed||
+        prev_view==GLV_UnsortedPerspective||prev_view==GLV_FrontEnd;
+    facts.supportedProgram=p->state.program==prog_3d_unlit||p->state.program==prog_3d_unlit_2x||
         p->state.program==prog_3d_pointlit||p->state.program==prog_3d_pointlit_dirt||
         p->state.program==prog_3d_crowd||p->state.program==prog_3d_crowd_lit;
-    if(!program)return false;
-    const auto bytes=dlGetSize(p->indexBuffer);
-    if(bytes<3||bytes>256u*1024u)return false;
+    facts.vertices=p->numVertices;
+    facts.primitive=p->primType;
+    facts.streams=p->streams?p->numStreams:0;
+    facts.listBytes=facts.displayList?dlGetSize(p->indexBuffer):0;
+    if(!native_model_runtime_admissible(facts))return false;
+    const auto descriptor=native_model_descriptor(prev_view,p);
+    if(!descriptor.valid())return false;
     // GXCallDisplayList normally emits pending VCD/VAT/BP state before the
     // draw. Do it for every native slot, outside the immutable recipe, so a
     // reused recipe cannot restore the first instance's dirty-state writes.
     GXFlush();
-    using namespace aurora::gx::fifo;
-    if(const auto* model=native_model_find(prev_view,p)){
-        const bool queued=write_native_model_recipe(model->recipe);
-        if(census)record_native_model_stage(queued?ModelStage::QueueAccepted:ModelStage::QueueRejected);
-        return queued;
-    }
-    if(census)record_native_model_stage(ModelStage::BeginAttempt);
-    if(!begin_native_model_recording(dlGetDisplayList(p->indexBuffer),bytes)){
-        if(census)record_native_model_stage(ModelStage::BeginRejected);
-        return false;
-    }
-    GXCallDisplayList(dlGetDisplayList(p->indexBuffer),bytes);
-    auto recipe=finish_native_model_recording(nullptr);
-    if(census)record_native_model_stage(recipe?ModelStage::CaptureSealed:ModelStage::CaptureAborted);
-    if(recipe&&recipe->before.empty()&&recipe->after.empty()){
-        native_model_store(prev_view,p,std::move(recipe));
-    }
-    // finish failure already replays the captured DL; do not issue it twice.
-    return true;
+    return native_model_registry().dispatch_or_capture(
+        descriptor,dlGetDisplayList(p->indexBuffer),facts.listBytes,
+        [](const void* data,uint32_t bytes) noexcept {
+            GXCallDisplayList(const_cast<void*>(data),bytes);
+        },census);
 }
 bool native_replay_enabled()
 {
@@ -3243,7 +3243,7 @@ bool native_replay_enabled()
 }
 bool native_replay_packet_eligible(eGLView view,const glModelPacket* packet)
 {
-    if(!packet||!glx_CompiledDraw||!packet->streams||!packet->indexBuffer||
+    if(!packet||!packet->streams||!packet->indexBuffer||
        packet->userData||packet->state.matrix!=glGetIdentityMatrix()||
        packet->state.program!=prog_3d_unlit||packet->state.texconfig||
        packet->primType!=0||packet->numVertices<48||
@@ -3296,39 +3296,80 @@ bool native_replay_try(eGLView view,unsigned long flags,const glModelPacket* p)
 void glx_SendFrame_cb(eGLView view, unsigned long flags, const glModelPacket* p)
 {
     PortPacketProfileScope packetProfile(view);
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
     bool nativeModelRecording=false;
     const bool nativeModelCensus=native_model_census_enabled();
     if(nativeModelCensus)native_model_observe(view,flags,p);
-    if(native_model_mode()==1&&native_model_eligible(view,flags,p)){
-        bool known=false;
-        if(const auto* model=native_model_find(view,p)){
-            known=true;
-            // Existing game material/array state must already match. The only
-            // skipped producer work is the draw; live matrix writes use the
-            // established function and remain ordered before the native slot.
-            if((flags&0x7ff&~0x20)==0&&glx_program==p->state.program&&
-                glx_NumIndices==p->numStreams){
-                if(flags&0x20){glx_SwitchMatrix(p);flags&=~0x20ul;}
-                if(aurora::gx::fifo::write_native_model_recipe(model->recipe)){
-                    if(nativeModelCensus)aurora::gx::fifo::record_native_model_stage(aurora::gx::fifo::ModelStage::QueueAccepted);
-                    sNativeReplayStamp.valid=false;
-                    packetProfile.phase(PacketProfileStage::Draw);return;
-                }
-                if(nativeModelCensus)aurora::gx::fifo::record_native_model_stage(aurora::gx::fifo::ModelStage::QueueRejected);
-            }else if(nativeModelCensus){
-                aurora::gx::fifo::record_native_model_stage(aurora::gx::fifo::ModelStage::KnownNeedsState);
+    // R3-A: only an unchanged, static, already captured model can bypass the
+    // producer GLX callback. The owner thread still checks live GX materials,
+    // GPU geometry, texture revisions and scene state before a GXM submission.
+    if(native_model_mode()==2&&aurora::gx::fifo::native_model_prepared_enabled()&&
+       aurora::gx::fifo::native_model_early_enabled()&&p&&p->streams&&
+       p->indexBuffer&&dlIsDisplayList(p->indexBuffer)){
+        aurora::gx::fifo::NativeModelEarlyFacts early{};
+        early.callbackFlags=static_cast<uint32_t>(flags);
+        early.compiledDraw=true;
+        early.stableView=view==prev_view&&view==GLV_UnsortedPerspective;
+        early.staticUnlitProgram=p->state.program==prog_3d_unlit;
+        early.identityMatrix=p->state.matrix==glGetIdentityMatrix();
+        early.matchingLiveProgram=glx_program==p->state.program;
+        early.matchingLiveStreams=glx_NumIndices!=0&&glx_NumIndices==p->numStreams;
+        early.noUserData=p->userData==0;
+        early.producerClean=glx_DirtyFlags==0&&glx_texdirty==0;
+        early.noDrawModifiers=!glx_IsCoPlanarView&&!glx_CoPlanar&&!glx_NoFog&&
+            !glx_viewport&&!glx_translucent&&!glx_norasterizedalpha&&
+            !glx_constantcolour&&!glx_envdiffuse&&!glx_mobilediffuse;
+        if(aurora::gx::fifo::native_model_early_admissible(early)){
+            auto descriptor=native_model_descriptor(view,p);
+            if(aurora::gx::fifo::native_model_registry().dispatch_prepared(
+                   early,descriptor,[]() noexcept {
+                       // glx_DrawPacket always resets this state before a draw,
+                       // even with clean GLX flags. Preserve an earlier
+                       // co-planar draw's effect in the exact same FIFO slot.
+                       gxSetCoPlanar(false);
+                       GXFlush();
+                   })){
+                // glx_DrawPacket always restores GX current matrix to zero
+                // *after* the display list. Preserve that producer-side effect
+                // in the same FIFO order even when the draw callback is skipped.
+                GXSetCurrentMtx(0);
+                sNativeReplayStamp.valid=false;
+                if(nativeModelCensus)aurora::gx::fifo::record_native_model_stage(
+                    aurora::gx::fifo::ModelStage::QueueAccepted);
+                packetProfile.phase(PacketProfileStage::Draw);
+                return;
             }
         }
-        // Capture the original callback without adding GX writes. Full state
-        // executes on first admission; repeated draws retain only their draw
-        // prelude and postfix. A later material/array transition stays on GX.
-        if(!known){
-            if(nativeModelCensus)aurora::gx::fifo::record_native_model_stage(aurora::gx::fifo::ModelStage::BeginAttempt);
-            nativeModelRecording=aurora::gx::fifo::begin_native_model_recording(
-                dlGetDisplayList(p->indexBuffer),dlGetSize(p->indexBuffer));
-            if(nativeModelCensus&&!nativeModelRecording)
-                aurora::gx::fifo::record_native_model_stage(aurora::gx::fifo::ModelStage::BeginRejected);
+    }
+    if(native_model_mode()==1&&native_model_eligible(view,flags,p)){
+        const auto descriptor=native_model_descriptor(view,p);
+        if(descriptor.valid()){
+            bool known=false;
+            if(const auto recipe=aurora::gx::fifo::native_model_registry().lookup(descriptor)){
+                known=true;
+                // Live matrix writes stay ordered before the native slot.
+                if((flags&0x7ff&~0x20)==0&&glx_program==p->state.program&&
+                    glx_NumIndices==p->numStreams){
+                    if(flags&0x20){glx_SwitchMatrix(p);flags&=~0x20ul;}
+                if(aurora::gx::fifo::write_native_model_recipe(*recipe)){
+                        if(nativeModelCensus)aurora::gx::fifo::record_native_model_stage(aurora::gx::fifo::ModelStage::QueueAccepted);
+                        sNativeReplayStamp.valid=false;
+                        packetProfile.phase(PacketProfileStage::Draw);return;
+                    }
+                    if(nativeModelCensus)aurora::gx::fifo::record_native_model_stage(aurora::gx::fifo::ModelStage::QueueRejected);
+                }else if(nativeModelCensus){
+                    aurora::gx::fifo::record_native_model_stage(aurora::gx::fifo::ModelStage::KnownNeedsState);
+                }
+            }
+            // Full state executes on first admission. Unrelated material and
+            // array transitions retain their original GX producer path.
+            if(!known){
+                if(nativeModelCensus)aurora::gx::fifo::record_native_model_stage(aurora::gx::fifo::ModelStage::BeginAttempt);
+                nativeModelRecording=aurora::gx::fifo::begin_native_model_recording(
+                    dlGetDisplayList(p->indexBuffer),dlGetSize(p->indexBuffer));
+                if(nativeModelCensus&&!nativeModelRecording)
+                    aurora::gx::fifo::record_native_model_stage(aurora::gx::fifo::ModelStage::BeginRejected);
+            }
         }
     }
     if(!nativeModelRecording&&native_replay_enabled()&&native_replay_try(view,flags,p)){
@@ -3618,18 +3659,18 @@ void glx_SendFrame_cb(eGLView view, unsigned long flags, const glModelPacket* p)
 
     if (flags & 0x800)
     {
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
         if(nativeModelRecording)aurora::gx::fifo::native_model_record_draw_boundary();
 #endif
         packetProfile.phase(PacketProfileStage::Draw);
         glx_DrawPacket(p);
     }
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
     if(nativeModelRecording){
         auto recipe=aurora::gx::fifo::finish_native_model_recording(nullptr);
         if(nativeModelCensus)aurora::gx::fifo::record_native_model_stage(recipe?
             aurora::gx::fifo::ModelStage::CaptureSealed:aurora::gx::fifo::ModelStage::CaptureAborted);
-        if(recipe)native_model_store(view,p,std::move(recipe));
+        if(recipe)aurora::gx::fifo::native_model_registry().store(native_model_descriptor(view,p),std::move(recipe));
     }
     if(native_replay_enabled()&&(flags&0x800))native_replay_mark(view,p);
     else sNativeReplayStamp.valid=false;

@@ -743,47 +743,6 @@ static glModel* glxLoadModelFromMemory(char* data, int size, unsigned long* pNum
     return lastModels;
 }
 
-static glModel* glxLoadModelFromDisk(const char* filename, unsigned long* pNumModels)
-{
-    unsigned int alignSize;
-    unsigned int fileSize;
-    char fullname[256];
-    glModel* retval;
-    nlFile* f;
-
-    glx_FreeMemory0();
-    nlStrNCat(fullname, "art/", filename, 256);
-
-    f = nlOpen(fullname);
-    if (f == NULL)
-    {
-        retval = NULL;
-    }
-    else
-    {
-        fileSize = nlFileSize(f, &alignSize);
-        nlClose(f);
-        if (fileSize == 0)
-        {
-            retval = NULL;
-        }
-        else
-        {
-            char* data = (char*)nlLoadEntireFileToVirtualMemory(fullname, (int*)&fileSize, 0x80000, NULL, AllocateEnd);
-            if (data == NULL)
-            {
-                retval = NULL;
-            }
-            else
-            {
-                retval = glxLoadModelFromMemory(data, fileSize, pNumModels, true);
-            }
-        }
-    }
-
-    glx_FreeMemory1(filename);
-    return retval;
-}
 
 /**
  * Offset/Address/Size: 0xCC | 0x801BFCEC | size: 0x104

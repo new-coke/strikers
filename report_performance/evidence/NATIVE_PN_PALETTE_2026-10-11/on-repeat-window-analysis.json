@@ -1,0 +1,24 @@
+{
+  "quiet-on-1": {
+    "bins_60_mean_ms": [
+      43.9919,
+      41.3671,
+      42.7551,
+      42.734,
+      42.6263
+    ],
+    "frames_above_70_ms": 1,
+    "frames_above_50_ms": 16
+  },
+  "quiet-on-2": {
+    "bins_60_mean_ms": [
+      45.2095,
+      46.5502,
+      45.374,
+      43.6804,
+      42.8985
+    ],
+    "frames_above_70_ms": 0,
+    "frames_above_50_ms": 9
+  }
+}

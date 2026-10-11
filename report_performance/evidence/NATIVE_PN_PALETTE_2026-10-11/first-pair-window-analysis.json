@@ -1,0 +1,84 @@
+{
+  "quiet-off-1": {
+    "bins_60_frames": [
+      {
+        "match_frame_first": 600,
+        "match_frame_last": 659,
+        "mean_ms": 53.2699,
+        "median_ms": 45.683,
+        "fps": 18.772327336826237
+      },
+      {
+        "match_frame_first": 660,
+        "match_frame_last": 719,
+        "mean_ms": 50.54548333333333,
+        "median_ms": 46.107,
+        "fps": 19.784161393912875
+      },
+      {
+        "match_frame_first": 720,
+        "match_frame_last": 779,
+        "mean_ms": 42.5959,
+        "median_ms": 42.0845,
+        "fps": 23.476437873128635
+      },
+      {
+        "match_frame_first": 780,
+        "match_frame_last": 839,
+        "mean_ms": 40.84803333333333,
+        "median_ms": 41.0795,
+        "fps": 24.4809827645721
+      },
+      {
+        "match_frame_first": 840,
+        "match_frame_last": 899,
+        "mean_ms": 40.30603333333333,
+        "median_ms": 40.471,
+        "fps": 24.810181436856848
+      }
+    ],
+    "frames_above_70_ms": 18,
+    "frames_above_50_ms": 34
+  },
+  "quiet-on-1": {
+    "bins_60_frames": [
+      {
+        "match_frame_first": 600,
+        "match_frame_last": 659,
+        "mean_ms": 43.991949999999996,
+        "median_ms": 43.318,
+        "fps": 22.73143154599876
+      },
+      {
+        "match_frame_first": 660,
+        "match_frame_last": 719,
+        "mean_ms": 41.36713333333333,
+        "median_ms": 41.6075,
+        "fps": 24.17378047306477
+      },
+      {
+        "match_frame_first": 720,
+        "match_frame_last": 779,
+        "mean_ms": 42.755066666666664,
+        "median_ms": 41.6165,
+        "fps": 23.389040831028215
+      },
+      {
+        "match_frame_first": 780,
+        "match_frame_last": 839,
+        "mean_ms": 42.73395,
+        "median_ms": 43.027,
+        "fps": 23.400598353299895
+      },
+      {
+        "match_frame_first": 840,
+        "match_frame_last": 899,
+        "mean_ms": 42.6263,
+        "median_ms": 42.7715,
+        "fps": 23.459695070883466
+      }
+    ],
+    "frames_above_70_ms": 1,
+    "frames_above_50_ms": 16
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "time_unix": 1791712252.841717,
+  "commands": [
+    {
+      "command": "screen on",
+      "response": "Turning display on..."
+    },
+    {
+      "command": "destroy",
+      "response": "Apps destroyed."
+    }
+  ],
+  "welcome": "220 FTPVita Server ready.",
+  "error": "error_perm('550 Could not allocate memory.')",
+  "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 13, in <module>\n  File \"/Users/robin994/Documents/Code/strikersVita/smstrikers-port/tools/vita_workflow_device.py\", line 46, in read\n    ftp.retrbinary(\"RETR \" + name, out.write)\n  File \"/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ftplib.py\", line 436, in retrbinary\n    with self.transfercmd(cmd, rest) as conn:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ftplib.py\", line 393, in transfercmd\n    return self.ntransfercmd(cmd, rest)[0]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ftplib.py\", line 359, in ntransfercmd\n    resp = self.sendcmd(cmd)\n           ^^^^^^^^^^^^^^^^^\n  File \"/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ftplib.py\", line 281, in sendcmd\n    return self.getresp()\n           ^^^^^^^^^^^^^^\n  File \"/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ftplib.py\", line 254, in getresp\n    raise error_perm(resp)\nftplib.error_perm: 550 Could not allocate memory.\n"
+}

@@ -18,6 +18,15 @@ int port_asset_archive_find(const PortAssetArchive* archive, const char* path);
 // Positional, bounded to the logical file. Returns bytes read, 0 at EOF, -1 on error.
 long port_asset_archive_read(PortAssetArchive* archive, unsigned index, void* dst,
                             size_t bytes, uint64_t offset);
+// Optional process-wide observations for archives opened with
+// STRIKERS_ASSET_IO_PROFILE=1. Snapshot counters only; never writes a log.
+// I/O and inflate times are CPU-observed elapsed time, not device busy time.
+typedef struct PortAssetIoStats {
+    uint64_t requests, requested_bytes;
+    uint64_t physical_reads, physical_bytes, read_us, read_errors;
+    uint64_t inflates, inflated_bytes, inflate_us, inflate_errors;
+} PortAssetIoStats;
+void port_asset_io_snapshot(PortAssetIoStats* out);
 #ifdef __cplusplus
 }
 #endif

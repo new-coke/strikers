@@ -33,6 +33,7 @@ inline void capture_completed_performance(bool livePlay) {
   std::fprintf(file,"frame,frame_us,gx_total_us,xf_pos_inspected,xf_pos_unchanged,xf_pos_changed,producer_wait_us,consumer_wait_us,draws,vertices,gpu_vertices,texture_uploads,texture_upload_bytes,geometry_hits,geometry_misses,geometry_bytes,prepared_hits,prepared_misses,prepared_rejected,pool_busy_fallbacks,core3_total_pct_x100,finish_calls,finish_wait_us,display_queue_us,native_texture_hits,native_geometry_hits,native_rejected,scene0_wait_us,scene1_wait_us,scene2_wait_us,scene3_wait_us,core3_telemetry_valid,core3_chunks,core3_denied,core3_telemetry_failures,core3_overruns,native_misses,vertex_delta_copies,vertex_delta_saved_calls,vertex_delta_fallbacks,vertex_delta_copied_bytes,vertex_delta_saved_bytes,native_gpu_geometry_hits,native_gpu_geometry_attempts,xf_tex_inspected,xf_tex_unchanged,xf_tex_changed,xf_normal_inspected,xf_normal_unchanged,xf_normal_changed,xf_post_inspected,xf_post_unchanged,xf_post_changed,tev_decoded_inspected,tev_decoded_skipped,tev_decoded_changed,native_replay_attempts,native_replay_hits,native_replay_fallbacks");
   using namespace aurora::vita::gfx;
   std::fprintf(file,",native_model_attempts,native_model_draws,native_model_fallbacks,native_model_compiled");
+  std::fprintf(file,",native_pn_palettes_queued,native_pn_palettes_applied,native_pn_matrices_applied");
   using namespace aurora::gx::fifo;
   std::fprintf(file,",native_census_callbacks,native_census_draw_callbacks,native_census_filter_passed,native_census_transport_ready,native_census_eligible,native_census_classifier_mismatches");
   for(const char* name:ModelRejectNames)std::fprintf(file,",native_census_reject_%s",name);
@@ -51,6 +52,8 @@ inline void capture_completed_performance(bool livePlay) {
     for(size_t i=0;i<sizeof(values)/sizeof(values[0]);++i)std::fprintf(file,"%s%llu",i?",":"",(unsigned long long)values[i]);
     const uint64_t models[]={s.nativeModelAttempts,s.nativeModelDraws,s.nativeModelFallbacks,s.nativeModelCompiled};
     for(uint64_t value:models)std::fprintf(file,",%llu",(unsigned long long)value);
+    const uint64_t pn[]={s.nativePnPalettesQueued,s.nativePnPalettesApplied,s.nativePnMatricesApplied};
+    for(uint64_t value:pn)std::fprintf(file,",%llu",(unsigned long long)value);
     const auto& census=s.nativeModelCensus;
     const uint64_t censusTotals[]={census.callbacks,census.drawCallbacks,census.filterPassed,
         census.transportReady,census.eligible,census.mismatches};

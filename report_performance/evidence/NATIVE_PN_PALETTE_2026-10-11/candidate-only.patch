@@ -1,0 +1,623 @@
+--- a/smstrikers-port/src/NL/glx/glxSend.cpp
++++ b/smstrikers-port/src/NL/glx/glxSend.cpp
+@@ -48,6 +48,7 @@
+ #include "../../../extern/aurora-vita/lib/gx/native_model_census.hpp"
+ #include "../../../extern/aurora-vita/lib/gx/native_model_registry.hpp"
+ #include "../../../extern/aurora-vita/lib/gx/native_model_options.hpp"
++#include "../../../extern/aurora-vita/lib/gx/native_pn_palette.hpp"
+ // Keep Aurora's full GX frontend headers out of Strikers' Dolphin GX ABI.
+ // These three queue hooks only transport an already-pinned, immutable DL.
+ namespace aurora::gx::fifo {
+@@ -2147,6 +2148,68 @@
+         bInvXpose = glx_InvXposeChar;
+     else
+         bInvXpose = glx_InvXpose;
++
++#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
++    // First prepared-Characters component: publish native frame parameters at
++    // the original skin slot, before the draw. Other userdata, materials and
++    // passes keep their current callbacks and current GX state dependencies.
++    if (aurora::gx::fifo::can_write_native_pn_palette() && prev_view == GLV_Characters &&
++        (glx_program == prog_3d_pointlit || glx_program == prog_3d_pointlit_dirt) &&
++        g_bFastSkinPath && g_bMtxSkinMath && !glx_IsCoPlanarView &&
++        pPacket->state.matrix == glGetIdentityMatrix() && numMatrices > 0 &&
++        numMatrices <= aurora::gx::fifo::NativePnPaletteCapacity)
++    {
++        using aurora::gx::fifo::NativePnMatrix;
++        std::array<NativePnMatrix, aurora::gx::fifo::NativePnPaletteCapacity> palette;
++        bool valid = true;
++        for (i = 0; i < numMatrices; ++i)
++        {
++            const int matrixId = pSkin[i].reg + 99;
++            if (matrixId < 0 || matrixId > 27 || matrixId % 3 != 0)
++            {
++                valid = false;
++                break;
++            }
++            palette[i].slot = static_cast<u32>(matrixId / 3);
++        }
++        const port::SkinMatrixResult* prepared = nullptr;
++        if (valid && s_SkinPacketView >= 0 && s_SkinPacketView == SkinPacketViewIndex(prev_view))
++            prepared = s_SkinPackets.find(reinterpret_cast<uintptr_t>(pPacket), pSkin, numMatrices,
++                                          gx_mview, bInvXpose != 0);
++        for (i = 0; valid && i < numMatrices; ++i)
++        {
++            const float* position;
++            const float* normal;
++            if (prepared != nullptr)
++            {
++                position = &prepared[i].position[0][0];
++                normal = bInvXpose ? &prepared[i].normal[0][0] : position;
++            }
++            else
++            {
++                PSMTXConcat(gx_mview, *(const Mtx*)pSkin[i].mat, mSkinConcat);
++                position = &mSkinConcat[0][0];
++                normal = position;
++                if (bInvXpose)
++                {
++                    valid = PSMTXInvXpose(mSkinConcat, mNormFast) != 0;
++                    normal = &mNormFast[0][0];
++                }
++            }
++            if (!valid) break;
++            memcpy(palette[i].position.data(), position, sizeof(Mtx));
++            for (unsigned row = 0; row < 3; ++row)
++                memcpy(palette[i].normal.data() + row * 3, normal + row * 4, 3 * sizeof(float));
++        }
++        if (valid && aurora::gx::fifo::write_native_pn_palette(palette.data(), numMatrices))
++        {
++            if (prepared != nullptr) s_SkinPacketStats[s_SkinPacketView].usedMatrices += numMatrices;
++            return;
++        }
++        // No native write has executed on rejection. Keep the original GX
++        // loads, including unusual matrix IDs, slow math and recording modes.
++    }
++#endif
+ 
+     if (g_bFastSkinPath && g_bMtxSkinMath && !glx_IsCoPlanarView && pPacket->state.matrix == glGetIdentityMatrix())
+     {
+--- a/smstrikers-port/src/Game/main.cpp
++++ b/smstrikers-port/src/Game/main.cpp
+@@ -1672,6 +1672,11 @@
+             OSReport("[vita] gxm_raster_uniform_reuse=%u\n",cfg.gxm_raster_uniform_reuse?1u:0u);
+         }
+         {
++            const char* value=getenv("STRIKERS_GXM_NATIVE_PN_PALETTE");
++            cfg.gxm_native_pn_palette=value && strcmp(value,"1")==0;
++            OSReport("[vita] gxm_native_pn_palette=%u scope=characters_pointlit\n",cfg.gxm_native_pn_palette?1u:0u);
++        }
++        {
+             const char* prepareCache = getenv("STRIKERS_GXM_FRAGMENT_PREPARE_CACHE");
+             const bool enablePrepareCache = prepareCache != NULL && prepareCache[0] == '1';
+             [&](auto& config) {
+--- a/smstrikers-port/src/platform/config.c
++++ b/smstrikers-port/src/platform/config.c
+@@ -95,6 +95,7 @@
+     { "gxm_xf_equal_matrix_writes", "0" },
+     { "gxm_tev_decoded_write_gate", "0" },
+     { "gxm_raster_uniform_reuse", "0" },
++    { "gxm_native_pn_palette", "0" },
+     { "gxm_fragment_prepare_cache", "1" },
+     { "gxm_uniform_delta_upload", "0" },
+     { "gxm_a4_fragment_opt", "0" },
+--- a/smstrikers-port/strikers.ini.example
++++ b/smstrikers-port/strikers.ini.example
+@@ -72,6 +72,9 @@
+ # gxm_tev_decoded_write_gate = 0
+ # Reuse CPU uniform snapshots across BP depth/blend-only pipeline changes.
+ # gxm_raster_uniform_reuse = 0
++# Native position/normal palette transport for pointlit Characters; async GX only.
++# Keeps the existing geometry/material draw path. Independent of native-model caches.
++# gxm_native_pn_palette = 0
+ # Exact compact CMPR subset as BC1; other textures keep lossless fallback.
+ # gxm_exact_bc1 = 0
+ # Immutable geometry buffers prefer CDRAM, retaining USER allocation fallback.
+--- a/smstrikers-port/tests/vita_default_config_test.c
++++ b/smstrikers-port/tests/vita_default_config_test.c
+@@ -11,7 +11,7 @@
+ #define CHECK(c) do { if (!(c)) { fprintf(stderr, "FAIL line %d: %s\n", __LINE__, #c); exit(1); } } while (0)
+ #define DEFAULTS_BEGIN "# --- STRIKERS VALIDATED DEFAULTS BEGIN ---"
+ #define DEFAULTS_END "# --- STRIKERS VALIDATED DEFAULTS END ---"
+-#define DEFAULT_CONFIG_KEY_COUNT 62
++#define DEFAULT_CONFIG_KEY_COUNT 63
+ 
+ static char s_data_dir[1024];
+ 
+@@ -43,6 +43,8 @@
+     fprintf(f, "gxm_native_model_early = 1\n");
+     fprintf(f, "gxm_raster_uniform_reuse = 1\n");
+     fprintf(f, "gxm_raster_uniform_reuse = 0\n");
++    fprintf(f, "gxm_native_pn_palette = 1\n");
++    fprintf(f, "gxm_native_pn_palette = 0\n");
+     fprintf(f, "gxm_internal_resolution = 640x480\n");
+     fprintf(f, "gxm_internal_resolution = 960x544\n");
+     fprintf(f, "diagnostics = 0\n");
+@@ -173,6 +175,7 @@
+         CHECK(strcmp(getenv("STRIKERS_VITA_VIEW_DRAW_PAYLOADS"), "0") == 0);
+         CHECK(strcmp(getenv("STRIKERS_GXM_XF_EQUAL_POS_WRITES"), "0") == 0);
+         CHECK(strcmp(getenv("STRIKERS_GXM_RASTER_UNIFORM_REUSE"), mode == 1 ? "1" : "0") == 0);
++        CHECK(strcmp(getenv("STRIKERS_GXM_NATIVE_PN_PALETTE"), mode == 1 ? "1" : "0") == 0);
+         CHECK(strcmp(getenv("STRIKERS_GXM_UNIFORM_DELTA_UPLOAD"), "0") == 0);
+         CHECK(strcmp(getenv("STRIKERS_GXM_A4_FRAGMENT_OPT"), "0") == 0);
+         CHECK(strcmp(getenv("STRIKERS_GXM_XF_EQUAL_MATRIX_WRITES"), "0") == 0);
+--- a/smstrikers-port/extern/aurora-vita/lib/gx/fifo.hpp
++++ b/smstrikers-port/extern/aurora-vita/lib/gx/fifo.hpp
+@@ -6,6 +6,7 @@
+ #include <atomic>
+ #include <cstring>
+ #include "native_model_recipe.hpp"
++#include "native_pn_palette.hpp"
+ 
+ namespace aurora::gx::fifo {
+ 
+--- a/smstrikers-port/extern/aurora-vita/lib/gx/fifo.cpp
++++ b/smstrikers-port/extern/aurora-vita/lib/gx/fifo.cpp
+@@ -102,7 +102,7 @@
+ constexpr uint32_t VitaJobSegmentCapacity = 128;
+ 
+ enum class VitaJobType : uint8_t { Fifo, Callback, Stop };
+-enum class VitaJobSegmentType : uint8_t { Inline, PinnedDisplayList, ViewMarker, NativeDrawReplay, NativeModel };
++enum class VitaJobSegmentType : uint8_t { Inline, PinnedDisplayList, ViewMarker, NativeDrawReplay, NativeModel, NativePnPalette };
+ 
+ struct VitaJobSegment {
+   VitaJobSegmentType type = VitaJobSegmentType::Inline;
+@@ -155,6 +155,8 @@
+ std::atomic<uint64_t> sProducerWaitUs{0}, sConsumerWaitUs{0};
+ std::atomic<uint64_t> sNativeReplayAttempts{0},sNativeReplayHits{0},sNativeReplayFallbacks{0};
+ std::atomic<uint64_t> sNativeModelAttempts{0},sNativeModelHits{0},sNativeModelFallbacks{0},sNativeModelCompiled{0};
++bool sNativePnPaletteEnabled = false, sNativePnPaletteDiagnostics = false;
++std::atomic<uint64_t> sNativePnPaletteQueued{0}, sNativePnPaletteApplied{0}, sNativePnPaletteMatrices{0};
+ ModelAdmissionCensus sNativeModelCensus;
+ std::atomic<bool> sNativeModelCensusObserved{false};
+ uint64_t sActiveNativeModelIdentity=0,sNextNativeModelIdentity=0;
+@@ -239,6 +241,14 @@
+             continue;
+           }
+           if (segment.bytes == 0) continue;
++          if (segment.type == VitaJobSegmentType::NativePnPalette) {
++            if (segment.offset <= job.bytes.size() && segment.bytes <= job.bytes.size() - segment.offset &&
++                apply_native_pn_palette(job.bytes.data() + segment.offset, segment.bytes) && sNativePnPaletteDiagnostics) {
++              sNativePnPaletteApplied.fetch_add(1, std::memory_order_relaxed);
++              sNativePnPaletteMatrices.fetch_add(segment.bytes / sizeof(NativePnMatrix), std::memory_order_relaxed);
++            }
++            continue;
++          }
+           if (segment.type == VitaJobSegmentType::Inline) {
+             if (segment.offset > job.bytes.size() || segment.bytes > job.bytes.size() - segment.offset) continue;
+             detail::sActiveProcessData = job.bytes.data();
+@@ -592,6 +602,60 @@
+ #endif
+ }
+ 
++void set_native_pn_palette_enabled(bool enabled, bool diagnostics) noexcept {
++#if defined(MKW_TARGET_VITA)
++  sNativePnPaletteEnabled = enabled;
++  sNativePnPaletteDiagnostics = diagnostics;
++  sNativePnPaletteQueued.store(0, std::memory_order_relaxed);
++  sNativePnPaletteApplied.store(0, std::memory_order_relaxed);
++  sNativePnPaletteMatrices.store(0, std::memory_order_relaxed);
++#else
++  (void)enabled; (void)diagnostics;
++#endif
++}
++
++bool can_write_native_pn_palette() noexcept {
++#if defined(MKW_TARGET_VITA)
++  return sNativePnPaletteEnabled && worker_running() && !on_worker_thread() &&
++         !detail::sInDisplayList && !detail::sNativeModelRecording;
++#else
++  return false;
++#endif
++}
++
++bool write_native_pn_palette(const NativePnMatrix* matrices, size_t count) noexcept {
++#if defined(MKW_TARGET_VITA)
++  if (!can_write_native_pn_palette() || !matrices || !count || count > NativePnPaletteCapacity) return false;
++  for (size_t i = 0; i < count; ++i)
++    if (matrices[i].slot >= NativePnPaletteCapacity) return false;
++  // Reuse the batch byte arena, with no per-palette allocation or extra job.
++  // Reserve room for the preceding inline segment and the native segment.
++  if (sPendingSegmentCount >= VitaJobSegmentCapacity - 2u || detail::sBufferSize >= 256u * 1024u) drain();
++  if (!seal_inline_segment() || sPendingSegmentCount == VitaJobSegmentCapacity) return false;
++  auto& segment = sPendingSegments[sPendingSegmentCount++];
++  segment = {};
++  segment.type = VitaJobSegmentType::NativePnPalette;
++  segment.offset = detail::sBufferSize;
++  segment.bytes = static_cast<uint32_t>(count * sizeof(NativePnMatrix));
++  write_data(matrices, segment.bytes);
++  sPendingInlineOffset = detail::sBufferSize;
++  if (sNativePnPaletteDiagnostics) sNativePnPaletteQueued.fetch_add(1, std::memory_order_relaxed);
++  return true;
++#else
++  (void)matrices; (void)count; return false;
++#endif
++}
++
++NativePnPaletteStats native_pn_palette_stats() noexcept {
++#if defined(MKW_TARGET_VITA)
++  return {sNativePnPaletteQueued.load(std::memory_order_relaxed),
++          sNativePnPaletteApplied.load(std::memory_order_relaxed),
++          sNativePnPaletteMatrices.load(std::memory_order_relaxed)};
++#else
++  return {};
++#endif
++}
++
+ void write_stable_data_from(const void* bytes, const void* stableSource, uint32_t length) {
+   if (detail::sInDisplayList) {
+     write_data(bytes, length);
+--- a/smstrikers-port/extern/aurora-vita/lib/gx/command_processor.hpp
++++ b/smstrikers-port/extern/aurora-vita/lib/gx/command_processor.hpp
+@@ -4,6 +4,7 @@
+ #include <memory>
+ #include <vector>
+ #include "../internal.hpp"
++#include "native_pn_palette.hpp"
+ 
+ namespace aurora::gx::fifo {
+ 
+@@ -49,6 +50,10 @@
+ bool submit_raw_draw(GXPrimitive prim, GXVtxFmt fmt, const uint8_t* vertices, uint16_t vtxCount,
+                      uint32_t vertexBytes, const uint8_t* stableSource = nullptr);
+ 
++// Consumer-only application of copied native parameters. Validates the whole
++// payload before publishing any state and preserves the GX mirror for fallback.
++bool apply_native_pn_palette(const uint8_t* data, size_t bytes) noexcept;
++
+ #if defined(MKW_TARGET_VITA)
+ // Fast path for the display lists generated by Strikers: exactly one GX draw
+ // followed only by alignment padding. It is synchronous-frontend only: while
+--- a/smstrikers-port/extern/aurora-vita/lib/gx/command_processor.cpp
++++ b/smstrikers-port/extern/aurora-vita/lib/gx/command_processor.cpp
+@@ -65,6 +65,30 @@
+ TevDecodedWriteStats tev_decoded_write_stats() noexcept {return sTevDecodedWriteStats;}
+ void set_raster_uniform_reuse(bool enabled) noexcept {sRasterUniformReuse=enabled;}
+ bool raster_uniform_reuse_enabled() noexcept {return sRasterUniformReuse;}
++
++bool apply_native_pn_palette(const uint8_t* data, size_t bytes) noexcept {
++  static_assert(MaxPnMtx == NativePnPaletteCapacity);
++  if (!data || !bytes || bytes % sizeof(NativePnMatrix) ||
++      bytes / sizeof(NativePnMatrix) > NativePnPaletteCapacity) return false;
++  NativePnMatrix matrix;
++  // FIFO byte storage may be unaligned. Copy before reading native fields.
++  for (size_t offset = 0; offset < bytes; offset += sizeof(matrix)) {
++    std::memcpy(&matrix, data + offset, sizeof(matrix));
++    if (matrix.slot >= MaxPnMtx) return false;
++  }
++  for (size_t offset = 0; offset < bytes; offset += sizeof(matrix)) {
++    std::memcpy(&matrix, data + offset, sizeof(matrix));
++    auto& destination = g_gxState.pnMtx[matrix.slot];
++    std::memcpy(&destination.pos, matrix.position.data(), sizeof(destination.pos));
++    auto* normal = reinterpret_cast<float*>(&destination.nrm);
++    for (size_t row = 0; row < 3; ++row)
++      std::memcpy(normal + row * 4, matrix.normal.data() + row * 3, 3 * sizeof(float));
++  }
++  // All writes precede the next draw. One revision publishes the complete
++  // palette; no pipeline/layout/material/texture dependency was changed.
++  g_gxState.mark_dirty(StateDomain::Vertex);
++  return true;
++}
+ 
+ using IndexBuffer = std::vector<u16>;
+ 
+--- a/smstrikers-port/extern/aurora-vita/platforms/vita/aurora_vita_backend.hpp
++++ b/smstrikers-port/extern/aurora-vita/platforms/vita/aurora_vita_backend.hpp
+@@ -88,6 +88,7 @@
+   uint64_t preparedListHits=0,preparedListMisses=0,preparedListRejected=0;
+   uint64_t nativeReplayAttempts=0,nativeReplayHits=0,nativeReplayFallbacks=0;
+   uint64_t nativeModelAttempts=0,nativeModelDraws=0,nativeModelFallbacks=0,nativeModelCompiled=0;
++  uint64_t nativePnPalettesQueued=0,nativePnPalettesApplied=0,nativePnMatricesApplied=0;
+   aurora::gx::fifo::ModelCensusSnapshot nativeModelCensus{};
+   aurora::gx::fifo::ModelCacheSnapshot nativeModelCache{};
+   gfx::VertexReuseProbe::Stats vertexReuse{};
+@@ -232,6 +233,8 @@
+   bool gxm_tev_decoded_write_gate=false;
+   // Isolated CPU preparation experiment for BP depth/blend-only transitions.
+   bool gxm_raster_uniform_reuse=false;
++  // Native per-instance position/normal parameters in the existing FIFO batch.
++  bool gxm_native_pn_palette=false;
+   // Prepared fragment bytes only; each draw still reserves a fresh GXM buffer.
+   bool gxm_fragment_prepare_cache=false;
+   // A3 experimental: copy a CPU-owned GXP vertex buffer image and upload only
+--- a/smstrikers-port/extern/aurora-vita/platforms/vita/aurora_vita_backend.cpp
++++ b/smstrikers-port/extern/aurora-vita/platforms/vita/aurora_vita_backend.cpp
+@@ -437,6 +437,7 @@
+   aurora::gx::fifo::set_xf_equal_matrix_writes(c.gxm_xf_equal_matrix_writes);
+   aurora::gx::fifo::set_tev_decoded_write_gate(c.gxm_tev_decoded_write_gate);
+   aurora::gx::fifo::set_raster_uniform_reuse(c.gxm_raster_uniform_reuse);
++  aurora::gx::fifo::set_native_pn_palette_enabled(c.gxm_native_pn_palette, c.diagnostics_enabled);
+   aurora::gx::fifo::set_display_list_shadow_enabled(c.display_list_shadow&&
+       !gfx::gxm_disabled(gfx::GxmDisableDisplayListShadow));
+ #endif
+@@ -958,6 +959,8 @@
+   const auto models=aurora::gx::fifo::native_model_stats();
+   out.nativeModelAttempts=models.attempted;out.nativeModelDraws=models.dispatched;
+   out.nativeModelFallbacks=models.fallback;out.nativeModelCompiled=models.compiled;
++  const auto pn=aurora::gx::fifo::native_pn_palette_stats();
++  out.nativePnPalettesQueued=pn.queued;out.nativePnPalettesApplied=pn.applied;out.nativePnMatricesApplied=pn.matrices;
+   out.nativeModelCensus=aurora::gx::fifo::native_model_census_snapshot();
+   out.nativeModelCache=aurora::gx::fifo::native_model_cache_snapshot();
+ #endif
+--- a/smstrikers-port/extern/aurora-vita/cmake/aurora_vita.cmake
++++ b/smstrikers-port/extern/aurora-vita/cmake/aurora_vita.cmake
+@@ -140,6 +140,10 @@
+             ${AURORA_VITA_SOURCE_DIR}/tests/vita_frontend_translation_test.cpp)
+         target_link_libraries(aurora_vita_frontend_translation_test PRIVATE aurora::vita_backend)
+         add_test(NAME vita_frontend_translation COMMAND aurora_vita_frontend_translation_test)
++        add_executable(aurora_vita_native_pn_palette_test
++            ${AURORA_VITA_SOURCE_DIR}/tests/vita_native_pn_palette_test.cpp)
++        target_link_libraries(aurora_vita_native_pn_palette_test PRIVATE aurora::vita_backend)
++        add_test(NAME vita_native_pn_palette COMMAND aurora_vita_native_pn_palette_test)
+         add_executable(aurora_vita_native_model_recipe_test
+             ${AURORA_VITA_SOURCE_DIR}/tests/vita_native_model_recipe_test.cpp)
+         target_link_libraries(aurora_vita_native_model_recipe_test PRIVATE aurora::vita_backend)
+--- a/smstrikers-port/include/port/vita_performance_capture.hpp
++++ b/smstrikers-port/include/port/vita_performance_capture.hpp
+@@ -33,6 +33,7 @@
+   std::fprintf(file,"frame,frame_us,gx_total_us,xf_pos_inspected,xf_pos_unchanged,xf_pos_changed,producer_wait_us,consumer_wait_us,draws,vertices,gpu_vertices,texture_uploads,texture_upload_bytes,geometry_hits,geometry_misses,geometry_bytes,prepared_hits,prepared_misses,prepared_rejected,pool_busy_fallbacks,core3_total_pct_x100,finish_calls,finish_wait_us,display_queue_us,native_texture_hits,native_geometry_hits,native_rejected,scene0_wait_us,scene1_wait_us,scene2_wait_us,scene3_wait_us,core3_telemetry_valid,core3_chunks,core3_denied,core3_telemetry_failures,core3_overruns,native_misses,vertex_delta_copies,vertex_delta_saved_calls,vertex_delta_fallbacks,vertex_delta_copied_bytes,vertex_delta_saved_bytes,native_gpu_geometry_hits,native_gpu_geometry_attempts,xf_tex_inspected,xf_tex_unchanged,xf_tex_changed,xf_normal_inspected,xf_normal_unchanged,xf_normal_changed,xf_post_inspected,xf_post_unchanged,xf_post_changed,tev_decoded_inspected,tev_decoded_skipped,tev_decoded_changed,native_replay_attempts,native_replay_hits,native_replay_fallbacks");
+   using namespace aurora::vita::gfx;
+   std::fprintf(file,",native_model_attempts,native_model_draws,native_model_fallbacks,native_model_compiled");
++  std::fprintf(file,",native_pn_palettes_queued,native_pn_palettes_applied,native_pn_matrices_applied");
+   using namespace aurora::gx::fifo;
+   std::fprintf(file,",native_census_callbacks,native_census_draw_callbacks,native_census_filter_passed,native_census_transport_ready,native_census_eligible,native_census_classifier_mismatches");
+   for(const char* name:ModelRejectNames)std::fprintf(file,",native_census_reject_%s",name);
+@@ -51,6 +52,8 @@
+     for(size_t i=0;i<sizeof(values)/sizeof(values[0]);++i)std::fprintf(file,"%s%llu",i?",":"",(unsigned long long)values[i]);
+     const uint64_t models[]={s.nativeModelAttempts,s.nativeModelDraws,s.nativeModelFallbacks,s.nativeModelCompiled};
+     for(uint64_t value:models)std::fprintf(file,",%llu",(unsigned long long)value);
++    const uint64_t pn[]={s.nativePnPalettesQueued,s.nativePnPalettesApplied,s.nativePnMatricesApplied};
++    for(uint64_t value:pn)std::fprintf(file,",%llu",(unsigned long long)value);
+     const auto& census=s.nativeModelCensus;
+     const uint64_t censusTotals[]={census.callbacks,census.drawCallbacks,census.filterPassed,
+         census.transportReady,census.eligible,census.mismatches};
+--- a/smstrikers-port/extern/aurora-vita/lib/gx/native_pn_palette.hpp
++++ b/smstrikers-port/extern/aurora-vita/lib/gx/native_pn_palette.hpp
+@@ -0,0 +1,31 @@
++#pragma once
++
++#include <array>
++#include <cstddef>
++#include <cstdint>
++#include <type_traits>
++
++namespace aurora::gx::fifo {
++// Native frame data, not a GX command stream. Position and normal rows retain
++// their exact float bits. The normal translation column is never overwritten.
++struct NativePnMatrix {
++  uint32_t slot = 0;
++  std::array<float, 12> position{};
++  std::array<float, 9> normal{};
++};
++inline constexpr size_t NativePnPaletteCapacity = 10;
++static_assert(sizeof(NativePnMatrix) == 88);
++static_assert(std::is_trivially_copyable_v<NativePnMatrix>);
++
++struct NativePnPaletteStats {
++  uint64_t queued = 0, applied = 0, matrices = 0;
++};
++
++// Configure before starting the worker. Quiet runs do not update counters.
++void set_native_pn_palette_enabled(bool enabled, bool diagnostics) noexcept;
++bool can_write_native_pn_palette() noexcept;
++// Copies the complete palette into the existing ordered batch. A rejection
++// leaves every matrix untouched; the producer can use its ordinary GX loads.
++bool write_native_pn_palette(const NativePnMatrix* matrices, size_t count) noexcept;
++NativePnPaletteStats native_pn_palette_stats() noexcept;
++} // namespace aurora::gx::fifo
+--- a/smstrikers-port/extern/aurora-vita/tests/vita_native_pn_palette_test.cpp
++++ b/smstrikers-port/extern/aurora-vita/tests/vita_native_pn_palette_test.cpp
+@@ -0,0 +1,213 @@
++#include "../lib/gx/fifo.hpp"
++#include "../lib/gx/command_processor.hpp"
++#include "../lib/gx/gx.hpp"
++#include "../lib/dolphin/gx/__gx.h"
++#include "aurora_vita_backend.hpp"
++#include "gx/aurora_gx_bridge.hpp"
++#include "gx/aurora_vita_draw_sink.hpp"
++#include "gfx/vita_fixed_vertex.hpp"
++
++#include <array>
++#include <atomic>
++#include <bit>
++#include <chrono>
++#include <cstdio>
++#include <cstdlib>
++#include <cstring>
++#include <thread>
++
++using namespace aurora::gx;
++using namespace aurora::gx::fifo;
++using namespace aurora::vita;
++#undef CHECK
++#define CHECK(x) do { if (!(x)) { std::fprintf(stderr,"FAIL %d: %s\n",__LINE__,#x); std::exit(1); } } while (false)
++
++using Palette = std::array<NativePnMatrix, NativePnPaletteCapacity>;
++struct Snapshot {
++  std::array<PnMtx, MaxPnMtx> matrices{};
++  gfx::FixedVertexUniforms fixed{};
++  gfx::DrawUniforms fragment{};
++  StateRevisions revisions{};
++  uint32_t pipeline=0,layout=0,vertexProgram=0;
++  uint64_t draws=0;
++};
++
++void reset() {
++  run_sync([](void*) {
++    auto& g=g_gxState;g=GXState{};
++    g.proj.m0={1,0,0,0};g.proj.m1={0,1,0,0};g.proj.m2={0,0,1,0};g.proj.m3={0,0,0,1};
++    g.currentPnMtx=0;
++    g.numChans=1;g.numTevStages=1;
++    g.tevStages[0].channelId=GX_COLOR0A0;
++    g.tevStages[0].colorPass.d=GX_CC_RASC;g.tevStages[0].alphaPass.d=GX_CA_RASA;
++    g.colorChannelConfig[GX_COLOR0].lightingEnabled=true;
++    g.colorChannelConfig[GX_COLOR0].diffFn=GX_DF_CLAMP;
++    g.colorChannelState[GX_COLOR0].lightMask=1;
++    g.colorChannelState[GX_COLOR0].matColor={1,0.7f,0.4f,1};
++    g.colorChannelState[GX_COLOR0].ambColor={0.2f,0.1f,0.3f,1};
++    g.lights[0].color={0.5f,1,0.25f,1};g.lights[0].pos={1,2,3,1};
++    g.lights[0].distAtt={1,0,0,0};
++    for(unsigned i=0;i<MaxPnMtx;++i) {
++      g.pnMtx[i].pos.m0={1,0,0,float(i)};g.pnMtx[i].pos.m1={0,1,0,0};g.pnMtx[i].pos.m2={0,0,1,0};
++      // Normal translation words are not part of GXLoadNrmMtxImm's payload.
++      g.pnMtx[i].nrm.m0={1,0,0,17};g.pnMtx[i].nrm.m1={0,1,0,18};g.pnMtx[i].nrm.m2={0,0,1,19};
++    }
++  },nullptr);
++}
++
++Snapshot snapshot() {
++  Snapshot result;
++  run_sync([](void* out) {
++    auto& s=*static_cast<Snapshot*>(out);const auto& g=g_gxState;
++    s.matrices=g.pnMtx;s.revisions=g.stateRevisions;
++    s.pipeline=g.pipelineStateGeneration;s.layout=g.layoutStateGeneration;s.vertexProgram=g.vertexProgramStateGeneration;
++    auto pipeline=gxbridge::translate_current_pipeline(GX_TRIANGLES,0);
++    pipeline.fixedVertexOnGpu=true;pipeline.fixedVertexIndexedPn=true;
++    gxbridge::refresh_current_vertex_program_state(pipeline);
++    gfx::VertexTransformState vertex{};
++    gxbridge::translate_fixed_vertex_state(vertex,s.fragment,pipeline,true);
++    gfx::fixed_vertex_uniforms_into(s.fixed,pipeline,vertex);
++    s.draws=draw_sink().submitted_draws();
++  },&result);
++  return result;
++}
++
++Palette palette(unsigned seed) {
++  Palette result;
++  for(unsigned i=0;i<result.size();++i) {
++    auto& m=result[i];m.slot=(i*3)%result.size();
++    m.position={1,0,0,float(seed+i),0,2,0,float(i),0,0,0.5f,-float(seed)};
++    m.normal={1,0,0,0,0.5f,0,0,0,2};
++  }
++  return result;
++}
++
++void reference(const NativePnMatrix* matrices,size_t count) {
++  for(size_t i=0;i<count;++i) {
++    const auto& m=matrices[i];float normal[12]{};
++    for(unsigned row=0;row<3;++row)std::memcpy(normal+row*4,m.normal.data()+row*3,3*sizeof(float));
++    GXLoadPosMtxImm(m.position.data(),m.slot*3);
++    GXLoadNrmMtxImm(normal,m.slot*3);
++  }
++}
++
++void same(const Snapshot& a,const Snapshot& b) {
++  CHECK(!std::memcmp(a.matrices.data(),b.matrices.data(),sizeof(a.matrices)));
++  CHECK(!std::memcmp(&a.fixed,&b.fixed,offsetof(gfx::FixedVertexUniforms,revision)));
++  CHECK(!std::memcmp(&a.fragment,&b.fragment,sizeof(a.fragment)));
++  CHECK(a.draws==b.draws);
++}
++
++int main() {
++  BackendConfig config{};config.log_level=RuntimeLogLevel::Silent;config.wait_vblank=false;
++  config.cpu_worker_threads=0;config.gxm_native_pn_palette=true;config.diagnostics_enabled=true;
++  CHECK(initialize(config));
++  auto data=palette(7);
++  CHECK(!can_write_native_pn_palette());CHECK(!write_native_pn_palette(data.data(),data.size()));
++  CHECK(start_worker());CHECK(begin_frame());reset();
++  const auto initial=snapshot();
++  reference(data.data(),data.size());const auto expected=snapshot();
++  reset();const auto before=snapshot();
++  CHECK(can_write_native_pn_palette());CHECK(write_native_pn_palette(data.data(),data.size()));
++  const auto native=snapshot();same(native,expected);
++  CHECK(native.revisions.vertex!=before.revisions.vertex);
++  CHECK(native.revisions.fragment==before.revisions.fragment&&native.revisions.textures==before.revisions.textures);
++  CHECK(native.pipeline==before.pipeline&&native.layout==before.layout&&native.vertexProgram==before.vertexProgram);
++  CHECK(native.draws==initial.draws);
++
++  // Exact encoded words survive both transports, including non-finite bits.
++  data[0].position[0]=std::bit_cast<float>(0x80000000u);
++  data[1].position[4]=std::bit_cast<float>(0x7fc12345u);
++  data[2].normal[7]=std::bit_cast<float>(0x80000000u);
++  data[3].normal[2]=std::bit_cast<float>(0x7fc54321u);
++  reset();reference(data.data(),data.size());const auto bitReference=snapshot();
++  reset();CHECK(write_native_pn_palette(data.data(),data.size()));same(snapshot(),bitReference);
++
++  // Both copies reject every malformed slot before changing any matrix.
++  auto bad=data;bad.back().slot=NativePnPaletteCapacity;
++  const auto untouched=snapshot();const auto statsBefore=native_pn_palette_stats();
++  CHECK(!write_native_pn_palette(bad.data(),bad.size()));
++  CHECK(!write_native_pn_palette(nullptr,1));CHECK(!write_native_pn_palette(data.data(),0));
++  CHECK(!write_native_pn_palette(data.data(),data.size()+1));
++  run_sync([](void* p) {
++    const auto& v=*static_cast<Palette*>(p);
++    CHECK(!apply_native_pn_palette(reinterpret_cast<const uint8_t*>(v.data()),sizeof(v)));
++    CHECK(!apply_native_pn_palette(reinterpret_cast<const uint8_t*>(v.data()),sizeof(v)-1));
++  },&bad);
++  same(snapshot(),untouched);CHECK(native_pn_palette_stats().queued==statsBefore.queued);
++
++  // Recording a display list or native model must keep ordinary GX bytes.
++  std::array<uint8_t,64> list{};
++  begin_display_list(list.data(),list.size());CHECK(!write_native_pn_palette(data.data(),1));
++  CHECK(end_display_list()==0);
++  CHECK(begin_native_model_recording(list.data(),list.size()));
++  CHECK(!write_native_pn_palette(data.data(),1));CHECK(!finish_native_model_recording(nullptr));
++
++  // Duplicate slots retain authored last-write order; ordinary XF writes on
++  // both sides retain their exact position in a shared FIFO batch.
++  auto a=palette(11),b=palette(33),c=palette(55);b[1].slot=b[0].slot;
++  reset();reference(a.data(),2);reference(b.data(),b.size());reference(c.data()+4,1);
++  const auto mixedReference=snapshot();
++  reset();reference(a.data(),2);CHECK(write_native_pn_palette(b.data(),b.size()));reference(c.data()+4,1);
++  same(snapshot(),mixedReference);
++
++  // Force segment-limit drains and mixed inline/native batches. No state can
++  // be reordered when a full pending batch is handed to the consumer.
++  reset();
++  for(unsigned n=0;n<300;++n) {auto p=palette(n);reference(p.data(),1);reference(p.data()+1,2);}
++  const auto stressReference=snapshot();
++  reset();
++  for(unsigned n=0;n<300;++n) {auto p=palette(n);reference(p.data(),1);CHECK(write_native_pn_palette(p.data()+1,2));}
++  same(snapshot(),stressReference);
++
++  // Hold the consumer behind an earlier callback while the producer reuses
++  // its storage. Only the owned batch copy may be observed afterwards.
++  struct Gate {std::atomic<bool> entered{false},release{false};} gate;
++  Gate* gatePointer=&gate;
++  CHECK(run_async([](void* p) {
++    auto& gate=**static_cast<Gate**>(p);gate.entered.store(true,std::memory_order_release);
++    while(!gate.release.load(std::memory_order_acquire))std::this_thread::yield();
++  },&gatePointer,sizeof(gatePointer)));
++  const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(1);
++  while(!gate.entered.load(std::memory_order_acquire))CHECK(std::chrono::steady_clock::now()<deadline);
++  auto owned=palette(123);const auto original=owned;
++  CHECK(write_native_pn_palette(owned.data(),owned.size()));drain();
++  owned=palette(999);gate.release.store(true,std::memory_order_release);wait_idle();
++  const auto copied=snapshot();reset();reference(original.data(),original.size());same(snapshot(),copied);
++  const auto totals=native_pn_palette_stats();CHECK(totals.queued==totals.applied);CHECK(totals.applied==304);
++  CHECK(totals.matrices==640);
++  // Actual indexed-PN, lit GX draws retain their order around the native
++  // palette. The palette segment itself must never manufacture another draw.
++  reset();
++  run_sync([](void*) {
++    auto& g=g_gxState;
++    g.vtxDesc[GX_VA_PNMTXIDX]=GX_DIRECT;
++    g.vtxDesc[GX_VA_POS]=g.vtxDesc[GX_VA_NRM]=GX_DIRECT;
++    g.vtxFmts[0].attrs[GX_VA_POS]={GX_POS_XYZ,GX_F32,0};
++    g.vtxFmts[0].attrs[GX_VA_NRM]={GX_NRM_XYZ,GX_F32,0};
++    g.mark_dirty(StateDomain::All);
++  },nullptr);
++  std::array<uint8_t,78> draw{};draw[0]=0x90;draw[2]=3;
++  const auto put=[](uint8_t* p,float f) {
++    const auto bits=std::bit_cast<uint32_t>(f);
++    for(unsigned byte=0;byte<4;++byte)p[byte]=uint8_t(bits>>(24-byte*8));
++  };
++  for(unsigned vertex=0;vertex<3;++vertex) {
++    auto* p=draw.data()+3+25*vertex;p[0]=uint8_t(vertex*3);
++    put(p+1,float(vertex==1));put(p+5,float(vertex==2));put(p+21,1);
++  }
++  const auto beforeDraws=snapshot();
++  write_data(draw.data(),draw.size());CHECK(write_native_pn_palette(a.data(),a.size()));
++  write_data(draw.data(),draw.size());const auto afterDraws=snapshot();
++  CHECK(afterDraws.draws==beforeDraws.draws+2);
++  end_frame();aurora::vita::shutdown();
++
++  // Disabled and quiet contexts: fallback is available; quiet counters stay
++  // zero even when native parameters are queued and applied successfully.
++  config.gxm_native_pn_palette=false;CHECK(initialize(config));CHECK(start_worker());
++  CHECK(!can_write_native_pn_palette());CHECK(!write_native_pn_palette(data.data(),1));aurora::vita::shutdown();
++  config.gxm_native_pn_palette=true;config.diagnostics_enabled=false;CHECK(initialize(config));CHECK(start_worker());
++  CHECK(write_native_pn_palette(data.data(),1));wait_idle();
++  CHECK(native_pn_palette_stats().queued==0&&native_pn_palette_stats().applied==0);aurora::vita::shutdown();
++  std::puts("native PN palette: real XF equivalence, lighting/normal uniforms, exact bits, atomic rejection, mixed FIFO batches, owned lifetime, no extra draws, quiet counters");
++}

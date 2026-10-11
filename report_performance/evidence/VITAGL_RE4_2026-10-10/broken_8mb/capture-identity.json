@@ -1,0 +1,36 @@
+{
+  "time_unix": 1791627441.4239411,
+  "eboot_sha256": "9b81555e34c8d94b9f0fa8e59d472b0900c786697f6f8e1d32c87b74d3f739ec",
+  "coredumps": [
+    "psp2core-1791272585-0x0002a7397f-eboot.bin.psp2dmp",
+    "psp2core-1791277863-0x00000b21bb-eboot.bin.psp2dmp",
+    "psp2core-1791303648-0x00040e27c1-eboot.bin.psp2dmp",
+    "psp2core-1791307164-0x0004132601-eboot.bin.psp2dmp",
+    "psp2core-1791313305-0x0004e42af1-eboot.bin.psp2dmp",
+    "psp2core-1791315331-0x0004fd28b1-eboot.bin.psp2dmp",
+    "psp2core-1791316902-0x0005032711-eboot.bin.psp2dmp",
+    "psp2core-1791319267-0x0007192559-eboot.bin.psp2dmp",
+    "psp2core-1791446436-0x0010d62e2d-eboot.bin.psp2dmp"
+  ],
+  "new_coredumps": [],
+  "wait_seconds": 256.11206254106946,
+  "files": {
+    "vg-v120-vitagl.csv": {
+      "bytes": 3685,
+      "sha256": "8e226eeaf48f808599249e80e941977052ec94a5764be4ef75ded7fe2d41007c"
+    },
+    "debug_frame_play_120.ppm": {
+      "bytes": 1566735,
+      "sha256": "f04c60ed5f85c2419067ac3d1f7124fd4d504ac587dbeb7326c8827a9c9246da"
+    },
+    "vg-v120-vitagl.log": {
+      "bytes": 13225,
+      "sha256": "7208f704faa832bd2df1f0268d2ee49c68458736ee388a5648e497f5b92c2b8a"
+    },
+    "strikers.ini": {
+      "bytes": 4606,
+      "sha256": "e9d0084eb1f79d5a8131e2d76d2b5fe29db3fc7f090e52ad5a64007a1783a852"
+    }
+  },
+  "effective_override_mismatches": {}
+}

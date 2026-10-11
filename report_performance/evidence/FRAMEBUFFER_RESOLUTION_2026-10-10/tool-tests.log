@@ -1,0 +1,19 @@
+test_aggregation_and_visual_gate (test_vita_resolution_ab.ResolutionComparisonTest.test_aggregation_and_visual_gate) ... ok
+test_bad_window_incomplete_or_noisy_capture_rejected (test_vita_resolution_ab.ResolutionComparisonTest.test_bad_window_incomplete_or_noisy_capture_rejected) ... ok
+test_capture_hash_mismatch_rejected (test_vita_resolution_ab.ResolutionComparisonTest.test_capture_hash_mismatch_rejected) ... ok
+test_capture_reads_files_and_rejects_new_dump (test_vita_resolution_ab.ResolutionComparisonTest.test_capture_reads_files_and_rejects_new_dump) ... ok
+test_changed_self_and_coredump_rejected (test_vita_resolution_ab.ResolutionComparisonTest.test_changed_self_and_coredump_rejected) ... ok
+test_geometry_plan_isolates_only_geometry_budget (test_vita_resolution_ab.ResolutionComparisonTest.test_geometry_plan_isolates_only_geometry_budget) ... ok
+test_ignored_runtime_resolution_rejected (test_vita_resolution_ab.ResolutionComparisonTest.test_ignored_runtime_resolution_rejected) ... ok
+test_unsealed_self_rejected (test_vita_resolution_ab.ResolutionComparisonTest.test_unsealed_self_rejected) ... ok
+test_wrong_effective_resolution_rejected (test_vita_resolution_ab.ResolutionComparisonTest.test_wrong_effective_resolution_rejected) ... ok
+test_bad_columns (test_analyze_vita_frames.FrameCaptureTest.test_bad_columns) ... ok
+test_incomplete (test_analyze_vita_frames.FrameCaptureTest.test_incomplete) ... ok
+test_live_play_provenance (test_analyze_vita_frames.FrameCaptureTest.test_live_play_provenance) ... ok
+test_malformed_or_wrong_sequence (test_analyze_vita_frames.FrameCaptureTest.test_malformed_or_wrong_sequence) ... ok
+test_rate_and_tails (test_analyze_vita_frames.FrameCaptureTest.test_rate_and_tails) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.185s
+
+OK

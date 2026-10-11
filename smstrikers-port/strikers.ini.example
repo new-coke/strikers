@@ -8,6 +8,12 @@
 # res_scale is deliberately absent: the default already renders the Deck's panel pixel for pixel.
 
 [display]
+# Vita GXM internal resolution, selected once at startup. Restart to change.
+# auto preserves the build default; 960x544 renders at panel resolution;
+# 640x480 uses the existing offscreen EFB and GPU upscale to the 960x544 panel.
+# This changes rasterization resolution, including HUD; it does not skip draws.
+# gxm_internal_resolution = auto
+
 # Internal render resolution, as a multiple of the console's 448 rows. Unset, it follows the window;
 # on a Steam Deck it is the panel's 800 rows (1.786) even when docked.
 # res_scale = 2.0
@@ -64,6 +70,11 @@
 # gxm_xf_equal_matrix_writes = 0
 # Skip inactive / semantically identical decoded TEV stage invalidations.
 # gxm_tev_decoded_write_gate = 0
+# Reuse CPU uniform snapshots across BP depth/blend-only pipeline changes.
+# gxm_raster_uniform_reuse = 0
+# Native position/normal palette transport for pointlit Characters; async GX only.
+# Keeps the existing geometry/material draw path. Independent of native-model caches.
+# gxm_native_pn_palette = 0
 # Exact compact CMPR subset as BC1; other textures keep lossless fallback.
 # gxm_exact_bc1 = 0
 # Immutable geometry buffers prefer CDRAM, retaining USER allocation fallback.
@@ -151,6 +162,12 @@
 # Keep the source ISO on the host for regeneration. ISO-only installs can leave
 # this unset to use the usual data path.
 # asset_archive = ux0:data/strikersVita/sms.psarc
+# Optional archive I/O observation. Default OFF; samples stay in RAM until the
+# finite capture completes. Times measure CPU-observed read/inflate duration.
+# asset_io_profile = 0
+# asset_io_capture = ux0:data/strikersVita/perf-io.csv
+# asset_io_capture_skip = 600
+# asset_io_capture_frames = 120
 
 # Optional small PSARC containing only native/v1 sidecars. Requires
 # gxm_native_assets=1; absent, Aurora reads sidecars from asset_archive instead.
@@ -242,6 +259,14 @@
 # --native-gxm-static and native_asset_archive pointing to it. Default OFF.
 # gxm_native_gpu_static = 0
 
+# After a Vita hardware freeze, STRIKERS_VITA_GXM_LEAN_RENDER defaults OFF
+# pending an isolated validation. It is a CMake build option, not an INI key.
+# This strips the experimental A6/R1-R3 GLX recipe/replay hooks and packet
+# timing probes from the game; INI flags below cannot re-enable stripped code.
+# Re-enable the lean path only in a controlled test build with
+# STRIKERS_GXM_LEAN_RENDER=ON, keeping the R3-A Aurora options unchanged.
+# The validated GXM renderer, GX worker, static GPU geometry and fallback remain.
+
 # A6 phase 1: opt-in same-frame GX decoding bypass for consecutive identical,
 # immutable, unlit and untextured packets whose AVNR v2 GXM buffer is resident.
 # Uses pinned display-list identity and exact-slot original GX fallback.
@@ -253,6 +278,8 @@
 # 2: intercept only the DL draw slot, retaining original GLX state/userdata
 # updates; textured/lit/indexed-PN resident geometry uses current texture,
 # TLUT and EFB resolution, with reference GX fallback. Requires GX worker.
+# Aurora-Vita now owns the typed model registry and admission/capture path;
+# mode 2 still pays live GX state/uniform costs and has NOT shown an FPS gain.
 # gxm_native_model_draw = 0
 # Opt-in CPU recipe cache: 256 entries, four-way lookup, selective replacement.
 # Producer/consumer capacity is coordinated with a 384-live-recipe ceiling.
@@ -262,9 +289,24 @@
 # Complete snapshots and GXM disable bits remain enforced. No GX state caching
 # or GPU reservation policy change; geometry budget is unchanged. Opt-in only.
 # gxm_native_model_uniform_build = 0
+# Reuse native-recipe CPU vertex/fragment preparation while tracked GX inputs
+# are unchanged. Permanent DLs receive loader generations and owner-scope
+# retirement. Live texture/TLUT/EFB changes and exact GX fallback remain active.
+# Experimental, default OFF; requires native model mode 1 or 2. Restart after
+# changing this; temporary/unregistered DLs retain the original GX path.
+# gxm_native_model_prepared = 0
+# R3-A (GXM only): an already compiled static/unlit model in a permanent
+# registered display list may bypass an unchanged GLX producer callback. Every
+# material/texture/geometry change is validated in Aurora's GPU owner thread.
+# Requires native model draw=2, prepared=1, and async GX. Stays default OFF
+# until matched scene/image/FPS hardware validation proves a benefit.
+# gxm_native_model_early = 0
 # Diagnostic producer census covers the mode-1 filter only; requires
 # diagnostics=1. Use native_model_* counters for mode-2 coverage.
 # gxm_native_model_census = 0
+# Independently collect producer/consumer cache events without enabling the
+# admission census. Diagnostic-only: mutex accounting affects frame times.
+# gxm_native_model_metrics = 0
 
 # Which disc the data came from, when the data cannot say: the id is read from sys/boot.bin
 # beside `files` or from an image's first bytes, and an extraction of `files` alone is taken

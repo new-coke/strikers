@@ -70,6 +70,19 @@ int main(int argc, char** argv)
         assert(port_asset_archive_read(a, i, NULL, 1, 0) == -1);
         fclose(source);
     }
+    {
+        PortAssetIoStats stats;
+        port_asset_io_snapshot(&stats);
+        const char* profile = getenv("STRIKERS_ASSET_IO_PROFILE");
+        if (profile && strcmp(profile, "1") == 0) {
+            assert(stats.requests > 0 && stats.physical_reads >= 3);
+            assert(stats.physical_bytes > 32 && stats.requested_bytes > 0);
+            assert(stats.read_errors == 0 && stats.inflate_errors == 0);
+        } else {
+            const PortAssetIoStats zero = {0};
+            assert(memcmp(&stats, &zero, sizeof stats) == 0);
+        }
+    }
     port_asset_archive_close(a);
     if (argc == 4) {
         puts("PSARC sidecar byte equivalence and random reads passed");

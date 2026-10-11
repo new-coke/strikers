@@ -1,0 +1,504 @@
+diff --git a/ab-artifacts/asset-io-20261011/before/smstrikers-port/src/platform/asset_archive.c b/smstrikers-port/src/platform/asset_archive.c
+index 665b6b4a..384d735d 100644
+--- a/ab-artifacts/asset-io-20261011/before/smstrikers-port/src/platform/asset_archive.c
++++ b/smstrikers-port/src/platform/asset_archive.c
+@@ -6,8 +6,15 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <sys/types.h>
++#include <time.h>
++#ifdef _WIN32
++#include <windows.h>
++#else
++#include <pthread.h>
++#endif
+ #ifdef STRIKERS_VITA
+ #include <psp2/io/fcntl.h>
++#include <psp2/kernel/processmgr.h>
+ #elif defined(_WIN32)
+ #include <io.h>
+ #endif
+@@ -26,6 +33,7 @@ typedef struct ArchiveEntry {
+ typedef struct ArchiveName { const char* path; unsigned index; } ArchiveName;
+ struct PortAssetArchive {
+     FILE* file;
++    int profile;
+ #ifdef STRIKERS_VITA
+     SceUID fd;
+ #endif
+@@ -39,6 +47,36 @@ struct PortAssetArchive {
+     int ignore_case;
+     unsigned char* toc;
+ };
++#ifdef _WIN32
++static SRWLOCK s_stats_lock = SRWLOCK_INIT;
++static void stats_lock(void) { AcquireSRWLockExclusive(&s_stats_lock); }
++static void stats_unlock(void) { ReleaseSRWLockExclusive(&s_stats_lock); }
++#else
++static pthread_mutex_t s_stats_lock = PTHREAD_MUTEX_INITIALIZER;
++static void stats_lock(void) { pthread_mutex_lock(&s_stats_lock); }
++static void stats_unlock(void) { pthread_mutex_unlock(&s_stats_lock); }
++#endif
++static PortAssetIoStats s_stats;
++void port_asset_io_snapshot(PortAssetIoStats* out)
++{
++    if (!out) return;
++    stats_lock(); *out = s_stats; stats_unlock();
++}
++static uint64_t io_time_us(void)
++{
++#ifdef STRIKERS_VITA
++    return sceKernelGetProcessTimeWide();
++#elif defined(_WIN32)
++    LARGE_INTEGER ticks, frequency;
++    QueryPerformanceCounter(&ticks); QueryPerformanceFrequency(&frequency);
++    return (uint64_t)(ticks.QuadPart / frequency.QuadPart) * 1000000u +
++           (uint64_t)(ticks.QuadPart % frequency.QuadPart) * 1000000u / frequency.QuadPart;
++#else
++    struct timespec t;
++    clock_gettime(CLOCK_MONOTONIC, &t);
++    return (uint64_t)t.tv_sec * 1000000u + (uint64_t)t.tv_nsec / 1000u;
++#endif
++}
+ static uint64_t be(const unsigned char* p, unsigned n)
+ {
+     uint64_t v = 0;
+@@ -47,12 +85,13 @@ static uint64_t be(const unsigned char* p, unsigned n)
+ }
+ static size_t read_at(PortAssetArchive* a, void* dst, size_t n, uint64_t pos)
+ {
++    const uint64_t start = a->profile ? io_time_us() : 0;
++    size_t got = 0;
+ #ifdef STRIKERS_VITA
+     if (pos > INT64_MAX || n > INT_MAX) return 0;
+-    const int got = sceIoPread(a->fd, dst, (unsigned)n, (SceOff)pos);
+-    return got > 0 ? (size_t)got : 0;
++    const int result = sceIoPread(a->fd, dst, (unsigned)n, (SceOff)pos);
++    got = result > 0 ? (size_t)result : 0;
+ #else
+-    size_t got = 0;
+ #ifdef _WIN32
+     _lock_file(a->file);
+     clearerr(a->file);
+@@ -66,8 +105,15 @@ static size_t read_at(PortAssetArchive* a, void* dst, size_t n, uint64_t pos)
+         got = fread(dst, 1, n, a->file);
+     funlockfile(a->file);
+ #endif
+-    return got;
+ #endif
++    if (a->profile) {
++        const uint64_t elapsed = io_time_us() - start;
++        stats_lock();
++        ++s_stats.physical_reads; s_stats.physical_bytes += got;
++        s_stats.read_us += elapsed; s_stats.read_errors += got != n;
++        stats_unlock();
++    }
++    return got;
+ }
+ static unsigned stored_size(const PortAssetArchive* a, unsigned block)
+ {
+@@ -161,14 +207,24 @@ static long read_entry(PortAssetArchive* a, unsigned i, void* dst, size_t bytes,
+         if (read_at(a, scratch, physical, a->offsets[k]) != physical) break;
+         const unsigned char* data = scratch;
+         if (physical < expected) {
++            const uint64_t start = a->profile ? io_time_us() : 0;
+             z_stream stream;
+             memset(&stream, 0, sizeof stream);
+             stream.next_in = scratch; stream.avail_in = physical;
+             stream.next_out = scratch + BLOCK_SIZE; stream.avail_out = expected;
+-            if (inflateInit(&stream) != Z_OK) break;
+-            int rc = inflate(&stream, Z_FINISH);
+-            int valid = rc == Z_STREAM_END && stream.total_out == expected && stream.total_in == physical;
+-            inflateEnd(&stream);
++            int valid = 0;
++            if (inflateInit(&stream) == Z_OK) {
++                const int rc = inflate(&stream, Z_FINISH);
++                valid = rc == Z_STREAM_END && stream.total_out == expected && stream.total_in == physical;
++                inflateEnd(&stream);
++            }
++            if (a->profile) {
++                const uint64_t elapsed = io_time_us() - start;
++                stats_lock(); ++s_stats.inflates;
++                s_stats.inflated_bytes += valid ? expected : 0;
++                s_stats.inflate_us += elapsed; s_stats.inflate_errors += !valid;
++                stats_unlock();
++            }
+             if (!valid) break;
+             data = scratch + BLOCK_SIZE;
+         }
+@@ -186,6 +242,9 @@ static long read_entry(PortAssetArchive* a, unsigned i, void* dst, size_t bytes,
+ long port_asset_archive_read(PortAssetArchive* a, unsigned i, void* dst, size_t bytes, uint64_t offset)
+ {
+     if (!a || i >= a->count - 1) return -1;
++    if (a->profile) {
++        stats_lock(); ++s_stats.requests; s_stats.requested_bytes += bytes; stats_unlock();
++    }
+     return read_entry(a, i + 1, dst, bytes, offset);
+ }
+ PortAssetArchive* port_asset_archive_open(const char* path, char* error, size_t n)
+@@ -193,6 +252,8 @@ PortAssetArchive* port_asset_archive_open(const char* path, char* error, size_t
+     unsigned char h[32];
+     PortAssetArchive* a = (PortAssetArchive*)calloc(1, sizeof *a);
+     if (!a) return fail(NULL, error, n, "out of memory");
++    const char* profile = getenv("STRIKERS_ASSET_IO_PROFILE");
++    a->profile = profile && strcmp(profile, "1") == 0;
+ #ifdef STRIKERS_VITA
+     a->fd = -1;
+ #endif
+diff --git a/ab-artifacts/asset-io-20261011/before/smstrikers-port/include/port/asset_archive.h b/smstrikers-port/include/port/asset_archive.h
+index cbad880b..a019143f 100644
+--- a/ab-artifacts/asset-io-20261011/before/smstrikers-port/include/port/asset_archive.h
++++ b/smstrikers-port/include/port/asset_archive.h
+@@ -18,6 +18,15 @@ int port_asset_archive_find(const PortAssetArchive* archive, const char* path);
+ // Positional, bounded to the logical file. Returns bytes read, 0 at EOF, -1 on error.
+ long port_asset_archive_read(PortAssetArchive* archive, unsigned index, void* dst,
+                             size_t bytes, uint64_t offset);
++// Optional process-wide observations for archives opened with
++// STRIKERS_ASSET_IO_PROFILE=1. Snapshot counters only; never writes a log.
++// I/O and inflate times are CPU-observed elapsed time, not device busy time.
++typedef struct PortAssetIoStats {
++    uint64_t requests, requested_bytes;
++    uint64_t physical_reads, physical_bytes, read_us, read_errors;
++    uint64_t inflates, inflated_bytes, inflate_us, inflate_errors;
++} PortAssetIoStats;
++void port_asset_io_snapshot(PortAssetIoStats* out);
+ #ifdef __cplusplus
+ }
+ #endif
+diff --git a/ab-artifacts/asset-io-20261011/before/smstrikers-port/src/Game/main.cpp b/smstrikers-port/src/Game/main.cpp
+index e4aac0b2..10230aef 100644
+--- a/ab-artifacts/asset-io-20261011/before/smstrikers-port/src/Game/main.cpp
++++ b/smstrikers-port/src/Game/main.cpp
+@@ -45,6 +45,7 @@ extern "C" void PortDebugFrame(void);   // PORT: defined in Game.cpp
+ #include "port/vita_profiler.h"
+ #if defined(PORT_VITA)
+ #include "port/vita_performance_capture.hpp"
++#include "port/asset_io_capture.hpp"
+ #include "port/vita_view_draw_capture.hpp"
+ #include "port/native_assets.hpp"
+ #include "port/native_audio.hpp"
+@@ -2126,6 +2127,7 @@ int main(int argc, char* argv[])
+             PortProfilerRecordRendererSample(&sample);
+         }
+         port::capture_completed_performance(g_pGame != NULL && g_pGame->IsGameplayOrOvertime());
++        port::capture_asset_io(g_pGame != NULL && g_pGame->IsGameplayOrOvertime());
+         port::capture_view_draw(g_pGame != NULL && g_pGame->IsGameplayOrOvertime());
+         VitaMaybeCaptureFrame();
+ #else
+diff --git a/ab-artifacts/asset-io-20261011/before/smstrikers-port/tests/CMakeLists.txt b/smstrikers-port/tests/CMakeLists.txt
+index 4fcc2fbf..af86ceae 100644
+--- a/ab-artifacts/asset-io-20261011/before/smstrikers-port/tests/CMakeLists.txt
++++ b/smstrikers-port/tests/CMakeLists.txt
+@@ -64,12 +64,15 @@ if(UNIX)
+     add_test(NAME profile_output COMMAND profile_output_test)
+     add_executable(switch_dvd_test switch_dvd_test.c ../src/platform/asset_archive.c)
+     target_include_directories(switch_dvd_test PRIVATE ../include)
++    target_link_libraries(switch_dvd_test PRIVATE Threads::Threads)
+     add_test(NAME switch_dvd COMMAND switch_dvd_test)
+     add_executable(vita_dvd_test vita_dvd_test.c ../src/platform/asset_archive.c)
+     target_include_directories(vita_dvd_test PRIVATE ../include)
++    target_link_libraries(vita_dvd_test PRIVATE Threads::Threads)
+     add_test(NAME vita_dvd COMMAND vita_dvd_test)
+     add_executable(asset_archive_probe asset_archive_probe.c ../src/platform/asset_archive.c)
+     target_include_directories(asset_archive_probe PRIVATE ../include)
++    target_link_libraries(asset_archive_probe PRIVATE Threads::Threads)
+     find_package(ZLIB QUIET)
+     if(TARGET ZLIB::ZLIB)
+         target_compile_definitions(asset_archive_probe PRIVATE STRIKERS_ZLIB=1)
+diff --git a/ab-artifacts/asset-io-20261011/before/smstrikers-port/tests/asset_archive_probe.c b/smstrikers-port/tests/asset_archive_probe.c
+index e179ac51..2daa9b3a 100644
+--- a/ab-artifacts/asset-io-20261011/before/smstrikers-port/tests/asset_archive_probe.c
++++ b/smstrikers-port/tests/asset_archive_probe.c
+@@ -70,6 +70,19 @@ int main(int argc, char** argv)
+         assert(port_asset_archive_read(a, i, NULL, 1, 0) == -1);
+         fclose(source);
+     }
++    {
++        PortAssetIoStats stats;
++        port_asset_io_snapshot(&stats);
++        const char* profile = getenv("STRIKERS_ASSET_IO_PROFILE");
++        if (profile && strcmp(profile, "1") == 0) {
++            assert(stats.requests > 0 && stats.physical_reads >= 3);
++            assert(stats.physical_bytes > 32 && stats.requested_bytes > 0);
++            assert(stats.read_errors == 0 && stats.inflate_errors == 0);
++        } else {
++            const PortAssetIoStats zero = {0};
++            assert(memcmp(&stats, &zero, sizeof stats) == 0);
++        }
++    }
+     port_asset_archive_close(a);
+     if (argc == 4) {
+         puts("PSARC sidecar byte equivalence and random reads passed");
+diff --git a/ab-artifacts/asset-io-20261011/before/smstrikers-port/tools/test_vita_assets.py b/smstrikers-port/tools/test_vita_assets.py
+index 0c7b339e..5be37c7c 100644
+--- a/ab-artifacts/asset-io-20261011/before/smstrikers-port/tools/test_vita_assets.py
++++ b/smstrikers-port/tools/test_vita_assets.py
+@@ -45,6 +45,14 @@ class AssetsTest(unittest.TestCase):
+             subprocess.run([str(PROBE), str(archive or self.archive), mode or str(self.tree)],
+                            check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+ 
++    def test_reader_profile_on_and_off(self):
++        self.pack()
++        if PROBE:
++            for enabled in ("0", "1"):
++                env = dict(os.environ, STRIKERS_ASSET_IO_PROFILE=enabled)
++                subprocess.run([str(PROBE), str(self.archive), str(self.tree)],
++                               check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
++
+     def test_native_only_compression_preserves_stored_game_blocks(self):
+         native=self.tree/"native";native.mkdir();payload=b"canonical native geometry"*10000
+         (native/"mesh.avnr").write_bytes(payload)
+diff --git a/ab-artifacts/asset-io-20261011/before/smstrikers-port/strikers.ini.example b/smstrikers-port/strikers.ini.example
+index afb3c839..55face54 100644
+--- a/ab-artifacts/asset-io-20261011/before/smstrikers-port/strikers.ini.example
++++ b/smstrikers-port/strikers.ini.example
+@@ -162,6 +162,12 @@
+ # Keep the source ISO on the host for regeneration. ISO-only installs can leave
+ # this unset to use the usual data path.
+ # asset_archive = ux0:data/strikersVita/sms.psarc
++# Optional archive I/O observation. Default OFF; samples stay in RAM until the
++# finite capture completes. Times measure CPU-observed read/inflate duration.
++# asset_io_profile = 0
++# asset_io_capture = ux0:data/strikersVita/perf-io.csv
++# asset_io_capture_skip = 600
++# asset_io_capture_frames = 120
+ 
+ # Optional small PSARC containing only native/v1 sidecars. Requires
+ # gxm_native_assets=1; absent, Aurora reads sidecars from asset_archive instead.
+diff --git a/smstrikers-port/CMakeLists.txt b/smstrikers-port/CMakeLists.txt
+index 3a9e466a..a93acc28 100644
+--- a/smstrikers-port/CMakeLists.txt
++++ b/smstrikers-port/CMakeLists.txt
+@@ -52,6 +52,8 @@ option(STRIKERS_VITA_FAST_PROFILER_BUILD
+     OFF)
+ option(STRIKERS_VITA_AUDIO_THREAD "Run the Vita MusyX software mixer on a dedicated worker" ON)
+ option(STRIKERS_VITA_GX_THREAD "Run the Vita GX FIFO frontend on a dedicated consumer thread" OFF)
++option(STRIKERS_VITA_GXM_LEAN_RENDER
++    "Compile out GLX native-model/replay experiments and per-packet probes from the Vita GXM game hot path" OFF)
+ option(STRIKERS_VITA_GXM_DIRECT_STREAM_WRITE
+     "Write packed Vita GXM vertex/index streams directly into GPU-visible ring pages" OFF)
+ option(STRIKERS_VITA_GXM_DIRECT_DRAW_SUBMIT
+@@ -149,6 +151,11 @@ endif()
+ if(STRIKERS_VITA AND STRIKERS_VITA_GX_THREAD)
+     list(APPEND PORT_DEFINES STRIKERS_VITA_GX_THREAD=1)
+ endif()
++if(STRIKERS_VITA AND STRIKERS_VITA_GXM_LEAN_RENDER)
++    # Aurora's GXM owner/FIFO and its async reference-count fix are unchanged.
++    # OFF restores the experimental GLX producer for explicit R1-R3 research.
++    list(APPEND PORT_DEFINES STRIKERS_VITA_GXM_LEAN_RENDER=1)
++endif()
+ if(STRIKERS_VITA AND STRIKERS_VITA_PROFILER)
+     list(APPEND PORT_DEFINES STRIKERS_VITA_PROFILER=1)
+ endif()
+@@ -338,6 +345,8 @@ if(STRIKERS_AURORA AND STRIKERS_VITA)
+     set(AURORA_VITA_ROOT "${STRIKERS_AURORA_VITA_ROOT}")
+     set(AURORA_VITA_WITH_GX_FRONTEND ON CACHE BOOL "" FORCE)
+     set(AURORA_VITA_WITH_UPSTREAM_GX OFF CACHE BOOL "" FORCE)
++    # Strikers Vita always uses the native sceGxm backend. Keep VitaGL/RE4
++    # experiments isolated from the production renderer selection.
+     set(AURORA_VITA_RENDERER GXM CACHE STRING "" FORCE)
+     set(AURORA_VITA_PORT_ABI GAMECUBE CACHE STRING "" FORCE)
+     set(AURORA_VITA_LTO ${STRIKERS_VITA_AURORA_LTO} CACHE BOOL "" FORCE)
+@@ -868,6 +877,10 @@ endif()
+ 
+ # zlib, for .gcz disc images and compressed PSARC blocks. The asset preparation
+ # tool writes stored PSARC blocks, which need no decompressor at runtime.
++if(NOT WIN32 AND NOT STRIKERS_VITA AND NOT NX)
++    find_package(Threads REQUIRED)
++    target_link_libraries(strikers_platform PRIVATE Threads::Threads)
++endif()
+ if(NOT TARGET ZLIB::ZLIB)
+     find_package(ZLIB QUIET)
+ endif()
+diff --git a/smstrikers-port/src/platform/config.c b/smstrikers-port/src/platform/config.c
+index 54218027..f5349f88 100644
+--- a/smstrikers-port/src/platform/config.c
++++ b/smstrikers-port/src/platform/config.c
+@@ -65,7 +65,11 @@ static const VitaDefaultConfigEntry s_vita_defaults[] = {
+     { "gxm_native_model_draw", "0" },
+     { "gxm_native_model_cache", "0" },
+     { "gxm_native_model_uniform_build", "0" },
++    { "gxm_native_model_prepared", "0" },
++    { "gxm_native_model_early", "0" },
+     { "gxm_native_model_census", "0" },
++    { "gxm_native_model_metrics", "0" },
++    { "gxm_internal_resolution", "auto" },
+     { "vita_native_audio", "1" },
+     { "vita_native_video", "1" },
+     { "task_profile", "1" },
+@@ -90,6 +94,8 @@ static const VitaDefaultConfigEntry s_vita_defaults[] = {
+     { "gxm_xf_equal_pos_writes", "0" },
+     { "gxm_xf_equal_matrix_writes", "0" },
+     { "gxm_tev_decoded_write_gate", "0" },
++    { "gxm_raster_uniform_reuse", "0" },
++    { "gxm_native_pn_palette", "0" },
+     { "gxm_fragment_prepare_cache", "1" },
+     { "gxm_uniform_delta_upload", "0" },
+     { "gxm_a4_fragment_opt", "0" },
+@@ -156,6 +162,28 @@ static void configure_diagnostics(void)
+ 
+ const char* PortConfigPath(void) { return s_path[0] != '\0' ? s_path : NULL; }
+ 
++int PortConfigVitaRenderSize(unsigned int* width, unsigned int* height)
++{
++    const char* value = getenv("STRIKERS_GXM_INTERNAL_RESOLUTION");
++    if (value == NULL || strcmp(value, "auto") == 0)
++        return 0;
++    if (width == NULL || height == NULL)
++        return -1;
++    if (strcmp(value, "960x544") == 0)
++    {
++        *width = 960;
++        *height = 544;
++        return 1;
++    }
++    if (strcmp(value, "640x480") == 0)
++    {
++        *width = 640;
++        *height = 480;
++        return 1;
++    }
++    return -1;
++}
++
+ static int exists(const char* path)
+ {
+     FILE* f = fopen(path, "rb");
+@@ -191,15 +219,56 @@ static int write_vita_default_block(FILE* f)
+     return fprintf(f, "%s\n", PORT_VITA_DEFAULTS_END) < 0 ? -1 : 0;
+ }
+ 
++static int vita_default_block_current(const char* path)
++{
++    FILE* in = fopen(path, "rb");
++    char line[1024], expected[256];
++    int found = 0, valid = 0;
++    if (in == NULL)
++        return 0;
++    while (fgets(line, sizeof line, in) != NULL)
++    {
++        if (line_is_marker(line, PORT_VITA_DEFAULTS_BEGIN))
++        {
++            found = strcmp(line, PORT_VITA_DEFAULTS_BEGIN "\n") == 0;
++            break;
++        }
++    }
++    if (!found)
++        goto done;
++    snprintf(expected, sizeof expected, "# profile_revision = %s\n", PORT_VITA_DEFAULTS_REVISION);
++    if (fgets(line, sizeof line, in) == NULL || strcmp(line, expected) != 0 ||
++        fgets(line, sizeof line, in) == NULL ||
++        strcmp(line, "# Managed automatically. Put custom overrides outside this block.\n") != 0)
++        goto done;
++    for (size_t i = 0; i < sizeof s_vita_defaults / sizeof s_vita_defaults[0]; ++i)
++    {
++        snprintf(expected, sizeof expected, "%s = %s\n", s_vita_defaults[i].key, s_vita_defaults[i].value);
++        if (fgets(line, sizeof line, in) == NULL || strcmp(line, expected) != 0)
++            goto done;
++    }
++    // Overrides after the managed block must still move before defaults. Only
++    // an exact current block at EOF is safe to keep without rewriting.
++    if (fgets(line, sizeof line, in) != NULL && strcmp(line, PORT_VITA_DEFAULTS_END "\n") == 0 &&
++        fgetc(in) == EOF && !ferror(in))
++        valid = 1;
++done:
++    fclose(in);
++    return valid;
++}
++
+ static int refresh_vita_default_config(const char* path)
+ {
+     char temp[1100];
+     char line[1024];
+-    FILE* in = fopen(path, "rb");
++    FILE* in;
+     FILE* out;
+     int managed = 0;
+     int copied = 0;
+ 
++    if (vita_default_block_current(path))
++        return 0;
++    in = fopen(path, "rb");
+     if (snprintf(temp, sizeof temp, "%s.tmp", path) >= (int)sizeof temp)
+         return -1;
+     remove(temp);
+diff --git a/smstrikers-port/tests/vita_default_config_test.c b/smstrikers-port/tests/vita_default_config_test.c
+index 8a9d2c6f..d484dc7b 100644
+--- a/smstrikers-port/tests/vita_default_config_test.c
++++ b/smstrikers-port/tests/vita_default_config_test.c
+@@ -11,7 +11,7 @@
+ #define CHECK(c) do { if (!(c)) { fprintf(stderr, "FAIL line %d: %s\n", __LINE__, #c); exit(1); } } while (0)
+ #define DEFAULTS_BEGIN "# --- STRIKERS VALIDATED DEFAULTS BEGIN ---"
+ #define DEFAULTS_END "# --- STRIKERS VALIDATED DEFAULTS END ---"
+-#define DEFAULT_CONFIG_KEY_COUNT 57
++#define DEFAULT_CONFIG_KEY_COUNT 63
+ 
+ static char s_data_dir[1024];
+ 
+@@ -39,6 +39,14 @@ static void write_ini(const char* path, const char* profile, const char* disable
+     fprintf(f, "gxm_native_model_draw = 2\n");
+     fprintf(f, "gxm_native_model_cache = 1\n");
+     fprintf(f, "gxm_native_model_uniform_build = 1\n");
++    fprintf(f, "gxm_native_model_prepared = 1\n");
++    fprintf(f, "gxm_native_model_early = 1\n");
++    fprintf(f, "gxm_raster_uniform_reuse = 1\n");
++    fprintf(f, "gxm_raster_uniform_reuse = 0\n");
++    fprintf(f, "gxm_native_pn_palette = 1\n");
++    fprintf(f, "gxm_native_pn_palette = 0\n");
++    fprintf(f, "gxm_internal_resolution = 640x480\n");
++    fprintf(f, "gxm_internal_resolution = 960x544\n");
+     fprintf(f, "diagnostics = 0\n");
+     fprintf(f, "fps_overlay = 0\n");
+     CHECK(fclose(f) == 0);
+@@ -106,6 +114,7 @@ static void run_case(const char* root, int mode)
+         unsetenv("STRIKERS_GXM_DISABLE");
+         unsetenv("STRIKERS_DIAGNOSTICS");
+         unsetenv("STRIKERS_FPS_OVERLAY");
++        unsetenv("STRIKERS_GXM_INTERNAL_RESOLUTION");
+ 
+         snprintf(user_ini, sizeof user_ini, "%s/strikers.ini", s_data_dir);
+         if (mode == 1)
+@@ -165,12 +174,28 @@ static void run_case(const char* root, int mode)
+         CHECK(strcmp(getenv("STRIKERS_VITA_VIEW_DRAW_CAPTURE"), "0") == 0);
+         CHECK(strcmp(getenv("STRIKERS_VITA_VIEW_DRAW_PAYLOADS"), "0") == 0);
+         CHECK(strcmp(getenv("STRIKERS_GXM_XF_EQUAL_POS_WRITES"), "0") == 0);
++        CHECK(strcmp(getenv("STRIKERS_GXM_RASTER_UNIFORM_REUSE"), mode == 1 ? "1" : "0") == 0);
++        CHECK(strcmp(getenv("STRIKERS_GXM_NATIVE_PN_PALETTE"), mode == 1 ? "1" : "0") == 0);
+         CHECK(strcmp(getenv("STRIKERS_GXM_UNIFORM_DELTA_UPLOAD"), "0") == 0);
+         CHECK(strcmp(getenv("STRIKERS_GXM_A4_FRAGMENT_OPT"), "0") == 0);
+         CHECK(strcmp(getenv("STRIKERS_GXM_XF_EQUAL_MATRIX_WRITES"), "0") == 0);
+         CHECK(strcmp(getenv("STRIKERS_GXM_TEV_DECODED_WRITE_GATE"), "0") == 0);
+         CHECK(strcmp(getenv("STRIKERS_GXM_NATIVE_MODEL_CACHE"), mode == 1 ? "1" : "0") == 0);
+         CHECK(strcmp(getenv("STRIKERS_GXM_NATIVE_MODEL_UNIFORM_BUILD"), mode == 1 ? "1" : "0") == 0);
++        CHECK(strcmp(getenv("STRIKERS_GXM_NATIVE_MODEL_PREPARED"), mode == 1 ? "1" : "0") == 0);
++        CHECK(strcmp(getenv("STRIKERS_GXM_NATIVE_MODEL_EARLY"), mode == 1 ? "1" : "0") == 0);
++        CHECK(strcmp(getenv("STRIKERS_GXM_INTERNAL_RESOLUTION"), mode == 1 ? "640x480" : "auto") == 0);
++        {
++            unsigned int width = 123, height = 456;
++            CHECK(PortConfigVitaRenderSize(&width, &height) == (mode == 1 ? 1 : 0));
++            CHECK(width == (mode == 1 ? 640u : 123u));
++            CHECK(height == (mode == 1 ? 480u : 456u));
++            CHECK(setenv("STRIKERS_GXM_INTERNAL_RESOLUTION", "960x544", 1) == 0);
++            CHECK(PortConfigVitaRenderSize(&width, &height) == 1 && width == 960 && height == 544);
++            CHECK(setenv("STRIKERS_GXM_INTERNAL_RESOLUTION", "640x481", 1) == 0);
++            CHECK(PortConfigVitaRenderSize(&width, &height) == -1 && width == 960 && height == 544);
++            CHECK(PortConfigVitaRenderSize(NULL, &height) == -1);
++        }
+         CHECK(strcmp(getenv("STRIKERS_GXM_PREPARED_DL"), "0") == 0);
+         CHECK(strcmp(getenv("STRIKERS_GXM_NATIVE_GPU_STATIC"), "0") == 0);
+         CHECK(strcmp(getenv("STRIKERS_GXM_NATIVE_DRAW_REPLAY"), "0") == 0);
+@@ -211,7 +236,14 @@ int main(void)
+     run_case(root, 0);
+     {
+         char generated[1200];
++        struct stat before, after;
+         snprintf(generated, sizeof generated, "%s/strikers.ini", data);
++        CHECK(stat(generated, &before) == 0);
++        run_case(root, 0);
++        CHECK(stat(generated, &after) == 0);
++        // A fresh process loading the same profile must keep the existing
++        // file, instead of creating a temporary file and replacing the INI.
++        CHECK(before.st_ino == after.st_ino && before.st_size == after.st_size);
+         CHECK(unlink(generated) == 0);
+     }
+     run_case(root, 1);

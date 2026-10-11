@@ -1,0 +1,9 @@
+Test project /Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/build/vita-host-tests-a5-asan
+    Start 18: vita_frontend_translation
+1/2 Test #18: vita_frontend_translation ........   Passed    3.59 sec
+    Start 19: vita_native_pn_palette
+2/2 Test #19: vita_native_pn_palette ...........   Passed    0.55 sec
+
+100% tests passed out of 2
+
+Total Test time (real) =   4.15 sec

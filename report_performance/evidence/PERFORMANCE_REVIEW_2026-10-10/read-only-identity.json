@@ -1,0 +1,7 @@
+{
+  "captured_utc": "2026-10-10T21:23:53.893828+00:00",
+  "self_sha256": "55897b45ca677e9c62c236bed4f41231c73a0451481043b8b57ce14e18ead1b5",
+  "self_bytes": 3601063,
+  "ini_sha256": "e9b21f3ec040a2b4458da9237723eefc586a09edc5467fe16049d0691d433f32",
+  "scope": "read-only; no launch, configuration change or deployment"
+}

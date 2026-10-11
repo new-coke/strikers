@@ -1,0 +1,17 @@
+{
+  "smstrikers-port/src/NL/glx/glxSend.cpp": "3dc79a814565a50afa45b3c4408be8c940a44584140e09644b6bb96faa39cb22",
+  "smstrikers-port/src/Game/main.cpp": "d46e97bc62a7b1244477db6a38ee65af7b7b635906927ab9e53d4dd919359fea",
+  "smstrikers-port/src/platform/config.c": "ca6ac13d32ff78e6709316bd05ea5198250e28d01cc6b1fa2f1be60ef0aa576d",
+  "smstrikers-port/strikers.ini.example": "aaf9b60229c0f847335aa499f6b7c3e90ee93d64df8fe5b4c92795d5ee59588a",
+  "smstrikers-port/tests/vita_default_config_test.c": "0a4de61ab18c9ca921b8dc56641553121cc43aa14db60d975abb6e1ad21192ea",
+  "smstrikers-port/extern/aurora-vita/lib/gx/fifo.hpp": "c31af15ede8c97cb4839f0dc2d9f77ad63b733cb403a5ba8a5a80035978f4914",
+  "smstrikers-port/extern/aurora-vita/lib/gx/fifo.cpp": "6713e80a584938c4dba6faadd806ecd1d2ae072e0d6865ce89a452e013d29313",
+  "smstrikers-port/extern/aurora-vita/lib/gx/command_processor.hpp": "e7293b38e0b8da136e206daaaa186e0b6ac4569cbddaabd8fbd543fa7fbfa6e8",
+  "smstrikers-port/extern/aurora-vita/lib/gx/command_processor.cpp": "be7dff9c25de9868157bbf7a4090799723b5729044a8e05ef957836b8dd2104e",
+  "smstrikers-port/extern/aurora-vita/platforms/vita/aurora_vita_backend.hpp": "91378be83b2c0b5a78619de032adc7c25b8fba16bcaeb72fbfad6505e2244765",
+  "smstrikers-port/extern/aurora-vita/platforms/vita/aurora_vita_backend.cpp": "ffb17c2fc74d12b1647c56ea0defcaf06980be855ed840e2a5d29736b97b30ec",
+  "smstrikers-port/extern/aurora-vita/cmake/aurora_vita.cmake": "444dea627e8df422b3b980a4dc7afb4f8f4d7dbc56e3ff2d6bc04b667fb79c67",
+  "smstrikers-port/include/port/vita_performance_capture.hpp": "85426769263326cbaae4d60c092dd4e4598bc5e43de2fd8a0d77877b950af2f5",
+  "smstrikers-port/extern/aurora-vita/lib/gx/native_pn_palette.hpp": "0d34f720c141bc68f76c3a87cf6fd1299115ae1f26901a719b17fb764a85b2a4",
+  "smstrikers-port/extern/aurora-vita/tests/vita_native_pn_palette_test.cpp": "1b54a938d74534f6c88d93e3f7a49f1b390651cb8b8f1c26d4ea1279321b5717"
+}

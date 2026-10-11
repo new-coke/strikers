@@ -1,0 +1,520 @@
+[
+  {
+    "file": "smstrikers-port/src/NL/glx/glxSwap.cpp",
+    "function": "PutPixel",
+    "reason": "Internal static function; sole identifier occurrence is its definition; no constructor/registration attribute",
+    "lines": 11,
+    "source_sha256": "95524aa30702f0d5c7dd0d4354fb0d877ce5a8c015a4cf5f1a7efc2e5c958b79"
+  },
+  {
+    "file": "smstrikers-port/src/NL/glx/glxSwap.cpp",
+    "function": "GetPixelFromTexture",
+    "reason": "Internal static function; sole identifier occurrence is its definition; no constructor/registration attribute",
+    "lines": 5,
+    "source_sha256": "b109e7661e3972c4fc6e6834eb5234d79b573a15783688abc3c71dcd1bc9cacf"
+  },
+  {
+    "file": "smstrikers-port/src/NL/glx/glxSwap.cpp",
+    "function": "RGB5A32RGB32",
+    "reason": "Internal static function; sole identifier occurrence is its definition; no constructor/registration attribute",
+    "lines": 17,
+    "source_sha256": "caf1951016906ff952bd336025c080cd103a266c439df38d7c71ac4ed8ee22aa"
+  },
+  {
+    "file": "smstrikers-port/src/NL/glx/glxSwap.cpp",
+    "function": "RGB2YUV",
+    "reason": "Internal static function; sole identifier occurrence is its definition; no constructor/registration attribute",
+    "lines": 20,
+    "source_sha256": "1f24966fa390b129eec81e2249fec77506b963d9fae3577138f701b435120041"
+  },
+  {
+    "file": "smstrikers-port/src/NL/glx/glxSwap.cpp",
+    "function": "glxSwapAllowDrawSync",
+    "reason": "Internal static function; sole identifier occurrence is its definition; no constructor/registration attribute",
+    "lines": 4,
+    "source_sha256": "f5fd0794cc7ee321a5424be4c950ed8bcbc1a21e9cb4d692a2df5bb76da4767f"
+  },
+  {
+    "file": "smstrikers-port/src/NL/glx/glxMemory.cpp",
+    "function": "glplatIsMemoryReadable",
+    "reason": "Internal static function; sole identifier occurrence is its definition; no constructor/registration attribute",
+    "lines": 4,
+    "source_sha256": "d30d5ea7db2ec23f41b50c3bf64d91c1bede06ed9449c62404a8f59455d2e0aa"
+  },
+  {
+    "file": "smstrikers-port/src/NL/glx/glxMemory.cpp",
+    "function": "glplatIsMemoryWriteable",
+    "reason": "Internal static function; sole identifier occurrence is its definition; no constructor/registration attribute",
+    "lines": 4,
+    "source_sha256": "28f0b4284c7b283179effdffa49c83d7aaa5165e1988b9a265421f01d778e40c"
+  },
+  {
+    "file": "smstrikers-port/src/NL/glx/glxMemory.cpp",
+    "function": "glx_TrackTextureBundleAlloc",
+    "reason": "Internal static function; sole identifier occurrence is its definition; no constructor/registration attribute",
+    "lines": 5,
+    "source_sha256": "74f60514adc64df7ecf108d9572062707ff41273c388ea99b3b81bc9f13df000"
+  },
+  {
+    "file": "smstrikers-port/src/NL/glx/glxMemory.cpp",
+    "function": "ResourceMarkerPrint",
+    "reason": "Internal static function; sole identifier occurrence is its definition; no constructor/registration attribute",
+    "lines": 4,
+    "source_sha256": "5bd4da61dd9e2c4a90e7e7ef93c7ba12cf2048fbd7789506a983066794dc2f0e"
+  },
+  {
+    "file": "smstrikers-port/src/NL/glx/glxLoadModel.cpp",
+    "function": "glxLoadModelFromDisk",
+    "reason": "Internal static function; sole identifier occurrence is its definition; no constructor/registration attribute",
+    "lines": 41,
+    "source_sha256": "0e1c3f1d5ea443099521f32d855a41535af8fe7cc061c2d9b2e59e6b9adfcafd"
+  },
+  {
+    "file": "smstrikers-port/src/NL/gl/glPlat.cpp",
+    "function": "glx_SetVIWidth",
+    "reason": "Internal static function; sole identifier occurrence is its definition; no constructor/registration attribute",
+    "lines": 6,
+    "source_sha256": "0a119abd3d424e2b4d5a60ab10c526d13757ea0384ce73f848ee9424eb335a77"
+  },
+  {
+    "file": "smstrikers-port/src/ode/NLGAdditions.cpp",
+    "function": "dGeomGetPosition",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 7,
+    "source_sha256": "c250dfe3913fee40bdb4278a6a5a5f8eec1bde9ca31bcd6f87b7b79c7bfd9120"
+  },
+  {
+    "file": "smstrikers-port/src/ode/NLGAdditions.cpp",
+    "function": "dGeomGetRotation",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 9,
+    "source_sha256": "dae0dc66b39441b9270bcf6f6163694b81a7445a9c76eb6631ac4787af377a22"
+  },
+  {
+    "file": "smstrikers-port/src/ode/NLGAdditions.cpp",
+    "function": "dGeomIsPlaceable",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 4,
+    "source_sha256": "8b0fa32dbe659ef343754aee05d536ec35f009234c1d5efcb89eaab3b0c23b1c"
+  },
+  {
+    "file": "smstrikers-port/src/ode/NLGAdditions.cpp",
+    "function": "dBodyGetFlags",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 4,
+    "source_sha256": "b97e2a34e9ef6381b5a06d321e428b95422609bd0255fe9f8bbb5626aea8e8ce"
+  },
+  {
+    "file": "smstrikers-port/src/ode/NLGAdditions.cpp",
+    "function": "dBodySetFlags",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 4,
+    "source_sha256": "d022590711f574fa510070b41389c87164ea34736205dc49c924f952c8302999"
+  },
+  {
+    "file": "smstrikers-port/src/ode/NLGAdditions.cpp",
+    "function": "dBodyGetRotation",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 9,
+    "source_sha256": "41d9adbd5dbd74f5eb8ed7c9d0a58982ffb57b6856e3790a3801783f53142162"
+  },
+  {
+    "file": "smstrikers-port/src/ode/NLGAdditions.cpp",
+    "function": "dBodyGetAutoDisableStepsRemain",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 4,
+    "source_sha256": "700c47b9af58efc0001a93b0a0166a32562fef43ddc64ba58904c272e7858327"
+  },
+  {
+    "file": "smstrikers-port/src/ode/NLGAdditions.cpp",
+    "function": "dBodySetAutoDisableStepsRemain",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 4,
+    "source_sha256": "3e84a10e22641fcdad653ccc262bb8af827a4efc89a4ed5150ea7faf5b1f4467"
+  },
+  {
+    "file": "smstrikers-port/src/ode/NLGAdditions.cpp",
+    "function": "dBodyGetAutoDisableTimeRemain",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 4,
+    "source_sha256": "d31ffc3caaa93bafcfc19b51a74d587e633c207ec035bd23582f42c35d559fc5"
+  },
+  {
+    "file": "smstrikers-port/src/ode/NLGAdditions.cpp",
+    "function": "dBodySetAutoDisableTimeRemain",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 4,
+    "source_sha256": "5c45f41d6d22fa01afd44421aeba67467b103ed74f6db62d755baa827ad782a6"
+  },
+  {
+    "file": "smstrikers-port/src/ode/NLGAdditions.cpp",
+    "function": "dMassGetParameters",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 15,
+    "source_sha256": "512f2679c23f8e3b4c845d2f0cd3483d6bfe8c06cbc2eb8e34246d4ba6b9a5ac"
+  },
+  {
+    "file": "smstrikers-port/src/ode/NLGAdditions.cpp",
+    "function": "dWorldGetParameters",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 22,
+    "source_sha256": "e23ea8c37414352b03d31e9d8fb5d33a2cd9daaf376688513a0cb695e52d5369"
+  },
+  {
+    "file": "smstrikers-port/src/ode/NLGAdditions.cpp",
+    "function": "dWorldSetParameters",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 22,
+    "source_sha256": "3fb6f12868c74eb6ae38a0a99903ab1ee00f8ade8eb3ed9763bbe1d33842a068"
+  },
+  {
+    "file": "smstrikers-port/src/ode/NLGAdditions.cpp",
+    "function": "dExtractColumn4",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 7,
+    "source_sha256": "9711089240ba76c17d796b76b5f30d3dcd56ccf324cc88e65032edeecf77a237"
+  },
+  {
+    "file": "smstrikers-port/src/ode/NLGAdditions.cpp",
+    "function": "dSetColumn4",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 7,
+    "source_sha256": "7774835da8128a9fe3286440b8595a7030241afa84db612c38226bf84918d246"
+  },
+  {
+    "file": "smstrikers-port/src/ode/NLGAdditions.cpp",
+    "function": "dConstructMatrix3",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 6,
+    "source_sha256": "bae79d95e83abac7b8ed084f0ce9d8cbd584125b523d4628c0d68beddd0f924d"
+  },
+  {
+    "file": "smstrikers-port/src/ode/NLGAdditions.cpp",
+    "function": "dConstructMatrix4",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 12,
+    "source_sha256": "2d7ff5ad37fa51449881e179675b4e07987ed2ed2948c3a6333e0994f6ac5853"
+  },
+  {
+    "file": "smstrikers-port/src/ode/NLGAdditions.cpp",
+    "function": "dGeomSetPosition",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 9,
+    "source_sha256": "6b981c7c665f6c8aee5a0b3eaf9bca0d55cc39bd5b0610976bf009ec4ba42e73"
+  },
+  {
+    "file": "smstrikers-port/src/ode/error.cpp",
+    "function": "printMessage",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 11,
+    "source_sha256": "59ab7525dc800c41366fc4e528b1df6a87e68ca1ad8af9f048f0025d8ee11b76"
+  },
+  {
+    "file": "smstrikers-port/src/Game/AI/Scripts/ScriptQuestions.cpp",
+    "function": "FielderType",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 14,
+    "source_sha256": "20ac8183747472240bb11c659f85e15c4829a1ffbb6787a6b59dd1e5353e5039"
+  },
+  {
+    "file": "smstrikers-port/src/Game/AI/Scripts/ScriptQuestions.cpp",
+    "function": "OnMyTeam",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 14,
+    "source_sha256": "f05fa97a89cc22a9753382f96b2096d95f0c61e182035081a3c54d1f82b5e3f3"
+  },
+  {
+    "file": "smstrikers-port/src/Game/AI/Scripts/ScriptQuestions.cpp",
+    "function": "InShotLane",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 19,
+    "source_sha256": "1ade307206993fbf239ce627dfe04506a6642c53cf4ba89b392f19deeb6b23a3"
+  },
+  {
+    "file": "smstrikers-port/src/Game/AI/Scripts/ScriptQuestions.cpp",
+    "function": "ReallyCloseToBall",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 12,
+    "source_sha256": "ade867d074f0c394c0ba3e97c526acb5572969886a507ccdeaebe2de88ceea77"
+  },
+  {
+    "file": "smstrikers-port/src/Game/AI/Scripts/ScriptQuestions.cpp",
+    "function": "ClosestToBall",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 32,
+    "source_sha256": "975446cf81c200bf9150274b0f4ef915d8ee11f3ff53157a6674e03aa776df0b"
+  },
+  {
+    "file": "smstrikers-port/src/Game/AI/Scripts/ScriptQuestions.cpp",
+    "function": "AvoidingStuff",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 9,
+    "source_sha256": "ed81aeeff770fe73121876dfba8523a13879054d680102e93e5ace2c38a04eda"
+  },
+  {
+    "file": "smstrikers-port/src/Game/AI/Scripts/ScriptQuestions.cpp",
+    "function": "InFrontOfMyNet",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 40,
+    "source_sha256": "8106b8689285511f4967d619b191f008d2eccf4024aa759cf28e5da12c01242a"
+  },
+  {
+    "file": "smstrikers-port/src/Game/AI/Scripts/ScriptQuestions.cpp",
+    "function": "CloseToFormationPosition",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 11,
+    "source_sha256": "8df78fddfec71078aa133b0abc941b1e5291b3f059ebac9579a10fafdaff2966"
+  },
+  {
+    "file": "smstrikers-port/src/Game/AI/Scripts/ScriptQuestions.cpp",
+    "function": "NearToFormationPosition",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 11,
+    "source_sha256": "979c74cfa36bf15bca21f5f801441ba07afc07446c3f2f65db43abcacfdbc8f8"
+  },
+  {
+    "file": "smstrikers-port/src/Game/AI/Scripts/ScriptQuestions.cpp",
+    "function": "FarToFormationPosition",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 11,
+    "source_sha256": "26c614c88edf6a19b4eaee0643e7c76570c74fe058d6c4f704fbbf9ce8831d80"
+  },
+  {
+    "file": "smstrikers-port/src/Game/AI/Scripts/ScriptQuestions.cpp",
+    "function": "CloseToMyGoalie",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 4,
+    "source_sha256": "4ffdbd2ca5b02019015e7a4d4804cd07f337729814d37ef2b8936324da0efb26"
+  },
+  {
+    "file": "smstrikers-port/src/Game/AI/Scripts/ScriptQuestions.cpp",
+    "function": "NearToMyGoalie",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 4,
+    "source_sha256": "173f4f3efa8fbba69767407da1947847098e38d3132db62e10ccd555291bdeb5"
+  },
+  {
+    "file": "smstrikers-port/src/Game/AI/Scripts/ScriptQuestions.cpp",
+    "function": "FarToMyGoalie",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 4,
+    "source_sha256": "43969ddfa376e15904871f2853da58c465ac219ca6b43d5674b885e0d099a14d"
+  },
+  {
+    "file": "smstrikers-port/src/Game/AI/Scripts/ScriptQuestions.cpp",
+    "function": "AtIdealDistanceForShooting",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 9,
+    "source_sha256": "700feaa7e930242ec90b3b045ba86de47ce32f5348a6e46705b2ad43d16d02a2"
+  },
+  {
+    "file": "smstrikers-port/src/Game/AI/Scripts/ScriptQuestions.cpp",
+    "function": "FaceToFace",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 17,
+    "source_sha256": "b8cd4bfce6b10ab62b4fde98752d1900b702062c9a0c0cc448fa4764afd5402f"
+  },
+  {
+    "file": "smstrikers-port/src/Game/AI/Scripts/ScriptQuestions.cpp",
+    "function": "DoingS2S",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 14,
+    "source_sha256": "1fbae9adac00cf8556acc62a99892187a84d78452285f512b2edf11c8fb64f03"
+  },
+  {
+    "file": "smstrikers-port/src/Game/AI/Scripts/ScriptQuestions.cpp",
+    "function": "ReceivingLowPassDelayed",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 10,
+    "source_sha256": "46ca79b5021c2581c266b40f8ffdf4d4b95263e07b04c9387fc3fac33043695e"
+  },
+  {
+    "file": "smstrikers-port/src/Game/AI/Scripts/ScriptQuestions.cpp",
+    "function": "ReallyHigh",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 9,
+    "source_sha256": "3927878f159e4be28b5c63e46cc9c0637ab48d39e29ea4d8136a9cf39e17c252"
+  },
+  {
+    "file": "smstrikers-port/src/Game/AI/Scripts/ScriptQuestions.cpp",
+    "function": "InNeutralZone",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 11,
+    "source_sha256": "586f83bf615245cab565d255687850ed1323eac002681e8a20a80b6dd0e5998f"
+  },
+  {
+    "file": "smstrikers-port/src/Game/AI/Scripts/ScriptQuestions.cpp",
+    "function": "InNeutralZoneOfPlayer",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 10,
+    "source_sha256": "914a9636502c99d06eff9117190bb261c3923b9853280435eb5fe820731a6ff7"
+  },
+  {
+    "file": "smstrikers-port/src/Game/Audio/CrowdMood.cpp",
+    "function": "CrowdMoodTest",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 13,
+    "source_sha256": "945f04db5caa75917b5a9c0841f1be07a7736f84304ddfab6a4c89b69761c445"
+  },
+  {
+    "file": "smstrikers-port/src/Game/Camera/CameraMan.cpp",
+    "function": "DrawBoundingSphere",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 41,
+    "source_sha256": "8b575d9e06de73a762c77e65cb7b44c9331bb5990a6b3fccf978e45bbca54c98"
+  },
+  {
+    "file": "smstrikers-port/src/Game/CharacterTemplate.cpp",
+    "function": "GetCharacterModelFileName",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 8,
+    "source_sha256": "12e232cb9099fdd07c05e52467288cf47a0dc858eb7e68b4ba407db58cc5b9d2"
+  },
+  {
+    "file": "smstrikers-port/src/Game/CharacterTemplate.cpp",
+    "function": "GetCharacterModelTextureFileName",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 8,
+    "source_sha256": "4a8d63c48d9e8baf82a58b5d12ef833042e92bc42b34f629bd78cd159436c0e0"
+  },
+  {
+    "file": "smstrikers-port/src/Game/CharacterTemplate.cpp",
+    "function": "GetCharacterModelAnimProperties",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 8,
+    "source_sha256": "7117cf737838b09abf07d1795d9f5580e0d50a6fcbbfadabe993887f5efae3ef"
+  },
+  {
+    "file": "smstrikers-port/src/Game/CharacterTemplate.cpp",
+    "function": "GetCharacterModelNumAnumProperties",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 8,
+    "source_sha256": "217f8b6f9a5c1100b47b6c2312980d897f130995c8ce7d48038868d6de9f9596"
+  },
+  {
+    "file": "smstrikers-port/src/Game/CharacterTemplate.cpp",
+    "function": "GetCharacterModelHierarchyFileName",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 8,
+    "source_sha256": "8b9bfa8cac6721073a8691ca193e4385b550e5bc7a3193cd5625f8a8a18829d5"
+  },
+  {
+    "file": "smstrikers-port/src/Game/CharacterTemplate.cpp",
+    "function": "GetCharacterModelHierarchyName",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 8,
+    "source_sha256": "26b3d8e2e4e355681539261cdfa23c722e2c84b8daf4192ea5a4dec555a03ec9"
+  },
+  {
+    "file": "smstrikers-port/src/Game/CharacterTemplate.cpp",
+    "function": "GetCharacterModelAnimFileName",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 8,
+    "source_sha256": "fc42fe3aeca2823affb49a8d7d4b55109230cb296bd7a5ab2932497e1bdecf07"
+  },
+  {
+    "file": "smstrikers-port/src/Game/Drawable/DrawableCharacter.cpp",
+    "function": "IsVisible",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 21,
+    "source_sha256": "03a89db131c620ef075bbfaf82239f051ce28d1ef7d0827c6f636390b73a0cdb"
+  },
+  {
+    "file": "smstrikers-port/src/Game/Drawable/DrawableCharacter.cpp",
+    "function": "DrawSphere",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 39,
+    "source_sha256": "f6d5ace9c633a8987814db7da2029e4be0d8452ee60dca4ee5c806f4022d140c"
+  },
+  {
+    "file": "smstrikers-port/src/Game/Drawable/DrawableCharacter.cpp",
+    "function": "FindBoundingSphereSloppy",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 15,
+    "source_sha256": "a868ffab11c768847cad2b124d76443f6cbe63bcb94114cbdbd2bb3b830ef134"
+  },
+  {
+    "file": "smstrikers-port/src/Game/Effects/EffectsGroup.cpp",
+    "function": "Tweak_AddScriptEffect",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 3,
+    "source_sha256": "d80c366234d0301198b0ccb92290994ea1a6b8329210c643f55e489052753310"
+  },
+  {
+    "file": "smstrikers-port/src/Game/Effects/EffectsGroup.cpp",
+    "function": "fxRegisterUserEffect",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 4,
+    "source_sha256": "dfd0b69a2ad758680cb61f1acde7509344ba776be1f0ba4a3d2fc86ae4922dea"
+  },
+  {
+    "file": "smstrikers-port/src/Game/Effects/ParticleSystem.cpp",
+    "function": "fxNumParticlesActive",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 4,
+    "source_sha256": "e2c44c3e7a58e4c7482d5589f73127c8456f1b7583649a5effc4a88ffe4b55c6"
+  },
+  {
+    "file": "smstrikers-port/src/Game/GameObjectLighting.cpp",
+    "function": "GameObjectDegToRad",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 4,
+    "source_sha256": "a930ade858a08ba51884971517bcd4838ef74b4b3a337afdf6c143e434041b45"
+  },
+  {
+    "file": "smstrikers-port/src/Game/GameObjectLighting.cpp",
+    "function": "GameObjectLightRampT",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 4,
+    "source_sha256": "3ffaa124e40a0acbb9804c16dade2f6702b2dfb498d7ec7c6e38d758c12d0e80"
+  },
+  {
+    "file": "smstrikers-port/src/Game/Render/Jumbotron.cpp",
+    "function": "Jumbotron_stub",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 6,
+    "source_sha256": "343cbd324debde8eca7ef03bf3da7c861cb2f587b94b2c50e858ac147da98130"
+  },
+  {
+    "file": "smstrikers-port/src/Game/Replay.cpp",
+    "function": "ReplayLayoutBarWidth",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 12,
+    "source_sha256": "68f2fbecd675669c922dcfd4a86052d7849ee91e0a2c2cb891739bc8cc04d05e"
+  },
+  {
+    "file": "smstrikers-port/src/Game/SH/SHSaveLoad.cpp",
+    "function": "DiffCardProceedAnywayCB",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 7,
+    "source_sha256": "19069cc98de547d1826f4e92914d6607d45e353ddc9f31a33b9952e5b5400e94"
+  },
+  {
+    "file": "smstrikers-port/src/Game/TransitionTask.cpp",
+    "function": "WaitForFELoadsToFinish",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 9,
+    "source_sha256": "ddb6c826acf982b4bc5d18a10e599ca78ebeeb82ea02a3ee7199ddc8e4f1b41f"
+  },
+  {
+    "file": "smstrikers-port/src/Game/main.cpp",
+    "function": "PortVitaShaderProfileName",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 9,
+    "source_sha256": "283a0dfba29d844558f5d9332dbd6614a9555efa97ad58847ad6114dba3a96c5"
+  },
+  {
+    "file": "smstrikers-port/src/Game/main.cpp",
+    "function": "PortMaybeRequestCapture",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 20,
+    "source_sha256": "ce530381ddc4499ca120d5442ae6c6b41b1c1769dea2dc2f5428a10e8178da19"
+  },
+  {
+    "file": "smstrikers-port/src/Game/world.cpp",
+    "function": "nlPlaneNormalize",
+    "reason": "Actual native-GXM compiler reports unused definition in its owning file; internal static function has no other identifier references; no registration/constructor attribute",
+    "lines": 8,
+    "source_sha256": "38d55f05a6296faa5733507478d34b241be6a50639d8599644044640a2eb29ae"
+  }
+]

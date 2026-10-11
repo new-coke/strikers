@@ -29,6 +29,7 @@ bool glxVitaResourceArenaOwns(const void* p);
 void glx_FreeMemory1(const char* filename);
 void glx_FreeMemory0();
 u32 glx_GetFreeMemory();
+u32 glx_GetResourceMarkerLevel();
 
 class GLXMemoryInfo
 {

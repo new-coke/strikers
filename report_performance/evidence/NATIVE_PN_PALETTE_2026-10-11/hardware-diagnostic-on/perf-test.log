@@ -1,0 +1,685 @@
+[port] DVD: 1415 files in ux0:data/strikersVita/sms.psarc (PSARC 1.4)
+[dvd-fen] map path=art/fe/popup_menu.fen idx=600 off=0x258 len=14460 fnv=8447d462 source=PSARC
+[dvd-fen] map path=art/fe/saving_loading.fen idx=604 off=0x25c len=12948 fnv=dffa4a45 source=PSARC
+[port] DVD: disc G4QP01 (Europe)
+After nlInitMemory
+Free Memory: 50069504
+Largest Free Block: 50069504
+[native-audio] indexed_blocks=1987 catalogue_bytes=95376 budget=2097152 exact_frame_validation=1
+[port] ux0:data/strikersVita/strikers.ini: 70 setting(s)
+[port] config path=ux0:data/strikersVita/strikers.ini applied=70 fopen=1 setenv_rc=0 probe=1
+[vita] clocks at boot: cpu=333 bus=222 gpu=0 xbar=111 MHz
+[vita] requested cpu=500 MHz rc=-2144665600 actual=333
+[vita] cpu fallback=444 MHz rc=0 actual=444
+[vita] requested gpu=222 bus=222 xbar=166 rc=0/0/0 reported=222/222/166
+[vita] pre-Aurora free memory: user=134217728 cdram=117440512 phycont=27262976
+[gfxmem] CDRAM plan: free=114688 KB GLX=49152 KB reserve=49152 KB desired=49152 KB
+[gfxmem] early CDRAM resource reservation: 49152 KB contiguous at 0x61000000
+[vita] post-GLX-reserve free memory: user=134217728 cdram=67108864 phycont=27262976
+[vita] native candidate distinct_cores=0 immediate_draw_view=0
+[vita] vitaGL fixed pools: ram=20480 KB cdram=40960 KB phycont=8192 KB
+[vita] gxm_prepared_dl=0
+[vita] gxm_native_gpu_static=1
+[vita] cpu helpers requested=3 renderer_lanes=3 game_lanes=3 core3_mode=auto budget=1 max_total=70 guard=5 window_ms=100 chunk_us=250 sample_us=10000
+[vita] GXM callback vblank wait=0 (NEXTFRAME present always enabled)
+[vita] gxm_bp_cache=0
+[vita] gxm_xf_equal_pos_writes=0
+[vita] gxm_xf_equal_matrix_writes=0 gxm_tev_decoded_write_gate=0
+[vita] gxm_raster_uniform_reuse=0
+[vita] gxm_native_pn_palette=1 scope=characters_pointlit
+[vita] gxm_fragment_prepare_cache=1
+[vita] gxm_uniform_delta_upload=0
+[vita] gxm_vertex_reuse_probe=0 sample_period=16
+[vita] gxm_a4_fragment_opt=0
+[vita] gxm_fixed_uniform_pool=1
+[vita] gxm_geometry_preflight=1
+[vita] gxm_local_draw_batching=0
+[vita] gxm_disable_mask=0x8
+[vita] static geometry budget=8192 KB gpu_fixed_vertex=1 streamed_gpu=0 lit_gpu=1 texmtx_gpu=0 bump_gpu=1 prim_gpu=1 split_vertex_phases=0
+[vita] 3D perf profile=cpu-color-v3 stream_v=8192KB stream_i=512KB parallel_min=64 aurora_diag=0 vita3d_diag=0
+[aurora-gxm] memory phase=before-init cdram=0 peak=0 allocs=0 pool=0 pool_used=0 pool_peak=0 user=0 peak=0 allocs=0 phycont=0 peak=0 allocs=0 cdialog=0 peak=0 allocs=0 fallbacks=0 free_cdram=63963136 free_user=134217728 free_phycont=27262976 query=0x00000000
+[aurora-gxm] program_cache abi=gxm-cg-gxp-v1
+[aurora-gxm] material key=c3589e319974cd1d native=1 stages=1 fragment_bytes=528 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] initialized 960x544 buffers=3 renderer=SceGxm native_cg=1 depth=D16
+[aurora-gxm] memory phase=after-init cdram=51380224 peak=51380224 allocs=4 pool=45088768 pool_used=1044480 pool_peak=1044480 user=6971392 peak=6971392 allocs=9 phycont=0 peak=0 allocs=0 cdialog=0 peak=0 allocs=0 fallbacks=0 free_cdram=8388608 free_user=121634816 free_phycont=27262976 query=0x00000000
+[aurora-gxm] pipeline_manifest loaded=417 prewarm_limit=64
+[aurora-gxm] material key=0248ea0cca7babb3 native=1 stages=2 fragment_bytes=1404 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=6bb1fe3c69772b47 native=1 stages=1 fragment_bytes=676 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=124e9f88f572a7c2 native=1 stages=4 fragment_bytes=1548 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=b1f7dcc1f3817557 native=1 stages=1 fragment_bytes=948 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=3a7a95e495d3f47e native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=443c43251178d318 native=1 stages=1 fragment_bytes=1268 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=d53fece88aac4f84 native=1 stages=4 fragment_bytes=1572 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=31caa990953a9b36 native=1 stages=2 fragment_bytes=1500 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=2dcf33a5f3cb2bbc native=1 stages=1 fragment_bytes=676 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=65387464f0ba02ff native=1 stages=1 fragment_bytes=1268 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=96ef17af6c8d6c6d native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=d8f4456d01518824 native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=3d34d428e8e0624a native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=7ee9424c65ab0732 native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=e7ef399f89f86f33 native=1 stages=4 fragment_bytes=1572 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=60b1388548722a9f native=1 stages=5 fragment_bytes=1664 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=c29171108f612527 native=1 stages=5 fragment_bytes=1664 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=a9071527305e5a80 native=1 stages=2 fragment_bytes=1508 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=f96778d3c87c2d4d native=1 stages=1 fragment_bytes=676 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=d44394b644aa6e72 native=1 stages=1 fragment_bytes=668 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=bbb1a0b47afee3ae native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=2784724beadc1961 native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=6774241b7276a992 native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=620a648daa738203 native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=795a95b14eaa2289 native=1 stages=5 fragment_bytes=1092 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=66e1648d9e1e5b7a native=1 stages=1 fragment_bytes=676 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=4226a3584ce29d47 native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=44684336301a7eaa native=1 stages=3 fragment_bytes=1612 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=10cabc60b34776b4 native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=0af47bbdc8700b4b native=1 stages=1 fragment_bytes=668 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=1a1a1a28e35e8c21 native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=ff06d01d8b1d4451 native=1 stages=3 fragment_bytes=1532 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=857ca3a3bce23ee4 native=1 stages=4 fragment_bytes=1548 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=51fc42025a1e202c native=1 stages=1 fragment_bytes=676 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=80abb719fc88ade0 native=1 stages=1 fragment_bytes=1268 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=d2dae5453455f04c native=1 stages=1 fragment_bytes=676 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=7f0cf7d915fdb796 native=1 stages=2 fragment_bytes=1484 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=efd7410a67d93182 native=1 stages=1 fragment_bytes=676 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=af77ba515c878b18 native=1 stages=2 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=a668ad81a28e2ffb native=1 stages=3 fragment_bytes=908 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=34b949b4d6c9f3da native=1 stages=2 fragment_bytes=1396 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=66e5a6f6b5568c87 native=1 stages=1 fragment_bytes=876 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=68f82a306ffc63bd native=1 stages=1 fragment_bytes=876 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=175e3f5c1dfb8a95 native=1 stages=4 fragment_bytes=972 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=e524397dc64658f3 native=1 stages=4 fragment_bytes=1700 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=51be1a8f01f1cac7 native=1 stages=1 fragment_bytes=676 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=2972b6d754ffb972 native=1 stages=2 fragment_bytes=1404 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=5f65d128ba9c8a0b native=1 stages=3 fragment_bytes=1500 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=70be1380642afc8f native=1 stages=1 fragment_bytes=1484 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=5af55081a6112ecf native=1 stages=6 fragment_bytes=1716 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=08b2460d37a32b19 native=1 stages=1 fragment_bytes=1396 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=c6f34650035a30ac native=1 stages=1 fragment_bytes=956 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=bf901ddad74df40d native=1 stages=4 fragment_bytes=1564 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=2afc51ca19f706e4 native=1 stages=1 fragment_bytes=676 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=d6f69736ca17399f native=1 stages=3 fragment_bytes=1548 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=94db02f317ba8be9 native=1 stages=3 fragment_bytes=1464 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=0fda4adc3719ffcc native=1 stages=2 fragment_bytes=1364 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=25e1810ba114e57f native=1 stages=4 fragment_bytes=1564 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=b26f353447ac0262 native=1 stages=4 fragment_bytes=924 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=a345ff396182c0ee native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=06ff3e7add5c9662 native=1 stages=1 fragment_bytes=632 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=94f8706ea3e904de native=1 stages=5 fragment_bytes=1656 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=db730929b5fc09be native=1 stages=1 fragment_bytes=1276 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=b08f9c81812efbe8 native=1 stages=3 fragment_bytes=964 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] pipeline_prewarm warmed=64 resident=64
+[aurora-vita] cpu helper lane=1 cpu=2 affinity=0x00040000 priority=0x00000040
+[aurora-vita] cpu helper lane=2 cpu=1 affinity=0x00020000 priority=0x00000041
+[aurora-vita] cpu helper lane=3 cpu=3 affinity=0x00080000 priority=0x00000041
+[aurora-vita] cpu workers=3 lanes=4 default_lanes=3 sync=paired_semaphores helpers=cpu2,cpu1-lowpri,cpu3-probed distinct_cores=0 parallel_min_items=64
+[aurora-vita] cpu topology workers=3 lanes=4 renderer_cap=3 game_cap=3 core3=1 core3_cpu=3 core3_affinity=0x00080000
+[aurora-vita] cpu3 budget enabled=1 max_total=70 guard=5 target=65 short_ms=100 long_ms=1000 chunk_us=250 sample_us=10000
+[aurora-vita] render config display=960x544 internal=960x544 native_cmpr=0 direct_stream=0 scratch_dynamic=0 scratch_stream=1 gpu_vertex_stride=120 gpu_geometry_mb=8 stream_v=8388608 stream_i=524288 slots=3
+[aurora-gxm] compact_texture fmt=11 size=1x1 mips=1 bytes=4 bc1=0
+[limiter] 59.94 Hz (debug command)
+[gfxmem] bundle global.glt: +403 KB, used=834/49152 KB, free=48317 KB
+[port] language: UKEnglish
+[gfxmem] bundle transitions/transitions.glt: +5 KB, used=849/49152 KB, free=48302 KB
+[gfxmem] bundle transitions/in_spiral_ball.glg: +8 KB, used=857/49152 KB, free=48294 KB
+[gfxmem] bundle transitions/in_double_ball.glg: +16 KB, used=873/49152 KB, free=48278 KB
+[gfxmem] bundle transitions/out_flying_ball.glg: +8 KB, used=881/49152 KB, free=48270 KB
+[gfxmem] bundle transitions/in_flying_ball.glg: +8 KB, used=889/49152 KB, free=48262 KB
+[gfxmem] bundle transitions/broken_glass.glg: +26 KB, used=915/49152 KB, free=48236 KB
+[gfxmem] bundle debug/debug.glg: +7 KB, used=1190/49152 KB, free=47961 KB
+[gfxmem] bundle effects/meshes.glg: +143 KB, used=1334/49152 KB, free=47817 KB
+[gfxmem] bundle effects/effects.glt: +1855 KB, used=3190/49152 KB, free=45962 KB
+[gfxmem] bundle fe/fe.glt: +165 KB, used=3355/49152 KB, free=45796 KB
+[gfxmem] bundle Environment/the_palace/the_palace.glt: +1790 KB, used=5145/49152 KB, free=44006 KB
+[gfxmem] bundle Environment/the_palace/the_palace.glg: +2164 KB, used=7310/49152 KB, free=41841 KB
+[gfxmem] bundle gameplay/ball.glt: +1 KB, used=7311/49152 KB, free=41840 KB
+[gfxmem] bundle gameplay/ball.glg: +8 KB, used=7320/49152 KB, free=41831 KB
+[gfxmem] bundle gameplay/powerups.glt: +263 KB, used=7583/49152 KB, free=41568 KB
+[gfxmem] bundle gameplay/powerups.glg: +74 KB, used=7657/49152 KB, free=41494 KB
+[gfxmem] bundle environment/Sideline_Objects/bench2_base.glt: +3 KB, used=7661/49152 KB, free=41490 KB
+[gfxmem] bundle environment/Sideline_Objects/bench2_base.glg: +13 KB, used=7675/49152 KB, free=41476 KB
+[gfxmem] bundle environment/Sideline_Objects/bench2_d.glt: +0 KB, used=7675/49152 KB, free=41476 KB
+[gfxmem] bundle environment/Sideline_Objects/bench2_d.glg: +7 KB, used=7683/49152 KB, free=41468 KB
+[gfxmem] bundle environment/Sideline_Objects/bench2.glt: +42 KB, used=7725/49152 KB, free=41426 KB
+[gfxmem] bundle environment/Sideline_Objects/bench2.glg: +22 KB, used=7748/49152 KB, free=41403 KB
+[invispoly] 1 objects, 1 packets
+[native-audio] block_hits=1 misses=0 rejected=0 cache_bytes=41020
+[native-audio] block_hits=2 misses=0 rejected=0 cache_bytes=41020
+[native-audio] block_hits=3 misses=0 rejected=0 cache_bytes=41020
+[native-audio] block_hits=4 misses=0 rejected=0 cache_bytes=41020
+[gfxmem] bundle characters/standupcamera/standupcamera.glt: +150 KB, used=7898/49152 KB, free=41253 KB
+[native-audio] block_hits=8 misses=0 rejected=0 cache_bytes=82040
+[gfxmem] bundle characters/standupcamera/standupcamera.glg: +16 KB, used=7914/49152 KB, free=41237 KB
+[native-audio] block_hits=16 misses=0 rejected=0 cache_bytes=123060
+[native-audio] block_hits=32 misses=0 rejected=0 cache_bytes=123060
+[native-audio] block_hits=64 misses=0 rejected=0 cache_bytes=123060
+[gfxmem] bundle environment/Sideline_Objects/standupcamera_base.glt: +10 KB, used=7925/49152 KB, free=41226 KB
+[native-audio] block_hits=128 misses=0 rejected=0 cache_bytes=123060
+[gfxmem] bundle environment/Sideline_Objects/standupcamera_base.glg: +1 KB, used=7927/49152 KB, free=41224 KB
+[native-audio] block_hits=256 misses=0 rejected=0 cache_bytes=123060
+[gfxmem] bundle environment/Sideline_Objects/standupcamera_d.glt: +0 KB, used=7927/49152 KB, free=41224 KB
+[gfxmem] bundle environment/Sideline_Objects/standupcamera_d.glg: +12 KB, used=7939/49152 KB, free=41212 KB
+[gfxmem] bundle characters/chainchomp/chainchomp.glt: +43 KB, used=7983/49152 KB, free=41168 KB
+[native-audio] block_hits=512 misses=0 rejected=0 cache_bytes=123060
+[gfxmem] bundle characters/chainchomp/chainchomp.glg: +31 KB, used=8014/49152 KB, free=41137 KB
+[gfxmem] bundle characters/bowser/bowser.glt: +181 KB, used=8196/49152 KB, free=40955 KB
+[gfxmem] bundle characters/bowser/bowser.glg: +89 KB, used=8286/49152 KB, free=40865 KB
+[native-audio] block_hits=1024 misses=0 rejected=0 cache_bytes=123060
+[gfxmem] bundle characters/luigi/luigi.glt: +214 KB, used=8500/49152 KB, free=40651 KB
+[gfxmem] bundle characters/luigi/luigi.glg: +118 KB, used=8618/49152 KB, free=40533 KB
+[gfxmem] bundle characters/luigi/luigi_blend.glg: +173 KB, used=8792/49152 KB, free=40359 KB
+[native-audio] block_hits=2048 misses=0 rejected=0 cache_bytes=123060
+[gfxmem] bundle characters/luigigoalie/luigigoalie.glt: +53 KB, used=8846/49152 KB, free=40305 KB
+[gfxmem] bundle characters/mariogoalie/mariogoalie.glg: +80 KB, used=8926/49152 KB, free=40225 KB
+[native-audio] block_hits=4096 misses=0 rejected=0 cache_bytes=246120
+[gfxmem] bundle characters/mariogoalie/mariogoalie_blend.glg: +128 KB, used=9055/49152 KB, free=40096 KB
+[gfxmem] bundle characters/mario/mario.glt: +128 KB, used=9184/49152 KB, free=39967 KB
+[gfxmem] bundle characters/mario/mario.glg: +115 KB, used=9300/49152 KB, free=39851 KB
+[native-audio] block_hits=8192 misses=0 rejected=0 cache_bytes=369180
+[gfxmem] bundle characters/mario/mario_blend.glg: +172 KB, used=9472/49152 KB, free=39679 KB
+[gfxmem] bundle characters/mariogoalie/mariogoalie.glt: +42 KB, used=9515/49152 KB, free=39636 KB
+[gfxmem] bundle characters/koopa/koopa.glt: +53 KB, used=9569/49152 KB, free=39582 KB
+[gfxmem] bundle characters/koopa/koopa.glg: +121 KB, used=9690/49152 KB, free=39461 KB
+[gfxmem] bundle characters/koopa/koopa_blend.glg: +171 KB, used=9862/49152 KB, free=39289 KB
+[gfxmem] bundle characters/koopa/koopa_luigi.glt: +170 KB, used=10033/49152 KB, free=39118 KB
+[gfxmem] bundle characters/toad/toad.glt: +27 KB, used=10060/49152 KB, free=39091 KB
+[gfxmem] bundle characters/toad/toad.glg: +95 KB, used=10155/49152 KB, free=38996 KB
+[gfxmem] bundle characters/toad/toad_blend.glg: +125 KB, used=10280/49152 KB, free=38871 KB
+[native-audio] block_hits=16384 misses=0 rejected=0 cache_bytes=714840
+[gfxmem] bundle characters/toad/toad_mario.glt: +170 KB, used=10451/49152 KB, free=38700 KB
+[match] begin rematch=0 kickoff=0
+-- Memory upon Exiting InitializeGameState
+Free Memory: 39026338
+Largest Free Block: 39026338
+Largest Virtual Free Block: 41306578
+-----------------------------------------
+
+[vita] gxm_native_model_draw=0
+[aurora-gxm] material key=b0a5095bf06efbfb native=1 stages=1 fragment_bytes=296 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[vita] gxm_native_draw_replay=0
+[aurora-gxm] compact_texture fmt=10 size=256x128 mips=5 bytes=174592 bc1=0
+[aurora-gxm] material key=82ea3bdeb2a4d845 native=1 stages=1 fragment_bytes=676 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-vita][fifo] draw submit cmd=0x98 fmt=0 verts=381 stride=8 bytes=3048 ok=1 err=0 warn=0x10
+[aurora-gxm] compact_texture fmt=10 size=256x512 mips=6 bytes=698880 bc1=0
+[aurora-gxm] material key=053a064495ca4882 native=1 stages=1 fragment_bytes=1396 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-vita][fifo] draw submit cmd=0x90 fmt=0 verts=261 stride=8 bytes=2088 ok=1 err=0 warn=0x0
+[aurora-vita][fifo] draw submit cmd=0x90 fmt=0 verts=132 stride=8 bytes=1056 ok=1 err=0 warn=0x0
+[aurora-vita][fifo] draw submit cmd=0x90 fmt=0 verts=132 stride=8 bytes=1056 ok=1 err=0 warn=0x0
+[aurora-gxm] compact_texture fmt=10 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] material key=0a4b564391c3765a native=1 stages=1 fragment_bytes=1268 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=10 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-vita][fifo] draw submit cmd=0x90 fmt=0 verts=1692 stride=8 bytes=13536 ok=1 err=0 warn=0x10
+[aurora-vita][fifo] draw submit cmd=0x90 fmt=0 verts=3540 stride=8 bytes=28320 ok=1 err=0 warn=0x10
+[aurora-vita][fifo] draw submit cmd=0x90 fmt=0 verts=2355 stride=8 bytes=18840 ok=1 err=0 warn=0x10
+[aurora-vita][fifo] draw submit cmd=0x90 fmt=0 verts=1644 stride=8 bytes=13152 ok=1 err=0 warn=0x10
+[aurora-vita][fifo] draw submit cmd=0x90 fmt=0 verts=156 stride=8 bytes=1248 ok=1 err=0 warn=0x10
+[aurora-gxm] compact_texture fmt=10 size=128x32 mips=3 bytes=21504 bc1=0
+[aurora-vita][fifo] draw submit cmd=0x90 fmt=0 verts=486 stride=8 bytes=3888 ok=1 err=0 warn=0x10
+[aurora-vita][fifo] draw submit cmd=0x90 fmt=0 verts=132 stride=8 bytes=1056 ok=1 err=0 warn=0x10
+[aurora-gxm] compact_texture fmt=10 size=128x32 mips=3 bytes=21504 bc1=0
+[aurora-vita][fifo] draw submit cmd=0x90 fmt=0 verts=582 stride=8 bytes=4656 ok=1 err=0 warn=0x10
+[aurora-vita][fifo] draw submit cmd=0x90 fmt=0 verts=198 stride=8 bytes=1584 ok=1 err=0 warn=0x10
+[aurora-vita][fifo] draw submit cmd=0x90 fmt=0 verts=198 stride=8 bytes=1584 ok=1 err=0 warn=0x10
+[aurora-vita][fifo] draw submit cmd=0x90 fmt=0 verts=273 stride=8 bytes=2184 ok=1 err=0 warn=0x10
+[aurora-gxm] compact_texture fmt=10 size=256x128 mips=5 bytes=174592 bc1=0
+[aurora-gxm] material key=ca637271777f249a native=1 stages=1 fragment_bytes=1396 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-vita][fifo] draw submit cmd=0x90 fmt=0 verts=276 stride=8 bytes=2208 ok=1 err=0 warn=0x0
+[aurora-vita][fifo] draw submit cmd=0x90 fmt=0 verts=456 stride=8 bytes=3648 ok=1 err=0 warn=0x0
+[aurora-vita][fifo] draw submit cmd=0x90 fmt=0 verts=456 stride=8 bytes=3648 ok=1 err=0 warn=0x0
+[aurora-vita][fifo] draw submit cmd=0x90 fmt=0 verts=456 stride=8 bytes=3648 ok=1 err=0 warn=0x0
+[aurora-gxm] compact_texture fmt=10 size=512x64 mips=4 bytes=174080 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=256x8 mips=1 bytes=8192 bc1=0
+[aurora-gxm] material key=b4c945d8ca445700 native=1 stages=2 fragment_bytes=1364 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-vita][fifo] draw submit cmd=0x90 fmt=0 verts=159 stride=8 bytes=1272 ok=1 err=0 warn=0x10
+[aurora-vita][fifo] draw submit cmd=0x90 fmt=0 verts=159 stride=8 bytes=1272 ok=1 err=0 warn=0x10
+[aurora-vita][fifo] draw submit cmd=0x90 fmt=0 verts=222 stride=8 bytes=1776 ok=1 err=0 warn=0x10
+[aurora-vita][fifo] draw submit cmd=0x90 fmt=0 verts=249 stride=8 bytes=1992 ok=1 err=0 warn=0x10
+[aurora-vita][fifo] draw submit cmd=0x90 fmt=0 verts=261 stride=8 bytes=2088 ok=1 err=0 warn=0x10
+[aurora-gxm] compact_texture fmt=10 size=16x16 mips=2 bytes=1280 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=128x256 mips=5 bytes=174592 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=128x256 mips=5 bytes=174592 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=64x512 mips=4 bytes=174080 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=256x64 mips=4 bytes=87040 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=256x64 mips=4 bytes=87040 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=256x64 mips=4 bytes=87040 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=256x64 mips=4 bytes=87040 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=256x64 mips=4 bytes=87040 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=256x64 mips=4 bytes=87040 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=256x64 mips=4 bytes=87040 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=256x64 mips=4 bytes=87040 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=64x128 mips=4 bytes=43520 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=128x64 mips=4 bytes=43520 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=128x64 mips=4 bytes=43520 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=256x32 mips=3 bytes=43008 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=128x64 mips=4 bytes=43520 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=16x16 mips=2 bytes=1280 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=128x32 mips=3 bytes=21504 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=256x128 mips=5 bytes=174592 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=256x256 mips=6 bytes=349440 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=256x128 mips=5 bytes=174592 bc1=0
+[aurora-gxm] material key=16d8e0c7bbb0016b native=1 stages=2 fragment_bytes=1476 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=b1fa3bca20aac01a native=1 stages=2 fragment_bytes=1476 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=10 size=128x16 mips=2 bytes=10240 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=256x256 mips=6 bytes=349440 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=256x256 mips=6 bytes=349440 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=256x128 mips=5 bytes=174592 bc1=0
+[aurora-gxm] material key=cdd165fdf53915f4 native=1 stages=3 fragment_bytes=1448 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=10 size=16x16 mips=2 bytes=1280 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=256x128 mips=5 bytes=174592 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=16x16 mips=2 bytes=1280 bc1=0
+[aurora-gxm] material key=8ec1b9b7e4a8c3c1 native=1 stages=4 fragment_bytes=1564 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=10 size=64x128 mips=4 bytes=43520 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=32x32 mips=3 bytes=5376 bc1=0
+[aurora-gxm] material key=886406b8bb718b39 native=1 stages=4 fragment_bytes=1700 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=10 size=256x128 mips=5 bytes=174592 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=128x256 mips=5 bytes=174592 bc1=0
+[aurora-gxm] material key=0ddbaf7e088f4df4 native=1 stages=5 fragment_bytes=1680 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=10 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] material key=de91aa4234888d13 native=1 stages=5 fragment_bytes=1680 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=10 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] material key=4bc38e40a1ec7262 native=1 stages=5 fragment_bytes=1656 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=10 size=256x256 mips=6 bytes=349440 bc1=0
+[aurora-gxm] material key=b5c135d17e635364 native=1 stages=5 fragment_bytes=1656 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=10 size=64x128 mips=4 bytes=43520 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=64x128 mips=4 bytes=43520 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=64x128 mips=4 bytes=43520 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=64x128 mips=4 bytes=43520 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=64x16 mips=2 bytes=5120 bc1=0
+[native-audio] block_hits=32768 misses=1 rejected=0 cache_bytes=1111400
+[aurora-gxm] compact_texture fmt=10 size=64x256 mips=4 bytes=87040 bc1=0
+[aurora-gxm] material key=2e4bdc5bb93831a2 native=1 stages=2 fragment_bytes=1476 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=f580a75555cc5a00 native=1 stages=4 fragment_bytes=964 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=6fa28c34950925fa native=1 stages=5 fragment_bytes=1084 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=8de2e553f6379c88 native=1 stages=5 fragment_bytes=1084 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=10 size=64x256 mips=4 bytes=87040 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=64x16 mips=2 bytes=5120 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=512x512 mips=7 bytes=1398016 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=512x512 mips=7 bytes=1398016 bc1=0
+[aurora-gxm] material key=c76d4c803b2850fc native=1 stages=3 fragment_bytes=1500 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=10 size=512x512 mips=7 bytes=1398016 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=512x512 mips=7 bytes=1398016 bc1=0
+[aurora-gxm] material key=7caf3cba39237093 native=1 stages=6 fragment_bytes=1716 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=10 size=256x256 mips=6 bytes=349440 bc1=0
+[aurora-gxm] compact_texture fmt=6 size=256x4 mips=1 bytes=4096 bc1=0
+[aurora-gxm] material key=a7936bf010fccf24 native=1 stages=2 fragment_bytes=1404 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=10 size=8x8 mips=1 bytes=256 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] material key=a130c71ed8a80843 native=1 stages=2 fragment_bytes=1500 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=8 size=128x64 mips=4 bytes=43520 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=8x8 mips=1 bytes=256 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=8x8 mips=1 bytes=256 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x32 mips=3 bytes=10752 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=16x256 mips=2 bytes=20480 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=16x16 mips=2 bytes=1280 bc1=0
+[aurora-gxm] material key=169c7f68cd217363 native=1 stages=4 fragment_bytes=1852 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=10 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] material key=570d6c04c21b6428 native=1 stages=4 fragment_bytes=1076 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=10 size=32x32 mips=3 bytes=5376 bc1=0
+[aurora-gxm] material key=d3189645d868b16e native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=a78d2a4b7cc898b5 native=1 stages=1 fragment_bytes=876 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=3d769d071ab62510 native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=cf9459e43d9ad50c native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=0872a311e115687c native=1 stages=1 fragment_bytes=876 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=366b55a1ec7473ae native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=8 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] material key=5feaf631566f3441 native=1 stages=1 fragment_bytes=992 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] efb_gpu_fixup n=1 flip=00 opaque=0 source_end_us=105 draw_us=19209 total_us=19314
+[aurora-gxm] compact_texture fmt=6 size=64x64 mips=5 bytes=21824 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=32x32 mips=1 bytes=4096 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=32x32 mips=1 bytes=4096 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=256x256 mips=1 bytes=262144 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=256x256 mips=1 bytes=262144 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=128x128 mips=1 bytes=65536 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=32x32 mips=1 bytes=4096 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=256x256 mips=1 bytes=262144 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=256x256 mips=1 bytes=262144 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=32x32 mips=1 bytes=4096 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=256x256 mips=1 bytes=262144 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=256x256 mips=1 bytes=262144 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=256x256 mips=1 bytes=262144 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=256x256 mips=1 bytes=262144 bc1=0
+[aurora-gxm] display_copy passthrough n=1 source=0,0 960x544
+[aurora-gxm] present_timing n=3 end_us=109 queue_us=34 total_us=143
+[aurora-gxm] material key=79c2127c9dbd2b3f native=1 stages=1 fragment_bytes=676 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=f7e8fec2e80dbfad native=1 stages=1 fragment_bytes=1396 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=ea79bb122288597e native=1 stages=1 fragment_bytes=1268 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=cf046f16781d353d native=1 stages=1 fragment_bytes=1396 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=c50ec6a2561337c1 native=1 stages=2 fragment_bytes=1404 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=81c2e5b9b827be9b native=1 stages=2 fragment_bytes=1508 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=bd33364416341107 native=1 stages=3 fragment_bytes=1448 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=fab7acc5083e229a native=1 stages=4 fragment_bytes=1572 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=0337f4d32d14abdb native=1 stages=4 fragment_bytes=1700 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=cd0ef7b30544c24b native=1 stages=5 fragment_bytes=1688 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=423064e8057be264 native=1 stages=5 fragment_bytes=1688 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=c4c479b0615e17c4 native=1 stages=5 fragment_bytes=1664 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=042bc8ac908352fd native=1 stages=5 fragment_bytes=1664 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=97fd88a7bd35c873 native=1 stages=2 fragment_bytes=1508 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=9cf242b124e52869 native=1 stages=4 fragment_bytes=972 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=e2517a3c0f8d73ec native=1 stages=5 fragment_bytes=1092 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=7701f2a522f587da native=1 stages=5 fragment_bytes=1092 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=10 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] efb_gpu_fixup n=2 flip=00 opaque=0 source_end_us=115 draw_us=70 total_us=185
+[aurora-gxm] compact_texture fmt=8 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=256x256 mips=6 bytes=349440 bc1=0
+[aurora-gxm] display_copy passthrough n=2 source=0,0 960x544
+[aurora-gxm] present_timing n=4 end_us=108 queue_us=35 total_us=143
+[aurora-gxm] material key=4db6a0a64b891a25 native=1 stages=2 fragment_bytes=1404 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=f5c5aafa5131f1e6 native=1 stages=2 fragment_bytes=1508 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=e8b469d8c341db3d native=1 stages=3 fragment_bytes=1448 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=6601f4680c220c8e native=1 stages=4 fragment_bytes=1572 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=0ca8f57853b0b478 native=1 stages=4 fragment_bytes=1700 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=b86805dde3edce26 native=1 stages=5 fragment_bytes=1688 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=b8d921569fe60696 native=1 stages=5 fragment_bytes=1688 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=7a54abdc11314458 native=1 stages=5 fragment_bytes=1664 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=6e2d45a7f5be81aa native=1 stages=5 fragment_bytes=1664 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=0e400b88c1372489 native=1 stages=2 fragment_bytes=1508 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=fd873772d073dbc4 native=1 stages=4 fragment_bytes=972 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=e51be56ded29a95e native=1 stages=5 fragment_bytes=1092 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=aa7749fd22378598 native=1 stages=5 fragment_bytes=1092 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=739430edd75dea9c native=1 stages=3 fragment_bytes=1500 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=5f2ec4713ab031e5 native=1 stages=6 fragment_bytes=1716 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=b775d2f907f50e72 native=1 stages=2 fragment_bytes=1500 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x32 mips=3 bytes=10752 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=16x256 mips=2 bytes=20480 bc1=0
+[aurora-gxm] material key=5fa9d701b798bb29 native=1 stages=4 fragment_bytes=1852 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=4a0827a02e1a3e98 native=1 stages=4 fragment_bytes=1076 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=e100eb8e5c5bfe02 native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=05f11366d4601d8d native=1 stages=1 fragment_bytes=876 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=1505da1c9f55c3ba native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=80cd1e977cd4aeaa native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=14b76e5397c90543 native=1 stages=1 fragment_bytes=876 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=d9226df0f6bf571c native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] efb_gpu_fixup n=3 flip=00 opaque=0 source_end_us=118 draw_us=82 total_us=200
+[aurora-gxm] compact_texture fmt=8 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=256x256 mips=6 bytes=349440 bc1=0
+[aurora-gxm] display_copy passthrough n=3 source=0,0 960x544
+[aurora-gxm] present_timing n=5 end_us=104 queue_us=34 total_us=138
+[aurora-gxm] material key=d947e1c08a228125 native=1 stages=1 fragment_bytes=676 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=344351b6bc5afb6e native=1 stages=1 fragment_bytes=1396 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=6f545c8ce69cab64 native=1 stages=1 fragment_bytes=1268 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=40186e99fb8d731f native=1 stages=1 fragment_bytes=1396 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=815bd3c481e0f97f native=1 stages=2 fragment_bytes=1404 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=7fa052401fcaf1e7 native=1 stages=2 fragment_bytes=1508 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=bfb322a89604ae21 native=1 stages=3 fragment_bytes=1448 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=04dee64e6ee33f85 native=1 stages=4 fragment_bytes=1572 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=ba9b911b6e7c328f native=1 stages=4 fragment_bytes=1700 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=8aa133c08ddf8979 native=1 stages=5 fragment_bytes=1688 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=7017c8278384fe8c native=1 stages=5 fragment_bytes=1688 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=8c7a7534e873febc native=1 stages=5 fragment_bytes=1664 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=7a1ddb7baec998a6 native=1 stages=5 fragment_bytes=1664 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=920dee4a0674fdf0 native=1 stages=2 fragment_bytes=1508 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=eecaac0fe32bbeb2 native=1 stages=4 fragment_bytes=972 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=8ddd3c9cd0fb480f native=1 stages=5 fragment_bytes=1092 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=5f6852a522e5b48d native=1 stages=5 fragment_bytes=1092 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=41cfedd14c8fbf0b native=1 stages=3 fragment_bytes=1500 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=a8b12da0679d3b74 native=1 stages=6 fragment_bytes=1716 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=8ae50fdbb0e9a857 native=1 stages=2 fragment_bytes=1500 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=674a940960fe5389 native=1 stages=4 fragment_bytes=1852 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=081859d406b2d376 native=1 stages=4 fragment_bytes=1076 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=d88f99acd6527da5 native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=15c69874fa81a923 native=1 stages=1 fragment_bytes=876 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=2ce03489d6024236 native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=a2aa286bdb518f1c native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=ae5f078092a0c0a6 native=1 stages=1 fragment_bytes=876 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=049b0835fba225f1 native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] efb_gpu_fixup n=4 flip=00 opaque=0 source_end_us=110 draw_us=69 total_us=179
+[aurora-gxm] compact_texture fmt=10 size=256x256 mips=6 bytes=349440 bc1=0
+[aurora-gxm] display_copy passthrough n=4 source=0,0 960x544
+[aurora-gxm] present_timing n=6 end_us=138 queue_us=36 total_us=174
+[aurora-gxm] material key=f12f20616ca5d356 native=1 stages=1 fragment_bytes=676 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=92f38e506fb08329 native=1 stages=1 fragment_bytes=1396 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=a1e32278fbaf05f1 native=1 stages=1 fragment_bytes=1268 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=c0a7b23800d84548 native=1 stages=1 fragment_bytes=1396 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=b3a99520269dc27a native=1 stages=2 fragment_bytes=1404 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=9c12f224909369ee native=1 stages=2 fragment_bytes=1508 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=2881d007c54ec9e5 native=1 stages=3 fragment_bytes=1448 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=d7cb461de25c3a0f native=1 stages=4 fragment_bytes=1572 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=be1cf490cd2debea native=1 stages=4 fragment_bytes=1700 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=14c5545808e47f2d native=1 stages=5 fragment_bytes=1688 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=f8886c1b68ebf611 native=1 stages=5 fragment_bytes=1688 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=da4df7ce88effe78 native=1 stages=5 fragment_bytes=1664 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=adb93bc285e1a61f native=1 stages=5 fragment_bytes=1664 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=2b19b8b9c25a80cc native=1 stages=2 fragment_bytes=1508 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=70bfb2b5f809d393 native=1 stages=4 fragment_bytes=972 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=675438ae529f93e6 native=1 stages=5 fragment_bytes=1092 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=bd3b669d911b5196 native=1 stages=5 fragment_bytes=1092 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=1a5e67830838da6d native=1 stages=3 fragment_bytes=1500 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=2dbe285c15b16cdd native=1 stages=6 fragment_bytes=1716 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=d03ae01cb36a00a7 native=1 stages=2 fragment_bytes=1500 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=966534213d460571 native=1 stages=4 fragment_bytes=1852 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=911eca31fe8f4415 native=1 stages=4 fragment_bytes=1076 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=3d4d5d4a88fb4ea7 native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=5be97bf23b09bab6 native=1 stages=1 fragment_bytes=876 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=b8698f63f53dfe97 native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=d45b034a7c1e0ce9 native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=4b00284e9afc29f4 native=1 stages=1 fragment_bytes=876 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=664a722c7f14d89d native=1 stages=1 fragment_bytes=780 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] efb_gpu_fixup n=5 flip=00 opaque=0 source_end_us=108 draw_us=70 total_us=178
+[aurora-gxm] present_timing n=7 end_us=94 queue_us=34 total_us=128
+[aurora-gxm] material key=610d8a8de67fa9b2 native=1 stages=1 fragment_bytes=676 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=348a21e82f6a860f native=1 stages=1 fragment_bytes=1396 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=93ca048ce2657d27 native=1 stages=1 fragment_bytes=1268 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=d35ad1d98144b30a native=1 stages=1 fragment_bytes=1396 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x32 mips=3 bytes=10752 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=16x256 mips=2 bytes=20480 bc1=0
+[aurora-gxm] efb_gpu_fixup n=6 flip=00 opaque=0 source_end_us=108 draw_us=69 total_us=177
+[aurora-gxm] present_timing n=8 end_us=95 queue_us=33 total_us=128
+[aurora-gxm] efb_gpu_fixup n=7 flip=00 opaque=0 source_end_us=118 draw_us=80 total_us=198
+[aurora-gxm] efb_gpu_fixup n=8 flip=00 opaque=0 source_end_us=117 draw_us=71 total_us=188
+[aurora-gxm] display_copy passthrough n=8 source=0,0 960x544
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x32 mips=3 bytes=10752 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=16x256 mips=2 bytes=20480 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x32 mips=3 bytes=10752 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=16x256 mips=2 bytes=20480 bc1=0
+[aurora-gxm] present_timing n=16 end_us=92 queue_us=32 total_us=124
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x32 mips=3 bytes=10752 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=16x256 mips=2 bytes=20480 bc1=0
+[aurora-gxm] efb_gpu_fixup n=16 flip=00 opaque=0 source_end_us=111 draw_us=71 total_us=182
+[aurora-gxm] display_copy passthrough n=16 source=0,0 960x544
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x32 mips=3 bytes=10752 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=16x256 mips=2 bytes=20480 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x32 mips=3 bytes=10752 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=16x256 mips=2 bytes=20480 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x32 mips=3 bytes=10752 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=16x256 mips=2 bytes=20480 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x32 mips=3 bytes=10752 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=16x256 mips=2 bytes=20480 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x32 mips=3 bytes=10752 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=16x256 mips=2 bytes=20480 bc1=0
+[aurora-gxm] present_timing n=32 end_us=97 queue_us=31 total_us=128
+[aurora-gxm] efb_gpu_fixup n=32 flip=00 opaque=0 source_end_us=114 draw_us=70 total_us=184
+[aurora-gxm] display_copy passthrough n=32 source=0,0 960x544
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x32 mips=3 bytes=10752 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=16x256 mips=2 bytes=20480 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x32 mips=3 bytes=10752 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=16x256 mips=2 bytes=20480 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x32 mips=3 bytes=10752 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=16x256 mips=2 bytes=20480 bc1=0
+[native-audio] block_hits=65536 misses=9013 rejected=0 cache_bytes=1544360
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x32 mips=3 bytes=10752 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=16x256 mips=2 bytes=20480 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x32 mips=3 bytes=10752 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=16x256 mips=2 bytes=20480 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x32 mips=3 bytes=10752 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=16x256 mips=2 bytes=20480 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x32 mips=3 bytes=10752 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=16x256 mips=2 bytes=20480 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x32 mips=3 bytes=10752 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=16x256 mips=2 bytes=20480 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x32 mips=3 bytes=10752 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=16x256 mips=2 bytes=20480 bc1=0
+[aurora-gxm] memory phase=profile-frame cdram=51380224 peak=51380224 allocs=4 pool=45088768 pool_used=19251200 pool_peak=19251200 user=40316928 peak=40316928 allocs=948 phycont=0 peak=0 allocs=0 cdialog=0 peak=0 allocs=0 fallbacks=0 free_cdram=11534336 free_user=85983232 free_phycont=27262976 query=0x00000000
+[aurora-gxm] present_timing n=64 end_us=104 queue_us=33 total_us=137
+[aurora-gxm] efb_gpu_fixup n=64 flip=00 opaque=0 source_end_us=106 draw_us=73 total_us=179
+[aurora-gxm] display_copy passthrough n=64 source=0,0 960x544
+[aurora-gxm] display_queue_profile avg_us=29.8 max_us=42 blocked_pct=0.0 cpu_frame_avg_us=178019.2 classification=cpu_or_frontend_bound
+[aurora-gxm] present_timing n=128 end_us=97 queue_us=31 total_us=128
+[aurora-gxm] efb_gpu_fixup n=128 flip=00 opaque=0 source_end_us=125 draw_us=79 total_us=204
+[aurora-gxm] display_copy passthrough n=128 source=0,0 960x544
+[aurora-gxm] memory phase=profile-frame cdram=51380224 peak=51380224 allocs=4 pool=45088768 pool_used=19251200 pool_peak=19251200 user=40415232 peak=40415232 allocs=962 phycont=0 peak=0 allocs=0 cdialog=0 peak=0 allocs=0 fallbacks=0 free_cdram=11534336 free_user=85983232 free_phycont=27262976 query=0x00000000
+[native-audio] block_hits=131072 misses=92620 rejected=0 cache_bytes=1582340
+[aurora-gxm] display_queue_profile avg_us=29.6 max_us=36 blocked_pct=0.0 cpu_frame_avg_us=99445.7 classification=cpu_or_frontend_bound
+[aurora-gxm] present_timing n=256 end_us=118 queue_us=38 total_us=156
+[aurora-gxm] efb_gpu_fixup n=256 flip=00 opaque=0 source_end_us=108 draw_us=71 total_us=179
+[aurora-gxm] display_copy passthrough n=256 source=0,0 960x544
+[aurora-gxm] memory phase=profile-frame cdram=51380224 peak=51380224 allocs=4 pool=45088768 pool_used=19251200 pool_peak=19251200 user=40525824 peak=40525824 allocs=976 phycont=0 peak=0 allocs=0 cdialog=0 peak=0 allocs=0 fallbacks=0 free_cdram=11534336 free_user=85983232 free_phycont=27262976 query=0x00000000
+[aurora-gxm] display_queue_profile avg_us=33.3 max_us=88 blocked_pct=0.0 cpu_frame_avg_us=80651.9 classification=cpu_or_frontend_bound
+[aurora-gxm] compact_texture fmt=10 size=16x16 mips=2 bytes=1280 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=32x32 mips=3 bytes=5376 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=512x512 mips=7 bytes=1398016 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] material key=79ea13ea966b14a8 native=1 stages=4 fragment_bytes=1548 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=4acc808afba0f8af native=1 stages=4 fragment_bytes=1548 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=10 size=256x256 mips=6 bytes=349440 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=512x512 mips=7 bytes=1398016 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] material key=94bbb2139ab67a83 native=1 stages=1 fragment_bytes=1484 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=d45b55a473128023 native=1 stages=4 fragment_bytes=1852 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=a4a1b7aeba94a800 native=1 stages=4 fragment_bytes=1076 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=6e92b306cce79e2b native=1 stages=2 fragment_bytes=1404 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=933d71954079996e native=1 stages=3 fragment_bytes=1448 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=879d8a883362f1cd native=1 stages=4 fragment_bytes=1700 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=52c0a6dceb643805 native=1 stages=4 fragment_bytes=1572 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=0ac274383b395345 native=1 stages=5 fragment_bytes=1688 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=b3f0cdca184b7d4d native=1 stages=5 fragment_bytes=1664 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=5718891230445ea6 native=1 stages=5 fragment_bytes=1664 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=7c53e6fc8043d962 native=1 stages=4 fragment_bytes=972 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=c5e5ae71d4614533 native=1 stages=5 fragment_bytes=1092 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=d0db742bf37ada3e native=1 stages=5 fragment_bytes=1092 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=e89d3222edd2276d native=1 stages=3 fragment_bytes=1500 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=74b47287b065877e native=1 stages=6 fragment_bytes=1716 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=4019beafc4836220 native=1 stages=1 fragment_bytes=296 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=10 size=64x128 mips=4 bytes=43520 bc1=0
+[aurora-gxm] material key=02aa1bc75eea88bb native=1 stages=1 fragment_bytes=676 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] memory phase=profile-frame cdram=51380224 peak=51380224 allocs=4 pool=45088768 pool_used=22757376 pool_peak=22757376 user=42389504 peak=42389504 allocs=1252 phycont=0 peak=0 allocs=0 cdialog=0 peak=0 allocs=0 fallbacks=0 free_cdram=11534336 free_user=83886080 free_phycont=27262976 query=0x00000000
+[aurora-gxm] compact_texture fmt=10 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] material key=238084154cad6d81 native=1 stages=1 fragment_bytes=668 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=10 size=512x256 mips=6 bytes=698880 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=64x128 mips=4 bytes=43520 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=64x128 mips=4 bytes=43520 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=512x512 mips=7 bytes=1398016 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=256x64 mips=4 bytes=87040 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=256x64 mips=4 bytes=87040 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=64x128 mips=4 bytes=43520 bc1=0
+[native-audio] block_hits=262144 misses=242324 rejected=0 cache_bytes=2083680
+[aurora-gxm] compact_texture fmt=10 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] display_queue_profile avg_us=32.9 max_us=60 blocked_pct=0.0 cpu_frame_avg_us=157481.4 classification=cpu_or_frontend_bound
+[aurora-gxm] present_timing n=512 end_us=105 queue_us=32 total_us=137
+[aurora-gxm] display_copy passthrough n=512 source=0,0 960x544
+[aurora-gxm] memory phase=profile-frame cdram=51380224 peak=51380224 allocs=4 pool=45088768 pool_used=26419200 pool_peak=26419200 user=46923776 peak=46923776 allocs=1794 phycont=0 peak=0 allocs=0 cdialog=0 peak=0 allocs=0 fallbacks=0 free_cdram=11534336 free_user=79691776 free_phycont=27262976 query=0x00000000
+[aurora-gxm] compact_texture fmt=8 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] material key=121e7cd00d39983b native=1 stages=3 fragment_bytes=1464 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] display_queue_profile avg_us=30.3 max_us=99 blocked_pct=0.0 cpu_frame_avg_us=52765.9 classification=cpu_or_frontend_bound
+[aurora-gxm] compact_texture fmt=8 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] memory phase=profile-frame cdram=51380224 peak=51380224 allocs=4 pool=45088768 pool_used=26599424 pool_peak=26599424 user=46981120 peak=46981120 allocs=1800 phycont=0 peak=0 allocs=0 cdialog=0 peak=0 allocs=0 fallbacks=0 free_cdram=11534336 free_user=79691776 free_phycont=27262976 query=0x00000000
+[aurora-gxm] display_queue_profile avg_us=30.1 max_us=66 blocked_pct=0.0 cpu_frame_avg_us=52519.3 classification=cpu_or_frontend_bound
+[aurora-gxm] compact_texture fmt=10 size=256x256 mips=6 bytes=349440 bc1=0
+[aurora-gxm] memory phase=profile-frame cdram=51380224 peak=51380224 allocs=4 pool=45088768 pool_used=26951680 pool_peak=26951680 user=47058944 peak=47124480 allocs=1822 phycont=0 peak=0 allocs=0 cdialog=0 peak=0 allocs=0 fallbacks=0 free_cdram=11534336 free_user=79691776 free_phycont=27262976 query=0x00000000
+[aurora-gxm] compact_texture fmt=8 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] display_queue_profile avg_us=30.3 max_us=59 blocked_pct=0.0 cpu_frame_avg_us=55308.0 classification=cpu_or_frontend_bound
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] material key=0cac72035e278f3f native=1 stages=3 fragment_bytes=1464 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=d0dca627e818dc04 native=1 stages=4 fragment_bytes=1572 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=a5ba362868f97a9b native=1 stages=4 fragment_bytes=1700 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=c93a1f735de5033e native=1 stages=5 fragment_bytes=1664 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=d382c80b04fbb8d8 native=1 stages=4 fragment_bytes=972 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=e257a14ee666d0c6 native=1 stages=5 fragment_bytes=1092 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=bedcf3e51526a19e native=1 stages=3 fragment_bytes=1500 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=5fc7709d1c8a182d native=1 stages=6 fragment_bytes=1716 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=8 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] compact_texture fmt=10 size=512x32 mips=3 bytes=86016 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=1 bytes=16384 bc1=0
+[aurora-gxm] material key=c65ae79772add558 native=1 stages=3 fragment_bytes=1464 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=8e3b2b7316c31129 native=1 stages=4 fragment_bytes=1572 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=8c8967019bc8aa25 native=1 stages=4 fragment_bytes=1700 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=16f30236f03d4a26 native=1 stages=5 fragment_bytes=1664 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=1c4165bde883b2a1 native=1 stages=4 fragment_bytes=972 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=4b2bc04a5875f151 native=1 stages=5 fragment_bytes=1092 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=9843b5ede6d067b4 native=1 stages=3 fragment_bytes=1500 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=d2ce89bf7e4a6feb native=1 stages=6 fragment_bytes=1716 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=8 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] material key=2a3f96f3372f4da5 native=1 stages=3 fragment_bytes=1464 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=42b4a8e865fbe085 native=1 stages=4 fragment_bytes=1572 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=91d8c6aa4d116e00 native=1 stages=4 fragment_bytes=1700 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=ee4769167bf456a0 native=1 stages=5 fragment_bytes=1664 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=c7238743f54c2710 native=1 stages=4 fragment_bytes=972 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=35c1f916e6b3a13f native=1 stages=5 fragment_bytes=1092 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=ab0a4c1ac0ee393e native=1 stages=3 fragment_bytes=1500 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=a26657424234691e native=1 stages=6 fragment_bytes=1716 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=8 size=128x128 mips=5 bytes=87296 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=4 bytes=21760 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=1 bytes=16384 bc1=0
+[aurora-gxm] memory phase=profile-frame cdram=51380224 peak=51380224 allocs=4 pool=45088768 pool_used=27660288 pool_peak=27660288 user=47046656 peak=47124480 allocs=1826 phycont=0 peak=0 allocs=0 cdialog=0 peak=0 allocs=0 fallbacks=0 free_cdram=11534336 free_user=79691776 free_phycont=27262976 query=0x00000000
+[aurora-gxm] display_queue_profile avg_us=30.2 max_us=67 blocked_pct=0.0 cpu_frame_avg_us=59383.4 classification=cpu_or_frontend_bound
+[aurora-gxm] compact_texture fmt=10 size=256x32 mips=3 bytes=43008 bc1=0
+[aurora-gxm] memory phase=profile-frame cdram=51380224 peak=51380224 allocs=4 pool=45088768 pool_used=27705344 pool_peak=27705344 user=47046656 peak=47124480 allocs=1826 phycont=0 peak=0 allocs=0 cdialog=0 peak=0 allocs=0 fallbacks=0 free_cdram=11534336 free_user=79691776 free_phycont=27262976 query=0x00000000
+[aurora-gxm] present_timing n=1024 end_us=104 queue_us=31 total_us=135
+[aurora-gxm] display_copy passthrough n=1024 source=0,0 960x544
+[aurora-gxm] display_queue_profile avg_us=30.1 max_us=70 blocked_pct=0.0 cpu_frame_avg_us=52208.8 classification=cpu_or_frontend_bound
+[aurora-gxm] compact_texture fmt=10 size=256x256 mips=6 bytes=349440 bc1=0
+[aurora-gxm] memory phase=profile-frame cdram=51380224 peak=51380224 allocs=4 pool=45088768 pool_used=28057600 pool_peak=28057600 user=47075328 peak=47124480 allocs=1834 phycont=0 peak=0 allocs=0 cdialog=0 peak=0 allocs=0 fallbacks=0 free_cdram=11534336 free_user=78643200 free_phycont=27262976 query=0x00000000
+[aurora-gxm] display_queue_profile avg_us=30.1 max_us=48 blocked_pct=0.0 cpu_frame_avg_us=55539.2 classification=cpu_or_frontend_bound
+[aurora-gxm] memory phase=profile-frame cdram=51380224 peak=51380224 allocs=4 pool=45088768 pool_used=28057600 pool_peak=28057600 user=46968832 peak=47124480 allocs=1842 phycont=0 peak=0 allocs=0 cdialog=0 peak=0 allocs=0 fallbacks=0 free_cdram=11534336 free_user=79691776 free_phycont=27262976 query=0x00000000
+[aurora-gxm] compact_texture fmt=8 size=256x32 mips=3 bytes=43008 bc1=0
+[aurora-gxm] display_queue_profile avg_us=29.5 max_us=43 blocked_pct=0.0 cpu_frame_avg_us=48357.2 classification=cpu_or_frontend_bound
+[aurora-gxm] memory phase=profile-frame cdram=51380224 peak=51380224 allocs=4 pool=45088768 pool_used=28102656 pool_peak=28102656 user=46968832 peak=47124480 allocs=1842 phycont=0 peak=0 allocs=0 cdialog=0 peak=0 allocs=0 fallbacks=0 free_cdram=11534336 free_user=79691776 free_phycont=27262976 query=0x00000000
+[aurora-gxm] display_queue_profile avg_us=30.4 max_us=48 blocked_pct=0.0 cpu_frame_avg_us=52888.2 classification=cpu_or_frontend_bound
+[native-audio] block_hits=524288 misses=307120 rejected=0 cache_bytes=2062960
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=1 bytes=16384 bc1=0
+[aurora-gxm] compact_texture fmt=8 size=32x32 mips=1 bytes=4096 bc1=0
+[aurora-gxm] memory phase=profile-frame cdram=51380224 peak=51380224 allocs=4 pool=45088768 pool_used=28123136 pool_peak=28123136 user=46968832 peak=47124480 allocs=1842 phycont=0 peak=0 allocs=0 cdialog=0 peak=0 allocs=0 fallbacks=0 free_cdram=11534336 free_user=79691776 free_phycont=27262976 query=0x00000000
+[aurora-gxm] display_queue_profile avg_us=30.9 max_us=98 blocked_pct=0.0 cpu_frame_avg_us=54992.3 classification=cpu_or_frontend_bound
+[aurora-gxm] memory phase=profile-frame cdram=51380224 peak=51380224 allocs=4 pool=45088768 pool_used=28123136 pool_peak=28123136 user=46968832 peak=47124480 allocs=1842 phycont=0 peak=0 allocs=0 cdialog=0 peak=0 allocs=0 fallbacks=0 free_cdram=11534336 free_user=79691776 free_phycont=27262976 query=0x00000000
+[aurora-gxm] display_queue_profile avg_us=30.0 max_us=50 blocked_pct=0.0 cpu_frame_avg_us=50592.9 classification=cpu_or_frontend_bound
+[aurora-gxm] memory phase=profile-frame cdram=51380224 peak=51380224 allocs=4 pool=45088768 pool_used=28123136 pool_peak=28123136 user=46968832 peak=47124480 allocs=1842 phycont=0 peak=0 allocs=0 cdialog=0 peak=0 allocs=0 fallbacks=0 free_cdram=11534336 free_user=79691776 free_phycont=27262976 query=0x00000000
+[aurora-gxm] display_queue_profile avg_us=30.3 max_us=53 blocked_pct=0.0 cpu_frame_avg_us=48686.2 classification=cpu_or_frontend_bound
+[aurora-gxm] memory phase=profile-frame cdram=51380224 peak=51380224 allocs=4 pool=45088768 pool_used=28123136 pool_peak=28123136 user=46968832 peak=47124480 allocs=1842 phycont=0 peak=0 allocs=0 cdialog=0 peak=0 allocs=0 fallbacks=0 free_cdram=11534336 free_user=79691776 free_phycont=27262976 query=0x00000000
+[aurora-gxm] material key=9f401815f35c93ab native=1 stages=5 fragment_bytes=1664 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=dd12a500955e9abc native=1 stages=5 fragment_bytes=1664 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] material key=e44a5fd0614bf575 native=1 stages=5 fragment_bytes=1664 A4_fetch_reuse=0 A4_dead_rgb=0 A4_dead_alpha=0 A4_dead_stages=0
+[aurora-gxm] compact_texture fmt=8 size=64x64 mips=1 bytes=16384 bc1=0
+[aurora-gxm] display_queue_profile avg_us=30.6 max_us=100 blocked_pct=0.0 cpu_frame_avg_us=52713.2 classification=cpu_or_frontend_bound

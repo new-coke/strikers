@@ -52,6 +52,8 @@ option(STRIKERS_VITA_FAST_PROFILER_BUILD
     OFF)
 option(STRIKERS_VITA_AUDIO_THREAD "Run the Vita MusyX software mixer on a dedicated worker" ON)
 option(STRIKERS_VITA_GX_THREAD "Run the Vita GX FIFO frontend on a dedicated consumer thread" OFF)
+option(STRIKERS_VITA_GXM_LEAN_RENDER
+    "Compile out GLX native-model/replay experiments and per-packet probes from the Vita GXM game hot path" OFF)
 option(STRIKERS_VITA_GXM_DIRECT_STREAM_WRITE
     "Write packed Vita GXM vertex/index streams directly into GPU-visible ring pages" OFF)
 option(STRIKERS_VITA_GXM_DIRECT_DRAW_SUBMIT
@@ -148,6 +150,11 @@ if(STRIKERS_VITA AND STRIKERS_VITA_AUDIO_THREAD)
 endif()
 if(STRIKERS_VITA AND STRIKERS_VITA_GX_THREAD)
     list(APPEND PORT_DEFINES STRIKERS_VITA_GX_THREAD=1)
+endif()
+if(STRIKERS_VITA AND STRIKERS_VITA_GXM_LEAN_RENDER)
+    # Aurora's GXM owner/FIFO and its async reference-count fix are unchanged.
+    # OFF restores the experimental GLX producer for explicit R1-R3 research.
+    list(APPEND PORT_DEFINES STRIKERS_VITA_GXM_LEAN_RENDER=1)
 endif()
 if(STRIKERS_VITA AND STRIKERS_VITA_PROFILER)
     list(APPEND PORT_DEFINES STRIKERS_VITA_PROFILER=1)
@@ -338,6 +345,8 @@ if(STRIKERS_AURORA AND STRIKERS_VITA)
     set(AURORA_VITA_ROOT "${STRIKERS_AURORA_VITA_ROOT}")
     set(AURORA_VITA_WITH_GX_FRONTEND ON CACHE BOOL "" FORCE)
     set(AURORA_VITA_WITH_UPSTREAM_GX OFF CACHE BOOL "" FORCE)
+    # Strikers Vita always uses the native sceGxm backend. Keep VitaGL/RE4
+    # experiments isolated from the production renderer selection.
     set(AURORA_VITA_RENDERER GXM CACHE STRING "" FORCE)
     set(AURORA_VITA_PORT_ABI GAMECUBE CACHE STRING "" FORCE)
     set(AURORA_VITA_LTO ${STRIKERS_VITA_AURORA_LTO} CACHE BOOL "" FORCE)
@@ -868,6 +877,10 @@ endif()
 
 # zlib, for .gcz disc images and compressed PSARC blocks. The asset preparation
 # tool writes stored PSARC blocks, which need no decompressor at runtime.
+if(NOT WIN32 AND NOT STRIKERS_VITA AND NOT NX)
+    find_package(Threads REQUIRED)
+    target_link_libraries(strikers_platform PRIVATE Threads::Threads)
+endif()
 if(NOT TARGET ZLIB::ZLIB)
     find_package(ZLIB QUIET)
 endif()

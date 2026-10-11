@@ -45,6 +45,14 @@ class AssetsTest(unittest.TestCase):
             subprocess.run([str(PROBE), str(archive or self.archive), mode or str(self.tree)],
                            check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+    def test_reader_profile_on_and_off(self):
+        self.pack()
+        if PROBE:
+            for enabled in ("0", "1"):
+                env = dict(os.environ, STRIKERS_ASSET_IO_PROFILE=enabled)
+                subprocess.run([str(PROBE), str(self.archive), str(self.tree)],
+                               check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
+
     def test_native_only_compression_preserves_stored_game_blocks(self):
         native=self.tree/"native";native.mkdir();payload=b"canonical native geometry"*10000
         (native/"mesh.avnr").write_bytes(payload)

@@ -334,15 +334,6 @@ static void WaitForAllScenesValid()
     }
 }
 
-static void WaitForFELoadsToFinish(BaseSceneHandler* pFinalScene)
-{
-    do
-    {
-        nlServiceFileSystem();
-        nlSingleton<FEResourceManager>::Instance()->Run(0.0f);
-        nlSingleton<FESceneManager>::Instance()->Update(0.0f);
-    } while (!pFinalScene->m_pFEScene->m_bValid);
-}
 
 static void ClearCharacterEffectsTexturing()
 {

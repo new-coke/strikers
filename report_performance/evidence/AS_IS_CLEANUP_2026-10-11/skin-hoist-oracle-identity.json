@@ -1,0 +1,6 @@
+{
+  "scope": "Actual pre-cleanup/current glud_Skin bodies extracted with Vita experimental paths excluded; actual glxCopyMatrix/nlMultMatrices and matrix primitives; ASan/UBSan; host-only, not Vita FPS proof",
+  "control_sha256": "3dc79a814565a50afa45b3c4408be8c940a44584140e09644b6bb96faa39cb22",
+  "candidate_sha256": "cf15ca3136988d35393fb1318b0888208711b43093e54ab228f6dc5831acef48",
+  "result": "PASS: 40 old/new skin cases; identical GX matrix bytes, slots and load order; invariant preparation N -> 1; zero-bone invalid-handle guard\n"
+}

@@ -1,0 +1,14 @@
+{
+  "host_tests": "38/38 PASS",
+  "sanitizers": "ASan/UBSan: native PN palette and frontend translation PASS; detect_leaks=0 on macOS",
+  "config_test": "PASS: default OFF, first explicit ON preserved over duplicate/default OFF",
+  "gxm_standalone_build": "PASS",
+  "strikers_gxm_build": "PASS",
+  "binary_audit": "PASS: 12857 executable symbols inspected; native GXM draw/present found; no GL/vgl/vita2d entry points or libraries.",
+  "scope": "Prepared Characters component: native PN palette transport for existing lit draw path. Full early prepared mesh/material draw bypass is still outstanding.",
+  "draw_count": "Host mixed actual GX draw fixture retains exactly two draws around a native palette segment.",
+  "quiet_counters": "No per-palette counters when diagnostics_enabled=false",
+  "default_flag": 0,
+  "native_model_cache_required": false,
+  "mkw_code_imported": false
+}

@@ -1,0 +1,11 @@
+Test project /Users/robin994/Documents/Code/strikersVita/ab-artifacts/as-is-cleanup-20261011/host-build
+    Start  9: glx_display_list
+1/3 Test  #9: glx_display_list .................   Passed    0.62 sec
+    Start 12: vita_default_config
+2/3 Test #12: vita_default_config ..............   Passed    0.16 sec
+    Start 15: skin_matrix_packets
+3/3 Test #15: skin_matrix_packets ..............   Passed    0.16 sec
+
+100% tests passed out of 3
+
+Total Test time (real) =   0.95 sec

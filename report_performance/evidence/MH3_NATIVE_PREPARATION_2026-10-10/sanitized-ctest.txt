@@ -1,0 +1,19 @@
+Test project /tmp/strikers-mh3-host-sanitized
+    Start  7: vita_geometry_recipe
+1/7 Test  #7: vita_geometry_recipe ..................   Passed    0.28 sec
+    Start 20: vita_native_model_textured
+2/7 Test #20: vita_native_model_textured ............   Passed    0.42 sec
+    Start 22: vita_native_model_textured_cache
+3/7 Test #22: vita_native_model_textured_cache ......   Passed    0.10 sec
+    Start 23: vita_native_model_textured_uniforms
+4/7 Test #23: vita_native_model_textured_uniforms ...   Passed    0.10 sec
+    Start 24: vita_native_model_textured_prepared
+5/7 Test #24: vita_native_model_textured_prepared ...   Passed    0.10 sec
+    Start 25: vita_native_model_prepared
+6/7 Test #25: vita_native_model_prepared ............   Passed    0.29 sec
+    Start 28: vita_native_model_registry_dispatch
+7/7 Test #28: vita_native_model_registry_dispatch ...   Passed    0.32 sec
+
+100% tests passed out of 7
+
+Total Test time (real) =   1.61 sec

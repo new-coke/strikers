@@ -1,0 +1,207 @@
+{
+  "scope": "diagnostic only; overlapping and nested timings must not be summed; consumer snapshots differ from whole-frame capture windows",
+  "per_frame": {
+    "frame_us": {
+      "mean": 49708.816666666666,
+      "median": 47787.0,
+      "max": 101272
+    },
+    "producer_wait_us": {
+      "mean": 25211.266666666666,
+      "median": 24258.0,
+      "max": 28897
+    },
+    "consumer_wait_us": {
+      "mean": 1652.3083333333334,
+      "median": 1078.5,
+      "max": 54791
+    },
+    "display_queue_us": {
+      "mean": 29.483333333333334,
+      "median": 29.0,
+      "max": 35
+    },
+    "scene0_wait_us": {
+      "mean": 0,
+      "median": 0.0,
+      "max": 0
+    },
+    "scene1_wait_us": {
+      "mean": 0,
+      "median": 0.0,
+      "max": 0
+    },
+    "scene2_wait_us": {
+      "mean": 0,
+      "median": 0.0,
+      "max": 0
+    },
+    "scene3_wait_us": {
+      "mean": 0,
+      "median": 0.0,
+      "max": 0
+    },
+    "vertex_decode_us": {
+      "mean": 4500.208333333333,
+      "median": 4372.5,
+      "max": 5546
+    },
+    "vertex_transform_us": {
+      "mean": 0,
+      "median": 0.0,
+      "max": 0
+    },
+    "texture_resolve_us": {
+      "mean": 902.15,
+      "median": 880.5,
+      "max": 1051
+    },
+    "pipeline_resolve_us": {
+      "mean": 122.30833333333334,
+      "median": 119.0,
+      "max": 234
+    },
+    "command_build_us": {
+      "mean": 2695.275,
+      "median": 2587.0,
+      "max": 3221
+    },
+    "submit_us": {
+      "mean": 4722.991666666667,
+      "median": 4528.0,
+      "max": 5695
+    },
+    "efb_copy_us": {
+      "mean": 0,
+      "median": 0.0,
+      "max": 0
+    },
+    "present_us": {
+      "mean": 697.1333333333333,
+      "median": 147.0,
+      "max": 53881
+    },
+    "buffer_upload_us": {
+      "mean": 329.0083333333333,
+      "median": 326.0,
+      "max": 377
+    },
+    "stream_wait_us": {
+      "mean": 3.5166666666666666,
+      "median": 3.0,
+      "max": 10
+    },
+    "vertex_pack_us": {
+      "mean": 0,
+      "median": 0.0,
+      "max": 0
+    },
+    "geometry_cache_us": {
+      "mean": 1870.0833333333333,
+      "median": 1767.5,
+      "max": 2247
+    },
+    "draw_frontend_us": {
+      "mean": 27471.725,
+      "median": 26304.5,
+      "max": 32128
+    },
+    "state_translate_us": {
+      "mean": 6839.116666666667,
+      "median": 6566.0,
+      "max": 7882
+    },
+    "geometry_key_us": {
+      "mean": 0,
+      "median": 0.0,
+      "max": 0
+    },
+    "geometry_validate_us": {
+      "mean": 0,
+      "median": 0.0,
+      "max": 0
+    },
+    "state_pipeline_us": {
+      "mean": 2459.4,
+      "median": 2400.5,
+      "max": 2861
+    },
+    "state_key_us": {
+      "mean": 640.8333333333334,
+      "median": 616.5,
+      "max": 760
+    },
+    "state_vertex_us": {
+      "mean": 1282.5083333333334,
+      "median": 1223.0,
+      "max": 1549
+    },
+    "state_memo_us": {
+      "mean": 647.725,
+      "median": 634.0,
+      "max": 926
+    },
+    "state_layout_us": {
+      "mean": 930.1,
+      "median": 922.0,
+      "max": 1133
+    },
+    "fixed_uniform_build_us": {
+      "mean": 736.8166666666667,
+      "median": 707.5,
+      "max": 882
+    },
+    "fixed_uniform_publish_us": {
+      "mean": 802.2166666666667,
+      "median": 767.0,
+      "max": 1016
+    },
+    "draws": {
+      "mean": 268.55,
+      "median": 255.5,
+      "max": 302
+    },
+    "vertices": {
+      "mean": 67997.425,
+      "median": 64503.0,
+      "max": 76035
+    },
+    "gpu_vertices": {
+      "mean": 66094.21666666666,
+      "median": 62609.0,
+      "max": 74145
+    }
+  },
+  "cumulative": {
+    "gx_total_us": {
+      "first": 79222966,
+      "last": 83195371,
+      "delta": 3972405,
+      "per_snapshot_interval": 33381.554621848736
+    },
+    "finish_wait_us": {
+      "first": 299953,
+      "last": 299953,
+      "delta": 0,
+      "per_snapshot_interval": 0.0
+    },
+    "native_pn_palettes_queued": {
+      "first": 71288,
+      "last": 81560,
+      "delta": 10272,
+      "per_snapshot_interval": 86.31932773109244
+    },
+    "native_pn_palettes_applied": {
+      "first": 71288,
+      "last": 81560,
+      "delta": 10272,
+      "per_snapshot_interval": 86.31932773109244
+    },
+    "native_pn_matrices_applied": {
+      "first": 310995,
+      "last": 356236,
+      "delta": 45241,
+      "per_snapshot_interval": 380.1764705882353
+    }
+  }
+}

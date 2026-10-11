@@ -1,0 +1,146 @@
+{
+  "updated_unix": 1791731043.2290618,
+  "request": "Pulizia del codice morto e rifattorizzazione di giri confermati troppo lunghi, mantenendo il comportamento as-is",
+  "status": "Local validation complete; native GXM candidate packaged; hardware performance comparison not performed",
+  "baseline_git_head": "7014a61e3060dcd1ea73e275df90f290ac2f8a99",
+  "baseline_includes_preexisting_uncommitted_changes": true,
+  "cleanup_only_patch_sha256": "398c7235d09e7dcb92fb78a2fb4e2ee7fb266cda7eea3e6fb20c401080f0ddfc",
+  "changes": {
+    "unused_internal_functions_removed": 74,
+    "unused_definition_and_annotation_lines_removed": 825,
+    "constant_private_flags_removed": 6,
+    "skin_non_identity_or_coplanar_path": "Prepare invariant model/view matrix once per nonempty packet; keep per-bone concat, normal transform, slots and GX load order",
+    "display_list_dispatch": "Share validated header and merge identical compiled dispatch branches; preserve raster skip and native fallback",
+    "index_emission": "Compute DL stride once and decode/read index once per vertex; preserve number and order of GX attribute writes",
+    "display_list_builder": "One constant indexed-stream count, direct header fields without duplicate overlay struct, BE header/indices and identical padding; NULL/bad-magic getters now return zero/null instead of null dereference"
+  },
+  "validation": {
+    "display_list_contract": "1094 cases x frame/resource storage PASS",
+    "display_list_sanitizers": "1094 cases PASS ASan/UBSan, detect_leaks=0 on macOS",
+    "skin_actual_old_new_oracle": "40 cases PASS exact matrix bytes/slots/load order and N -> 1 preparation count; actual source bodies, native experimental hooks excluded; ASan/UBSan",
+    "draw_actual_old_new_oracle": "5040 cases PASS exact GX begin/end/attribute/display-list sequence; actual source blocks, native experimental hooks excluded; ASan/UBSan",
+    "host_cmake_tests": "3/3 PASS display list, skin packets, INI",
+    "native_gxm_build": "PASS Release; existing topology flags preserved",
+    "binary_audit": "PASS: 12862 executable symbols inspected; native GXM draw/present found; no GL/vgl/vita2d entry points or libraries.",
+    "vpk_crc_and_self_identity": "PASS",
+    "sfo_fields": {
+      "APP_VER": "01.00",
+      "ATTRIBUTE": 32768,
+      "ATTRIBUTE2": 12,
+      "ATTRIBUTE_MINOR": 16,
+      "BOOT_FILE": "",
+      "CATEGORY": "gd",
+      "CONTENT_ID": "",
+      "EBOOT_APP_MEMSIZE": 0,
+      "EBOOT_ATTRIBUTE": 0,
+      "EBOOT_PHY_MEMSIZE": 0,
+      "LAREA_TYPE": 0,
+      "NP_COMMUNICATION_ID": "",
+      "PARENTAL_LEVEL": 0,
+      "PSP2_DISP_VER": "00.000",
+      "PSP2_SYSTEM_VER": 0,
+      "STITLE": "Super Mario Strikers Vita",
+      "TITLE": "Super Mario Strikers Vita",
+      "TITLE_ID": "SMSVITA01",
+      "VERSION": "00.00"
+    },
+    "desktop_source_checks": {
+      "units": 23,
+      "passed": 21,
+      "failed": 2,
+      "baseline_comparison": [
+        {
+          "file": "/Users/robin994/Documents/Code/strikersVita/smstrikers-port/src/Game/AI/Scripts/ScriptQuestions.cpp",
+          "identical_errors_before_cleanup": true
+        },
+        {
+          "file": "/Users/robin994/Documents/Code/strikersVita/smstrikers-port/src/NL/gl/glPlat.cpp",
+          "identical_errors_before_cleanup": true
+        }
+      ],
+      "scope": "Desktop syntax checks only; 2 preexisting compilation failures also reproduced in archived control sources; no desktop full-link/runtime proof"
+    }
+  },
+  "artifacts": {
+    "strikers": {
+      "sha256": "970e43fc5c5737c14ee46d434943475d0aaaf006691cbd5f1af236dff1cb3eaf",
+      "bytes": 19929788
+    },
+    "strikers.map": {
+      "sha256": "da86b816dd9e85958bd206dbd8bdbf7e2caf20592dedfff09ce27d3a06bd113f",
+      "bytes": 11273761
+    },
+    "strikers.velf": {
+      "sha256": "393f8907cb2d550785ebac1d1242460d95c66b4c8a6d2481a11399d5e121c09a",
+      "bytes": 22026542
+    },
+    "strikers_vita.self": {
+      "sha256": "a9e5b3bc2fc1eb701344c879cb4885ecc04b33af76aab3b16e64ee0940638b2d",
+      "bytes": 3605105
+    },
+    "strikers_vita.vpk": {
+      "sha256": "cc933e6744785ac47874e47578ec9ddfac49f73b8726540c8c517a2033cfb022",
+      "bytes": 3585446
+    },
+    "CMakeCache.txt": {
+      "sha256": "2a85146a15f4ceac927c40dc54de5170ef3c4bca1e82eab88606c4c015009a89",
+      "bytes": 28807
+    },
+    "compile_commands.json": {
+      "sha256": "67ad6446d9a1b48da6fd92f97b5aa972ce8413b460ec032d6454bcf0781b7698",
+      "bytes": 1592637
+    }
+  },
+  "source_sha256": {
+    "smstrikers-port/include/NL/glx/glxDisplayList.h": "6b63dec9d16fd4f75c46f3035200861e2718d55a26425b91a81bc1f5f8122b23",
+    "smstrikers-port/src/Game/AI/Scripts/ScriptQuestions.cpp": "b7589e348cc525c547e03c760f03244a24af94f03d3d4c8fa43210573ed15b70",
+    "smstrikers-port/src/Game/Audio/CrowdMood.cpp": "2dc47fb186384581d2699f0b9567e5a4d6d035d4af9732ae9368dae429360798",
+    "smstrikers-port/src/Game/Camera/CameraMan.cpp": "247659dc767bece66f5c337504be060309c4d894b3d976e4cbc68aa07a822248",
+    "smstrikers-port/src/Game/CharacterTemplate.cpp": "a3f549f6d9c63a74860f114aea455a8bd10e4502eda8326da7436f614d129bdd",
+    "smstrikers-port/src/Game/Drawable/DrawableCharacter.cpp": "57ef7e76c5122e351626147ade1a5bcf3fbe089cbc2f90492812da3d396fd344",
+    "smstrikers-port/src/Game/Effects/EffectsGroup.cpp": "7e63391d06fe8ac91411536dafd5a9f837ce372392a51d5a63780f9dcef97a54",
+    "smstrikers-port/src/Game/Effects/ParticleSystem.cpp": "9a43c35c41cbc0e94009867e44158e3bea02ab16fb0164d20ae5607da708bca3",
+    "smstrikers-port/src/Game/GameObjectLighting.cpp": "1b779d6999604af95c5d5d85499261d77aabb4c8c3d6468416c05674671c4be5",
+    "smstrikers-port/src/Game/Render/Jumbotron.cpp": "9b3f761265980c6c0bad659a87efd0000796c2512984570ace5c50acdf89d0dc",
+    "smstrikers-port/src/Game/Replay.cpp": "bff324d96b243bd3ffb301fbf9cb74acd946cd3a55e5a9f1656cca0a4c6e16da",
+    "smstrikers-port/src/Game/SH/SHSaveLoad.cpp": "e7b11e5c6815a0d8d5fcfa619e4a88d3ef137b8e48148f1e73ca0185c571906e",
+    "smstrikers-port/src/Game/TransitionTask.cpp": "8a32448dac19ec5f9dbc630d3e8a976430d6dcc37330bd1be08ae03559a20bb9",
+    "smstrikers-port/src/Game/main.cpp": "c14405c66b2e6672d5230bbf932687e833846c9216e992727b24c4e91eba6c18",
+    "smstrikers-port/src/Game/world.cpp": "f12cd387a4a86e198c10c6400369d4a8e35bb6b61ae437f0aee13e5e7c2b4afd",
+    "smstrikers-port/src/NL/gl/glPlat.cpp": "950af7afe472cc819592242358627a959a2c3bb11dc6b082a22c6cf9e71c5f18",
+    "smstrikers-port/src/NL/glx/glxDisplayList.cpp": "17858f32fce19db857183310e9e19420a4be1510121cfac132a5495848c4134e",
+    "smstrikers-port/src/NL/glx/glxLoadModel.cpp": "fa5813184b0466ba3c9f80aac9997546433f3d8c603b9cafbab6c27da10fac90",
+    "smstrikers-port/src/NL/glx/glxMemory.cpp": "fb9a39cdb6bf09f511116876a536fee57f1f8dd375888eb19f9158b951b7c9dd",
+    "smstrikers-port/src/NL/glx/glxSend.cpp": "cf15ca3136988d35393fb1318b0888208711b43093e54ab228f6dc5831acef48",
+    "smstrikers-port/src/NL/glx/glxSwap.cpp": "744f77fb7e4fd879d300da745b065d4ddde3d7203bd66474174380509c26717e",
+    "smstrikers-port/src/ode/NLGAdditions.cpp": "152c978dca22a37413b75bc1d540b48cbcf6dcff22eb0bc217247a6014a08a7a",
+    "smstrikers-port/src/ode/error.cpp": "3ba4a5061385d3d5df3ee8bcb8f77e5f29387b5ca0e5b4b621ffc43e016176db",
+    "smstrikers-port/tests/CMakeLists.txt": "8f8e6b94c2e3cb6af3bcb742cf77a2ca2eac8b9d39b02f411dca0c69c5f26660",
+    "smstrikers-port/tests/glx_display_list_test.cpp": "d85e839558e0d0e2fb5dc687c7872b71e1d6e0b8939f496c4b2270df135082aa"
+  },
+  "device": {
+    "installed_self_sha256": "1cd15f8a8a1b3ee79987c666613e91be1e27b1dadb9deefa3ebdc0ab9abee760",
+    "identity_source": "../ASSET_IO_2026-10-11/final-restore/identity.json",
+    "cleanup_candidate_installed": false,
+    "original_ini_restored": true,
+    "temporary_io_captures_and_update_package_removed": true
+  },
+  "performance": {
+    "hardware_fps_improvement": null,
+    "warning": "Dead-function removal primarily reduces maintenance. Runtime reductions are conditional on the changed paths. No 60 FPS claim; local equivalence and binary proof do not establish hardware speed or visuals."
+  },
+  "remaining_scope": [
+    "Whole-repository reachability is not proven; remaining lexical candidates, SDK-only files, alternate configurations and shared-header helpers were not blindly deleted",
+    "Cross-cutting prepared Characters/material bypass still requires separate implementation and matched hardware validation",
+    "CPU/GPU active utilization is not measured by this cleanup"
+  ],
+  "evidence_files": [
+    "dead-code-manifest.json",
+    "cleanup-only.patch",
+    "host-tests.log",
+    "sanitizers.log",
+    "skin-hoist-oracle.log",
+    "draw-indices-oracle.log",
+    "binary-audit.log"
+  ]
+}

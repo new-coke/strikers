@@ -340,9 +340,3 @@ void Jumbotron::Update(float dt)
 // Force .data string-literal order to match target. With -inline deferred, this
 // end-of-file stub emits first, so its references fix the @NNN allocation order:
 // "kickoff/frame%03d", "kickoff/frame000", "jumbotron/%s.glt".
-static void Jumbotron_stub()
-{
-    nlSNPrintf(NULL, 0, "kickoff/frame%03d");
-    nlStrNCpy<char>((char*)NULL, "kickoff/frame000", 0);
-    nlSNPrintf(NULL, 0, "jumbotron/%s.glt");
-}

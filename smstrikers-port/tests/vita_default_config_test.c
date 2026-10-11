@@ -11,7 +11,7 @@
 #define CHECK(c) do { if (!(c)) { fprintf(stderr, "FAIL line %d: %s\n", __LINE__, #c); exit(1); } } while (0)
 #define DEFAULTS_BEGIN "# --- STRIKERS VALIDATED DEFAULTS BEGIN ---"
 #define DEFAULTS_END "# --- STRIKERS VALIDATED DEFAULTS END ---"
-#define DEFAULT_CONFIG_KEY_COUNT 57
+#define DEFAULT_CONFIG_KEY_COUNT 63
 
 static char s_data_dir[1024];
 
@@ -39,6 +39,14 @@ static void write_ini(const char* path, const char* profile, const char* disable
     fprintf(f, "gxm_native_model_draw = 2\n");
     fprintf(f, "gxm_native_model_cache = 1\n");
     fprintf(f, "gxm_native_model_uniform_build = 1\n");
+    fprintf(f, "gxm_native_model_prepared = 1\n");
+    fprintf(f, "gxm_native_model_early = 1\n");
+    fprintf(f, "gxm_raster_uniform_reuse = 1\n");
+    fprintf(f, "gxm_raster_uniform_reuse = 0\n");
+    fprintf(f, "gxm_native_pn_palette = 1\n");
+    fprintf(f, "gxm_native_pn_palette = 0\n");
+    fprintf(f, "gxm_internal_resolution = 640x480\n");
+    fprintf(f, "gxm_internal_resolution = 960x544\n");
     fprintf(f, "diagnostics = 0\n");
     fprintf(f, "fps_overlay = 0\n");
     CHECK(fclose(f) == 0);
@@ -106,6 +114,7 @@ static void run_case(const char* root, int mode)
         unsetenv("STRIKERS_GXM_DISABLE");
         unsetenv("STRIKERS_DIAGNOSTICS");
         unsetenv("STRIKERS_FPS_OVERLAY");
+        unsetenv("STRIKERS_GXM_INTERNAL_RESOLUTION");
 
         snprintf(user_ini, sizeof user_ini, "%s/strikers.ini", s_data_dir);
         if (mode == 1)
@@ -165,12 +174,28 @@ static void run_case(const char* root, int mode)
         CHECK(strcmp(getenv("STRIKERS_VITA_VIEW_DRAW_CAPTURE"), "0") == 0);
         CHECK(strcmp(getenv("STRIKERS_VITA_VIEW_DRAW_PAYLOADS"), "0") == 0);
         CHECK(strcmp(getenv("STRIKERS_GXM_XF_EQUAL_POS_WRITES"), "0") == 0);
+        CHECK(strcmp(getenv("STRIKERS_GXM_RASTER_UNIFORM_REUSE"), mode == 1 ? "1" : "0") == 0);
+        CHECK(strcmp(getenv("STRIKERS_GXM_NATIVE_PN_PALETTE"), mode == 1 ? "1" : "0") == 0);
         CHECK(strcmp(getenv("STRIKERS_GXM_UNIFORM_DELTA_UPLOAD"), "0") == 0);
         CHECK(strcmp(getenv("STRIKERS_GXM_A4_FRAGMENT_OPT"), "0") == 0);
         CHECK(strcmp(getenv("STRIKERS_GXM_XF_EQUAL_MATRIX_WRITES"), "0") == 0);
         CHECK(strcmp(getenv("STRIKERS_GXM_TEV_DECODED_WRITE_GATE"), "0") == 0);
         CHECK(strcmp(getenv("STRIKERS_GXM_NATIVE_MODEL_CACHE"), mode == 1 ? "1" : "0") == 0);
         CHECK(strcmp(getenv("STRIKERS_GXM_NATIVE_MODEL_UNIFORM_BUILD"), mode == 1 ? "1" : "0") == 0);
+        CHECK(strcmp(getenv("STRIKERS_GXM_NATIVE_MODEL_PREPARED"), mode == 1 ? "1" : "0") == 0);
+        CHECK(strcmp(getenv("STRIKERS_GXM_NATIVE_MODEL_EARLY"), mode == 1 ? "1" : "0") == 0);
+        CHECK(strcmp(getenv("STRIKERS_GXM_INTERNAL_RESOLUTION"), mode == 1 ? "640x480" : "auto") == 0);
+        {
+            unsigned int width = 123, height = 456;
+            CHECK(PortConfigVitaRenderSize(&width, &height) == (mode == 1 ? 1 : 0));
+            CHECK(width == (mode == 1 ? 640u : 123u));
+            CHECK(height == (mode == 1 ? 480u : 456u));
+            CHECK(setenv("STRIKERS_GXM_INTERNAL_RESOLUTION", "960x544", 1) == 0);
+            CHECK(PortConfigVitaRenderSize(&width, &height) == 1 && width == 960 && height == 544);
+            CHECK(setenv("STRIKERS_GXM_INTERNAL_RESOLUTION", "640x481", 1) == 0);
+            CHECK(PortConfigVitaRenderSize(&width, &height) == -1 && width == 960 && height == 544);
+            CHECK(PortConfigVitaRenderSize(NULL, &height) == -1);
+        }
         CHECK(strcmp(getenv("STRIKERS_GXM_PREPARED_DL"), "0") == 0);
         CHECK(strcmp(getenv("STRIKERS_GXM_NATIVE_GPU_STATIC"), "0") == 0);
         CHECK(strcmp(getenv("STRIKERS_GXM_NATIVE_DRAW_REPLAY"), "0") == 0);
@@ -211,7 +236,14 @@ int main(void)
     run_case(root, 0);
     {
         char generated[1200];
+        struct stat before, after;
         snprintf(generated, sizeof generated, "%s/strikers.ini", data);
+        CHECK(stat(generated, &before) == 0);
+        run_case(root, 0);
+        CHECK(stat(generated, &after) == 0);
+        // A fresh process loading the same profile must keep the existing
+        // file, instead of creating a temporary file and replacing the INI.
+        CHECK(before.st_ino == after.st_ino && before.st_size == after.st_size);
         CHECK(unlink(generated) == 0);
     }
     run_case(root, 1);

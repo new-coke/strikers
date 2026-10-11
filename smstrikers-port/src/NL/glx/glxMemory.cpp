@@ -6,6 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
+#include "../../../extern/aurora-vita/lib/gx/native_model_recipe.hpp"
+#include "../../../extern/aurora-vita/lib/gx/native_model_options.hpp"
+#endif
 #if defined(STRIKERS_VITA)
 #include <psp2/kernel/sysmem.h>
 #endif
@@ -40,6 +44,11 @@ static u32 n_phys;
 static int i_frame;
 static u32 glx_mem0;
 static int g_uResourceMarker;
+
+u32 glx_GetResourceMarkerLevel()
+{
+    return static_cast<u32>(g_uResourceMarker);
+}
 #if defined(STRIKERS_VITA)
 struct VitaResourceSegment
 {
@@ -415,21 +424,8 @@ inline void GLXMemoryInfo::Print(unsigned long level) const
     tDebugPrintManager::Print(DC_GLPLAT, "%uKB .. %uKB\n", GetTotal() >> 10, GetTexDiff() >> 10);
 }
 
-static bool glplatIsMemoryReadable(eGLMemory memType)
-{
-    return true;
-}
 
-static bool glplatIsMemoryWriteable(eGLMemory memType)
-{
-    return true;
-}
 
-static void glx_TrackTextureBundleAlloc(const GXTextureHeader* pHeader)
-{
-    int size = GCTextureSize(pHeader->format, pHeader->width, pHeader->height, pHeader->numLevels, -1);
-    g_uResourceAlloc[g_uResourceMarker].m_uTexBundle += size;
-}
 
 // PORT: The console printed this to the on-screen debug console; nothing draws that here.
 static void port_ReportResourceArena(const char* why)
@@ -474,10 +470,6 @@ extern "C" int PortGfxArenaStats(PortGfxArena* out)
     return 1;
 }
 
-static void ResourceMarkerPrint(unsigned long level)
-{
-    g_uResourceAlloc[level].Print(level);
-}
 
 static void ResourceAllocTotal()
 {
@@ -631,6 +623,11 @@ unsigned long long glplatResourceMark()
 void glplatResourceRelease(unsigned long long marker)
 {
     int level = (int)(marker & 0xFFFFFFFF);
+
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
+    if (aurora::gx::fifo::native_model_prepared_enabled())
+        aurora::gx::fifo::release_native_model_sources(static_cast<uint32_t>(level));
+#endif
 
     n_phys = (u32)(marker >> 32);
 

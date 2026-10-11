@@ -1,0 +1,104 @@
+{
+  "date": "2026-10-10",
+  "repository_head": "7014a61e3060dcd1ea73e275df90f290ac2f8a99",
+  "embedded_aurora_head": "dec0a58028972f3c4eb295235cd94ba3c24aabc6",
+  "scope": "Startup selection of the existing GXM offscreen EFB, isolated comparison tooling, and host regression coverage.",
+  "settings": {
+    "gxm_internal_resolution": {
+      "auto": "preserve compile-time default",
+      "960x544": "panel raster",
+      "640x480": "existing reduced EFB + GPU upscale; restart required"
+    },
+    "geometry_comparison": {
+      "resolution": "960x544",
+      "reference_mb": 8,
+      "candidate_mb": 0,
+      "native_model": "OFF",
+      "batching": "OFF",
+      "streamed_gpu": "OFF"
+    }
+  },
+  "pixel_count": {
+    "960x544": 522240,
+    "640x480": 307200,
+    "reduction_pct": 41.17647058823529
+  },
+  "geometry_audit": {
+    "source": "StaticGeometryCache::get creates/reuses buffers; DrawSink::submit chooses resident, streamed or CPU enqueue exclusively. GXM packet submission has one sceGxmDraw call.",
+    "host_oracle": "33 submissions -> 33 queued packets -> 33 draws and 33 triangles with cache ON and OFF; 31 cache hits; mutation falls back once.",
+    "batching_limitation": "Resident geometry packets bypass enqueue_streamed_draw local merging. Cached draws can prevent reductions achievable for adjacent streamed draws; this is distinct from duplicate submission.",
+    "device_proof": null,
+    "further_attribution": [
+      "cache hit/miss source verification",
+      "buffer creation/upload",
+      "retirement waits",
+      "resident vs streamed batching"
+    ]
+  },
+  "validation": {
+    "host_tests": {
+      "passed": 37,
+      "total": 37
+    },
+    "sanitized_frontend": "PASS ASan/UBSan; leak detection disabled on macOS",
+    "config_test": "PASS",
+    "python_tests": {
+      "passed": 14,
+      "total": 14,
+      "fixtures": "synthetic; not performance evidence"
+    },
+    "vita_translation_unit_syntax": [
+      "main.cpp PASS",
+      "config.c PASS"
+    ],
+    "zsh_syntax": "PASS",
+    "root_and_aurora_diff_check": "PASS"
+  },
+  "hardware": {
+    "new_vita_build": false,
+    "deployment": false,
+    "device_config_write": false,
+    "fps_result": null,
+    "visual_result": null,
+    "self_sha256": null,
+    "reason": "Manual Vita build retained per prior user constraint, recorded in AURORA_NATIVE_MODEL_REGISTRY_2026-10-10.md:136."
+  },
+  "plans": {
+    "resolution": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/resolution-ab-20261010/plan.json",
+    "geometry": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/geometry-ab-20261010/plan.json",
+    "runs_each": "5 separate fixed-dt visual captures + 6 quiet real-dt captures, 3 per variant; live-play frames600-899"
+  },
+  "limits": [
+    "Host frontend test uses a host renderer, not actual GXM execution.",
+    "640x480 lowers raster resolution including HUD and adds a presentation upscale pass; visual correctness must be reviewed on Vita.",
+    "Disabling resident geometry also moves fixed vertex work from GPU to CPU; it does not isolate cache lookup time alone.",
+    "Low pixel count does not guarantee higher FPS or establish a 60 FPS target.",
+    "Existing unrelated dirty changes retained; no Git commit/push performed."
+  ],
+  "source_sha256": {
+    "smstrikers-port/src/Game/main.cpp": "e3793a6a13e45b481ffcc01fd548ecb72c6c40eee1cdf734092e785385103e6a",
+    "smstrikers-port/src/platform/config.c": "6e5607e8e827118bf62fa033c465e763de08489aab75a1d48e74ef244e49c862",
+    "smstrikers-port/include/port/config.h": "c05f3e1814ed62f4025d2c4c0b148dbe2fbd537f9dbd394c72eb01d88dac45fd",
+    "smstrikers-port/tests/vita_default_config_test.c": "e4f7f0c1a707612ecfe4606b62e4386b019e1934c6e566b4355f039ad1950015",
+    "smstrikers-port/build-vita-native-gxm.sh": "2556d4e3d4a15e83a682925e098491bf86de3cb00ca70c81c68f8d044bda1ff7",
+    "smstrikers-port/strikers.ini.example": "453bf54fed9da7baba777bc19d65917ac0e0851a2982a34dc9f9ff27d0a6db21",
+    "smstrikers-port/extern/aurora-vita/tests/vita_frontend_translation_test.cpp": "e2e77bd49ccd31670fe776c65b9a5f493b522e17735f2a2087eb8f4c46e1171f",
+    "smstrikers-port/tools/vita_resolution_ab.py": "8264d0dffb831b99929842cb397aa3c7d1a60012f25d817e96992c7a4eccbc4c",
+    "smstrikers-port/tools/test_vita_resolution_ab.py": "8c703b2feb5f123bc12ebd8248d43ea6264604a77f0a64f39fe45f3a454eb1d3"
+  },
+  "evidence_sha256": {
+    "host-suite.log": "7e44caa70be7c4e0feba29ab68714ea2caba86c1ff529026079f095c883f4067",
+    "host-build.log": "2e04d8e14281acf5b3fb83c28f8037b530e5a72759f52fc215e7eaa3daff33ab",
+    "frontend-build.log": "574694a4dce413a306b0ec4b1c84fad8ea73984bdcc106476550fb71427b9c4b",
+    "sanitized-build.log": "ba467031049d16852d1a9cef5c21601d4929ae9b4682dd4828792ac2bc176f09",
+    "sanitized-frontend.log": "c55c33415c59f2c1b60054f15a9c0f0bfd9ad83518c7092ecdd941d9255433af",
+    "config-test.log": "c5cd4f93a3483ad34019c11d1e005a6bb7f933b09911a95acb7d400572d9f049",
+    "tool-tests.log": "53f5292af847837d907fcd54f3ebf990de3282d2feb04e1954a2280d03efe35b",
+    "vita-main-syntax.log": "31133e8e6d4f551a740995ce6931d1337a777b9c685d2f620ae9e2a2539e4770",
+    "vita-config-syntax.log": "8282102ca24e03997109e1d61d2b6657c76f6f4a3d8a6af29db875504854a786",
+    "scoped-changes.patch": "aa3aed3ebafeb994eace66febc0bac412021b32d23c9846abf5ec7bbe235ef3f",
+    "resolution-plan.json": "a8a24751daed2d5d3bcc35704b40da2f211b416e42a85b3b12daf0b794011a25",
+    "geometry-plan.json": "838805d03b63f05bc429a0d68936fdc664fd32c52d1429a46610375cda055981",
+    "manual-build.txt": "db9e47a09dabfbabc71223dd43265fbf7cd7395be80300579ae225422f01150a"
+  }
+}

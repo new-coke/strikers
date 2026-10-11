@@ -1,0 +1,15 @@
+{
+  "time_unix": 1791729009.897896,
+  "label": "hardware-observer-2",
+  "eboot_sha256": "1cd15f8a8a1b3ee79987c666613e91be1e27b1dadb9deefa3ebdc0ab9abee760",
+  "ini_sha256": "d938b0658d0b089a3aca3a7c1a9d577249d7170a71359a66bedcf2c6824b535b",
+  "csv_sha256": "f6cb99bd5198c0827c9de76970fa02313c685478693c677743757225a1421d4e",
+  "csv_bytes": 8528,
+  "launch_ini_sha256": "a01c3565ccfaa75861c3aac88243663745c49f44e97f8c9124fb44da1807cd46",
+  "ini_startup_blank_line": true,
+  "new_coredumps": [],
+  "attempts": 20,
+  "io_csv_sha256": "11d156b9fd08bd28f5877ba992c366ccb22bd06d823206191852ec8e8d1550f3",
+  "io_csv_bytes": 60466,
+  "capture_scope": "I/O attribution, not a quiet FPS improvement test"
+}

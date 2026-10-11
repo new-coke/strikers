@@ -1,0 +1,82 @@
+[
+  {
+    "file": "smstrikers-port/src/Game/Formation.cpp",
+    "name": "fMax",
+    "line": 1079
+  },
+  {
+    "file": "smstrikers-port/src/Game/Formation.cpp",
+    "name": "fMin",
+    "line": 1086
+  },
+  {
+    "file": "smstrikers-port/src/Game/TransitionTask.cpp",
+    "name": "ClearCharacterEffectsAndResetPowerups",
+    "line": 275
+  },
+  {
+    "file": "smstrikers-port/src/Game/FE/feScene.cpp",
+    "name": "RelocatePointer",
+    "line": 85
+  },
+  {
+    "file": "smstrikers-port/src/Game/SH/SHStadiumSelect.cpp",
+    "name": "WrapStadiumIndex",
+    "line": 53
+  },
+  {
+    "file": "smstrikers-port/src/Game/Sys/CallStackDumper.cpp",
+    "name": "DisplayMessage",
+    "line": 3500
+  },
+  {
+    "file": "smstrikers-port/src/Game/Audio/AudioScriptEventMgr.cpp",
+    "name": "GetPlayerTeam",
+    "line": 151
+  },
+  {
+    "file": "smstrikers-port/src/Game/Loader/LoadingManager.cpp",
+    "name": "_EnsureDataSegmentOrder",
+    "line": 103
+  },
+  {
+    "file": "smstrikers-port/src/Game/AI/FielderActions.cpp",
+    "name": "SetFacingAnim",
+    "line": 1723
+  },
+  {
+    "file": "smstrikers-port/src/Game/AI/FielderDesires.cpp",
+    "name": "CalcDeltaToTarget",
+    "line": 133
+  },
+  {
+    "file": "smstrikers-port/src/Game/AI/Scripts/ScriptQuestions.cpp",
+    "name": "AvoidingBowser",
+    "line": 913
+  },
+  {
+    "file": "smstrikers-port/src/Game/AI/Scripts/ScriptQuestions.cpp",
+    "name": "AvoidingGoalie",
+    "line": 925
+  },
+  {
+    "file": "smstrikers-port/src/Game/AI/Scripts/ScriptQuestions.cpp",
+    "name": "ReceivingLowPass",
+    "line": 2553
+  },
+  {
+    "file": "smstrikers-port/src/ode/quickstep.cpp",
+    "name": "CG_LCP",
+    "line": 196
+  },
+  {
+    "file": "smstrikers-port/src/ode/util.cpp",
+    "name": "sinc",
+    "line": 86
+  },
+  {
+    "file": "smstrikers-port/src/ode/NLGAdditions.cpp",
+    "name": "dSetColumn3",
+    "line": 251
+  }
+]

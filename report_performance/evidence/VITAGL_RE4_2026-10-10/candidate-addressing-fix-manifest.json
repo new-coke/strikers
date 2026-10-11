@@ -1,0 +1,15 @@
+{
+  "root_commit": "7014a61e3060dcd1ea73e275df90f290ac2f8a99",
+  "aurora_commit": "dec0a58028972f3c4eb295235cd94ba3c24aabc6",
+  "sha256": {
+    "strikers": "a6c18d2da23cb92196756b254f1c387b86fc83f5fd742a231abaef0d27f557f6",
+    "strikers_vita.self": "35ecaa023b25a975041080ce66d47726cf39fbfbab41e0a79ae57e6b3a439bf4",
+    "strikers_vita.vpk": "862341e3def5a9838e579ffc17d4b17f6c89049d69b0caa75678c11bc2302d30",
+    "aurora.patch": "fde8fa6b309d93ab6449f1c3139b68a3be9b5314a49e8cc0385957362a1652f9",
+    "strikers.map": "34aadaaac52a5e587e631275b7d375e9ec769f4e7bc04fa43bdd7c341848518b",
+    "strikers.velf": "b87d07f7c60f854cac9bd3d5dd59363975a0891debd1a4e10df7f2fb1e6409b6",
+    "CMakeCache.txt": "f6275f08a4d0685e6366509b5103b6918d60fe1ebd6a30ae214f1a3c576b38bc",
+    "build.log": "8c7cc152ae27aacc5bbec2b59e46ee1d06c49ad15f5af04afb6cf24b44bddaa6"
+  },
+  "vitagl_library_sha256": "53aba7dbbef39026959f78091c1023c49c2af033bb6d3a514e12e8a4564255ae"
+}

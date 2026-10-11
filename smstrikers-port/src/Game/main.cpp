@@ -45,6 +45,7 @@ extern "C" void PortDebugFrame(void);   // PORT: defined in Game.cpp
 #include "port/vita_profiler.h"
 #if defined(PORT_VITA)
 #include "port/vita_performance_capture.hpp"
+#include "port/asset_io_capture.hpp"
 #include "port/vita_view_draw_capture.hpp"
 #include "port/native_assets.hpp"
 #include "port/native_audio.hpp"
@@ -954,15 +955,6 @@ static VitaShaderProfile PortVitaReadShaderProfile()
     return VITA_SHADER_SEALED;
 }
 
-static const char* PortVitaShaderProfileName(VitaShaderProfile profile)
-{
-    switch (profile)
-    {
-    case VITA_SHADER_CONTROL: return "CONTROL";
-    case VITA_SHADER_WARM: return "WARM";
-    default: return "SEALED";
-    }
-}
 
 #define PORT_VITA_GXM_COUNTER(snapshot, field) \
     ([](const auto& s) -> unsigned int { \
@@ -1096,26 +1088,6 @@ static float PortEnvFloat(const char* name, float fallback)
 }
 
 // STRIKERS_CAPTURE writes a frame as a binary PPM; Aurora records the readback on the frame's own command encoder.
-static void PortMaybeRequestCapture()
-{
-#if defined(PORT_VITA)
-    // Vita capture is intentionally disabled during bring-up. The renderer has
-    // its own frame tracing/telemetry and no desktop readback path is present.
-    return;
-#else
-    const char* capturePath = getenv("STRIKERS_CAPTURE");
-    if (capturePath == NULL)
-        return;
-
-    const char* whichEnv = getenv("STRIKERS_CAPTURE_FRAME");
-    unsigned long which = whichEnv != NULL ? strtoul(whichEnv, NULL, 10) : 120;
-    if (s_portFrame + 1 != which)
-        return;
-
-    OSReport("requesting capture of frame %lu to %s\n", which, capturePath);
-    aurora_capture_frame(capturePath);
-#endif
-}
 
 static void PortRequestManualShot()
 {
@@ -1384,6 +1356,18 @@ int main(int argc, char* argv[])
         cfg.render_width = 640;
         cfg.render_height = 480;
 #endif
+        unsigned int renderWidth = 0, renderHeight = 0;
+        const int renderOverride = PortConfigVitaRenderSize(&renderWidth, &renderHeight);
+        if (renderOverride > 0)
+        {
+            cfg.render_width = renderWidth;
+            cfg.render_height = renderHeight;
+        }
+        else if (renderOverride < 0)
+        {
+            OSReport("[vita] unsupported gxm_internal_resolution=%s; using build default\n",
+                     getenv("STRIKERS_GXM_INTERNAL_RESOLUTION"));
+        }
         const char* distinctCores = getenv("STRIKERS_AURORA_DISTINCT_CPU_CORES");
         if (distinctCores != NULL)
             cfg.cpu_distinct_core_dispatch = distinctCores[0] == '1';
@@ -1653,6 +1637,16 @@ int main(int argc, char* argv[])
             cfg.gxm_tev_decoded_write_gate=tev && strcmp(tev,"1")==0;
             OSReport("[vita] gxm_xf_equal_matrix_writes=%u gxm_tev_decoded_write_gate=%u\n",
                 cfg.gxm_xf_equal_matrix_writes?1u:0u,cfg.gxm_tev_decoded_write_gate?1u:0u);
+        }
+        {
+            const char* value=getenv("STRIKERS_GXM_RASTER_UNIFORM_REUSE");
+            cfg.gxm_raster_uniform_reuse=value && strcmp(value,"1")==0;
+            OSReport("[vita] gxm_raster_uniform_reuse=%u\n",cfg.gxm_raster_uniform_reuse?1u:0u);
+        }
+        {
+            const char* value=getenv("STRIKERS_GXM_NATIVE_PN_PALETTE");
+            cfg.gxm_native_pn_palette=value && strcmp(value,"1")==0;
+            OSReport("[vita] gxm_native_pn_palette=%u scope=characters_pointlit\n",cfg.gxm_native_pn_palette?1u:0u);
         }
         {
             const char* prepareCache = getenv("STRIKERS_GXM_FRAGMENT_PREPARE_CACHE");
@@ -2104,6 +2098,7 @@ int main(int argc, char* argv[])
             PortProfilerRecordRendererSample(&sample);
         }
         port::capture_completed_performance(g_pGame != NULL && g_pGame->IsGameplayOrOvertime());
+        port::capture_asset_io(g_pGame != NULL && g_pGame->IsGameplayOrOvertime());
         port::capture_view_draw(g_pGame != NULL && g_pGame->IsGameplayOrOvertime());
         VitaMaybeCaptureFrame();
 #else

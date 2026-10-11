@@ -1,0 +1,11 @@
+....G4QE01: test
+/private/var/folders/ys/3wk7kylj5yg1ykd7z3cm8bt00000gn/T/tmpp9ddpt5u/collision.iso: FST paths collide without case: /var/folders/ys/3wk7kylj5yg1ykd7z3cm8bt00000gn/T/tmpp9ddpt5u/vita-assets-srqx4as3/G4QE01/files/COMMON.INI
+....G4QE01: test
+1 files, 8 bytes -> /var/folders/ys/3wk7kylj5yg1ykd7z3cm8bt00000gn/T/tmpaadvjjy6/vita-assets-21a6nzuz/G4QE01/files; sys/ has boot.bin, bi2.bin, apploader.img (32 bytes), main.dol (256 bytes), fst.bin
+.....G4QE01: test
+1 files, 8 bytes -> /var/folders/ys/3wk7kylj5yg1ykd7z3cm8bt00000gn/T/tmp4ahdp_nt/vita-assets-c_21uqrd/G4QE01/files; sys/ has boot.bin, bi2.bin, apploader.img (32 bytes), main.dol (256 bytes), fst.bin
+.
+----------------------------------------------------------------------
+Ran 14 tests in 0.614s
+
+OK

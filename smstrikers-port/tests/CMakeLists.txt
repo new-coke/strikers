@@ -23,10 +23,19 @@ add_test(NAME tool_vita_cpu_trace
          COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_analyze_vita_cpu_trace.py")
 add_test(NAME tool_vita_frames
          COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_analyze_vita_frames.py")
+add_test(NAME tool_vita_asset_io
+         COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_analyze_vita_asset_io.py")
 add_test(NAME tool_vita_performance
          COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_vita_performance_analysis.py")
 
 if(UNIX)
+    add_executable(glx_display_list_test
+        glx_display_list_test.cpp
+        ../src/NL/glx/glxDisplayList.cpp)
+    set_target_properties(glx_display_list_test PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+    target_compile_options(glx_display_list_test PRIVATE -UNDEBUG -Wno-register)
+    target_link_libraries(glx_display_list_test PRIVATE port_flags)
+    add_test(NAME glx_display_list COMMAND glx_display_list_test)
     add_executable(cpu_trace_hotpaths_test
         cpu_trace_hotpaths_test.cpp
         ../src/NL/plat/platvmath.cpp
@@ -64,12 +73,15 @@ if(UNIX)
     add_test(NAME profile_output COMMAND profile_output_test)
     add_executable(switch_dvd_test switch_dvd_test.c ../src/platform/asset_archive.c)
     target_include_directories(switch_dvd_test PRIVATE ../include)
+    target_link_libraries(switch_dvd_test PRIVATE Threads::Threads)
     add_test(NAME switch_dvd COMMAND switch_dvd_test)
     add_executable(vita_dvd_test vita_dvd_test.c ../src/platform/asset_archive.c)
     target_include_directories(vita_dvd_test PRIVATE ../include)
+    target_link_libraries(vita_dvd_test PRIVATE Threads::Threads)
     add_test(NAME vita_dvd COMMAND vita_dvd_test)
     add_executable(asset_archive_probe asset_archive_probe.c ../src/platform/asset_archive.c)
     target_include_directories(asset_archive_probe PRIVATE ../include)
+    target_link_libraries(asset_archive_probe PRIVATE Threads::Threads)
     find_package(ZLIB QUIET)
     if(TARGET ZLIB::ZLIB)
         target_compile_definitions(asset_archive_probe PRIVATE STRIKERS_ZLIB=1)

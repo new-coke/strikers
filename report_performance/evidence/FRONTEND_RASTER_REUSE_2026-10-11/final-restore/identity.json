@@ -1,0 +1,26 @@
+{
+  "time_unix": 1791710288.85535,
+  "restoration_target_sha256": "1200ffa8d3a29f988c4636dfb1724d9fcbe09e89e1346ae294ef5bcc2ff571a1",
+  "before_sha256": "dbc5a1a5914d3e2096cbc23a0b3f4f5beceb513e6193d81cabf661cf3d988735",
+  "attempt": "absolute path STOR",
+  "error": "550 File not found.",
+  "actual_self_sha256": "dbc5a1a5914d3e2096cbc23a0b3f4f5beceb513e6193d81cabf661cf3d988735",
+  "original_binary_restored": false,
+  "actual_ini_sha256": "e903fbc96bcff24029076f0ba6e6ce7e28ac088bc437cfe9fb646237abd99493",
+  "original_ini_restored": true,
+  "app_entries": [
+    "eboot.bin",
+    "sce_sys"
+  ],
+  "data_entries": [
+    "aurora-vita",
+    "cardA",
+    "cardB",
+    "sms-native-20261006-cache.psarc",
+    "sms-native-balanced-20261008.psarc",
+    "sms-native-gxm-static.psarc",
+    "sms.psarc",
+    "strikers.ini"
+  ],
+  "installed_experiment_default": "OFF"
+}

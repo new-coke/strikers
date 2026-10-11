@@ -45,9 +45,6 @@ struct EffectsSpecRaw
     f32 m_fLingerEnd;
 };
 
-static void Tweak_AddScriptEffect(const char*)
-{
-}
 
 EffectsTerrainSpec::EffectsTerrainSpec()
 {
@@ -743,9 +740,4 @@ static EffectsGroup* fxGetGroup(unsigned long hashID)
 EffectsGroup* fxGetGroup(const char* groupName)
 {
     return fxGetGroup(nlStringHash(groupName));
-}
-
-static void fxRegisterUserEffect(UserEffectFactory* factory)
-{
-    gUserEffectTypes[gnUserEffectTypes++] = factory;
 }

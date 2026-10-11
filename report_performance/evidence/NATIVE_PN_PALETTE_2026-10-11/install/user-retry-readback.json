@@ -1,0 +1,12 @@
+{
+  "time_unix": 1791714617.391596,
+  "host": "192.168.1.79",
+  "welcome": "220 FTPVita Server ready.",
+  "size": 3603207,
+  "self_sha256": "ebbc7f2b42973d4f6528e01fb6fecc682483f82dd38d547db26deab404cf2117",
+  "self_bytes": 3603207,
+  "candidate_matches": true,
+  "ini_sha256": "e903fbc96bcff24029076f0ba6e6ce7e28ac088bc437cfe9fb646237abd99493",
+  "ini_bytes": 4015,
+  "original_ini_matches": true
+}
