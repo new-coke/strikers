@@ -1,0 +1,85 @@
+{
+  "time_unix": 1791733145.787215,
+  "policy": "One shared build directory; no per-run artifact copies; one previous build only",
+  "active_build_directory": "smstrikers-port/build-vita-gxm-latest",
+  "previous_build": {
+    "strikers.previous": {
+      "sha256": "970e43fc5c5737c14ee46d434943475d0aaaf006691cbd5f1af236dff1cb3eaf",
+      "bytes": 19929788,
+      "path": "smstrikers-port/build-vita-gxm-latest/strikers.previous"
+    },
+    "strikers_vita.previous.self": {
+      "sha256": "a9e5b3bc2fc1eb701344c879cb4885ecc04b33af76aab3b16e64ee0940638b2d",
+      "bytes": 3605105,
+      "path": "smstrikers-port/build-vita-gxm-latest/strikers_vita.previous.self"
+    },
+    "strikers_vita.previous.vpk": {
+      "sha256": "cc933e6744785ac47874e47578ec9ddfac49f73b8726540c8c517a2033cfb022",
+      "bytes": 3585446,
+      "path": "smstrikers-port/build-vita-gxm-latest/strikers_vita.previous.vpk"
+    }
+  },
+  "removed_generated_files": [
+    {
+      "path": "ab-artifacts/ini-defaults-20261011/candidate-artifacts/strikers",
+      "bytes": 19929852,
+      "sha256": "0110ddc9076a86613fa7c427143289f0763d6eef6f96d4a115a941710359b226"
+    },
+    {
+      "path": "ab-artifacts/ini-defaults-20261011/candidate-artifacts/strikers.map",
+      "bytes": 11273761,
+      "sha256": "a19fc994acec554d51fdd5c95476a911ea34599310e361c61956a06fa4d79dca"
+    },
+    {
+      "path": "ab-artifacts/ini-defaults-20261011/candidate-artifacts/strikers.velf",
+      "bytes": 22026702,
+      "sha256": "7eb02cdd6944d8e956bc96d7c1766b8bd2eb2652ff91cc36d9cda1c65b590339"
+    },
+    {
+      "path": "ab-artifacts/ini-defaults-20261011/candidate-artifacts/strikers_vita.self",
+      "bytes": 3605124,
+      "sha256": "25963510ff28f4ab8eaaf79e2550f21dc6c85e160229a5ddc0e8d93c9b879e54"
+    },
+    {
+      "path": "ab-artifacts/ini-defaults-20261011/candidate-artifacts/strikers_vita.vpk",
+      "bytes": 3585369,
+      "sha256": "e49a3606f0852466d3fd36d85a8f2b12a80a82e1a381da5c3dfbddd37ec1bf02"
+    },
+    {
+      "path": "ab-artifacts/ini-defaults-20261011/candidate-artifacts/CMakeCache.txt",
+      "bytes": 28807,
+      "sha256": "2a85146a15f4ceac927c40dc54de5170ef3c4bca1e82eab88606c4c015009a89"
+    },
+    {
+      "path": "ab-artifacts/ini-defaults-20261011/candidate-artifacts/compile_commands.json",
+      "bytes": 1592637,
+      "sha256": "67ad6446d9a1b48da6fd92f97b5aa972ce8413b460ec032d6454bcf0781b7698"
+    },
+    {
+      "path": "ab-artifacts/as-is-cleanup-20261011/candidate-artifacts/compile_commands.json",
+      "bytes": 1592637,
+      "reason": "Generated intermediate/cache/map; one previous executable, package and matching unstripped ELF retained"
+    },
+    {
+      "path": "ab-artifacts/as-is-cleanup-20261011/candidate-artifacts/strikers.map",
+      "bytes": 11273761,
+      "reason": "Generated intermediate/cache/map; one previous executable, package and matching unstripped ELF retained"
+    },
+    {
+      "path": "ab-artifacts/as-is-cleanup-20261011/candidate-artifacts/strikers.velf",
+      "bytes": 22026542,
+      "reason": "Generated intermediate/cache/map; one previous executable, package and matching unstripped ELF retained"
+    },
+    {
+      "path": "ab-artifacts/as-is-cleanup-20261011/candidate-artifacts/CMakeCache.txt",
+      "bytes": 28807,
+      "reason": "Generated intermediate/cache/map; one previous executable, package and matching unstripped ELF retained"
+    },
+    {
+      "path": "ab-artifacts/ini-defaults-20261011/eboot.bin.before",
+      "bytes": 3605105,
+      "reason": "Identical to shared previous SELF"
+    }
+  ],
+  "removed_bytes": 100569104
+}

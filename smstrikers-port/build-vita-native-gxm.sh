@@ -2,7 +2,9 @@
 set -euo pipefail
 
 ROOT="${0:A:h}"
-BUILD_DIR="${STRIKERS_GXM_BUILD_DIR:-${ROOT}/build-vita-gxm-latest}"
+# Reuse one checkout-local build directory for all Vita GXM iterations.
+# Do not create per-experiment build trees or full artifact copies.
+BUILD_DIR="${ROOT}/build-vita-gxm-latest"
 JOBS="${JOBS:-$(sysctl -n hw.ncpu)}"
 
 cd "${ROOT}"
@@ -16,6 +18,10 @@ cmake -S . -B "${BUILD_DIR}" \
   -DSTRIKERS_VITA=ON \
   -DSTRIKERS_AURORA=ON \
   -DSTRIKERS_VITA_NO_LOGS=OFF \
+  -DSTRIKERS_VITA_PROFILER=OFF \
+  -DSTRIKERS_VITA_PROFILE_AUTOSTART=OFF \
+  -DSTRIKERS_VITA_FAST_PROFILER_BUILD=OFF \
+  -DSTRIKERS_VITA_STATIC_GEOMETRY_MB=8 \
   -DSTRIKERS_VITA_GC_NATIVE_RES="${STRIKERS_GC_NATIVE_RES:-OFF}" \
   -DSTRIKERS_VITA_AUDIO_THREAD=ON \
   -DSTRIKERS_VITA_GX_THREAD="${STRIKERS_GX_THREAD:-ON}" \

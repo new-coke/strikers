@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="${0:A:h}"
-BUILD_DIR="${ROOT}/build-vita-gxm-profile"
+BUILD_DIR="${ROOT}/build-vita-gxm-latest"
 VITADEBUGGER_ROOT="${VITADEBUGGER_ROOT:-${ROOT}/../.tmp/VitaDebugger}"
 JOBS="${JOBS:-$(sysctl -n hw.ncpu)}"
 STATIC_GEOMETRY_MB="${STATIC_GEOMETRY_MB:-0}"
@@ -26,6 +26,7 @@ cmake -S . -B "${BUILD_DIR}" \
   -DSTRIKERS_VITA_FORCE_60HZ=ON \
   -DSTRIKERS_VITA_PROFILER=ON \
   -DSTRIKERS_VITA_PROFILE_AUTOSTART=ON \
+  -DSTRIKERS_VITA_FAST_PROFILER_BUILD=OFF \
   -DSTRIKERS_VITADEBUGGER_ROOT="${VITADEBUGGER_ROOT}"
 
 rm -f \
