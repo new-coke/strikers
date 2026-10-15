@@ -16,5 +16,16 @@
     "build products",
     "raw logs and raw PPM/crash backups"
   ],
-  "whitespace_policy": "application sources checked; imported VitaGL bytes and hash-bound raw evidence preserve original whitespace through path-scoped attributes"
+  "whitespace_policy": "application sources checked; imported VitaGL bytes and hash-bound raw evidence preserve original whitespace through path-scoped attributes",
+  "published_code_commit": "22c311218bdecf30f9fb355a1cea792820d450fc",
+  "remote_code_commit_verified": true,
+  "generated_ini_verified": {
+    "profile": "2026-10-14-vitagl",
+    "first_run_test_passed": true,
+    "managed_gxm_migration_test_passed": true,
+    "default_test_match": 0,
+    "device_test_match_explicit_override": 1,
+    "fixed_dt": 0,
+    "test_fps_limit": null
+  }
 }
