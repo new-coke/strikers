@@ -1,0 +1,10 @@
+{
+  "artifacts_sha256": {
+    "strikers": "f0d22d2bd2320d6049dd43cf717d766a9fe18fb8e259634a31accaedad1ef1fc",
+    "strikers.map": "1438731483b2789d36ed803c6c39de785e9ec7b790ce6639246b144dc71959bb",
+    "strikers.velf": "aa6f8113853a1c8ab876817db12454922e614f2102cdd7791485d6bba12e1ea6",
+    "strikers_vita.self": "41ff29d27c894920782dd0b31b3d5a99d5670800fc18eca72262a47893de08c0",
+    "strikers_vita.vpk": "1799fc60781b6c6b895626ac4cc0c14e83bd6ce4abe99e3c3562065e3af38e90"
+  },
+  "hardware": "clean startup, menus, input and audio accepted"
+}

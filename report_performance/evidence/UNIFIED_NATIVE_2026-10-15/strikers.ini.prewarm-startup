@@ -1,0 +1,33 @@
+# temporary native-workflow hardware test
+diagnostics=1
+vita_snapshot_play_frame=120
+log=ux0:data/strikersVita/native-prewarm.log
+# --- STRIKERS VALIDATED DEFAULTS BEGIN ---
+# profile_revision = 2026-10-15-vitagl-unified
+# Managed automatically. Put custom overrides outside this block.
+diagnostics = 0
+fps_overlay = 0
+vita_test_match = 0
+vita_frameskip = 0
+vita_debug_menu = 0
+seed = 0x53545249
+fixed_dt = 0
+frame_capture = 
+frame_capture_frames = 0
+frame_capture_match_only = 1
+frame_capture_play_only = 1
+frame_capture_skip = 600
+vita_snapshot_match_frame = 0
+vita_snapshot_play_frame = 0
+log = ux0:data/strikersVita/vitagl.log
+asset_archive = ux0:data/strikersVita/sms.psarc
+vita_native_audio = 1
+vita_native_video = 1
+task_profile = 0
+asset_io_profile = 0
+vita_view_draw_capture = 0
+benchmark = 0
+cpu_mhz = 500
+gpu_mhz = 222
+vitagl_timing = 0
+# --- STRIKERS VALIDATED DEFAULTS END ---

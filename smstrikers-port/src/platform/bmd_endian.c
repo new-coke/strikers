@@ -321,3 +321,45 @@ void port_bmd_convert_models(void* dst, const void* src, unsigned long count,
         memcpy(out + ptrOff, &scaled, sizeof scaled);
     }
 }
+
+// Native model wire records contain little-endian fields and element indices,
+// never host pointers or GameCube record strides.
+static uint32_t port_nmd_word(const uint8_t* p)
+{
+    return (uint32_t)p[0] | (uint32_t)p[1]<<8 | (uint32_t)p[2]<<16 | (uint32_t)p[3]<<24;
+}
+void port_nmd_convert_models(void* dst, const void* src, unsigned long count,
+                             unsigned long hostModelSize)
+{
+    const uint8_t* in=(const uint8_t*)src;uint8_t* out=(uint8_t*)dst;
+    for(unsigned long i=0;i<count;++i,in+=16,out+=hostModelSize) {
+        for(unsigned k=0;k<3;++k){uint32_t value=port_nmd_word(in+4*k);memcpy(out+4*k,&value,4);}
+        uintptr_t offset=(uintptr_t)port_nmd_word(in+12)*sizeof(PortPacket);
+        memcpy(out+((12+sizeof(void*)-1)&~(sizeof(void*)-1)),&offset,sizeof offset);
+    }
+}
+void port_nmd_convert_packets(void* dst, const void* src, unsigned long count)
+{
+    PortPacket* out=(PortPacket*)dst;const uint8_t* in=(const uint8_t*)src;
+    for(unsigned long i=0;i<count;++i,++out,in+=80) {
+        memset(out,0,sizeof *out);
+        out->userData=port_nmd_word(in);out->indexBuffer=port_nmd_word(in+4);
+        out->numVertices=(uint16_t)in[8]|(uint16_t)in[9]<<8;
+        out->primType=in[10];out->numStreams=in[11];
+        out->streams=(void*)((uintptr_t)port_nmd_word(in+12)*sizeof(PortStream));
+        out->state.texturestate=(uint64_t)port_nmd_word(in+16)|(uint64_t)port_nmd_word(in+20)<<32;
+        out->state.materialstate=port_nmd_word(in+24);out->state.program=port_nmd_word(in+28);
+        out->state.raster=port_nmd_word(in+32);out->state.matrix=port_nmd_word(in+36);
+        for(unsigned k=0;k<6;++k)out->state.texture[k]=port_nmd_word(in+40+k*4);
+        out->state.texconfig=in[64];out->state.pad=in[65];out->state.userStateKey=port_nmd_word(in+68);
+        out->materialset=port_nmd_word(in+72);
+    }
+}
+void port_nmd_convert_streams(void* dst, const void* src, unsigned long count)
+{
+    PortStream* out=(PortStream*)dst;const uint8_t* in=(const uint8_t*)src;
+    for(unsigned long i=0;i<count;++i,++out,in+=12) {
+        out->address=port_nmd_word(in);out->id=in[4];out->stride=in[5];out->beData=0;
+        out->dataSize=port_nmd_word(in+8);
+    }
+}

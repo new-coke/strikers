@@ -67,8 +67,10 @@ void AsyncImage::QueueLoad(const char* path, bool isblocking)
     {
         mBundleFile->GetFileInfo(path, &info, true);
 
-        if (m_loadBuffer == NULL)
+        if (m_loadBuffer == NULL || mTextureSize != info.m_length)
         {
+            if(m_loadBuffer != NULL)
+                nlFree(m_loadBuffer);
             m_loadBuffer = (u8*)nlMalloc(info.m_length, 0x20, true);
             mTextureSize = info.m_length;
         }

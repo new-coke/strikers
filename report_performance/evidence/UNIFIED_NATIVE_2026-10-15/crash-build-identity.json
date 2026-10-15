@@ -1,0 +1,74 @@
+{
+  "base_commit": "55c5544fa1bdfdb77d0b9f1707ddcd64262daf3d",
+  "uncommitted_source": true,
+  "artifacts_sha256": {
+    "strikers": "e14236db2fef0042939ea7589529fc5bee06c09a23913fde4788c5ebce8dd2a8",
+    "strikers.map": "6ebddb7ba6224d3ff0af4fe2a90ef8f03b48fff377e1546875028d937b2f8b8c",
+    "strikers.velf": "1bffc4a6726404aa9573ba074ea7d4197f47abc3a9fa565a1222f895a6e2a4c6",
+    "strikers_vita.self": "b8f974d6925aead615bdbb5c74aef8e14a7bc36001d7ef301a3c78aa636fe2b0",
+    "strikers_vita.vpk": "ef75781327b4753db21bbe73761e70f551fb47966a31cc1fe152c5d18ea17df2",
+    "libstrikers_vitagl.a": "e107159de830f005120ce2bdc40d0f0be567d087946d13f0d700bbdefd12e544"
+  },
+  "sources_sha256": {
+    "smstrikers-port/include/port/native_graphics.hpp": "7985070d0c6052bdce417a1e2a947053a8f5f27931d98e2938c06236349b36fc",
+    "smstrikers-port/src/platform/native_graphics.cpp": "82e8d94b51df82893586fce0bdf713ef8a1eea52c46915b31fc288926f7d2b1a",
+    "smstrikers-port/src/platform/native_pack_verify.cpp": "adc80f1916a438506178d8b2a533f24c76fc1d81dd1426550604b02bc53f591b",
+    "smstrikers-port/tests/native_graphics_test.cpp": "b83cd0fcabb9924f2fc22f25c8a84c9d1a869c220dd97632192c753e5bbaec98",
+    "smstrikers-port/tests/native_pack_verify_test.cpp": "a8ca236840c079d684e83a5b38fdb07f3e4bbcfef59cb64230280f0665c1ccb6",
+    "smstrikers-port/tools/asset_pipeline/native_graphics.py": "ad2dba5ec4b48832fce366ead828528d0b7ba232ac1d673f10b216de490cda35",
+    "smstrikers-port/tools/compile_native_graphics.cpp": "44b70b64a37de9ef540394a9bedf8b6005a68023dc36686f89a9617e815e14d8",
+    "smstrikers-port/tools/test_native_graphics.py": "8147d71a308ea024b3c0ee051e90a5a5b1d8b98a7f160910a59c0843104c2706",
+    "smstrikers-port/tools/vita_native_manifest.py": "6a3bd54add7da900547a2e368b310cbd2bbf1bdd4df13bf313dd002fbad5df06",
+    "smstrikers-port/CMakeLists.txt": "7f084cea5be91e25b7fd098eaff06c56213231f5aa03a5ae731af41fa37397fe",
+    "smstrikers-port/include/Game/GL/GLSkinMesh.h": "4ef9d307006d98600405101d3459d249507d650997b752acfdbbc50851d0ba9d",
+    "smstrikers-port/include/NL/glx/glxTexture.h": "e510fdf12ce3a7a177379f76b7efabe975773ba7cafea9ee558ab2cea325fbc3",
+    "smstrikers-port/include/port/native_match_runtime.hpp": "a66f96b1729890ccd9b2891d6da682010056d8b1ccbba03a9fcf86d25a8ce3ed",
+    "smstrikers-port/src/Game/FE/feAsyncImage.cpp": "9bb6184157aff0067399cd95bde487a127e529818af5da5e6ef90db2a2724a03",
+    "smstrikers-port/src/Game/GL/gluSkinMesh.cpp": "125d532c9bd5eda45d1585e251cea8246415b8567cb26f59e7d1431034a6ecaf",
+    "smstrikers-port/src/Game/Render/Presentation.cpp": "a628460fd530888322c8124d53d62b86eea138e3b6cb44aa6452d7c2c67a7b2c",
+    "smstrikers-port/src/Game/main.cpp": "fc9ad4b4e60a505ae30ffbd7ac4f8dd835437db1dba542c2c26acf6c745ea427",
+    "smstrikers-port/src/NL/glx/glxLoadModel.cpp": "fde774a30f6d77ce3e070930dec2c7829893337844d1b3015c47d939fb215a6c",
+    "smstrikers-port/src/NL/glx/glxSend.cpp": "9edb1294f1a6a28a54d81a0cea9d965cb42b8df810579910fab8a518ab014c0c",
+    "smstrikers-port/src/NL/glx/glxTexture.cpp": "7b7f66668e66da4aa0bb73f3c29fc33d9914a5ab5458b57f6e45d4794321815f",
+    "smstrikers-port/src/platform/bmd_endian.c": "3509b0ad0aec30ed008ea53d8faf64ba47b2e8f94f332c8017d96fb6f9b48299",
+    "smstrikers-port/src/platform/config.c": "563f2c7284e8168d867bcefb8059eaccc195cc133512f337a486dd6a49aac148",
+    "smstrikers-port/src/platform/dvd.c": "f56e780e77ac62f787b6fb3fadea6000e3150fedb4d4db22cee5064c2fbcb8a0",
+    "smstrikers-port/src/platform/native_audio.cpp": "08c19ddb51aa55936793a09bedb060dac6db290e38f953cad7e4f8e34adb1e6c",
+    "smstrikers-port/src/platform/native_match_runtime.cpp": "d7400b4e1deea21be1037ee5c7aaee92d7e52fb4b364efa1755ce3edb3c003ec",
+    "smstrikers-port/src/platform/native_video.cpp": "946cdd81c09f6551d16706e4379f709dc9a7b7a550b15eafab2ad1e1f8075830",
+    "smstrikers-port/src/platform/vitagl_renderer.cpp": "4c7f337fedb6a240fcf14bfabb42cd03cf2a868ef4f12d0ab6a26e2849862cc9",
+    "smstrikers-port/strikers-vitagl.ini.example": "86486fe3e6cde285e1fa8d13c24a31570325f019219ba311d8a49953a3b5b165",
+    "smstrikers-port/tests/CMakeLists.txt": "6317a30c2f9b4fff9c0fed6eade449a01f84b2372ad47bfbea21ec94beff8437",
+    "smstrikers-port/tests/vitagl_default_config_test.c": "1876d5485119ea8ae6813bf6188d61fa27a9db7116357a4b4830342a8ad77aa5",
+    "smstrikers-port/tools/vita_prepare_assets.py": "42040c02b167bd6877b2509edb92e6ecd5ab79876caedccf64b225862da1dfd0"
+  },
+  "vitagl_flags": [
+    "READBACKS_SPEEDHACK=1",
+    "HAVE_SHADER_CACHE=1",
+    "NO_DEBUG=1",
+    "DRAW_SPEEDHACK=1",
+    "STORE_DEPTH_STENCIL=1"
+  ],
+  "provider_units": 30,
+  "cmake": {
+    "STRIKERS_AURORA": "OFF",
+    "STRIKERS_VITA_VITAGL": "ON",
+    "STRIKERS_VITA_PROFILER": "OFF",
+    "STRIKERS_VITA_PROFILE_AUTOSTART": "OFF",
+    "STRIKERS_VITA_AUDIO_THREAD": "ON"
+  },
+  "forbidden_graphics_symbols": 0,
+  "glfinish_glflush_calls": 0,
+  "retail_model_conversion_symbols": [],
+  "vpk_self_identical": true,
+  "host_tests": {
+    "passed": 41,
+    "failed": 0,
+    "sanitizers": [
+      "native graphics C++ parser over complete generated PSARC (ASan/UBSan)",
+      "production VitaGL driver (ASan/UBSan)",
+      "production archive verifier with SDK mock (ASan/UBSan)"
+    ]
+  },
+  "hardware_status": "archive native verification running; final reviewed normal build pending promotion"
+}

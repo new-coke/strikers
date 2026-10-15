@@ -1,0 +1,11 @@
+{
+  "self_sha256": "a5d09afdcda739167bfaac5768eb046fd59b9aa055bfe9f35ddc939d967efba6",
+  "startup_ini_sha256": "a140c55d97b396865dbf004ae971ba2a4405abd1961f68d139e49230165f73c7",
+  "normal_ini_restored_sha256": "aac80bdf22392a11167a11dd9f713ffcff4088d3e9c898f9e6e50f5314620759",
+  "raw_log_sha256": "6c4ad25bc23abc9cfd5a6673ac425bcced0b3e2e15d6905cc858bedce334f32b",
+  "raw_log_committed": false,
+  "last_audio_line": "[audio] outputs=9000 ticks=19200 underruns=0 non_silent=1 error=00000000 mix=1 studios=1 voices=9 samples=9 env=32767 vol=16757 peak=7262 mixer_us=22344514 max_us=22272",
+  "last_worker_line": "[native-audio] async_loads=512 hits=633669 misses=31694 rejected=0 cache_bytes=2064880 max_load_us=202874",
+  "owner_feedback": "Spettatori corretti e animati",
+  "limits": "diagnostic single run; reported counters do not establish quiet FPS or a matched A/B"
+}

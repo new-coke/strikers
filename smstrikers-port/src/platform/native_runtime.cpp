@@ -1,6 +1,7 @@
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
 #include "port/native_runtime.hpp"
 #include "port/native_jobs.hpp"
+#include "port/native_boot_screen.hpp"
 #include "port/config.h"
 #include "port/native_match_runtime.hpp"
 #include <psp2/ctrl.h>
@@ -23,7 +24,7 @@ bool initialize() noexcept {
 }
 bool pump() noexcept {SceCtrlData c{};sceCtrlPeekBufferPositive(0,&c,1);static SceUInt64 held=0;
  const auto now=sceKernelGetSystemTimeWide();if((c.buttons&SCE_CTRL_START)&&(c.buttons&SCE_CTRL_SELECT)){if(!held)held=now;return now-held<2000000;}held=0;return true;}
-void shutdown() noexcept {port::jobs::shutdown();}
+void shutdown() noexcept {port::jobs::shutdown();port::startup::shutdown();}
 }
 extern "C" void strikers_native_prepare_memory_write(const void*,size_t) noexcept {}
 extern "C" void strikers_native_notify_memory_write(const void* p,size_t n) noexcept {port::directmatch::notify_write(p,n);}

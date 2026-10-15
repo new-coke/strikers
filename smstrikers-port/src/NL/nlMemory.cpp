@@ -1,3 +1,4 @@
+#include "port/native_boot_screen.hpp"
 #include "NL/nlMemory.h"
 #include <stdlib.h>
 #include "NL/MemAlloc.h"
@@ -129,6 +130,11 @@ void nlInitMemory()
     if (s_MemoryInitialized == 0)
     {
         s_MemoryInitialized = 1;
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+        // Static game constructors can mount the archive before main(). This
+        // runs after the SDK thread runtime is ready and before that disk I/O.
+        (void)port::startup::begin();
+#endif
         VMInit(0x100000, 0x700000, 0x900000);
         VMAlloc(0x7E000000, 0x900000);
         DVDInit();

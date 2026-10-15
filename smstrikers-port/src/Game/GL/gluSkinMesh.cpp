@@ -127,6 +127,8 @@ void ShaderSkinMesh::AttachSkinData(unsigned long program, const nlMatrix4* pRef
                     inNormal.x = (float)packed[0] * invNormalScale;
                     inNormal.y = (float)packed[1] * invNormalScale;
                     inNormal.z = (float)packed[2] * invNormalScale;
+                    if(softwareVertices[index].native_normal_valid)
+                        inNormal=softwareVertices[index].native_normal;
 
                     register const nlVector3* pInN = &inNormal;
                     register nlVector3& outVertex = outVertices[index];

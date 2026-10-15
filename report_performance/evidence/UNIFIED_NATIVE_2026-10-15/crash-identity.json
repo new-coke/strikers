@@ -1,0 +1,7 @@
+{
+  "dump": "ab-artifacts/unified-native-20261015/psp2core-1792088894-0x000ab93ead-eboot.bin.psp2dmp",
+  "dump_sha256": "13dacd4697ffb623545a160293a9bc34f9ee625cbdb70c2118f5c1fde7131d54",
+  "dump_bytes": 169632,
+  "self_sha256": "b8f974d6925aead615bdbb5c74aef8e14a7bc36001d7ef301a3c78aa636fe2b0",
+  "archive_sha256": "c98379e7079b046b412522c1148f4aea25f80a0f1f54cb37a726cfc3ecd41a3a"
+}

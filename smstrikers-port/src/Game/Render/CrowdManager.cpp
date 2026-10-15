@@ -13,6 +13,22 @@
 
 static void CrowdBundleLoad_cb(void*, unsigned long, void*);
 
+static void BeginCrowdBundleLoad(const char* filename,uintptr_t buffer)
+{
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    // Retail updates the atlas through a shared staging buffer. Native bundles
+    // own their decoded data and must explicitly replace the stable atlas
+    // handle, even when a stadium-specific bundle uses a different entry ID.
+    const auto old=glx_SetLoadCallback([](unsigned long)->unsigned long {
+        return glGetTexture("idle/idle");
+    });
+    glBeginLoadTextureBundle(filename,CrowdBundleLoad_cb,(void*)buffer);
+    glx_SetLoadCallback(old);
+#else
+    glBeginLoadTextureBundle(filename,CrowdBundleLoad_cb,(void*)buffer);
+#endif
+}
+
 CrowdManager CrowdManager::instance;
 
 /**
@@ -127,7 +143,7 @@ void CrowdManager::Replay(LoadFrame& frame)
             nlSNPrintf(szFilename, 64, "crowd/%s_%s.glt", m_szStadium, szBundle);
         }
 
-        glBeginLoadTextureBundle(szFilename, CrowdBundleLoad_cb, (void*)m_BundleLoadBase);
+        BeginCrowdBundleLoad(szFilename,m_BundleLoadBase);
 
         m_nCurrentFrame = 0;
         nlStrNCpy(m_szTexture, "idle/idle", 64);
@@ -203,7 +219,7 @@ void CrowdManager::SetState(eCrowdState state, bool force)
         nlSNPrintf(szFilename, 64, "crowd/%s_%s.glt", m_szStadium, szBundle);
     }
 
-    glBeginLoadTextureBundle(szFilename, CrowdBundleLoad_cb, (void*)m_BundleLoadBase);
+    BeginCrowdBundleLoad(szFilename,m_BundleLoadBase);
 
     m_nCurrentFrame = 0;
     nlStrNCpy(m_szTexture, "idle/idle", 64);

@@ -366,7 +366,13 @@ void PortBenchGetLive(PortBenchLive* out)
 void PortBenchFrameEnd(void)
 {
     if (!PortDiagnosticsEnabled() && !PortFpsOverlayEnabled() && !capture_active())
+    {
+        // Logical frame selection also serves one-shot screenshots with the
+        // diagnostics gate off. It needs no timing or renderer collection.
+        if (s_matchActive) ++s_matchFrameCounter;
+        if (s_playActive) ++s_playFrameCounter;
         return;
+    }
     const unsigned long long end = port_monotonic_ns();
     const unsigned long long tasks = s_tTasks - s_t0;
     const unsigned long long present = end - s_tTasks;

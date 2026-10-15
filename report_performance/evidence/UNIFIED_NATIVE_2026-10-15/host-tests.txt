@@ -1,0 +1,87 @@
+Test project /Users/robin994/Documents/Code/strikersVita/smstrikers-port/.tmp/native-gxm-host
+      Start 37: tool_switch_rebuild
+      Start 35: tool_vita_assets
+      Start 20: tool_extract_disc
+      Start 38: tool_vita_delay_contract
+      Start 25: glx_display_list
+      Start 13: deferred_renderer_driver
+ 1/41 Test #25: glx_display_list .................   Passed    0.10 sec
+      Start 41: tool_native_media
+ 2/41 Test #13: deferred_renderer_driver .........   Passed    0.12 sec
+      Start 14: audio_out_native_driver
+ 3/41 Test #41: tool_native_media ................   Passed    0.08 sec
+      Start 16: vitagl_renderer_driver
+ 4/41 Test #14: audio_out_native_driver ..........   Passed    0.08 sec
+      Start 21: tool_vita_cpu_trace
+ 5/41 Test #16: vitagl_renderer_driver ...........   Passed    0.04 sec
+      Start 27: diagnostics_config
+ 6/41 Test #27: diagnostics_config ...............   Passed    0.01 sec
+      Start  1: chunk_bounds
+ 7/41 Test  #1: chunk_bounds .....................   Passed    0.01 sec
+      Start  7: native_graphics
+ 8/41 Test  #7: native_graphics ..................   Passed    0.00 sec
+      Start 19: tool_genstubs
+ 9/41 Test #38: tool_vita_delay_contract .........   Passed    0.25 sec
+      Start  3: native_render_limiter
+10/41 Test  #3: native_render_limiter ............   Passed    0.03 sec
+      Start 22: tool_vita_frames
+11/41 Test #21: tool_vita_cpu_trace ..............   Passed    0.09 sec
+      Start  4: simulation_task_clock
+12/41 Test  #4: simulation_task_clock ............   Passed    0.01 sec
+      Start 23: tool_vita_asset_io
+13/41 Test #19: tool_genstubs ....................   Passed    0.07 sec
+      Start 24: tool_vita_performance
+14/41 Test #22: tool_vita_frames .................   Passed    0.09 sec
+      Start 39: tool_native_asset_adapter
+15/41 Test #23: tool_vita_asset_io ...............   Passed    0.07 sec
+      Start 29: benchmark_fps
+16/41 Test #29: benchmark_fps ....................   Passed    0.01 sec
+      Start 34: vita_dvd
+17/41 Test #24: tool_vita_performance ............   Passed    0.08 sec
+      Start 33: switch_dvd
+18/41 Test #34: vita_dvd .........................   Passed    0.01 sec
+      Start 36: vita_pad
+19/41 Test #33: switch_dvd .......................   Passed    0.01 sec
+      Start  2: prompts_resolve
+20/41 Test #36: vita_pad .........................   Passed    0.01 sec
+      Start 26: cpu_trace_hotpaths
+21/41 Test #26: cpu_trace_hotpaths ...............   Passed    0.00 sec
+      Start 18: native_model_sources
+22/41 Test #18: native_model_sources .............   Passed    0.01 sec
+      Start  8: tool_native_graphics
+23/41 Test  #2: prompts_resolve ..................   Passed    0.02 sec
+      Start 31: skin_matrix_packets
+24/41 Test #39: tool_native_asset_adapter ........   Passed    0.06 sec
+      Start 32: profile_output
+25/41 Test #31: skin_matrix_packets ..............   Passed    0.01 sec
+      Start 17: native_model_vertices
+26/41 Test #32: profile_output ...................   Passed    0.01 sec
+      Start  9: native_texture_record
+27/41 Test  #9: native_texture_record ............   Passed    0.00 sec
+      Start 40: native_media_record
+28/41 Test #35: tool_vita_assets .................   Passed    0.44 sec
+      Start  5: nis_render_state
+29/41 Test #40: native_media_record ..............   Passed    0.00 sec
+      Start 15: native_jobs_driver
+30/41 Test #17: native_model_vertices ............   Passed    0.01 sec
+      Start 28: vitagl_default_config
+31/41 Test  #5: nis_render_state .................   Passed    0.00 sec
+      Start 30: frame_capture
+32/41 Test #30: frame_capture ....................   Passed    0.00 sec
+      Start 10: vitagl_texture
+33/41 Test #28: vitagl_default_config ............   Passed    0.01 sec
+      Start 12: native_pack_verify
+34/41 Test #15: native_jobs_driver ...............   Passed    0.01 sec
+      Start  6: vitagl_circular_pool
+35/41 Test #10: vitagl_texture ...................   Passed    0.01 sec
+      Start 11: native_match_transform
+36/41 Test #20: tool_extract_disc ................   Passed    0.46 sec
+37/41 Test  #6: vitagl_circular_pool .............   Passed    0.01 sec
+38/41 Test #12: native_pack_verify ...............   Passed    0.01 sec
+39/41 Test #11: native_match_transform ...........   Passed    0.01 sec
+40/41 Test  #8: tool_native_graphics .............   Passed    0.09 sec
+41/41 Test #37: tool_switch_rebuild ..............   Passed    1.09 sec
+
+100% tests passed out of 41
+
+Total Test time (real) =   1.09 sec

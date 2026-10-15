@@ -566,6 +566,14 @@ endif()
 add_library(strikers_ode      OBJECT ${ODE_SOURCES})
 add_library(strikers_game     OBJECT ${GAME_SOURCES})
 add_library(strikers_platform OBJECT ${PLATFORM_SOURCES})
+if(NOT STRIKERS_VITA)
+    # The shared native file reader uses bounded C++20 spans. Keep this
+    # requirement local instead of changing the legacy desktop game's dialect.
+    set_source_files_properties(
+        src/NL/glx/glxLoadModel.cpp src/platform/native_graphics.cpp
+        PROPERTIES COMPILE_OPTIONS
+        "$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-std=gnu++20;-Wno-register>;$<$<CXX_COMPILER_ID:MSVC>:/std:c++20>")
+endif()
 # The crash log stamps the build into every file it writes.
 target_include_directories(strikers_platform PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/version")
 
@@ -894,7 +902,7 @@ if(STRIKERS_VITA)
         SceCommonDialog_stub SceKernelDmacMgr_stub SceKernelThreadMgr_stub SceSysmem_stub SceProcessmgr_stub
         SceCtrl_stub SceAudio_stub SceAudioIn_stub ScePower_stub SceRtc_stub
         SceIofilemgr_stub SceAppMgr_stub SceDisplay_stub SceGxm_stub
-        SceSysmodule_stub SceVideodec_stub SceLibKernel_stub pthread m)
+        SceSysmodule_stub SceVideodec_stub SceSblSsMgr_stub SceLibKernel_stub pthread m)
     if(STRIKERS_VITA_PROFILER)
         target_link_libraries(strikers PRIVATE
             strikers_vitaprofiler SceKernelThreadMgr_stub SceProcessmgr_stub SceSysmem_stub)

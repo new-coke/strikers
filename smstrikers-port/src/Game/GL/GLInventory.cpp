@@ -254,6 +254,9 @@ void GLInventory::AddTextureAnim(unsigned long key, GLTextureAnim* anim)
  */
 GLTextureAnim* GLInventory::GetTextureAnim(uintptr_t id)
 {
+    // Font bundles load before Create(); there are no animation mappings yet.
+    if (!m_bCreated)
+        return nullptr;
     for (int i = m_nLevel; i >= 0; i--)
     {
         GLTextureAnim** foundValue;

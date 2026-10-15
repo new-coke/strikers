@@ -1,0 +1,8 @@
+{
+  "self_sha256": "db2ddb6f52857fce30da39f73f4fbb884f90ab0fe3be7503e050ee59a5d7c7fd",
+  "ini_sha256": "aac80bdf22392a11167a11dd9f713ffcff4088d3e9c898f9e6e50f5314620759",
+  "archive_sha256": "699670609b952510615d869b344c18bda6b7b1f0cce8868e0248b9204cec220d",
+  "collected_unix": 1792103771.710297,
+  "new_crashes": [],
+  "startup_ini_sha256": "6b9a0b0cb63ca30ceb85737e7a407f75b632c737d1324fdcff7ef37cef100e21"
+}

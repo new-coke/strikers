@@ -1,4 +1,11 @@
-# Reusable asset preparation and Strikers PSARC support
+# Asset preparation and native Strikers PSARC
+
+The current Vita runtime requires one converted native PSARC. See
+[NATIVE_ASSETS.md](NATIVE_ASSETS.md) for the complete graphics/audio/video
+conversion command and the matching runtime contract. The extraction and
+container layer described below also remains useful for preparing an original
+source PSARC on the host; an unconverted source pack cannot be used by the
+current native-only Vita graphics loaders.
 
 Implemented 2026-10-05. Container format and license:
 [asset_pipeline/FORMAT.md](asset_pipeline/FORMAT.md).
@@ -10,8 +17,7 @@ texture/model payloads. No disc padding is copied. Stored blocks avoid adding
 decompression work to the Vita CPU. The generated archive contains local game
 data and must stay outside Git and VPK packages.
 The host tool requires Python 3.10 or newer and no third-party Python packages.
-PSARC is the preferred Vita asset package for normal gameplay. The ISO remains
-the host-side source for rebuilding and validating the archive.
+The original source PSARC or ISO remains on the host for rebuilding and validating the native archive.
 
 ## Prepare Strikers
 
@@ -32,9 +38,8 @@ identity, inventory, deduplication and per-file size/SHA-256. Only the temporary
 directory created by that invocation is removed.
 
 The archive needs a build that includes `src/platform/asset_archive.c` and the
-DVD adapter. Older Strikers builds cannot mount it. Copy `sms.psarc` to
-`ux0:data/strikersVita/sms.psarc` and add this outside the managed INI block,
-before any other occurrence of the key:
+DVD adapter. Older Strikers builds cannot mount it. For the current Vita build, first complete the native conversion in NATIVE_ASSETS.md. Copy the converted `sms.psarc` to
+`ux0:data/strikersVita/sms.psarc`; all native consumers select that same file:
 
 ```ini
 asset_archive = ux0:data/strikersVita/sms.psarc
@@ -47,13 +52,15 @@ source ISO and saves need no changes. An explicitly selected invalid archive fai
 it does not silently switch data sources. Desktop `data=/path/to/sms.psarc`
 also recognizes the PSAR header.
 
-### Storage and normal gameplay
+### Original source-pack storage
 
-For the verified G4QP01 disc, `sms.psarc` occupies 623,698,090 bytes instead of
+For the verified G4QP01 disc, the original source `sms.psarc` occupies 623,698,090 bytes instead of
 the ISO's 1,459,978,240 bytes: 836,280,150 bytes less, a 57.28% reduction. This
 comes from removing disc padding and sharing identical payloads; original game
-files remain byte-identical. The current packer stores blocks without runtime
-decompression.
+files remain byte-identical in that source pack. Native conversion replaces
+graphics/movie payloads and adds prepared audio, so the resulting native pack
+has a different size and identity. Original source packs use stored blocks. Native outputs may compress cold
+PCM/index records with zlib; loading those records includes decompression.
 
 Use the archive selector above for normal gameplay. It does not require the
 automatic test match or frameskip; those remain independent INI controls:
@@ -74,7 +81,7 @@ FPS claim; the hardware comparison is recorded in
 The PSARC contains `files/...` and `sys/...`; DVD indexing exposes only paths
 under `files/`. Region and save-card identity come from `sys/boot.bin`. DVD
 reads clamp to each logical file, and retain callbacks, error states, alignment
-handling and Aurora memory invalidation. A stored file uses one positional read
+handling and native renderer memory invalidation. A stored file uses one positional read
 for each DVD request, independent of the archive's 64 KiB block boundaries.
 The Vita uses `sceIoPread`; host streams are locked for seek/read operations.
 

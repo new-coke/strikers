@@ -52,8 +52,12 @@ def prepare(profile: str, iso: Path | None, roots: list[Path], output: Path,
             native_textures: str = 'compact', native_audio: str = 'off', audio_compiler: Path | None = None,
             native_video: bool = False, ffmpeg: str = 'ffmpeg', video_crf: int = 18,
             video_threads: int = 4, shader_cache: Path | None = None,
-            native_gpu_static: bool = False) -> dict:
-    has_native = bool(native_compiler or native_audio != 'off' or native_video or shader_cache)
+            native_gpu_static: bool = False, native_graphics_compiler: Path | None = None, native_media_archive: Path | None = None) -> dict:
+    has_native = bool(native_compiler or native_graphics_compiler or native_media_archive or native_audio != 'off' or native_video or shader_cache)
+    if native_media_archive and (native_audio!='off' or native_video or shader_cache):
+        raise ValueError('select either prepared native media or media compilation')
+    if native_graphics_compiler and (native_only or native_compiler or native_gpu_static):
+        raise ValueError('native graphics requires a complete archive and cannot use legacy geometry sidecars')
     if native_textures not in ('compact','all') or native_audio not in ('off','bank','all'):
         raise ValueError('invalid native preparation mode')
     if native_only and not has_native:
@@ -121,6 +125,10 @@ def prepare(profile: str, iso: Path | None, roots: list[Path], output: Path,
                 raise ValueError("source disc changed during extraction")
         else:
             adapter = {"payload_policy": "original bytes", "roots": [str(p.resolve()) for p in roots]}
+        graphics_report = None
+        if native_graphics_compiler:
+            from asset_pipeline.native_graphics import prepare_graphics
+            graphics_report = prepare_graphics(roots,native_graphics_compiler,workspace)
         native_report = None
         native_root=workspace/'native'
         original_roots=list(roots)
@@ -132,6 +140,18 @@ def prepare(profile: str, iso: Path | None, roots: list[Path], output: Path,
                                                         include_rgba=native_textures=='all',
                                                         gpu_static=native_gpu_static)
         media_report={}
+        if native_media_archive:
+            media_source=native_media_archive.resolve();before=sha256_file(media_source)
+            parsed_media=parse_psarc(media_source);copied=[]
+            with media_source.open('rb') as handle:
+                for i,name in enumerate(parsed_media.paths,1):
+                    if not (name.startswith('native/v1/audio/') or name=='native/v1/audio-index.bin' or name.startswith('native/v1/video/')):continue
+                    target=workspace/name;target.parent.mkdir(parents=True,exist_ok=True)
+                    with target.open('wb') as f:
+                        for block in iter_entry(handle,parsed_media,i):f.write(block)
+                    copied.append(name)
+            if sha256_file(media_source)!=before:raise ValueError('native media source changed')
+            media_report['prepared']={'source_sha256':before,'entries':len(copied),'policy':'audio and video only; no geometry, texture or shader sidecars imported'}
         if native_audio!='off':
             from asset_pipeline.media import prepare_audio
             media_report['audio']=prepare_audio(original_roots,audio_compiler,workspace,mode=native_audio)
@@ -141,6 +161,23 @@ def prepare(profile: str, iso: Path | None, roots: list[Path], output: Path,
         if shader_cache:
             from asset_pipeline.media import prepare_shader_cache
             media_report['shaders']=prepare_shader_cache(shader_cache,workspace)
+        if native_graphics_compiler:
+            files_root=next(r for r in original_roots if r.name=='files')
+            video_root=workspace/'native/v1/video';replaced_video=[]
+            if video_root.exists():
+                for native_movie in sorted(video_root.rglob('*.thp')):
+                    relative=native_movie.relative_to(video_root);target=files_root/relative
+                    if not target.is_file():raise ValueError('native movie has no original logical path')
+                    os.replace(native_movie,target);replaced_video.append(relative.as_posix())
+            media_report['native_movie_paths']=replaced_video
+            removed=[]
+            # These are GameCube executables/debug outputs, never Vita runtime data.
+            for root in original_roots:
+                for path in sorted(root.iterdir()):
+                    if path.is_file() and ((root.name=='sys' and path.name!='boot.bin' and path.name!='strikers-native.bin') or
+                            (root.name=='files' and path.suffix.lower() in ('.elf','.dol','.exe','.idb','.map'))):
+                        removed.append(path.relative_to(root.parent).as_posix());path.unlink()
+            graphics_report['removed_non_runtime_files']=removed
         if has_native:
             native_root.mkdir(exist_ok=True)
             roots=[native_root] if native_only else [*original_roots,native_root]
@@ -155,7 +192,7 @@ def prepare(profile: str, iso: Path | None, roots: list[Path], output: Path,
         report = {
             "format_version": 1, "profile": profile, "source_disc": source,
             "adapter": adapter, "native_assets": native_report, "native_only": native_only,
-            "native_media":media_report,
+            "native_media":media_report, "native_graphics":graphics_report,
             "create": packed, "verify": checked,
             "archive_sha256": archive_hash, "verified_files": files,
             "elapsed_seconds": time.perf_counter() - started,
@@ -178,16 +215,18 @@ def main() -> int:
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--replace", action="store_true")
     p.add_argument("--no-dedup", action="store_true")
+    p.add_argument("--native-media-archive",type=Path,help="reuse validated native audio/video records; graphics are regenerated from the original source")
+    p.add_argument("--native-graphics-compiler",type=Path,help="Strikers compiler: replace GLG/GLT and embedded resource textures with native graphics; no original payload fallback")
     p.add_argument("--native-compiler", type=Path,
-                   help="Aurora host compiler: add exact native GLT/static GLG sidecars; originals remain")
+                   help="legacy graphics sidecars for older runtimes; current Vita requires --native-graphics-compiler")
     p.add_argument("--native-only", action="store_true",
-                   help="package only native sidecars; keep the original game PSARC and select native_asset_archive")
+                   help="legacy sidecar-only pack for older runtimes; unsupported by the current Vita loaders")
     p.add_argument('--native-textures',choices=('compact','all'),default='compact',help='all includes exact RGBA/TPL texture outputs')
     p.add_argument('--native-gxm-static',action='store_true',
                    help='include AVNR v2 source-verified static geometry packed for common exact GXM layouts')
     p.add_argument('--native-audio',choices=('off','bank','all'),default='off',help='bank covers SFX; all also prepares DSP/IDSP music and streams')
     p.add_argument('--audio-compiler',type=Path,help='host strikers_compile_native_audio executable')
-    p.add_argument('--native-video',action='store_true',help='add independent Baseline H.264 movies; originals retained')
+    p.add_argument('--native-video',action='store_true',help='prepare independent Baseline H.264 movies; native graphics builds replace original movie payloads')
     p.add_argument('--ffmpeg',default='ffmpeg')
     p.add_argument('--video-crf',type=int,default=18)
     p.add_argument('--video-threads',type=int,default=4)
@@ -200,7 +239,7 @@ def main() -> int:
                          native_textures=a.native_textures,native_audio=a.native_audio,audio_compiler=a.audio_compiler,
                          native_video=a.native_video,ffmpeg=a.ffmpeg,video_crf=a.video_crf,
                          video_threads=a.video_threads,shader_cache=a.shader_cache,
-                         native_gpu_static=a.native_gxm_static)
+                         native_gpu_static=a.native_gxm_static,native_graphics_compiler=a.native_graphics_compiler,native_media_archive=a.native_media_archive)
     except (OSError, ValueError, RuntimeError, subprocess.CalledProcessError) as exc:
         p.exit(1, f"Asset preparation failed: {exc}\n")
     print(json.dumps({"archive": str(a.output), "sha256": report["archive_sha256"],

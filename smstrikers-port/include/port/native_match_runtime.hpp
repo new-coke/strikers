@@ -7,6 +7,8 @@
 #include "NL/gl/glView.h"
 #include <vector>
 #include <array>
+#include "port/native_texture_record.hpp"
+class PlatTexture;
 namespace port::directmatch {
 void note_ball_packets(const glModel* model) noexcept;
 void enable(bool yes) noexcept;
@@ -34,6 +36,7 @@ void draw_message_bitmap(unsigned width,unsigned height,const uint8_t* bits,uint
 void clear_depth() noexcept;
 void set_fog(float start,float end,bool enabled,unsigned type,std::array<float,4> color) noexcept;
 void on_texture_release(uint32_t level) noexcept;
+bool admit_texture(const PlatTexture* texture,const nativegxm::TextureUpload& image) noexcept;
 void notify_write(const void* ptr,size_t bytes) noexcept;
 }
 #endif

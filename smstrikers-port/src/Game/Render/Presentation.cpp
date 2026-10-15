@@ -120,7 +120,9 @@ static void ReadTrophyTexture(void* data, unsigned long size, void* userData)
 {
     Presentation& presentation = Presentation::Instance();
     presentation.mTrophyTextureLoaded = true;
-    glEndLoadTextureBundle(data, size);
+    // Native owned-buffer completion has already installed the textures.
+    if (data != NULL)
+        glEndLoadTextureBundle(data, size);
 }
 
 /**

@@ -44,7 +44,7 @@ int main()
             assert(!strcmp(getenv("STRIKERS_VITA_TEST_MATCH"), mode ? "1" : "0"));
             assert(!strcmp(getenv("STRIKERS_FRAME_CAPTURE_FRAMES"), mode ? "30" : "0"));
             assert(!strcmp(getenv("STRIKERS_BENCHMARK"), "0"));
-            assert(!strcmp(getenv("STRIKERS_NATIVE_ASSETS"), "1"));
+            assert(!getenv("STRIKERS_NATIVE_ASSET_ARCHIVE"));
             assert(!strcmp(getenv("STRIKERS_VITAGL_TIMING"), "0"));
             assert(!getenv("STRIKERS_GXM_DISABLE"));
             assert(!PortDiagnosticsEnabled() && !PortFpsOverlayEnabled());
@@ -53,7 +53,7 @@ int main()
             size_t n = fread(text, 1, sizeof text - 1, f);
             assert(!fclose(f));
             text[n] = 0;
-            assert(strstr(text, "profile_revision = 2026-10-14-vitagl"));
+            assert(strstr(text, "profile_revision = 2026-10-15-vitagl-unified"));
             assert(!strstr(text, "gxm_") && !strstr(text, "aurora"));
             assert(!strstr(text, "task_profile=1"));
             exit(0);

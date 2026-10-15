@@ -1195,7 +1195,7 @@ static inline void glx_SwitchTexture(const glModelPacket* p)
             }
 
             // PORT: a texture with no pixel data is as unusable as none at all, glx_CreatePlatTexture leaves the GXTexObj zeroed.
-            if (pTex != NULL && pTex->m_SwizzledData == NULL)
+            if (pTex != NULL && pTex->m_SwizzledData == NULL && pTex->m_NativeDataSize==0)
                 pTex = NULL;
 
             if (pTex == NULL)

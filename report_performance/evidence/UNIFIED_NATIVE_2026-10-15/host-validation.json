@@ -1,0 +1,21 @@
+{
+  "host_tests_passed": 41,
+  "host_tests_failed": 0,
+  "sanitizers": [
+    "native graphics parser over complete converted PSARC",
+    "production VitaGL driver",
+    "production native verifier with SDK mock"
+  ],
+  "native_payload_inventory": {
+    "models": 149,
+    "texture_bundles": 164,
+    "bundled_texture_occurrences": 1738,
+    "resource_bundles": 38,
+    "embedded_texture_occurrences": 770,
+    "unique_source_texture_requests": 1809
+  },
+  "shared_desktop_reader_units": "native_graphics.cpp and glxLoadModel.cpp compile successfully with local C++20 flags",
+  "desktop_full_game": "not validated; an attempted aggregate Aurora-off host-game build fails in untouched legacy less declarations; targeted reader units and test suite pass",
+  "manifest_generator": "reproduces the exact 54080-byte uploaded native verification manifest; known SHA256 and partial final chunk tests pass",
+  "resource_regression": "real compiler covers .Dmn and arbitrary filename extension; old archive rejected by C++ consumer; corrected archive passes under ASan/UBSan"
+}

@@ -1,0 +1,90 @@
+=== THREADS ===
+    SMSVITA01
+        ID: 0x40010003
+        Stop reason: 0x30004 (Data abort exception)
+        Status: 0x1 (Running)
+        PC: 0x810efff4 (strikers@1 + 0xe2ff4)
+    SceCommonDialogWorker
+        ID: 0x400100c3
+        Stop reason: 0x0 (No reason)
+        Status: 0x8 (Waiting)
+        PC: 0xe00150b4 (SceLibKernel@1 + 0x6304)
+    pthread
+        ID: 0x4001011b
+        Stop reason: 0x0 (No reason)
+        Status: 0x8 (Waiting)
+        PC: 0xe00150b4 (SceLibKernel@1 + 0x6304)
+    pthread
+        ID: 0x4001012f
+        Stop reason: 0x0 (No reason)
+        Status: 0x2 ()
+        PC: 0xe00150b4 (SceLibKernel@1 + 0x6304)
+    vitaGL Garbage Collector
+        ID: 0x4001015b
+        Stop reason: 0x0 (No reason)
+        Status: 0x8 (Waiting)
+        PC: 0xe00150b4 (SceLibKernel@1 + 0x6304)
+    SceGxmDisplayQueue
+        ID: 0x40010169
+        Stop reason: 0x0 (No reason)
+        Status: 0x8 (Waiting)
+        PC: 0xe00154c4 (SceLibKernel@1 + 0x6714)
+    pthread
+        ID: 0x400101df
+        Stop reason: 0x0 (No reason)
+        Status: 0x8 (Waiting)
+        PC: 0x812d2658 (strikers@1 + 0x2c5658)
+
+=== THREAD "SMSVITA01" <0x40010003> CRASHED (Data abort exception) ===
+
+DISASSEMBLY AROUND PC: 0x810efff4 (ARM):
+
+810e2fe4 <_ZN15ButtonComponent13CentreButtonsEv+0x3c>:
+810e2fe4:	3f04      	subs	r7, #4
+810e2fe6:	2201      	movs	r2, #1
+810e2fe8:	4611      	mov	r1, r2
+810e2fea:	f8d3 3080 	ldr.w	r3, [r3, #128]	@ 0x80
+810e2fee:	6958      	ldr	r0, [r3, #20]
+810e2ff0:	f101 fc2e 	bl	811e4850 <_Z10glx_GetTexjbb>
+!!! 		8883      	ldrh	r3, [r0, #4] !!!
+810e2ff6:	6838      	ldr	r0, [r7, #0]
+810e2ff8:	ee08 3a90 	vmov	s17, r3
+810e2ffc:	f022 fa34 	bl	81105468 <_ZNK10TLInstance16GetAssetPositionEv>
+810e3000:	eef8 8a68 	vcvt.f32.u32	s17, s17
+
+
+DISASSEMBLY AROUND LR: 0x811f1c24 (Thumb):
+
+811e4c14 <_Z10glx_GetTexjbb+0x3c4>:
+811e4c14:	f243 3100 	movw	r1, #13056	@ 0x3300
+811e4c18:	462a      	mov	r2, r5
+811e4c1a:	f2c8 112e 	movt	r1, #33070	@ 0x812e
+811e4c1e:	2002      	movs	r0, #2
+811e4c20:	f7d1 f904 	bl	811b5e2c <_ZN18tDebugPrintManager5PrintE14eDEBUG_CHANNELPKcz>
+!!! 		e654      	b.n	811e48d0 <_Z10glx_GetTexjbb+0x80> !!!
+811e4c26:	f04f 36ff 	mov.w	r6, #4294967295	@ 0xffffffff
+811e4c2a:	88b9      	ldrh	r1, [r7, #4]
+811e4c2c:	7a3b      	ldrb	r3, [r7, #8]
+811e4c2e:	88fa      	ldrh	r2, [r7, #6]
+811e4c30:	68f8      	ldr	r0, [r7, #12]
+811e4c32:	9600      	str	r6, [sp, #0]
+
+REGISTERS:
+    R0: 0x0
+    R1: 0x2
+    R2: 0x0
+    R3: 0x81419630
+    R4: 0x818c0bf0
+    R5: 0x8ca2e064
+    R6: 0x0
+    R7: 0x8ca2e05c
+    R8: 0x81459c78
+    R9: 0x8ca2e058
+    R10: 0x81459c70
+    R11: 0x8141dccc
+    R12: 0xffffffff
+    SP: 0x818c0bc0
+    PC: 0x810efff4 (strikers@1 + 0xe2ff4)
+    LR: 0x811f1c25 (strikers@1 + 0x1e4c25)
+
+STACK CONTENTS AROUND SP:

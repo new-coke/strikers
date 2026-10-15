@@ -7,7 +7,9 @@ struct SkinVertex
 {
     /* 0x00 */ nlVector3 position;
     /* 0x0C */ signed char packed_normal[4];
-}; // total size: 0x10
+    nlVector3 native_normal;
+    bool native_normal_valid;
+}; // Runtime-owned vertex, including lossless native normals.
 
 struct SkinPair
 {

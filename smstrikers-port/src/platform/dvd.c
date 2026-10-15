@@ -339,6 +339,17 @@ static void open_archive(const char* path)
     char err[2048];
     s_archive = port_asset_archive_open(path, err, sizeof err);
     if (s_archive == NULL) image_fatal(path, err);
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    {
+        static const unsigned char expected[16] = {'S','N','P','A','C','K','0','1',1,0,0,0,1,0,0,0};
+        unsigned char version[16];
+        const int entry=port_asset_archive_find(s_archive,"sys/strikers-native.bin");
+        if(entry<0 || port_asset_archive_size(s_archive,(unsigned)entry)!=sizeof version ||
+           port_asset_archive_read(s_archive,(unsigned)entry,version,sizeof version,0)!=sizeof version ||
+           memcmp(version,expected,sizeof version))
+            image_fatal(path,"This Vita build requires the converted native PSARC. Regenerate sms.psarc with the Strikers native graphics compiler.");
+    }
+#endif
     int boot = port_asset_archive_find(s_archive, "sys/boot.bin");
     if (boot < 0 || port_asset_archive_read(s_archive, (unsigned)boot, s_disk_id,
                                           sizeof s_disk_id, 0) != sizeof s_disk_id)

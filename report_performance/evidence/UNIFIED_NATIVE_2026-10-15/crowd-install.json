@@ -1,0 +1,46 @@
+{
+  "started_unix": 1792105786.414773,
+  "self_sha256": "a5d09afdcda739167bfaac5768eb046fd59b9aa055bfe9f35ddc939d967efba6",
+  "previous_self_sha256": "66c2caa0a7a1005ad656d6e97a93697f5a7461e294bf3d676c697414111736ed",
+  "normal_ini_sha256": "aac80bdf22392a11167a11dd9f713ffcff4088d3e9c898f9e6e50f5314620759",
+  "archive_sha256": "699670609b952510615d869b344c18bda6b7b1f0cce8868e0248b9204cec220d",
+  "mode": "manual match; one intro screenshot; temporary diagnostics; native crowd atlas replacement only",
+  "owner_feedback_previous": {
+    "audio": "regular in manual match",
+    "rolling_ball": "correct",
+    "crowd": "black rectangles"
+  },
+  "startup_ini_sha256": "a140c55d97b396865dbf004ae971ba2a4405abd1961f68d139e49230165f73c7",
+  "kill": "Error: cannot kill the app. Is the TITLEID correct?",
+  "activate_for_close": "Launched.",
+  "kill_retry": "Killed.",
+  "prior_crashes": [
+    "psp2core-1791883756-0x00000521c5-eboot.bin.psp2dmp",
+    "psp2core-1791999337-0x00043f38d3-eboot.bin.psp2dmp",
+    "psp2core-1792001391-0x000c372671-eboot.bin.psp2dmp",
+    "psp2core-1792002100-0x00043d35f7-eboot.bin.psp2dmp",
+    "psp2core-1792002978-0x000450308d-eboot.bin.psp2dmp",
+    "psp2core-1792073568-0x0011d122e1-eboot.bin.psp2dmp",
+    "psp2core-1792088894-0x000ab93ead-eboot.bin.psp2dmp",
+    "psp2core-1792089110-0x0010992abd-eboot.bin.psp2dmp",
+    "psp2core-1792089210-0x000d5f37d5-eboot.bin.psp2dmp",
+    "psp2core-1792089452-0x000d643aaf-eboot.bin.psp2dmp",
+    "psp2core-1792103282-0x0010ba32b7-eboot.bin.psp2dmp",
+    "psp2core-1792104361-0x0010af363d-eboot.bin.psp2dmp",
+    "psp2core-1792105208-0x00172522f9-eboot.bin.psp2dmp"
+  ],
+  "interrupted_config_transfer": {
+    "result": "FTP 550 Could not allocate memory left zero-byte primary INI",
+    "recovered_from": "byte-verified local normal INI",
+    "resolution": "stage, exact readback, then rename"
+  },
+  "premature_confirm_unix": 1792105811.320312,
+  "verified_self_sha256": "a5d09afdcda739167bfaac5768eb046fd59b9aa055bfe9f35ddc939d967efba6",
+  "launch": "Launched.",
+  "launched_unix": 1792105866.171345,
+  "normal_ini_restored_sha256": "aac80bdf22392a11167a11dd9f713ffcff4088d3e9c898f9e6e50f5314620759",
+  "normal_ini_restored_unix": 1792105896.8198578,
+  "owner_feedback_current": {
+    "crowd": "Spettatori corretti e animati"
+  }
+}

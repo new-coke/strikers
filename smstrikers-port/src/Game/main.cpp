@@ -46,9 +46,9 @@ extern "C" void PortInvokePadSamplingCallback(void);
 #include "port/audio.h"
 #include "port/vita_profiler.h"
 #if defined(PORT_VITA)
-#include "port/native_assets.hpp"
 #include "port/native_audio.hpp"
 #include "port/native_match_runtime.hpp"
+#include "port/native_graphics.hpp"
 #endif
 #include "port/determinism.h"
 #include "port/config.h"
@@ -832,11 +832,18 @@ static unsigned long s_portFrame=0;
 static void PortPumpHostEvents() {s_portRunning=port::native_runtime::pump();}
 #endif
 
+#include "port/native_boot_screen.hpp"
 int main(int argc, char* argv[])
 {
 #if defined(PORT_VITA)
+    (void)port::startup::begin();
     // The master INI gate must be resolved before any runtime file is opened.
     (void)PortConfigLoad();
+    const int assetVerification=port::assets::verify_archive_if_requested(
+        [](unsigned current,unsigned total) noexcept {
+            port::startup::show("VERIFYING GAME DATA",current,total);
+        });
+    if(assetVerification){port::startup::shutdown();return assetVerification<0?1:0;}
     port::directmatch::enable(true);
 #if !defined(STRIKERS_VITA_NO_LOGS)
     // Keep the Vita diagnostics on the memory card. stderr is deliberately
@@ -850,6 +857,7 @@ int main(int argc, char* argv[])
         fprintf(stderr, "[vita] runtime log started\n");
     }
 #endif
+    port::startup::show("LOADING GAME DATA");
     PortNativeAudioInitialize();
 #endif
 
@@ -884,7 +892,6 @@ int main(int argc, char* argv[])
 
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
     if(!port::native_runtime::initialize())return 1;
-    port::initialize_native_assets();
     PortSetWindowAspect(960,544);
     PortSetDisplayRefresh(60.0,1);
     glxVitaReserveResourceArena();
@@ -1032,7 +1039,6 @@ int main(int argc, char* argv[])
         PortAudioStop();
         PortNativeAudioShutdown();
         port::directmatch::shutdown();
-        port::shutdown_native_assets();
 
         return 1;
     }
@@ -1143,7 +1149,6 @@ int main(int argc, char* argv[])
     PortProfilerStop();
     port::directmatch::shutdown();
     port::native_runtime::shutdown();
-    port::shutdown_native_assets();
 
     sceKernelExitProcess(0);
 #else

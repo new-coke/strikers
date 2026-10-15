@@ -3,10 +3,13 @@
 // It is not an on-disk texture file signature.
 
 #include "NL/nlString.h"
+#include "NL/nlDebug.h"
 #include "NL/glx/glxTexture.h"
 #include "port/endian.h"
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
 #include "port/native_match_runtime.hpp"
+#include "port/native_graphics.hpp"
+#include <algorithm>
 #endif
 #include "dolphin/os.h"
 #include "port/texture_packs.h"
@@ -45,6 +48,52 @@ static inline void (TexDestructor::* glx_GetTexDestructorCallback())(const unsig
 {
     return &TexDestructor::CallDestructor;
 }
+
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+static bool glxApplyNativeTexture(PlatTexture* texture,const void* bytes,size_t size)
+{
+    port::nativegxm::TextureUpload image;uint32_t semantic;uint8_t bits[4];bool missing;
+    if(!texture || !port::assets::texture({static_cast<const uint8_t*>(bytes),size},image,&semantic,bits,&missing))return false;
+    texture->m_Width=image.width;texture->m_Height=image.height;
+    texture->m_Levels=texture->m_MaxLevel=image.mipCount;texture->m_Format=eGXTextureFormat(semantic);
+    texture->m_nPaletteEntries=0;texture->m_PaletteData=NULL;texture->m_bMissingTexture=missing;
+    texture->m_SwizzledData=NULL;texture->m_NativeDataSize=size;
+    memcpy(texture->m_Bits,bits,4);return port::directmatch::admit_texture(texture,image);
+}
+static bool glxLoadNativeBundle(nlFile* file,unsigned size)
+{
+    uint8_t header[16];
+    if(size<16)return false;
+    nlRead(file,header,16);
+    if(static_cast<GCFile*>(file)->GetReadStatus()!=DVD_STATE_END || memcmp(header,"NSTB0001",8) || port::assets::word(header+8)!=size)return false;
+    const size_t count=port::assets::word(header+12);
+    if(count>(size-16)/16)return false;
+    std::vector<uint8_t> dictionary(count*16);
+    nlRead(file,dictionary.data(),dictionary.size());
+    if(static_cast<GCFile*>(file)->GetReadStatus()!=DVD_STATE_END)return false;
+    size_t previous=16+dictionary.size(),largest=0;
+    for(size_t i=0;i<count;++i) {
+        const auto* entry=dictionary.data()+i*16;
+        const size_t at=port::assets::word(entry+4),n=port::assets::word(entry+8);
+        if(port::assets::word(entry+12) || at%16 || at<previous || at>size || n>size-at || n<64 || n>16u*1024u*1024u+64)return false;
+        previous=at+n;largest=std::max(largest,n);
+    }
+    std::vector<uint8_t> scratch(largest);
+    for(size_t i=0;i<count;++i) {
+        const auto* entry=dictionary.data()+i*16;
+        const auto ident=port::assets::word(entry),at=port::assets::word(entry+4),n=port::assets::word(entry+8);
+        nlSeek(file,at,0);
+        nlRead(file,scratch.data(),n);
+        if(static_cast<GCFile*>(file)->GetReadStatus()!=DVD_STATE_END)return false;
+        const auto handle=glxTextureLoad_cb?glxTextureLoad_cb(ident):ident;
+        if(handle==uint32_t(-1))continue;
+        if(glTextureLoad(handle))glplatTextureReplace(handle,scratch.data(),n);
+        else glplatTextureAdd(handle,scratch.data(),n);
+        if(!glx_GetTex(handle,false,false))return false;
+    }
+    return true;
+}
+#endif
 
 /**
  * Offset/Address/Size: 0x19DC | 0x801B8C98 | size: 0x10
@@ -307,6 +356,15 @@ bool glx_AddTex(uintptr_t handle, PlatTexture* pTex)
  */
 PlatTexture* glx_MakeTexture(GXTextureHeader* header, uintptr_t texhandle, unsigned long fileSize)
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    PlatTexture* texture=glx_CreatePlatTexture();
+    if(!glxApplyNativeTexture(texture,header,fileSize)) {
+        OSReport("[native-texture] converted texture required or invalid: %08lx\n",(unsigned long)texhandle);
+        return NULL;
+    }
+    return texture;
+#else
+
     if (header == NULL || fileSize < sizeof(GXTextureHeader))
     {
         OSReport("[texture] invalid bundle entry: handle=%08lX size=%lu (header=%u)\n",
@@ -366,6 +424,9 @@ PlatTexture* glx_MakeTexture(GXTextureHeader* header, uintptr_t texhandle, unsig
         pTex->m_SwizzledData = NULL;
         pTex->m_LinearData = NULL;
         pTex->m_PaletteData = NULL;
+        pTex->m_NativeDataSize = 0;
+        pTex->m_OwnerTextureLevel=currentMarkerLevel;
+        pTex->m_OwnerResourceLevel=glx_GetResourceMarkerLevel();
         memset(&pTex->m_TexObj, 0, sizeof(pTex->m_TexObj));
         memset(&pTex->m_TlutObj, 0, sizeof(pTex->m_TlutObj));
         memset(pTex->m_Bits, 0xFF, sizeof(pTex->m_Bits));
@@ -409,6 +470,7 @@ PlatTexture* glx_MakeTexture(GXTextureHeader* header, uintptr_t texhandle, unsig
     PortTextureCreated(&pTex->m_TexObj, pTex->m_nPaletteEntries > 0 ? &pTex->m_TlutObj : NULL); // PORT: texture packs
 
     return pTex;
+#endif
 }
 
 /**
@@ -446,6 +508,12 @@ bool glplatLoadTextureBundle(const char* filename)
 
     unsigned int fileAllocSize = 0;
     const unsigned int bundleFileSize = nlFileSize(pFile, &fileAllocSize);
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    const bool nativeLoaded=glxLoadNativeBundle(pFile,bundleFileSize);
+    nlClose(pFile);glx_FreeMemory1(filename);
+    if(!nativeLoaded)OSReport("[native-texture] invalid native bundle %s\n",filename);
+    return nativeLoaded;
+#else
     if (bundleFileSize < sizeof(glTexBundleHeader))
     {
         OSReport("[texture] bundle %s is truncated: %u bytes\n", filename, bundleFileSize);
@@ -556,14 +624,28 @@ bool glplatLoadTextureBundle(const char* filename)
     glx_FreeMemory1(filename);
 
     return true;
+#endif
 }
 
 #pragma dont_inline on
 /**
  * Offset/Address/Size: 0x93C | 0x801B7BF8 | size: 0xB8
  */
-static bool glxParseTextureBundle(const char* filedata, unsigned long fileSize)
+static bool glxParseTextureBundle(const char* filedata, unsigned long fileSize,
+                                glxTextureLoadCallback_t remap=glxTextureLoad_cb)
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    const auto bytes=std::span(reinterpret_cast<const uint8_t*>(filedata),size_t(fileSize));
+    if(!filedata)return false;
+    return port::assets::admit_texture_bundle(bytes,
+        [remap](uint32_t ident){return remap?uint32_t(remap(ident)):ident;},
+        [](uint32_t handle,std::span<const uint8_t> image){
+            if(glTextureLoad(handle))glplatTextureReplace(handle,image.data(),image.size());
+            else glplatTextureAdd(handle,image.data(),image.size());
+            return glx_GetTex(handle,false,false)!=NULL;
+        });
+#else
+
     if (filedata == NULL || fileSize < sizeof(glTexBundleHeader))
     {
         OSReport("[texture] async bundle is truncated: %lu bytes\n", fileSize);
@@ -621,6 +703,7 @@ static bool glxParseTextureBundle(const char* filedata, unsigned long fileSize)
     GXInvalidateTexAll();
 #endif
     return true;
+#endif
 }
 #pragma dont_inline off
 
@@ -632,6 +715,23 @@ bool glplatBeginLoadTextureBundle(const char* filename, void (*callback)(void*, 
     char fullname[256];
     nlStrNCat<char>(fullname, "art/", filename, 0x100);
     PortTextureDumpExpect(param, fullname); // PORT: texture dumps; the file arrives in `param` when it is set
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    if(param!=NULL) {
+        struct Completion {LoadAsyncCallback callback;glxTextureLoadCallback_t remap;};
+        // Remapping belongs to this request. The caller restores the global
+        // hook before the asynchronous read completes.
+        auto* completion=new Completion{callback,glxTextureLoad_cb};
+        const auto completed=[](void* bytes,unsigned long size,void* context) {
+            auto* c=static_cast<Completion*>(context);
+            const bool loaded=glxParseTextureBundle(static_cast<const char*>(bytes),size,c->remap);
+            nlFree(bytes);const auto original=c->callback;delete c;
+            if(!loaded){OSReport("[native-texture] async native bundle failed\n");nlBreak();return;}
+            if(original)original(NULL,size,NULL);
+        };
+        if(!nlLoadEntireFileAsync(fullname,completed,completion,0x20,AllocateEnd)){delete completion;return false;}
+        return true;
+    }
+#endif
     if (param == NULL)
     {
         if (nlLoadEntireFileAsync(fullname, callback, param, 0x20, AllocateEnd) == 0)
@@ -775,6 +875,9 @@ PlatTexture* glx_CreatePlatTexture()
         pTex->m_SwizzledData = NULL;
         pTex->m_LinearData = NULL;
         pTex->m_PaletteData = NULL;
+        pTex->m_NativeDataSize = 0;
+        pTex->m_OwnerTextureLevel=currentMarkerLevel;
+        pTex->m_OwnerResourceLevel=glx_GetResourceMarkerLevel();
         memset(&pTex->m_TexObj, 0, sizeof(pTex->m_TexObj));
         memset(&pTex->m_TlutObj, 0, sizeof(pTex->m_TlutObj));
         memset(pTex->m_Bits, 0xFF, sizeof(pTex->m_Bits));
@@ -799,6 +902,7 @@ PlatTexture::~PlatTexture()
  */
 void PlatTexture::CreateWithMemory(int width, int height, eGXTextureFormat format, int numLevels, const void* pTextureData)
 {
+    m_NativeDataSize = 0;
     m_Width = width;
     m_Height = height;
     m_Levels = (u8)numLevels;
@@ -819,6 +923,7 @@ void PlatTexture::Create(int width, int height, eGXTextureFormat format, int num
         m_LinearData = NULL;
     }
 
+    m_NativeDataSize = 0;
     m_Width = width;
     m_Height = height;
     m_Levels = (u8)numLevels;
@@ -883,7 +988,7 @@ static inline GXTexFmt* glx_GetGXFormatTable()
 void PlatTexture::Prepare()
 {
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
-    DCStoreRange(m_SwizzledData,GCTextureSize(m_Format,m_Width,m_Height,m_Levels,-1));
+    DCStoreRange(m_SwizzledData,m_NativeDataSize?m_NativeDataSize:GCTextureSize(m_Format,m_Width,m_Height,m_Levels,-1));
     if(m_PaletteData&&m_nPaletteEntries>0)DCStoreRange(m_PaletteData,m_nPaletteEntries*2);
 #else
 
@@ -931,6 +1036,11 @@ void glplatTextureAdd(uintptr_t handle, const void* textureData, unsigned long s
  */
 void glplatTextureReplace(uintptr_t handle, const void* textureData, unsigned long size)
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    if(!glxApplyNativeTexture(glx_GetTex(handle,false,false),textureData,size))
+        OSReport("[native-texture] invalid native replacement: %08lx\n",(unsigned long)handle);
+#else
+
     // PORT: the header is NOT swapped in place here.
     const GXTextureHeader* pHeader = (GXTextureHeader*)textureData;
     PlatTexture* pTex = glx_GetTex(handle, false, false);
@@ -1021,6 +1131,7 @@ void glplatTextureReplace(uintptr_t handle, const void* textureData, unsigned lo
     GXInitTexObj(&pTex->m_TexObj, pTex->m_SwizzledData, pTex->m_Width, pTex->m_Height, glx_GetGXFormatTable()[pTex->m_Format], GX_CLAMP, GX_CLAMP, pTex->m_Levels > 1 ? 1 : 0);
     GXInitTexObjLOD(&pTex->m_TexObj, (pTex->m_Levels == 1) ? GX_LINEAR : GX_LIN_MIP_LIN, GX_LINEAR, 0.0f, (float)(pTex->m_MaxLevel - 1), 0.0f, GX_DISABLE, GX_DISABLE, GX_ANISO_1);
     PortTextureCreated(&pTex->m_TexObj, NULL); // PORT: texture packs
+#endif
 #endif
 }
 #pragma dont_inline off

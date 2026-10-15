@@ -1,8 +1,12 @@
 #include "NL/glx/glxLoadModel.h"
 #include "port/endian.h"
+#include "port/native_graphics.hpp"
 #include "NL/nlWare.h"
 #include "dolphin/os.h"
 extern "C" {
+void port_nmd_convert_packets(void*,const void*,unsigned long);
+void port_nmd_convert_streams(void*,const void*,unsigned long);
+void port_nmd_convert_models(void*,const void*,unsigned long,unsigned long);
 unsigned long port_skin_validate(const void*, unsigned long);
 unsigned long port_bmd_packet_count(unsigned long);
 unsigned long port_bmd_stream_count(unsigned long);
@@ -97,11 +101,25 @@ void glSetIgnoreDuplicateModels(bool ignore)
     glIgnoreDuplicateModels = ignore;
 }
 
-static void glx_DecodeMatrixBE(nlMatrix4* out, const u8* in)
+static bool glxReadModelSection(const u8* p,const u8* end,PortBEChunkView* out,bool native,bool skin=false)
+{
+    if(!native)return port_be_chunk_read(p,end,out)!=0;
+    port::assets::Section section;
+    if(!port::assets::section(p,end,section))return false;
+    static const u32 modelIDs[]={0,0x8001B000u,0x1B002,0x1B003,0x1B004,0x1B005,0x1B006,0x1B007,0x8001B008u,0x1B00F,0x1B011,0x1B012};
+    static const u32 skinIDs[]={0,0x1B00A,0x1B00B,0x1B00C,0x1B00D,0x1B00E,0x1B010};
+    const size_t count=skin?sizeof(skinIDs)/sizeof(*skinIDs):sizeof(modelIDs)/sizeof(*modelIDs);
+    if(!section.type || section.type>=count)return false;
+    out->raw=p;out->payload=section.payload.data();out->next=section.next;
+    out->id=skin?skinIDs[section.type]:modelIDs[section.type];
+    out->size=out->payload_len=section.payload.size();return true;
+}
+
+static void glx_DecodeMatrix(nlMatrix4* out, const u8* in, bool native)
 {
     for (u32 word = 0; word < sizeof(nlMatrix4) / sizeof(float); ++word)
     {
-        const float value = port_bef32(in + word * 4);
+        const float value = native ? port::assets::scalar(in + word * 4) : port_bef32(in + word * 4);
         memcpy((u8*)out + word * 4, &value, sizeof(value));
     }
 }
@@ -115,8 +133,16 @@ GLSkinMesh* glx_MakeSkinMesh(nlChunk* outerChunk, glModel* models)
         return NULL;
 
     const u8* outerRaw = (const u8*)outerChunk;
-    const u32 outerID = port_be32(outerRaw + 0);
-    const u32 outerSize = port_be32(outerRaw + 4);
+    const bool native=std::memcmp(outerRaw,"NSSK0001",8)==0;
+    const auto read32=[native](const void* p){return native?port::assets::word(p):port_be32(p);};
+    const auto read16=[native](const void* p){return native?port::assets::half(p):port_be16(p);};
+    const auto readFloat=[native](const void* p){return native?port::assets::scalar(p):port_bef32(p);};
+    if(native && !port::assets::validate_skin({outerRaw,port::assets::word(outerRaw+8)}))return NULL;
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    if(!native)return NULL;
+#endif
+    const u32 outerID = native ? 0x8001B008u : port_be32(outerRaw + 0);
+    const u32 outerSize = native ? port::assets::word(outerRaw+8)-16 : port_be32(outerRaw + 4);
     if ((outerID & ~0x7F000000u) != 0x8001B008u)
         return NULL;
 
@@ -132,13 +158,13 @@ GLSkinMesh* glx_MakeSkinMesh(nlChunk* outerChunk, glModel* models)
 
     u32 i;
     u32 count;
-    const u8* cursor = outerRaw + 8;
+    const u8* cursor = outerRaw + (native?16:8);
     const u8* end = cursor + outerSize;
 
     while (cursor < end)
     {
         PortBEChunkView view;
-        if (!port_be_chunk_read(cursor, end, &view))
+        if (!glxReadModelSection(cursor, end, &view,native,true))
             return fail();
         cursor = view.next;
 
@@ -157,10 +183,10 @@ GLSkinMesh* glx_MakeSkinMesh(nlChunk* outerChunk, glModel* models)
             count = chunkSize / 0x44;
             for (i = 0; i < count; i++)
             {
-                const u32 boneID = port_be32(data);
+                const u32 boneID = read32(data);
                 nlMatrix4 src;
                 nlMatrix4 inv;
-                glx_DecodeMatrixBE(&src, data + 4);
+                glx_DecodeMatrix(&src, data + 4,native);
                 data += 0x44;
                 nlInvertMatrix(inv, src);
                 mesh->SetBoneMatrix(boneID, &inv);
@@ -179,8 +205,8 @@ GLSkinMesh* glx_MakeSkinMesh(nlChunk* outerChunk, glModel* models)
             node->m_next = NULL;
             for (i = 0; i < count; i++)
             {
-                const unsigned long key = port_be32(data + 0);
-                const unsigned long value = port_be32(data + 4);
+                const unsigned long key = read32(data + 0);
+                const unsigned long value = read32(data + 4);
                 data += 8;
                 node->boneMap.Add(key, value);
             }
@@ -189,9 +215,9 @@ GLSkinMesh* glx_MakeSkinMesh(nlChunk* outerChunk, glModel* models)
         }
         case 0x1B00D:
         {
-            if (chunkSize % 0x10 != 0)
+            if (chunkSize % (native?32:16) != 0)
                 return fail();
-            count = chunkSize >> 4;
+            count = chunkSize / (native?32:16);
             if (count > 0x1000u)
                 return fail();
             SkinVertex* vertices = count != 0
@@ -200,10 +226,17 @@ GLSkinMesh* glx_MakeSkinMesh(nlChunk* outerChunk, glModel* models)
                 return fail();
             for (i = 0; i < count; ++i)
             {
-                vertices[i].position.x = port_bef32(data + i * 0x10 + 0x00);
-                vertices[i].position.y = port_bef32(data + i * 0x10 + 0x04);
-                vertices[i].position.z = port_bef32(data + i * 0x10 + 0x08);
-                memcpy(vertices[i].packed_normal, data + i * 0x10 + 0x0C, 4);
+                const size_t stride=native?32:16;
+                vertices[i].position.x = readFloat(data + i * stride + 0);
+                vertices[i].position.y = readFloat(data + i * stride + 4);
+                vertices[i].position.z = readFloat(data + i * stride + 8);
+                vertices[i].native_normal_valid=native;
+                if(native) {
+                    memset(vertices[i].packed_normal,0,4);
+                    vertices[i].native_normal.x=readFloat(data+i*stride+12);
+                    vertices[i].native_normal.y=readFloat(data+i*stride+16);
+                    vertices[i].native_normal.z=readFloat(data+i*stride+20);
+                } else memcpy(vertices[i].packed_normal, data + i * stride + 12, 4);
             }
             mesh->SetSoftwareVertices((int)count, vertices);
             if (vertices != NULL)
@@ -223,8 +256,8 @@ GLSkinMesh* glx_MakeSkinMesh(nlChunk* outerChunk, glModel* models)
                 return fail();
             for (i = 0; i < count; ++i)
             {
-                pairs[i].vertexIndex = port_be16(data + i * 4 + 0);
-                pairs[i].vertexWeight = port_be16(data + i * 4 + 2);
+                pairs[i].vertexIndex = read16(data + i * 4 + 0);
+                pairs[i].vertexWeight = read16(data + i * 4 + 2);
             }
             mesh->AppendSkinPairList((int)count, pairs);
             if (pairs != NULL)
@@ -235,8 +268,8 @@ GLSkinMesh* glx_MakeSkinMesh(nlChunk* outerChunk, glModel* models)
         {
             if (chunkSize < 12)
                 return fail();
-            const u32 numMorphs = port_be32(data + 0);
-            const u32 numBaseVerts = port_be32(data + 4);
+            const u32 numMorphs = read32(data + 0);
+            const u32 numBaseVerts = read32(data + 4);
             if (numMorphs > 8 || numBaseVerts > 0x1000u ||
                 numMorphs > (chunkSize - 12) / 8)
                 return fail();
@@ -246,7 +279,7 @@ GLSkinMesh* glx_MakeSkinMesh(nlChunk* outerChunk, glModel* models)
             const u8* countsRaw = idsRaw + numMorphs * 4;
             const u32 used = 8 + numMorphs * 8;
             const u8* deltaCountRaw = data + used;
-            const u32 deltaCount = port_be32(deltaCountRaw);
+            const u32 deltaCount = read32(deltaCountRaw);
             if (deltaCount > (chunkSize - used - 4) / sizeof(MorphDelta))
                 return fail();
 
@@ -262,8 +295,8 @@ GLSkinMesh* glx_MakeSkinMesh(nlChunk* outerChunk, glModel* models)
             uint64_t referencedDeltas = 0;
             for (i = 0; i < numMorphs; ++i)
             {
-                ids[i] = port_be32(idsRaw + i * 4);
-                deltaCounts[i] = port_be32(countsRaw + i * 4);
+                ids[i] = read32(idsRaw + i * 4);
+                deltaCounts[i] = read32(countsRaw + i * 4);
                 referencedDeltas += deltaCounts[i];
             }
             if (referencedDeltas > deltaCount)
@@ -286,10 +319,10 @@ GLSkinMesh* glx_MakeSkinMesh(nlChunk* outerChunk, glModel* models)
             const u8* deltaRaw = deltaCountRaw + 4;
             for (i = 0; i < deltaCount; ++i)
             {
-                deltas[i].delta.x = port_bef32(deltaRaw + i * 0x10 + 0x00);
-                deltas[i].delta.y = port_bef32(deltaRaw + i * 0x10 + 0x04);
-                deltas[i].delta.z = port_bef32(deltaRaw + i * 0x10 + 0x08);
-                deltas[i].index = (int)port_be32(deltaRaw + i * 0x10 + 0x0C);
+                deltas[i].delta.x = readFloat(deltaRaw + i * 0x10 + 0x00);
+                deltas[i].delta.y = readFloat(deltaRaw + i * 0x10 + 0x04);
+                deltas[i].delta.z = readFloat(deltaRaw + i * 0x10 + 0x08);
+                deltas[i].index = (int)read32(deltaRaw + i * 0x10 + 0x0C);
                 if ((u32)deltas[i].index >= numBaseVerts)
                 {
                     nlFree(deltas);
@@ -309,8 +342,8 @@ GLSkinMesh* glx_MakeSkinMesh(nlChunk* outerChunk, glModel* models)
                 return fail();
             {
                 // Serialized order is packet count first, then packet index.
-                const u32 numPackets = port_be32(data + 0);
-                const u32 packetIndex = port_be32(data + 4);
+                const u32 numPackets = read32(data + 0);
+                const u32 packetIndex = read32(data + 4);
                 if (numPackets == 0 || packetIndex >= numPackets ||
                     (mesh->stitchArray != NULL && mesh->numPackets != (int)numPackets))
                     return fail();
@@ -338,26 +371,33 @@ static glModel* glxLoadModelFromMemory(char* data, int size, unsigned long* pNum
 
     const u8* fileBegin = (const u8*)data;
     const u8* fileEnd = fileBegin + (unsigned long)size;
-    PortBEChunkView first;
-    if (!port_be_chunk_read(fileBegin, fileEnd, &first))
+    const bool native=port::assets::magic({fileBegin,size_t(size)},"NSMD0001");
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    if(!native){OSReport("[native-model] converted model required\n");nlFree(data);return NULL;}
+#endif
+    if(native && !port::assets::validate_model({fileBegin,size_t(size)})){nlFree(data);return NULL;}
+    const auto read32=[native](const void* p){return native?port::assets::word(p):port_be32(p);};
+    const auto readFloat=[native](const void* p){return native?port::assets::scalar(p):port_bef32(p);};
+    PortBEChunkView first{};
+    if (!native && !port_be_chunk_read(fileBegin, fileEnd, &first))
     {
         OSReport("Error: model data does not start with a bounded BE chunk\n");
         return NULL;
     }
 
-    const bool hasBmdHeader = ((first.id & ~0x7F000000u) == 0x8001B100u);
-    const u8* outerCursor = hasBmdHeader ? first.raw + 8 : fileBegin;
+    const bool hasBmdHeader = !native && ((first.id & ~0x7F000000u) == 0x8001B100u);
+    const u8* outerCursor = native ? fileBegin+16 : hasBmdHeader ? first.raw + 8 : fileBegin;
     const u8* outerEnd = hasBmdHeader ? first.next : fileEnd;
     glModel* lastModels = NULL;
 
     while (outerCursor < outerEnd)
     {
         PortBEChunkView outer;
-        if (!port_be_chunk_read(outerCursor, outerEnd, &outer) ||
+        if (!glxReadModelSection(outerCursor, outerEnd, &outer,native) ||
             (outer.id & ~0x7F000000u) != 0x8001B000u)
         {
             OSReport("Error: model container is malformed or has unexpected id 0x%08lx\n",
-                     (unsigned long)(outerCursor + 4 <= outerEnd ? port_be32(outerCursor) : 0));
+                     (unsigned long)(outerCursor + 4 <= outerEnd ? read32(outerCursor) : 0));
             nlFree(data);
             return NULL;
         }
@@ -375,12 +415,12 @@ static glModel* glxLoadModelFromMemory(char* data, int size, unsigned long* pNum
         u8* pIndexData = NULL;
         bool hasSkinData = false;
 
-        const u8* innerCursor = outer.raw + 8;
-        const u8* innerEnd = outer.next;
+        const u8* innerCursor = native ? outer.payload : outer.raw + 8;
+        const u8* innerEnd = native ? outer.payload+outer.payload_len : outer.next;
         while (innerCursor < innerEnd)
         {
             PortBEChunkView chunkView;
-            if (!port_be_chunk_read(innerCursor, innerEnd, &chunkView))
+            if (!glxReadModelSection(innerCursor, innerEnd, &chunkView,native))
             {
                 OSReport("Error: malformed inner BMD chunk\n");
                 nlFree(data);
@@ -404,7 +444,7 @@ static glModel* glxLoadModelFromMemory(char* data, int size, unsigned long* pNum
                     refDataPtr = (uintptr_t)p;
                     memcpy(p, chunkData, chunkSize);
                     // PORT: matrices, and the file is big-endian.
-                    port_be32_array(p, chunkSize / 4);
+                    if(!native)port_be32_array(p, chunkSize / 4);
                     break;
                 }
                 case BMD_CHUNK_MODELS:
@@ -418,7 +458,7 @@ static glModel* glxLoadModelFromMemory(char* data, int size, unsigned long* pNum
                         numModels * sizeof(glModel), GLM_Header);
                     if (pModels == NULL)
                         return NULL;
-                    port_bmd_convert_models(pModels, chunkData, numModels,
+                    (native?port_nmd_convert_models:port_bmd_convert_models)(pModels, chunkData, numModels,
                                             sizeof(glModel));
                     {
                         glModel* pEnt = pModels;
@@ -439,30 +479,30 @@ static glModel* glxLoadModelFromMemory(char* data, int size, unsigned long* pNum
                 }
                 case BMD_CHUNK_PACKETS:
                 {
-                    if (chunkSize % 0x4A != 0)
+                    if (chunkSize % (native?80:0x4A) != 0)
                         return NULL;
-                    numPacketEntries = (int)port_bmd_packet_count(chunkSize);
+                    numPacketEntries = native ? int(chunkSize/80) : (int)port_bmd_packet_count(chunkSize);
                     if (numPacketEntries <= 0)
                         return NULL;
                     pPackets = (glModelPacket*)glResourceAlloc(
                         numPacketEntries * sizeof(glModelPacket), GLM_Header);
                     if (pPackets == NULL)
                         return NULL;
-                    port_bmd_convert_packets(pPackets, chunkData, numPacketEntries);
+                    (native?port_nmd_convert_packets:port_bmd_convert_packets)(pPackets, chunkData, numPacketEntries);
                     break;
                 }
                 case BMD_CHUNK_STREAMS:
                 {
-                    if (chunkSize % 0x06 != 0)
+                    if (chunkSize % (native?12:0x06) != 0)
                         return NULL;
-                    numStreamEntries = (int)port_bmd_stream_count(chunkSize);
+                    numStreamEntries = native ? int(chunkSize/12) : (int)port_bmd_stream_count(chunkSize);
                     if (numStreamEntries <= 0)
                         return NULL;
                     pStreamData = (u8*)glResourceAlloc(
                         numStreamEntries * sizeof(glModelStream), GLM_Header);
                     if (pStreamData == NULL)
                         return NULL;
-                    port_bmd_convert_streams(pStreamData, chunkData, numStreamEntries);
+                    (native?port_nmd_convert_streams:port_bmd_convert_streams)(pStreamData, chunkData, numStreamEntries);
                     break;
                 }
                 case BMD_CHUNK_DISPLAY_LIST:
@@ -485,7 +525,7 @@ static glModel* glxLoadModelFromMemory(char* data, int size, unsigned long* pNum
                     if (pIndexData == NULL)
                         return NULL;
                     memcpy(pIndexData, chunkData, chunkSize);
-                    port_bmd_swap_indices(pIndexData, chunkSize);
+                    if(!native)port_bmd_swap_indices(pIndexData, chunkSize);
                     DCFlushRange(pIndexData, chunkSize);
                     break;
                 }
@@ -495,17 +535,17 @@ static glModel* glxLoadModelFromMemory(char* data, int size, unsigned long* pNum
                     const u8* p32 = (const u8*)chunkData;
                     if (chunkSize < 16)
                         return NULL;
-                    unsigned long canonID = port_be32(p32);
+                    unsigned long canonID = read32(p32);
                     p32 += 4;
                     if (glInventory.GetTextureAnim(canonID) == NULL)
                     {
-                        unsigned long num = port_be32(p32);
+                        unsigned long num = read32(p32);
                         p32 += 4;
                         if (num > (chunkSize - 16) / 8)
                             return NULL;
-                        unsigned long mode = port_be32(p32);
+                        unsigned long mode = read32(p32);
                         p32 += 4;
-                        float start = port_bef32(p32);
+                        float start = readFloat(p32);
                         p32 += 4;
                         GLTextureAnim* pAnim = new (nlMalloc(sizeof(GLTextureAnim), 8, false)) GLTextureAnim();
                         pAnim->m_unk_0x00 = (s32)canonID;
@@ -516,10 +556,10 @@ static glModel* glxLoadModelFromMemory(char* data, int size, unsigned long* pNum
                         GLAnimTex animTex;
                         for (index = 0; index < num; index++)
                         {
-                            unsigned long hashID = port_be32(p32);
+                            unsigned long hashID = read32(p32);
                             p32 += 4;
                             animTex.textureHandle = hashID;
-                            animTex.time = port_bef32(p32);
+                            animTex.time = readFloat(p32);
                             p32 += 4;
                             pAnim->SetTexture(index, animTex);
                         }
@@ -537,10 +577,10 @@ static glModel* glxLoadModelFromMemory(char* data, int size, unsigned long* pNum
                     const u8* p32 = (const u8*)chunkData;
                     if (chunkSize < 16)
                         return NULL;
-                    unsigned long hashID = port_be32(p32 + 0);
-                    unsigned long numFrames = port_be32(p32 + 4);
-                    unsigned long numVerts = port_be32(p32 + 8);
-                    unsigned long fps = port_be32(p32 + 12);
+                    unsigned long hashID = read32(p32 + 0);
+                    unsigned long numFrames = read32(p32 + 4);
+                    unsigned long numVerts = read32(p32 + 8);
+                    unsigned long fps = read32(p32 + 12);
                     p32 += 16;
                     GLVertexAnim* pAnim = new (nlMalloc(sizeof(GLVertexAnim), 8, false)) GLVertexAnim();
                     pAnim->m_uHashID = hashID;
@@ -558,7 +598,7 @@ static glModel* glxLoadModelFromMemory(char* data, int size, unsigned long* pNum
                         return NULL;
                     memcpy(pVertices, p32, vertexBytes);
                     // PORT: and the vertices themselves are big-endian floats.
-                    port_be32_array(pVertices, vertexBytes / 4);
+                    if(!native)port_be32_array(pVertices, vertexBytes / 4);
                     DCFlushRange(pVertices, vertexBytes);
                     pAnim->m_pVertices = pVertices;
                     pAnim->m_pModel = glInventory.GetModel(hashID);
@@ -571,8 +611,8 @@ static glModel* glxLoadModelFromMemory(char* data, int size, unsigned long* pNum
                     // PORT: decode into a host array; never rewrite the source .glg.
                     const u8* p32 = (const u8*)chunkData;
                     if (chunkSize < 8) return NULL;
-                    unsigned long modelID = port_be32(p32 + 0);
-                    unsigned long numMats = port_be32(p32 + 4);
+                    unsigned long modelID = read32(p32 + 0);
+                    unsigned long numMats = read32(p32 + 4);
                     p32 += 8;
                     if (numMats > (chunkSize - 8) / sizeof(GLMaterialEntry)) return NULL;
                     GLMaterialEntry* hostMats = (GLMaterialEntry*)nlMalloc(
@@ -581,9 +621,9 @@ static glModel* glxLoadModelFromMemory(char* data, int size, unsigned long* pNum
                     for (unsigned long m = 0; m < numMats; ++m)
                     {
                         u32* words = (u32*)&hostMats[m];
-                        words[0] = port_be32(p32 + m * 12 + 0);
-                        words[1] = port_be32(p32 + m * 12 + 4);
-                        words[2] = port_be32(p32 + m * 12 + 8);
+                        words[0] = read32(p32 + m * 12 + 0);
+                        words[1] = read32(p32 + m * 12 + 4);
+                        words[2] = read32(p32 + m * 12 + 8);
                     }
                     GLMaterialList* pList = new (nlMalloc(sizeof(GLMaterialList), 8, false)) GLMaterialList();
                     pList->m_uHashID = modelID;
@@ -596,8 +636,9 @@ static glModel* glxLoadModelFromMemory(char* data, int size, unsigned long* pNum
                 {
                     if (pModels == NULL || numModels == 0)
                         return NULL;
-                    const u32 skinSize = chunkView.size + 8;
-                    if (port_skin_validate(chunkView.raw, skinSize) == 0)
+                    const u32 skinSize = native ? chunkSize : chunkView.size+8;
+                    const u8* skinData=native?chunkData:chunkView.raw;
+                    if (native ? !port::assets::validate_skin({skinData,skinSize}) : port_skin_validate(skinData,skinSize)==0)
                     {
                         OSReport("Error: SKIN chunk of model %lu is not well-formed\n",
                                  (unsigned long)pModels->id);
@@ -608,7 +649,7 @@ static glModel* glxLoadModelFromMemory(char* data, int size, unsigned long* pNum
                     // Retain the original immutable BE chunk. Mesh construction decodes
                     // format-defined fields into host-owned arrays; no private endian-swapped
                     // nlChunk tree is needed anymore.
-                    memcpy(pSkinChunk, chunkView.raw, skinSize);
+                    memcpy(pSkinChunk, skinData, skinSize);
                     // PORT: see rw_glinventory_skinprobe.
                     if (getenv("STRIKERS_PROBE_SKIN"))
                         OSReport("[skin] ADD id=%lu pModels=%p numModels=%lu\n",
@@ -677,7 +718,7 @@ static glModel* glxLoadModelFromMemory(char* data, int size, unsigned long* pNum
 
         {
             glModelStream* pStream = (glModelStream*)pStreamData;
-            port_bmd_stream_sizes(pStream, numStreamEntries, vertexDataSize);
+            if(!native)port_bmd_stream_sizes(pStream, numStreamEntries, vertexDataSize);
             for (int count = 0; count < numStreamEntries; count++)
                 pStream[count].address += (uintptr_t)pDisplayListData;
         }

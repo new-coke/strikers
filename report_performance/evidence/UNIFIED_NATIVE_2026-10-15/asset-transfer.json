@@ -1,0 +1,15 @@
+{
+  "source_sha256": "c98379e7079b046b412522c1148f4aea25f80a0f1f54cb37a726cfc3ecd41a3a",
+  "bytes": 1769263305,
+  "stage": "ux0:/data/strikersVita/sms-native-unified.psarc.stage",
+  "start_unix": 1792087211.927256,
+  "published": false,
+  "uploaded_bytes": 1769263305,
+  "elapsed_seconds": 1118.2765660830191,
+  "upload_complete": true,
+  "upload_seconds": 1130.0063777909963,
+  "verified_bytes": 4344,
+  "readback_elapsed_seconds": 0.11436808301368728,
+  "readback_cancelled": true,
+  "verification_method": "native DMAC5 SHA256 per 1 MiB block; FTP full-file readback cancelled after complete upload"
+}

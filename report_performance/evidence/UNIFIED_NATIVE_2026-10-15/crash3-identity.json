@@ -1,0 +1,9 @@
+{
+  "dump": "ab-artifacts/unified-native-20261015/psp2core-1792103282-0x0010ba32b7-eboot.bin.psp2dmp",
+  "dump_bytes": 136832,
+  "dump_sha256": "f1678ee7df675e342460f5ad209b367e97e51dfaf8cbacdb04d506f0bcffb02c",
+  "ini_sha256": "aac80bdf22392a11167a11dd9f713ffcff4088d3e9c898f9e6e50f5314620759",
+  "attribution": "UNRELATED application PHGV00001; not Strikers, no rollback justified",
+  "candidate_self_sha256": "db2ddb6f52857fce30da39f73f4fbb884f90ab0fe3be7503e050ee59a5d7c7fd",
+  "candidate_archive_sha256": "699670609b952510615d869b344c18bda6b7b1f0cce8868e0248b9204cec220d"
+}

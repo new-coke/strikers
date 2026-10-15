@@ -2,6 +2,7 @@
 #include "port/renderer.hpp"
 #include "port/scene_shaders.hpp"
 #include "port/vitagl_texture.hpp"
+#include "port/native_boot_screen.hpp"
 #include <vitaGL.h>
 #include <psp2/kernel/sysmem.h>
 #include <psp2/kernel/threadmgr.h>
@@ -104,7 +105,7 @@ struct ModelLease
 struct Renderer::Impl
 {
     bool initialized = false, sceneInitialized = false, active = false, presented = false,
-         timed = false;
+         timed = false, startupRetired = false;
     SceUID owner = -1;
     unsigned cullTest = 0;
     int error = 0;
@@ -344,6 +345,7 @@ bool Renderer::initialize(bool timed) noexcept
     if (d.initialized)
         return d.on_owner();
     d.owner = sceKernelGetThreadId();
+    port::startup::show("PREPARING GRAPHICS");
     d.timed = timed;
     const char* cull = std::getenv("STRIKERS_VITAGL_CULL_TEST");
     d.cullTest = cull ? unsigned(std::clamp(std::atoi(cull), 0, 2)) : 0;
@@ -406,17 +408,23 @@ bool Renderer::initialize_scene_program() noexcept
         return true;
     if (d.error)
         return false;
+    port::startup::show("PREPARING SHADERS",0,41);
     d.vertexShader = d.compile(GL_CG_VERTEX_SHADER_EXT, kSceneVertexShader);
     if (!d.vertexShader)
         return false;
     if (!d.make_program(128, 63, true, true))
         return false;
+    unsigned prepared=1;
+    port::startup::show("PREPARING SHADERS",prepared,41);
     constexpr unsigned masks[]{ 0,  1,  3,  5,  7,  9,  13, 17, 19, 21,
                                 25, 33, 35, 37, 39, 41, 43, 49, 53, 57 };
     for (auto mask : masks)
-        for (unsigned alpha = 0; alpha < 2; ++alpha)
+        for (unsigned alpha = 0; alpha < 2; ++alpha) {
             if (!d.make_program(mask * 2 + alpha, mask, alpha, false))
                 return false;
+            port::startup::show("PREPARING SHADERS",++prepared,41);
+        }
+    port::startup::show("STARTING GAME");
     d.sceneInitialized = true;
     glUseProgram(0);
     d.boundProgram = 0;
@@ -442,18 +450,28 @@ uint32_t Renderer::create_texture(const TextureUpload& image) noexcept
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, t.id);
         d.boundTextures[0] = t.id;
+        size_t linearOffset=0;
         for (unsigned level = 0; level < image.mipCount; ++level)
         {
             TextureLevel decoded;
-            if (!texture_level_rgba(image, level, decoded))
+            const unsigned width=std::max(1u,image.width>>level),height=std::max(1u,image.height>>level);
+            const bool linear=image.storage==nativegxm::TextureStorage::Rgba8 && !image.swizzled;
+            const unsigned stride=(width+7u)&~7u;
+            const uint8_t* pixels=nullptr;
+            if(linear && stride==width)
+                pixels=image.pixels.data()+linearOffset;
+            else if (texture_level_rgba(image, level, decoded))
+                pixels=decoded.rgba.data();
+            else
             {
                 d.fail("texture_decode");
                 return 0;
             }
-            for (size_t i = 3; i < decoded.rgba.size(); i += 4)
-                t.minAlpha = std::min(t.minAlpha, decoded.rgba[i]);
-            glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, decoded.width, decoded.height, 0, GL_RGBA,
-                         GL_UNSIGNED_BYTE, decoded.rgba.data());
+            for (size_t i = 3; i < size_t(width)*height*4; i += 4)
+                t.minAlpha = std::min(t.minAlpha, pixels[i]);
+            glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, width, height, 0, GL_RGBA,
+                         GL_UNSIGNED_BYTE, pixels);
+            if(linear)linearOffset+=size_t(stride)*height*4;
         }
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
                         t.levels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
@@ -639,10 +657,16 @@ bool Renderer::draw_scene(uint32_t model, std::span<const ModelVertex> vertices,
     }
     d.attributes();
     const unsigned mask = unsigned(m.controls[0]);
+    // GLUD_ConstantColour replaces both TEV colour and alpha for diffuse-only
+    // draws. BallBlurCB uses that alpha for its five translucent rotations.
+    // Explicit translucent/no-rasterized-alpha data has priority; the lit
+    // 0x21 combiner replaces RGB only and retains its rasterized alpha.
+    const float rasterAlpha = m.effects[1] >= 0 ? m.effects[1] :
+        (m.effects[0] > .5f && mask == 1 ? m.tint[3] : -1.f);
     bool test = m.controls[1] >= 0;
     float minimum = float(alpha) / 255;
-    if (m.effects[1] >= 0)
-        minimum = m.effects[1];
+    if (rasterAlpha >= 0)
+        minimum = rasterAlpha;
     if (m.environment[2] > 0)
         minimum = 0;
     const auto texalpha = [&](unsigned slot) {
@@ -666,7 +690,7 @@ bool Renderer::draw_scene(uint32_t model, std::span<const ModelVertex> vertices,
         glUseProgram(p.id);
         d.boundProgram = p.id;
     }
-    float lighting[]{ float(m.lit), m.effects[1], float(m.controls[3] == 1), m.effects[3] };
+    float lighting[]{ float(m.lit), rasterAlpha, float(m.controls[3] == 1), m.effects[3] };
     const float* values[]{ mvp.data(),
                            m.modelView.data(),
                            m.bones[0].data(),
@@ -954,6 +978,7 @@ bool Renderer::end_frame(bool present) noexcept
     if (!d.check("present_blit"))
         return false;
     vglSwapBuffers(GL_FALSE);
+    if(!d.startupRetired)d.startupRetired=port::startup::retire_if_replaced();
     d.current.queueUs += d.now() - start;
     d.completed = d.current;
     d.active = false;

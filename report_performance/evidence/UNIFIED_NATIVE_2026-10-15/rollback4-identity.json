@@ -1,0 +1,11 @@
+{
+  "manual_recovery_confirmed": true,
+  "started_unix": 1792105240.6375759,
+  "restored_self_sha256": "db2ddb6f52857fce30da39f73f4fbb884f90ab0fe3be7503e050ee59a5d7c7fd",
+  "restored_ini_sha256": "aac80bdf22392a11167a11dd9f713ffcff4088d3e9c898f9e6e50f5314620759",
+  "crash_ini_sha256": "fd556d377493920c19e0e9dad1afe107ab7b2a5eec209fcaf629df546c499e20",
+  "kill": "Error: cannot kill the app. Is the TITLEID correct?",
+  "verified_self_sha256": "db2ddb6f52857fce30da39f73f4fbb884f90ab0fe3be7503e050ee59a5d7c7fd",
+  "verified_ini_sha256": "aac80bdf22392a11167a11dd9f713ffcff4088d3e9c898f9e6e50f5314620759",
+  "completed_unix": 1792105250.935849
+}

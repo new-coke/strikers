@@ -37,6 +37,7 @@ std::vector<std::vector<uint8_t>> submitted;
 std::vector<float> bones;
 std::vector<float> specularDirections, specularColors, material;
 std::vector<float> controls;
+std::map<GLuint,std::vector<float>> lightingByProgram;
 void generate(GLsizei n, GLuint* ids, std::set<GLuint>& live)
 {
     while (n--)
@@ -263,6 +264,8 @@ void glUniform4fv(GLint location, GLsizei count, const GLfloat* values)
         material.assign(values, values + count * 4);
     if (location == -13)
         controls.assign(values, values + count * 4);
+    if (location == -8)
+        lightingByProgram[program].assign(values, values + count * 4);
 }
 void glEnableVertexAttribArray(GLuint) {}
 void glVertexAttribPointer(GLuint, GLint, GLenum, GLboolean, GLsizei, const void*)
@@ -478,6 +481,18 @@ int main()
             assert(textureParameters[rampTexture][GL_TEXTURE_WRAP_T] ==
                    ((wrap & 1) ? GL_CLAMP_TO_EDGE : GL_REPEAT));
         }
+        // Ball motion blur supplies 10-32% alpha in ConstantColour, not in
+        // GLUD_Translucent. Verify the uniform actually sent to the GPU and
+        // the priority of the explicit-alpha and lit-material paths.
+        m.effects[0]=1;m.tint[3]=81.f/255.f;
+        assert(r.draw_scene(model, {}, {}, identity, raster, m));
+        assert(lightingByProgram.at(program).size()==4 && lightingByProgram.at(program)[1]==81.f/255.f);
+        m.effects[1]=.75f;
+        assert(r.draw_scene(model, {}, {}, identity, raster, m) && lightingByProgram.at(program)[1]==.75f);
+        m.effects[1]=-1;m.controls[0]=33;
+        assert(r.draw_scene(model, {}, {}, identity, raster, m) && lightingByProgram.at(program)[1]==-1.f);
+        m.effects[0]=0;m.controls[0]=1;
+        assert(r.draw_scene(model, {}, {}, identity, raster, m) && lightingByProgram.at(program)[1]==-1.f);
         m.bones[29][3] = 1234;
         assert(r.draw_scene(model, {}, {}, identity, raster, m) && bones.size() == 120 &&
                bones[119] == 1234);

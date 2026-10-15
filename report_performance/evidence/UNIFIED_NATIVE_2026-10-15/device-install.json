@@ -1,0 +1,53 @@
+{
+  "host": "192.168.1.79",
+  "started_unix": 1792088351.9635751,
+  "backup": "ux0:/data/strikersVita.before-native-20261015",
+  "previous_self_sha256": "41ff29d27c894920782dd0b31b3d5a99d5670800fc18eca72262a47893de08c0",
+  "candidate_self_sha256": "b8f974d6925aead615bdbb5c74aef8e14a7bc36001d7ef301a3c78aa636fe2b0",
+  "previous_ini_sha256": "e824045f1d37b132539dfc51f5b2a0622d6f86a38c1a345af81bdd166a15977d",
+  "prior_crashes": [
+    "psp2core-1791883756-0x00000521c5-eboot.bin.psp2dmp",
+    "psp2core-1791999337-0x00043f38d3-eboot.bin.psp2dmp",
+    "psp2core-1792001391-0x000c372671-eboot.bin.psp2dmp",
+    "psp2core-1792002100-0x00043d35f7-eboot.bin.psp2dmp",
+    "psp2core-1792002978-0x000450308d-eboot.bin.psp2dmp",
+    "psp2core-1792073568-0x0011d122e1-eboot.bin.psp2dmp"
+  ],
+  "previous_data_names": [
+    "sms.psarc",
+    "sms-native-gxm-static.psarc",
+    "strikers.ini",
+    "cardA",
+    "cardB",
+    "vitagl_match_status.csv",
+    "native_rejected_packets.log",
+    "sms-native-unified.psarc.stage"
+  ],
+  "manifest_readback_verified": true,
+  "kill": "Error: cannot kill the app. Is the TITLEID correct?",
+  "activate_for_close": "Launched.",
+  "kill_retry": "Killed.",
+  "installed_self_sha256": "b8f974d6925aead615bdbb5c74aef8e14a7bc36001d7ef301a3c78aa636fe2b0",
+  "verification_ini_sha256": "729baa07e1b04fa8f3b39689ddc7b669ed0903ed388c634bd72db8fbbc3f55ab",
+  "verification_launch": "Launched.",
+  "verification_launched_unix": 1792088370.945059,
+  "verification_self_sha256": "c2b67ab5958e6d41167fbad9ac856b08b5a13a5d6a1aaca878e73e80a1693188",
+  "old_asset_sizes": {
+    "sms.psarc": 623698090,
+    "sms-native-gxm-static.psarc": 280013735
+  },
+  "published": true,
+  "published_unix": 1792088890.18176,
+  "active_psarcs": [
+    "sms.psarc"
+  ],
+  "normal_launch": "Launched.",
+  "normal_launched_unix": 1792088890.5704331,
+  "normal_press": "Input pressed.",
+  "normal_release": "Input released.",
+  "normal_confirmed_unix": 1792088901.9229,
+  "new_crashes": [
+    "psp2core-1792088894-0x000ab93ead-eboot.bin.psp2dmp"
+  ],
+  "last_error": "RuntimeError('New crash; stop for manual recovery')"
+}

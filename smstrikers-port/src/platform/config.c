@@ -26,7 +26,7 @@
 #if defined(PORT_VITA)
 #define PORT_VITA_DEFAULTS_BEGIN "# --- STRIKERS VALIDATED DEFAULTS BEGIN ---"
 #define PORT_VITA_DEFAULTS_END "# --- STRIKERS VALIDATED DEFAULTS END ---"
-#define PORT_VITA_DEFAULTS_REVISION "2026-10-14-vitagl"
+#define PORT_VITA_DEFAULTS_REVISION "2026-10-15-vitagl-unified"
 
 typedef struct VitaDefaultConfigEntry
 {
@@ -54,8 +54,6 @@ static const VitaDefaultConfigEntry s_vita_defaults[] = {
     { "vita_snapshot_play_frame", "0" },
     { "log", "ux0:data/strikersVita/vitagl.log" },
     { "asset_archive", "ux0:data/strikersVita/sms.psarc" },
-    { "native_asset_archive", "ux0:data/strikersVita/sms-native-gxm-static.psarc" },
-    { "native_assets", "1" },
     { "vita_native_audio", "1" },
     { "vita_native_video", "1" },
     { "task_profile", "0" },

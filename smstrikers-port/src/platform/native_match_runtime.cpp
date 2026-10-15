@@ -5,7 +5,7 @@
 #include "port/native_match_transform.hpp"
 #include "port/scene_texture_sampling.hpp"
 #include "port/scene_specular.hpp"
-#include "port/native_assets.hpp"
+#include "port/native_graphics.hpp"
 #include "Game/GL/ShaderSkinMesh.h"
 #include "NL/gl/glState.h"
 #include "NL/gl/glMatrix.h"
@@ -40,7 +40,7 @@ uint64_t frameDrawStart=0,frameStartNs=0;
 struct Range {uintptr_t address;size_t size;};
 bool overlaps(Range a,Range b){return a.address<=b.address?b.address-a.address<a.size:a.address-b.address<b.size;}
 struct Geometry {uint32_t id=0,level=0;uint64_t generation=0;std::vector<Range> ranges;};
-struct Texture {uint32_t id=0,level=0;const PlatTexture* source=nullptr;Range pixels{},palette{};unsigned width=0,height=0,levels=0,format=0;bool target=false;int shadowPartition=-1;};
+struct Texture {uint32_t id=0,level=0;const PlatTexture* source=nullptr;Range pixels{},palette{};unsigned width=0,height=0,levels=0,format=0;bool target=false;int shadowPartition=-1;bool fileNative=false;uint32_t resourceLevel=0;};
 uint32_t shadowAtlas=0;
 std::unordered_map<uint64_t,Geometry> geometry;
 std::unordered_map<const PlatTexture*,Texture> textures;
@@ -66,27 +66,29 @@ void consume_writes(){
  std::array<Range,4096> changed;unsigned n;bool all;{std::lock_guard<std::mutex> guard(writeMutex);n=writeCount;std::copy_n(writes.begin(),n,changed.begin());all=invalidateAll;writeCount=0;invalidateAll=false;}
  if(!n&&!all)return;
  for(auto it=geometry.begin();it!=geometry.end();){bool dirty=all;for(unsigned i=0;i<n&&!dirty;++i)for(auto range:it->second.ranges)if(overlaps(range,changed[i])){dirty=true;break;}if(dirty){gpu.release_model(it->second.id);it=geometry.erase(it);}else ++it;}
- for(auto it=textures.begin();it!=textures.end();){if(it->second.target){++it;continue;}bool dirty=all;for(unsigned i=0;i<n&&!dirty;++i)dirty=overlaps(it->second.pixels,changed[i])||overlaps(it->second.palette,changed[i]);if(dirty){gpu.release_texture(it->second.id);it=textures.erase(it);}else ++it;}
+ for(auto it=textures.begin();it!=textures.end();){if(it->second.target||it->second.fileNative){++it;continue;}bool dirty=all;for(unsigned i=0;i<n&&!dirty;++i)dirty=overlaps(it->second.pixels,changed[i])||overlaps(it->second.palette,changed[i]);if(dirty){gpu.release_texture(it->second.id);it=textures.erase(it);}else ++it;}
 }
 const void* userdata(const glModelPacket& p,eGLUserData type){if(!p.userData)return nullptr;auto handle=reinterpret_cast<const uintptr_t*>(p.userData)[type];return handle?glUserGetData(reinterpret_cast<const void*>(handle)):nullptr;}
 void report(){auto* f=std::fopen("ux0:data/strikersVita/vitagl_match_status.csv","wb");if(!f)return;
- std::fprintf(f,"# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n%u,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%d,%s,%s\n",unsigned(glGetCurrentFrame()),draws,textured,hud,characters,invalid,records,decoded,resident,dynamic,gpu.error_code(),gpu.last_error(),failure);std::fclose(f);
+ std::fprintf(f,"# vitagl_match_v9 assets=native_graphics_v1 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n%u,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%d,%s,%s\n",unsigned(glGetCurrentFrame()),draws,textured,hud,characters,invalid,records,decoded,resident,dynamic,gpu.error_code(),gpu.last_error(),failure);std::fclose(f);
  if(timingFrames){f=std::fopen("ux0:data/strikersVita/native_renderer_timing.csv","w");if(f){std::fprintf(f,"frames,fence_us,upload_us,draw_calls_us,queue_us,draws,dynamic_bytes,frontend_wait_us,command_bytes,slot_waits\n%llu,%llu,%llu,%llu,%llu,%u,%llu,%llu,%llu,%u\n",timingFrames,timings.fenceUs,timings.uploadUs,timings.drawUs,timings.queueUs,timings.draws,timings.dynamicVertexBytes,timings.frontendWaitUs,timings.commandBytes,timings.slotWaits);std::fclose(f);}}
 }
 uint32_t texture_for(const PlatTexture* p){
- if(!p||p->m_Magic!=0x50544558||!p->m_SwizzledData||!p->m_Width||!p->m_Height||unsigned(p->m_Format)>8)return 0;
+ if(!p||p->m_Magic!=0x50544558||!p->m_Width||!p->m_Height||unsigned(p->m_Format)>8)return 0;
  auto existing=textures.find(p);if(existing!=textures.end())return existing->second.id;
- constexpr TextureEncoding formats[]{TextureEncoding::Rgb565,TextureEncoding::Rgb5a3,TextureEncoding::Cmpr,TextureEncoding::Rgba8,TextureEncoding::I8,TextureEncoding::I4,TextureEncoding::I8,TextureEncoding::IA8,TextureEncoding::C8};
- TextureSource source;source.width=p->m_Width;source.height=p->m_Height;source.mipCount=std::max(1u,unsigned(p->m_Levels));source.encoding=formats[p->m_Format];
- const size_t bytes=encoded_texture_bytes(source.width,source.height,source.encoding,source.mipCount);if(!bytes)return 0;
- source.pixels={static_cast<const uint8_t*>(p->m_SwizzledData),bytes};
- if(p->m_Format==GXTex_CI8){if(!p->m_PaletteData||p->m_nPaletteEntries<=0)return 0;source.palette={reinterpret_cast<const uint8_t*>(p->m_PaletteData),size_t(p->m_nPaletteEntries)*2};source.paletteEncoding=PaletteEncoding::Rgb5a3;}
- TextureUpload upload;std::vector<uint8_t> request,record;bool loaded=false;
- if(make_texture_request(source,request)&&read_native_asset(texture_record_path(request).c_str(),record,nullptr)&&parse_texture_record(record,request,upload)){loaded=true;++records;}
- if(!loaded){if(!decode_texture(source,upload)){failure="texture_decode";return 0;}++decoded;}
+ if(p->m_NativeDataSize||!p->m_SwizzledData){failure="native_texture_not_resident";++invalid;return 0;}
+ TextureUpload upload;size_t bytes=0,paletteBytes=0;uint32_t storage=0;
+  // Only runtime-generated surfaces reach the decoder. File textures must be NSTX.
+  constexpr TextureEncoding formats[]{TextureEncoding::Rgb565,TextureEncoding::Rgb5a3,TextureEncoding::Cmpr,TextureEncoding::Rgba8,TextureEncoding::I8,TextureEncoding::I4,TextureEncoding::I8,TextureEncoding::IA8,TextureEncoding::C8};
+  TextureSource source;source.width=p->m_Width;source.height=p->m_Height;source.mipCount=std::max(1u,unsigned(p->m_Levels));source.encoding=formats[p->m_Format];
+  bytes=encoded_texture_bytes(source.width,source.height,source.encoding,source.mipCount);if(!bytes)return 0;
+  source.pixels={static_cast<const uint8_t*>(p->m_SwizzledData),bytes};
+  if(p->m_Format==GXTex_CI8){if(!p->m_PaletteData||p->m_nPaletteEntries<=0)return 0;paletteBytes=size_t(p->m_nPaletteEntries)*2;source.palette={reinterpret_cast<const uint8_t*>(p->m_PaletteData),paletteBytes};source.paletteEncoding=PaletteEncoding::Rgb5a3;}
+  if(!decode_texture(source,upload)){failure="generated_texture_decode";return 0;}storage=uint32_t(source.encoding);++decoded;
  const uint32_t id=gpu.create_texture(upload);if(!id){failure="texture_upload";return 0;}
- textures.emplace(p,Texture{id,uint32_t(glx_GetTexMarkerLevel()),p,{reinterpret_cast<uintptr_t>(source.pixels.data()),source.pixels.size()},{reinterpret_cast<uintptr_t>(source.palette.data()),source.palette.size()},source.width,source.height,source.mipCount,unsigned(source.encoding)});return id;
+ textures.emplace(p,Texture{id,uint32_t(glx_GetTexMarkerLevel()),p,{reinterpret_cast<uintptr_t>(p->m_SwizzledData),bytes},{reinterpret_cast<uintptr_t>(p->m_PaletteData),paletteBytes},p->m_Width,p->m_Height,p->m_Levels,storage});return id;
 }
+
 std::array<float,4> vector4(const nlVector4& v){return {v.x,v.y,v.z,v.w};}
 void transform_point(std::array<float,4>& out,const float* xyz,const nlMatrix4& m,bool direction){for(unsigned k=0;k<3;++k)out[k]=xyz[0]*m.e[k]+xyz[1]*m.e[4+k]+xyz[2]*m.e[8+k]+(direction?0.f:m.e[12+k]);}
 }
@@ -124,8 +126,24 @@ void on_stitch_selectors(const glModelPacket* p,const uint8_t* s,uint32_t n) noe
     if(it->second.generation==priorGeneration){gpu.release_model(it->second.id);it=geometry.erase(it);}else ++it;
  }catch(...){++invalid;failure="skin_allocation";}
 }
-void on_resource_release(uint32_t level) noexcept{sources.release_after(level);for(auto it=geometry.begin();it!=geometry.end();)if(it->second.level>level){gpu.release_model(it->second.id);it=geometry.erase(it);}else ++it;}
+void on_resource_release(uint32_t level) noexcept {
+ sources.release_after(level);
+ for(auto it=geometry.begin();it!=geometry.end();)if(it->second.level>level){gpu.release_model(it->second.id);it=geometry.erase(it);}else ++it;
+ for(auto it=textures.begin();it!=textures.end();)if(it->second.fileNative&&it->second.resourceLevel>level){gpu.release_texture(it->second.id);it=textures.erase(it);}else ++it;
+}
 void on_texture_release(uint32_t level) noexcept{for(auto it=textures.begin();it!=textures.end();)if(it->second.level>level){if(it->second.id!=shadowAtlas)gpu.release_texture(it->second.id);it=textures.erase(it);}else ++it;}
+bool admit_texture(const PlatTexture* p,const nativegxm::TextureUpload& image) noexcept {
+ if(!p||!preload())return false;
+ const uint32_t id=gpu.create_texture(image);if(!id)return false;
+ try {
+  auto [it,inserted]=textures.try_emplace(p);
+  const uint32_t old=inserted?0:it->second.id;
+  it->second=Texture{id,p->m_OwnerTextureLevel,p,{},{},image.width,image.height,image.mipCount,uint32_t(TextureEncoding::LinearRgba8)};
+  it->second.fileNative=true;it->second.resourceLevel=p->m_OwnerResourceLevel;++records;
+  if(old&&old!=shadowAtlas)gpu.release_texture(old);
+  return true;
+ }catch(...){gpu.release_texture(id);failure="native_texture_admission";++invalid;return false;}
+}
 void notify_write(const void* ptr,size_t bytes) noexcept{if(!ptr||!bytes)return;std::lock_guard<std::mutex> guard(writeMutex);if(writeCount<writes.size())writes[writeCount++]={reinterpret_cast<uintptr_t>(ptr),bytes};else invalidateAll=true;}
 void draw_message_bitmap(unsigned width,unsigned height,const uint8_t* bits,uint32_t color,bool centered) noexcept {
  try {

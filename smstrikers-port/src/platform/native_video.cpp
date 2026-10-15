@@ -107,9 +107,9 @@ nlFile* PortOpenNativeMovie(const char* source){
     if(!PortNativeVideoEnabled()||!source)return nullptr;
     while(*source=='/'||*source=='\\')++source;
     if(!*source||std::strstr(source,"..")||std::strchr(source,':')||std::strchr(source,'\\'))return nullptr;
-    const char* path=std::getenv("STRIKERS_NATIVE_ASSET_ARCHIVE");if(!path||!*path)path=std::getenv("STRIKERS_ASSET_ARCHIVE");if(!path||!*path)return nullptr;
+    const char* path=std::getenv("STRIKERS_ASSET_ARCHIVE");if(!path||!*path)return nullptr;
     char error[256];auto* archive=port_asset_archive_open(path,error,sizeof error);if(!archive)return nullptr;
-    std::string name="native/v1/video/";name+=source;const int entry=port_asset_archive_find(archive,name.c_str());
+    std::string name="files/";name+=source;const int entry=port_asset_archive_find(archive,name.c_str());
     const uint64_t size=entry<0?0:port_asset_archive_size(archive,entry);
     uint8_t header[80];bool valid=size>=80&&size<=256*1024*1024&&!(size%32)&&
         port_asset_archive_read(archive,entry,header,sizeof header,0)==sizeof header&&

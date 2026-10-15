@@ -29,6 +29,8 @@ static void run_case(int mode)
         unsigned long long window[256] = {0}, sum = 0;
         CHECK(PortBenchGetFps() == 0.0);
         PortBenchInit();
+        PortBenchRendererGameplayStart();
+        PortBenchSetPlayActive(1);
         for (unsigned int i = 0; i < 800; ++i)
         {
             const unsigned long long workNs = (10000ull + i % 37 * 100ull) * 1000ull;
@@ -59,6 +61,7 @@ static void run_case(int mode)
         PortBenchLive live;
         PortBenchGetLive(&live);
         CHECK(live.fps == PortBenchGetFps());
+        CHECK(live.matchActive && live.playActive && live.frames==800 && live.playFrames==800);
         CHECK(clockCalls == before); // Reading FPS does not sample another clock.
         if (!diagnostics)
             CHECK(live.busyP95Ms == 0.0);
