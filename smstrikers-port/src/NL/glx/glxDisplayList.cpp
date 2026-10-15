@@ -3,14 +3,9 @@
 #include "NL/nlString.h"
 #include "dolphin/os/OSCache.h"
 #include "dolphin/PPCArch.h"
-#if defined(PORT_VITA) && defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
-#include "port/native_match_direct.hpp"
+#if defined(PORT_VITA) && defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "port/native_match_runtime.hpp"
 #include "NL/glx/glxMemory.h"
-#endif
-#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
-#include "NL/glx/glxMemory.h"
-#include "../../../extern/aurora-vita/lib/gx/native_model_registry.hpp"
-#include "../../../extern/aurora-vita/lib/gx/native_model_options.hpp"
 #endif
 
 #define DISPLAY_LIST_HEADER 0xBA7EF00D
@@ -90,19 +85,13 @@ DisplayList* dlMakeDisplayList(const glModelPacket* packet, bool permanent)
     DCFlushRangeNoSync(pList->list, pList->size);
     PPCSync();
 
-#if defined(PORT_VITA) && defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
+#if defined(PORT_VITA) && defined(STRIKERS_VITA_NATIVE_RUNTIME)
     if (permanent)
         port::directmatch::on_display_list_created(
             packet, reinterpret_cast<uintptr_t>(pList),
             glx_GetResourceMarkerLevel());
 #endif
 
-#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
-    if (permanent && aurora::gx::fifo::native_model_prepared_enabled())
-        aurora::gx::fifo::native_model_registry().register_source(
-            reinterpret_cast<uintptr_t>(pList), pList->list, pList->size,
-            glx_GetResourceMarkerLevel());
-#endif
 
     return pList;
 }

@@ -12,7 +12,7 @@ registry *after* the original GLX state switching and draw-time setup.
 The existing persistent GXM geometry cache and pipeline packet therefore
 did not remove enough producer work to establish any FPS benefit.
 
-MH3, documented in `MH3_NATIVE_PREPARATION_2026-10-10.md`, added permanent
+native-preparation, documented in `NATIVE_PREPARATION_2026-10-10.md`, added permanent
 GLG source-generation tracking, owner-level retirement, and reuse of
 current native material CPU snapshots. The async `shared_ptr` fix from
 `AURORA_VITA_R2_GTHREAD_COREDUMP_2026-10-10.md` is in the same source

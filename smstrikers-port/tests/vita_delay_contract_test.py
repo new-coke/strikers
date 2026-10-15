@@ -4,8 +4,7 @@ import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
-AURORA = ROOT / "extern" / "aurora-vita"
-SOURCE_ROOTS = (ROOT / "src", AURORA / "lib", AURORA / "platforms")
+SOURCE_ROOTS = (ROOT / "src",)
 SOURCE_SUFFIXES = {".c", ".cc", ".cpp", ".cxx", ".h", ".hpp"}
 
 
@@ -17,7 +16,6 @@ def fail(message: str) -> None:
 delay_call = re.compile(r"sceKernelDelayThread\s*\(")
 allowed_delay_files = {
     ROOT / "src" / "platform" / "host.c",
-    AURORA / "platforms" / "vita" / "vita_thread_utils.hpp",
 }
 
 for root in SOURCE_ROOTS:
@@ -55,11 +53,5 @@ if "sceKernelDelayThread" in yield_body:
     fail("Vita port_yield must not use sceKernelDelayThread")
 if 'volatile("yield"' not in yield_body:
     fail("Vita port_yield must use the ARM yield hint")
-
-aurora_thread = (AURORA / "platforms" / "vita" / "vita_thread_utils.hpp").read_text(encoding="utf-8")
-if "if (requestedUs <= 0)" not in aurora_thread:
-    fail("Aurora checked delay wrapper must reject every non-positive request")
-if aurora_thread.count("sceKernelDelayThread") != 1:
-    fail("Aurora checked delay wrapper must be the only Aurora delay syscall site")
 
 print("vita delay contract: OK")

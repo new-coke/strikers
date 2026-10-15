@@ -11,7 +11,7 @@
 #include "NL/nlString.h"
 #include "dolphin/thp/THPInfo.h"
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
-#include "port/native_match_direct.hpp"
+#include "port/native_match_runtime.hpp"
 #endif
 #include "port/audio.h"   // PORT: is anything pulling?
 
@@ -308,7 +308,7 @@ bool MoviePlay()
     }
 
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
-    port::directmatch::finish();
+    // Native rendering is completed by the owning outer frame.
 #else
     GXSetDrawDone();
     GXFlush();

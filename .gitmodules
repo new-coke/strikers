@@ -1,4 +1,0 @@
-[submodule "smstrikers-port/extern/aurora-vita"]
-	path = smstrikers-port/extern/aurora-vita
-	url = https://github.com/robin994/aurora-vita
-	branch = vita-experiment

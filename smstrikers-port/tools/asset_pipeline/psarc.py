@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 """Create/list/verify PSARC 1.4 archives without proprietary host tools.
 
-Adapted from Rinnegatamante/re4 tools/vita_psarc.py at
-dee72109dd06c0cf52e2fd21c095b3d09b23cad7 (CC0-1.0).
-See LICENSE-CC0.txt and UPSTREAM.md in this directory.
+Distributed under CC0-1.0. See LICENSE-CC0.txt in this directory.
 
-The writer intentionally targets the subset RE4 Vita needs:
+The writer supports the following container features:
 - PSARC 1.4, zlib tag, 64 KiB blocks
 - original payload blocks stored uncompressed; optional prefix-limited zlib for cold native sidecars
 - relative paths with optional case-insensitive hashing
 - optional content deduplication
 
 Only Python's standard library is required.
-This is a clean-room implementation of the publicly documented container
-layout; it contains no Sony SDK source code.
+The implementation uses the documented container layout and contains no Sony
+SDK source code.
 """
 from __future__ import annotations
 

@@ -6,12 +6,12 @@
     {
       "frame": 60,
       "gpu_error": 0,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n60,36329,36329,448,2106,1,160,152,419,6314,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n60,36329,36329,448,2106,1,160,152,419,6314,0,none,skin_selectors\n"
     },
     {
       "frame": 120,
       "gpu_error": 0,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n120,64449,64449,448,6059,1,170,155,461,8772,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n120,64449,64449,448,6059,1,170,155,461,8772,0,none,skin_selectors\n"
     }
   ],
   "prior_cores": [

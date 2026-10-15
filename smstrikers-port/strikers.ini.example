@@ -1,5 +1,5 @@
 # strikers.ini, rename or copy this to strikers.ini beside the executable.
-# Vita: strikers-vita.ini.example is the complete current GXM baseline, also
+# Vita: strikers-vitagl.ini.example is the current VitaGL baseline, also
 # generated automatically when ux0:data/strikersVita/strikers.ini is missing.
 # It includes the automatic test match and finite gameplay FPS capture.
 

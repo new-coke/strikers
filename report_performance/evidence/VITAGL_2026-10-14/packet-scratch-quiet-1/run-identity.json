@@ -27,183 +27,183 @@
   "statuses": [
     {
       "time": 1792048259.9196951,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n60,37118,37118,928,2198,1,80,82,405,6656,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n60,37118,37118,928,2198,1,80,82,405,6656,0,none,skin_selectors\n"
     },
     {
       "time": 1792048266.749398,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n120,76251,76251,1872,4427,1,80,82,408,14780,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n120,76251,76251,1872,4427,1,80,82,408,14780,0,none,skin_selectors\n"
     },
     {
       "time": 1792048270.4028769,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n180,115143,115143,1872,6596,1,160,152,413,22035,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n180,115143,115143,1872,6596,1,160,152,413,22035,0,none,skin_selectors\n"
     },
     {
       "time": 1792048273.695072,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n240,153107,153107,1872,8831,1,160,152,419,28300,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n240,153107,153107,1872,8831,1,160,152,419,28300,0,none,skin_selectors\n"
     },
     {
       "time": 1792048276.992555,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n300,185345,185345,1872,10751,1,160,152,419,29590,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n300,185345,185345,1872,10751,1,160,152,419,29590,0,none,skin_selectors\n"
     },
     {
       "time": 1792048280.219111,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n360,216357,216357,1872,12645,1,160,152,419,30790,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n360,216357,216357,1872,12645,1,160,152,419,30790,0,none,skin_selectors\n"
     },
     {
       "time": 1792048283.426707,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n420,238372,238372,1872,21054,1,170,153,454,35117,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n420,238372,238372,1872,21054,1,170,153,454,35117,0,none,skin_selectors\n"
     },
     {
       "time": 1792048286.635426,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n480,257218,257218,1872,29472,1,170,153,462,39497,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n480,257218,257218,1872,29472,1,170,153,462,39497,0,none,skin_selectors\n"
     },
     {
       "time": 1792048289.993387,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n540,277484,277484,1872,37996,1,170,153,466,43877,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n540,277484,277484,1872,37996,1,170,153,466,43877,0,none,skin_selectors\n"
     },
     {
       "time": 1792048296.413192,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n600,301676,301676,1872,42574,1,181,153,552,47677,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n600,301676,301676,1872,42574,1,181,153,552,47677,0,none,skin_selectors\n"
     },
     {
       "time": 1792048299.612015,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n660,326391,326391,1872,46918,1,181,156,563,51594,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n660,326391,326391,1872,46918,1,181,156,563,51594,0,none,skin_selectors\n"
     },
     {
       "time": 1792048302.828749,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n720,342610,342610,1872,50697,1,183,156,568,55851,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n720,342610,342610,1872,50697,1,183,156,568,55851,0,none,skin_selectors\n"
     },
     {
       "time": 1792048309.217429,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n840,369319,369319,1872,56127,1,184,156,570,62074,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n840,369319,369319,1872,56127,1,184,156,570,62074,0,none,skin_selectors\n"
     },
     {
       "time": 1792048312.522088,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n900,383025,383025,1872,59758,1,184,156,573,65002,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n900,383025,383025,1872,59758,1,184,156,573,65002,0,none,skin_selectors\n"
     },
     {
       "time": 1792048315.9274838,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n960,404122,404122,1872,64866,1,184,156,573,68542,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n960,404122,404122,1872,64866,1,184,156,573,68542,0,none,skin_selectors\n"
     },
     {
       "time": 1792048319.130327,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1020,425417,425417,1872,70042,1,184,156,573,72082,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1020,425417,425417,1872,70042,1,184,156,573,72082,0,none,skin_selectors\n"
     },
     {
       "time": 1792048322.3472798,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1080,446874,446874,1872,75241,1,184,157,573,75617,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1080,446874,446874,1872,75241,1,184,157,573,75617,0,none,skin_selectors\n"
     },
     {
       "time": 1792048326.010329,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1140,467186,467186,1872,79370,1,184,157,590,78857,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1140,467186,467186,1872,79370,1,184,157,590,78857,0,none,skin_selectors\n"
     },
     {
       "time": 1792048329.352597,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1200,489513,489513,1872,83629,1,184,157,590,82097,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1200,489513,489513,1872,83629,1,184,157,590,82097,0,none,skin_selectors\n"
     },
     {
       "time": 1792048332.715297,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1260,511389,511389,1872,87925,1,184,157,590,85337,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1260,511389,511389,1872,87925,1,184,157,590,85337,0,none,skin_selectors\n"
     },
     {
       "time": 1792048336.114159,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1380,554925,554925,1872,96353,1,184,158,590,91829,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1380,554925,554925,1872,96353,1,184,158,590,91829,0,none,skin_selectors\n"
     },
     {
       "time": 1792048339.41385,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1440,565772,565772,1872,97219,1,187,158,590,93233,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1440,565772,565772,1872,97219,1,187,158,590,93233,0,none,skin_selectors\n"
     },
     {
       "time": 1792048342.705292,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1500,576804,576804,1872,97819,1,194,158,590,94433,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1500,576804,576804,1872,97819,1,194,158,590,94433,0,none,skin_selectors\n"
     },
     {
       "time": 1792048345.9473228,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1620,605012,605012,2628,108241,1,197,163,632,98252,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1620,605012,605012,2628,108241,1,197,163,632,98252,0,none,skin_selectors\n"
     },
     {
       "time": 1792048349.245217,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1740,637150,637150,3588,122056,1,197,164,632,102504,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1740,637150,637150,3588,122056,1,197,164,632,102504,0,none,skin_selectors\n"
     },
     {
       "time": 1792048352.580557,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1800,653631,653631,4068,129131,1,197,164,632,104678,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1800,653631,653631,4068,129131,1,197,164,632,104678,0,none,skin_selectors\n"
     },
     {
       "time": 1792048355.810542,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1920,686298,686298,5028,143487,1,198,164,645,108985,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1920,686298,686298,5028,143487,1,198,164,645,108985,0,none,skin_selectors\n"
     },
     {
       "time": 1792048358.982645,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1980,703640,703640,5541,151498,1,199,168,645,111412,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1980,703640,703640,5541,151498,1,199,168,645,111412,0,none,skin_selectors\n"
     },
     {
       "time": 1792048362.155218,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2100,736939,736939,6621,167481,1,199,168,645,116243,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2100,736939,736939,6621,167481,1,199,168,645,116243,0,none,skin_selectors\n"
     },
     {
       "time": 1792048365.489284,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2220,770406,770406,7701,182638,1,199,168,645,120677,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2220,770406,770406,7701,182638,1,199,168,645,120677,0,none,skin_selectors\n"
     },
     {
       "time": 1792048368.7218492,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2280,786848,786848,8241,189695,1,200,168,645,122910,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2280,786848,786848,8241,189695,1,200,168,645,122910,0,none,skin_selectors\n"
     },
     {
       "time": 1792048371.882613,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2400,820538,820538,9374,204813,1,202,168,645,127559,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2400,820538,820538,9374,204813,1,202,168,645,127559,0,none,skin_selectors\n"
     },
     {
       "time": 1792048375.063881,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2460,837875,837875,10063,212304,1,202,168,658,130692,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2460,837875,837875,10063,212304,1,202,168,658,130692,0,none,skin_selectors\n"
     },
     {
       "time": 1792048382.107612,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2520,855289,855289,10063,221004,1,202,168,658,136878,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2520,855289,855289,10063,221004,1,202,168,658,136878,0,none,skin_selectors\n"
     },
     {
       "time": 1792048385.5222468,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2580,872336,872336,10063,229557,1,202,168,658,143058,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2580,872336,872336,10063,229557,1,202,168,658,143058,0,none,skin_selectors\n"
     },
     {
       "time": 1792048392.054124,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2640,891157,891157,10068,237874,1,208,169,659,149129,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2640,891157,891157,10068,237874,1,208,169,659,149129,0,none,skin_selectors\n"
     },
     {
       "time": 1792048395.324797,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2700,913296,913296,10416,246358,1,208,172,659,155460,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2700,913296,913296,10416,246358,1,208,172,659,155460,0,none,skin_selectors\n"
     },
     {
       "time": 1792048401.947314,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2760,939653,939653,10956,257396,1,208,172,659,163339,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2760,939653,939653,10956,257396,1,208,172,659,163339,0,none,skin_selectors\n"
     },
     {
       "time": 1792048408.330755,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2820,964035,964035,11496,266821,1,208,172,659,170412,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2820,964035,964035,11496,266821,1,208,172,659,170412,0,none,skin_selectors\n"
     },
     {
       "time": 1792048414.91614,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2880,985956,985956,12036,274505,1,208,172,659,176564,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2880,985956,985956,12036,274505,1,208,172,659,176564,0,none,skin_selectors\n"
     },
     {
       "time": 1792048418.056332,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2940,1003816,1003816,12296,279531,1,209,172,659,181044,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n2940,1003816,1003816,12296,279531,1,209,172,659,181044,0,none,skin_selectors\n"
     },
     {
       "time": 1792048424.422413,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n3000,1021451,1021451,12356,284522,1,209,172,659,185299,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n3000,1021451,1021451,12356,284522,1,209,172,659,185299,0,none,skin_selectors\n"
     },
     {
       "time": 1792048427.7418618,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n3060,1038009,1038009,12488,288830,1,212,172,660,188493,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n3060,1038009,1038009,12488,288830,1,212,172,660,188493,0,none,skin_selectors\n"
     },
     {
       "time": 1792048431.0290198,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n3180,1068938,1068938,13715,302750,1,212,173,660,192966,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n3180,1068938,1068938,13715,302750,1,212,173,660,192966,0,none,skin_selectors\n"
     },
     {
       "time": 1792048434.362165,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n3240,1085001,1085001,14315,309712,1,212,173,660,195208,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n3240,1085001,1085001,14315,309712,1,212,173,660,195208,0,none,skin_selectors\n"
     }
   ],
   "prior_cores": [

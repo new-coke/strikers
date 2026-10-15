@@ -17,7 +17,7 @@
     "include/Game/Drawable/DrawableBall.h": "6457bb92db8b3a484f5e7912d4aec87e2a8a44a8f683b09693d920b8f9a499b8",
     "src/Game/Drawable/DrawableBall.cpp": "7d288393ec9ee01a11007ba4c74a826a74d74ef6da5af3de8f834569210611b3",
     "src/Game/Ball.cpp": "64ca3d09f877c54b245bed9d1181fa4329dd937dd8ef4532cdab2716f53e7ef6",
-    "extern/re4-renderer/gx_command_buffer.h": "e639b754e40c1400b54ed955d66b6d3d560647568d050bf502d988a81c3f12d5",
+    "extern/command-buffer/gx_command_buffer.h": "e639b754e40c1400b54ed955d66b6d3d560647568d050bf502d988a81c3f12d5",
     "include/port/scene_shaders.hpp": "42f5568ce8c9a97775ba88f5f06d35be6d30d4c466daa5e3ce675acf29a72d08",
     "include/port/renderer.hpp": "9d7784b74d742fbf8f40f82df070929b9eed443f870b3e4b95fcf0a4f1591ac5",
     "include/port/native_match_direct.hpp": "40a9645c3793628a086979daa03a143f0fb62bcd7c389f0416df390a1f0c3591",
@@ -46,8 +46,8 @@
     "DRAW_SPEEDHACK=1"
   ],
   "provider_units": 30,
-  "re4": {
-    "repository": "https://github.com/Rinnegatamante/re4",
+  "command-ring": {
+    "repository": "[reference omitted]",
     "commit": "24c03d65b2a5896ef6d56dab1d8e9110ae19e0ae",
     "original": "platform/renderer/gx_command_buffer.h",
     "sha256": "e639b754e40c1400b54ed955d66b6d3d560647568d050bf502d988a81c3f12d5"

@@ -294,7 +294,7 @@ index 3a9e466a..a93acc28 100644
      set(AURORA_VITA_ROOT "${STRIKERS_AURORA_VITA_ROOT}")
      set(AURORA_VITA_WITH_GX_FRONTEND ON CACHE BOOL "" FORCE)
      set(AURORA_VITA_WITH_UPSTREAM_GX OFF CACHE BOOL "" FORCE)
-+    # Strikers Vita always uses the native sceGxm backend. Keep VitaGL/RE4
++    # Strikers Vita always uses the native sceGxm backend. Keep VitaGL/command-ring
 +    # experiments isolated from the production renderer selection.
      set(AURORA_VITA_RENDERER GXM CACHE STRING "" FORCE)
      set(AURORA_VITA_PORT_ABI GAMECUBE CACHE STRING "" FORCE)

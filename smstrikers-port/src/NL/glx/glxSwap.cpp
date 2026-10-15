@@ -1,12 +1,12 @@
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
 #include "NL/glx/glxSwap.h"
-#include "port/native_match_direct.hpp"
+#include "port/native_match_runtime.hpp"
 u8 glx_ScreenShot=0,glx_MovieOutput=0,glx_ResetCaptureFrame=0,glx_bLoadingIndicator=0,bInRetrace=0;
 s32 glx_nBlitXor=0;
 void glxSwapPost(bool){}
 void glxSwapPre(bool){}
 void glxInitSwap(void*,void*){}
-void glxSwapWaitDrawDone(){port::directmatch::finish();}
+void glxSwapWaitDrawDone(){}
 void glxLoadRestoreState(){}
 void glxLoadSaveState(){}
 void glxSwapLoading(bool begin,bool){glx_bLoadingIndicator=begin;}
@@ -15,9 +15,6 @@ void* glxGetDisplayedBuffer(){return nullptr;}
 void glxSwapSetBlack(bool){}
 #else
 #include "NL/glx/glxSwap.h"
-#if defined(PORT_VITA) && defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
-#include "port/native_match_direct.hpp"
-#endif
 #include "NL/nlDebug.h"
 #include "NL/nlPrint.h"
 #include "NL/nlEndian.h"
@@ -253,16 +250,6 @@ static void BlitImage(int offset_x, int offset_y, float scale_x, float scale_y, 
  */
 static void hitz_Post(bool bSend)
 {
-#if defined(PORT_VITA) && defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
-    if (port::directmatch::enabled())
-    {
-        // Hitz is the default Vita swap mode. Complete all native GXM draws
-        // and copy the EFB without GXCopyDisp/GXSetDrawDone/GXFlush.
-        port::directmatch::present_native();
-        count0 = VIGetRetraceCount();
-        return;
-    }
-#endif
     if (glx_ResetCaptureFrame != 0)
     {
         _shotno = 0;
@@ -293,11 +280,6 @@ static void hitz_Post(bool bSend)
  */
 static void hitz_Pre(bool)
 {
-#if defined(PORT_VITA) && defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
-    // present_native() waits for the GXM owner, so there is no GX draw-done
-    // token to wait for. Keep the original VI retrace/advance behavior.
-    if (!port::directmatch::enabled())
-#endif
     GXWaitDrawDone();
     u32 retraceCount = VIGetRetraceCount();
     float value = glConstantGet("glxswap/vwait").x;
@@ -368,13 +350,6 @@ static void hitz_AdvanceFrame()
  */
 static void simple_Post(bool bSend)
 {
-#if defined(PORT_VITA) && defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
-    if(port::directmatch::enabled()) {
-        // Direct GXM copy/present after the ordered native draw callbacks.
-        // Neither the GX state setters nor GXCopyDisp execute in this branch.
-        port::directmatch::present_native();
-    } else
-#endif
     {
     gxSetZMode(true, GX_LEQUAL, true);
     gxSetColourUpdate(true);

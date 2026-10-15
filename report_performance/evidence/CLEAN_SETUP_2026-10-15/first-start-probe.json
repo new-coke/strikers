@@ -1,0 +1,24 @@
+{
+  "time": 1792084514.7816792,
+  "names": [
+    "sms.psarc",
+    "sms-native-gxm-static.psarc"
+  ],
+  "strikers.ini": {
+    "missing": "550 File not found."
+  },
+  "vitagl_match_status.csv": {
+    "missing": "550 File not found."
+  },
+  "vitagl.log": {
+    "missing": "550 File not found."
+  },
+  "crashes": [
+    "psp2core-1791883756-0x00000521c5-eboot.bin.psp2dmp",
+    "psp2core-1791999337-0x00043f38d3-eboot.bin.psp2dmp",
+    "psp2core-1792001391-0x000c372671-eboot.bin.psp2dmp",
+    "psp2core-1792002100-0x00043d35f7-eboot.bin.psp2dmp",
+    "psp2core-1792002978-0x000450308d-eboot.bin.psp2dmp",
+    "psp2core-1792073568-0x0011d122e1-eboot.bin.psp2dmp"
+  ]
+}

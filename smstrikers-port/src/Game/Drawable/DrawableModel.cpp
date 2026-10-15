@@ -17,7 +17,7 @@
 #include "Game/WorldManager.h"
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
 #include "port/config.h"
-#include "port/native_match_direct.hpp"
+#include "port/native_match_runtime.hpp"
 #include "port/native_model_vertices.hpp"
 #include <cmath>
 #include <cstdio>

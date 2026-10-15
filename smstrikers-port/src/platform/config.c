@@ -26,11 +26,7 @@
 #if defined(PORT_VITA)
 #define PORT_VITA_DEFAULTS_BEGIN "# --- STRIKERS VALIDATED DEFAULTS BEGIN ---"
 #define PORT_VITA_DEFAULTS_END "# --- STRIKERS VALIDATED DEFAULTS END ---"
-#if defined(STRIKERS_VITA_VITAGL)
 #define PORT_VITA_DEFAULTS_REVISION "2026-10-14-vitagl"
-#else
-#define PORT_VITA_DEFAULTS_REVISION "2026-10-11-current-gxm-baseline"
-#endif
 
 typedef struct VitaDefaultConfigEntry
 {
@@ -42,7 +38,6 @@ typedef struct VitaDefaultConfigEntry
 // INI from this table when missing and refresh an outdated managed block;
 // leave an already current file untouched to avoid redundant storage writes.
 static const VitaDefaultConfigEntry s_vita_defaults[] = {
-#if defined(STRIKERS_VITA_VITAGL)
     { "diagnostics", "0" },
     { "fps_overlay", "0" },
     { "vita_test_match", "0" },
@@ -70,78 +65,6 @@ static const VitaDefaultConfigEntry s_vita_defaults[] = {
     { "cpu_mhz", "500" },
     { "gpu_mhz", "222" },
     { "vitagl_timing", "0" },
-#else
-    // Confirmed runtime baseline; keep these in sync with the device INI.
-    { "gxm_disable", "0x8" },
-    { "gxm_shader_profile", "WARM" },
-    { "diagnostics", "0" },
-    { "fps_overlay", "0" },
-    { "vita_test_match", "1" },
-    { "vita_frameskip", "0" },
-    { "vita_debug_menu", "1" },
-    { "vita_view_draw_capture", "0" },
-    { "vita_view_draw_payloads", "0" },
-    { "vita_view_draw_skip", "600" },
-    { "vita_view_draw_frames", "12" },
-    { "vita_view_draw_capacity", "8192" },
-    { "seed", "0x53545249" },
-    { "fixed_dt", "0" },
-    { "frame_capture", "ux0:data/strikersVita/r3a_quiet_gx.csv" },
-    { "frame_capture_frames", "300" },
-    { "frame_capture_match_only", "1" },
-    { "frame_capture_play_only", "1" },
-    { "frame_capture_skip", "600" },
-    { "vita_snapshot_match_frame", "0" },
-    { "vita_snapshot_play_frame", "0" },
-    { "log", "ux0:data/strikersVita/r3a_quiet_gx.log" },
-    { "asset_archive", "ux0:data/strikersVita/sms.psarc" },
-    { "native_asset_archive", "ux0:data/strikersVita/sms-native-gxm-static.psarc" },
-    { "gxm_native_assets", "1" },
-    { "gxm_native_gpu_static", "1" },
-    { "gxm_native_draw_replay", "0" },
-    { "gxm_native_model_draw", "0" },
-    { "gxm_native_model_cache", "0" },
-    { "gxm_native_model_uniform_build", "0" },
-    { "gxm_native_model_prepared", "0" },
-    { "gxm_native_model_early", "0" },
-    { "gxm_native_model_census", "0" },
-    { "gxm_native_model_metrics", "0" },
-    { "gxm_internal_resolution", "auto" },
-    { "vita_native_audio", "1" },
-    { "vita_native_video", "1" },
-    { "task_profile", "1" },
-    { "vita_packet_profile_period", "0" },
-
-    // Other established Vita settings retained from the previous profile.
-    { "benchmark", "1" },
-    { "benchmark_seconds", "60" },
-    { "bench_record", "ux0:data/strikersVita/bench-nolog-gxthread2-1.csv" },
-    { "cpu_mhz", "500" },
-    { "gpu_mhz", "222" },
-    { "gxm_streamed_vertex_gpu", "0" },
-    { "gxm_dl_shadow", "0" },
-    { "gxm_prepared_dl", "0" },
-    { "vita_core3", "auto" },
-    { "vita_core3_max_total_pct", "70" },
-    { "vita_core3_guard_pct", "5" },
-    { "vita_core3_window_ms", "100" },
-    { "vita_core3_chunk_target_us", "250" },
-    { "vita_core3_sample_us", "10000" },
-    { "gxm_bp_cache", "0" },
-    { "gxm_xf_equal_pos_writes", "0" },
-    { "gxm_xf_equal_matrix_writes", "0" },
-    { "gxm_tev_decoded_write_gate", "0" },
-    { "gxm_raster_uniform_reuse", "0" },
-    { "gxm_native_pn_palette", "0" },
-    { "gxm_fragment_prepare_cache", "1" },
-    { "gxm_uniform_delta_upload", "0" },
-    { "gxm_a4_fragment_opt", "0" },
-    { "gxm_fixed_uniform_pool", "1" },
-    { "gxm_geometry_preflight", "1" },
-    { "task_profile_buffered", "1" },
-    { "vita_skin_packets", "0" },
-    { "gxm_local_draw_batching", "0" },
-#endif
 };
 #endif
 
@@ -200,27 +123,7 @@ static void configure_diagnostics(void)
 
 const char* PortConfigPath(void) { return s_path[0] != '\0' ? s_path : NULL; }
 
-int PortConfigVitaRenderSize(unsigned int* width, unsigned int* height)
-{
-    const char* value = getenv("STRIKERS_GXM_INTERNAL_RESOLUTION");
-    if (value == NULL || strcmp(value, "auto") == 0)
-        return 0;
-    if (width == NULL || height == NULL)
-        return -1;
-    if (strcmp(value, "960x544") == 0)
-    {
-        *width = 960;
-        *height = 544;
-        return 1;
-    }
-    if (strcmp(value, "640x480") == 0)
-    {
-        *width = 640;
-        *height = 480;
-        return 1;
-    }
-    return -1;
-}
+
 
 static int exists(const char* path)
 {

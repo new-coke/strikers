@@ -16,12 +16,9 @@ extern LoadingManager* g_pTheLoadingManagerTask;
 const int* GetRegion();
 
 #if defined(PORT_VITA)
-// Shader compilation is permitted only in explicit loading windows. Interactive
-// front-end/gameplay phases run cache-only in the SEALED profile.
-void PortVitaShaderCacheBeginLoading();
-void PortVitaShaderCacheEndLoading(bool enteringGameplay);
-void PortVitaShaderCacheEnterGameplay();
-void PortVitaShaderCacheLeaveGameplay();
+// Mark gameplay measurement boundaries around scene transitions.
+void PortVitaEnterGameplay();
+void PortVitaLeaveGameplay();
 #endif
 
 #endif // _MAIN_H_

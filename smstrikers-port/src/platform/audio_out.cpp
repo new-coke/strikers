@@ -15,10 +15,6 @@
 #include <cstring>
 #include <cstdint>
 
-#if defined(PORT_VITA) && defined(STRIKERS_VITA_AUDIO_THREAD)
-#include <pthread.h>
-#include <psp2/kernel/threadmgr.h>
-#endif
 
 // salPortNextBuffer() returns the ring slot the DAC would be playing and advances MusyX by one 5 ms
 // tick.
@@ -65,12 +61,6 @@ std::atomic<unsigned long long> s_updateTotalUs{0};
 std::atomic<unsigned long long> s_updateMaxUs{0};
 std::atomic<unsigned long> s_updateOver2ms{0};
 
-#if defined(PORT_VITA) && defined(STRIKERS_VITA_AUDIO_THREAD)
-std::atomic<bool> s_workerStop{false};
-std::atomic<bool> s_workerRunning{false};
-pthread_t s_worker;
-bool s_workerCreated = false;
-#endif
 
 void report() {
     const unsigned long updateCalls = s_updateCalls.load(std::memory_order_relaxed);
@@ -186,46 +176,6 @@ void audioFillQueue() {
     PortProfilerAudioFillEnd();
 }
 
-#if defined(PORT_VITA) && defined(STRIKERS_VITA_AUDIO_THREAD)
-void* audioWorkerMain(void*) {
-    // Keep periodic audio work off the game/render control core. In the stable
-    // topology Aurora's single CPU helper lives on core 2, so audio owns core 1.
-    (void)sceKernelChangeThreadCpuAffinityMask(
-        sceKernelGetThreadId(), SCE_KERNEL_CPU_MASK_USER_1);
-    PortProfilerAudioThreadStarted((unsigned int)sceKernelGetThreadId());
-    while (!s_workerStop.load(std::memory_order_acquire)) {
-        audioFillQueue();
-        // The stream is kept ~30 ms ahead in 5 ms MusyX chunks. A 2 ms poll
-        // remains comfortably below one audio tick while halving scheduler
-        // wakeups on the helper core shared with Aurora.
-        port_sleep_ns(2000ull * 1000ull);
-    }
-    return nullptr;
-}
-
-void startAudioWorker() {
-    s_workerStop.store(false, std::memory_order_release);
-    if (pthread_create(&s_worker, nullptr, audioWorkerMain, nullptr) == 0) {
-        s_workerCreated = true;
-        s_workerRunning.store(true, std::memory_order_release);
-        return;
-    }
-
-    s_workerCreated = false;
-    s_workerRunning.store(false, std::memory_order_release);
-    std::fprintf(stderr,
-                 "[port] audio: worker creation failed; falling back to main-thread mixing\n");
-}
-
-void stopAudioWorker() {
-    if (!s_workerCreated)
-        return;
-    s_workerStop.store(true, std::memory_order_release);
-    pthread_join(s_worker, nullptr);
-    s_workerRunning.store(false, std::memory_order_release);
-    s_workerCreated = false;
-}
-#endif
 
 } // namespace
 
@@ -289,9 +239,6 @@ int PortAudioStart(void) {
                          (unsigned)got.format, frames, kSampleRate, salPortBufferBytes());
         }
     }
-#if defined(PORT_VITA) && defined(STRIKERS_VITA_AUDIO_THREAD)
-    startAudioWorker();
-#endif
     return 1;
 }
 
@@ -308,9 +255,6 @@ void PortAudioUpdateCost(unsigned long* calls, double* meanMs, double* maxMs,
 }
 
 void PortAudioStop(void) {
-#if defined(PORT_VITA) && defined(STRIKERS_VITA_AUDIO_THREAD)
-    stopAudioWorker();
-#endif
     if (s_stream != nullptr) {
         report();
         SDL_DestroyAudioStream(s_stream);
@@ -323,10 +267,6 @@ void PortAudioStop(void) {
 }
 
 void PortAudioUpdate(void) {
-#if defined(PORT_VITA) && defined(STRIKERS_VITA_AUDIO_THREAD)
-    if (s_workerRunning.load(std::memory_order_acquire))
-        return;
-#endif
     audioFillQueue();
 }
 

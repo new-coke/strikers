@@ -273,19 +273,9 @@ void count_usage(void* user, const char* name)
 
 extern "C" {
 
-#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
 void CARDInit(void)
-#else
-void CARDInit(const char* game, const char* maker)
-#endif
 {
     ensure_dirs();
-    #if !defined(STRIKERS_VITA_NATIVE_RUNTIME)
-    if (game != nullptr)
-        std::memcpy(s_game, game, sizeof s_game);
-    if (maker != nullptr)
-        std::memcpy(s_maker, maker, sizeof s_maker);
-    #endif
 }
 
 s32 CARDProbeEx(s32 chan, s32* memSize, s32* sectorSize)

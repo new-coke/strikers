@@ -7,19 +7,19 @@
       "time_utc": "2026-10-15T07:33:52.313657+00:00",
       "frame": 60,
       "gpu_error": 0,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n60,36003,36003,384,2052,1,160,152,419,5973,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n60,36003,36003,384,2052,1,160,152,419,5973,0,none,skin_selectors\n"
     },
     {
       "time_utc": "2026-10-15T07:33:55.537795+00:00",
       "frame": 120,
       "gpu_error": 0,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n120,64534,64534,384,5938,1,170,153,461,8129,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n120,64534,64534,384,5938,1,170,153,461,8129,0,none,skin_selectors\n"
     },
     {
       "time_utc": "2026-10-15T07:35:04.311447+00:00",
       "frame": 1560,
       "gpu_error": 0,
-      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1560,480362,480362,12594,162904,1,202,177,644,69837,0,none,skin_selectors\n"
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n1560,480362,480362,12594,162904,1,202,177,644,69837,0,none,skin_selectors\n"
     }
   ],
   "initial_self_and_ini_readback_verified": true,

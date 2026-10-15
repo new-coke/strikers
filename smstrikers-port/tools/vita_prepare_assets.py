@@ -159,8 +159,7 @@ def prepare(profile: str, iso: Path | None, roots: list[Path], output: Path,
             "create": packed, "verify": checked,
             "archive_sha256": archive_hash, "verified_files": files,
             "elapsed_seconds": time.perf_counter() - started,
-            "upstream": {"repository": "https://github.com/Rinnegatamante/re4",
-                         "commit": "dee72109dd06c0cf52e2fd21c095b3d09b23cad7"},
+            "container": {"format": "PSARC 1.4", "license": "CC0-1.0"},
         }
         report_tmp = workspace / "report.json"
         report_tmp.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

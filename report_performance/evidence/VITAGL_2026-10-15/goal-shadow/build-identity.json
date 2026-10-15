@@ -56,7 +56,7 @@
   "hardware_visual": {
     "evidence": "owner-visual-acceptance.json",
     "original_reference_stadium": "The Palace",
-    "human_acceptance": "S\u00ec, ora sono corretti",
+    "human_acceptance": "Sì, ora sono corretti",
     "capture": "validated-realtime20/debug_frame_play_1.png",
     "actual_live_frame": 65,
     "scope": "goal materials and static/projected shadows",

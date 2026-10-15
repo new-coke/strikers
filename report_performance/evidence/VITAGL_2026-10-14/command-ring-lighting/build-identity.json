@@ -1,0 +1,55 @@
+{
+  "artifacts_sha256": {
+    "strikers": "922935efbf9084c1ffd3ce4b5d920cfc2b5d573e1063ed700798c6c354872b60",
+    "strikers.map": "0eadfcd47ceed970d66a08ea7e062085307a6ca44b3d11993b8f06b81de7fc6c",
+    "strikers.velf": "bedf46f70c94a6794256772f475a7d2662d1c931e685f689c9f7f646e0a445cb",
+    "strikers_vita.self": "cb3c403be7eb5108bbe27466a40633153d88d6127b1125ad2c22b98ad015aafc",
+    "strikers_vita.vpk": "6b736c6c70d9d44fee66be07f55355e04cd138078707417839cb8f4aca4e0e22",
+    "libstrikers_vitagl.a": "b7610afb5e994c30c750dd29113662693875f7a31f37056a5ebe31d2325f495f"
+  },
+  "sources_sha256": {
+    "src/platform/deferred_renderer.cpp": "2162cbcd107189c752a0912a7a8a4175fdea51af4121cd81f28a8b3520eaaca4",
+    "src/platform/vitagl_renderer.cpp": "7b1e1166b770b6faf399fadacb6440fbc1db0545b6960927940b547f97c7d3aa",
+    "src/platform/audio_mix.cpp": "4f55e066bb2df4aac4c8f6b4caff809256064ba93b2b1e719b43a4b53186f2f0",
+    "src/platform/audio_out_native.cpp": "b276ef70e0ab733c4e9f05f48de3af8ef334b46d2f989fcf04ae0c0916e6d19d",
+    "src/platform/native_runtime.cpp": "833f73127ca214688d085b86aeecab7764779d054cb998fe55651bf2f174d003",
+    "src/platform/native_jobs.cpp": "5eda682d46657354ff6bc70adf2c74c19e0c45afc95613d1aab6ac7dc6a6a200",
+    "include/Game/Drawable/DrawableBall.h": "6457bb92db8b3a484f5e7912d4aec87e2a8a44a8f683b09693d920b8f9a499b8",
+    "src/Game/Drawable/DrawableBall.cpp": "4a6982a06642b1df497185dd62423afa98b534afade1782920f2797db31937cb",
+    "src/Game/Ball.cpp": "64ca3d09f877c54b245bed9d1181fa4329dd937dd8ef4532cdab2716f53e7ef6",
+    "extern/command-buffer/gx_command_buffer.h": "e639b754e40c1400b54ed955d66b6d3d560647568d050bf502d988a81c3f12d5",
+    "include/port/scene_shaders.hpp": "42f5568ce8c9a97775ba88f5f06d35be6d30d4c466daa5e3ce675acf29a72d08",
+    "include/port/renderer.hpp": "9d7784b74d742fbf8f40f82df070929b9eed443f870b3e4b95fcf0a4f1591ac5"
+  },
+  "cmake": {
+    "STRIKERS_AURORA": "OFF",
+    "STRIKERS_VITA_VITAGL": "ON",
+    "STRIKERS_VITA_GX_THREAD": "OFF",
+    "STRIKERS_VITA_NATIVE_GXM_RENDERER": "OFF",
+    "STRIKERS_VITA_PROFILER": "OFF",
+    "STRIKERS_VITA_PROFILE_AUTOSTART": "OFF",
+    "STRIKERS_VITA_FAST_PROFILER_BUILD": "OFF"
+  },
+  "vitagl_flags": [
+    "READBACKS_SPEEDHACK=1",
+    "HAVE_SHADER_CACHE=1",
+    "NO_DEBUG=1",
+    "DRAW_SPEEDHACK=1"
+  ],
+  "provider_units": 30,
+  "command-ring": {
+    "repository": "[reference omitted]",
+    "commit": "24c03d65b2a5896ef6d56dab1d8e9110ae19e0ae",
+    "original": "platform/renderer/gx_command_buffer.h",
+    "sha256": "e639b754e40c1400b54ed955d66b6d3d560647568d050bf502d988a81c3f12d5"
+  },
+  "native_audio_software_mixer_linked": true,
+  "host_checks": [
+    "deferred frontend ASan/UBSan",
+    "native audio ASan/UBSan",
+    "native jobs ASan/UBSan"
+  ],
+  "hardware_verified": false,
+  "lighting": "preserve game lighting/range (2x by default) on light-ramp diffuse stage before specular and emission",
+  "compiled_application_glfinish_glflush_calls": 0
+}

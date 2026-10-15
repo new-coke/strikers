@@ -1,0 +1,930 @@
+{
+  "policy": "Historical audit exports have normalized labels and omitted external reference metadata. Artifact and source hashes in historical records identify the original observations; exported text is not a byte-identical original capture. Numerical measurements were not changed. Original raw text is retained in a local ignored archive.",
+  "exports": [
+    {
+      "path": "ASSET_PIPELINE_STATUS_2026-10-05.md",
+      "original_sha256": "e7111596de0e943a0091b7476fa33712997039f29ae866da00e2797429b6f293",
+      "export_sha256": "60387165383479ec86dedbacc21f95408c671864584a4b50b7493920578df449"
+    },
+    {
+      "path": "PERFORMANCE_CPU_TRACE_2026-10-05.md",
+      "original_sha256": "d25a39a1b97bef2b3dacd5684ebf6e47558c5bed473118704f3848f3917fd449",
+      "export_sha256": "fda417800f375337783017ebfeada3fb1b8e0315fe07310cac4e803651e43a9b"
+    },
+    {
+      "path": "report_performance/AURORA_NATIVE_MODEL_REGISTRY_2026-10-10.md",
+      "original_sha256": "bc57435c863be1e3bf46fc59d8e448783ca8523ddba08f19502ceaede0c12d11",
+      "export_sha256": "e163953b2de5cdc3c57a25d8fc657c2b4394834bddc02ff656fd873e3a372385"
+    },
+    {
+      "path": "report_performance/AURORA_R3A_EARLY_PRODUCER_2026-10-10.md",
+      "original_sha256": "23d76bad6136e92062858820b9ab07dd3a2be75de9d15187017a0bb649e213c8",
+      "export_sha256": "6f925c2c5e7fb97b54cda61752443b79580cbbab1efd35a7c164c94f2ff6dd32"
+    },
+    {
+      "path": "report_performance/GEOMETRY_REUSE_2026-10-09.json",
+      "original_sha256": "0d748ea6a6d9a87bf13e0bda6e92cd8c35c2f99e9624faa7698f672170bfcfa9",
+      "export_sha256": "2c7a0ba386ae850e51d63c5072c891cbdb0ea0d224f2a6b9bd56fef03e72c13d"
+    },
+    {
+      "path": "report_performance/NATIVE_PREPARATION_2026-10-10.md",
+      "original_sha256": "4dc835accd621b4b33c32d5416c2f3b8fac69c3c0ffe2534b85c5ac61e6029b4",
+      "export_sha256": "dc7bc3d5142646c5e6ca5b6fff459702bc5bd7c881d093b8fbdc8d5181c60ec5"
+    },
+    {
+      "path": "report_performance/NATIVE_GXM_FAST_PATH_2026-10-08.md",
+      "original_sha256": "65bd6654e72079045cf63d8982e18ff0465997232a92d06d3290610221229c6d",
+      "export_sha256": "7df7f8760626bf6c36620a2796fda9a86e344ad19b194c869bbfb3eb73d8219c"
+    },
+    {
+      "path": "report_performance/NATIVE_MODEL_RECIPE_2026-10-09.md",
+      "original_sha256": "35d7a1750aafc82cd20cc2ea98afcce8de1e836448d96802564630ed5d964c24",
+      "export_sha256": "50b8827883107610426dfb03c3398370ba82df355ced99f7e17f7d0547d88b01"
+    },
+    {
+      "path": "report_performance/VITAGL_CONVERSION_2026-10-14.md",
+      "original_sha256": "b55aa6619abab82e7c8374dd8fc126a26299cec4b0bd010d6b6e3a175f1af3b7",
+      "export_sha256": "290fce33b1c9a40910c94a2922b81dc0f2cfa4e824cf56308d8915cc7f36d3d6"
+    },
+    {
+      "path": "report_performance/VITAGL_RENDERER_2026-10-10.json",
+      "original_sha256": "4631ebe9c367bf3da47c234b91c668ecbf475a9fa1befcbc9740f05006ba87b8",
+      "export_sha256": "bf4b6b11371b035fde4ebb22d05433111b5f568e2c4d075f87797e5322107873"
+    },
+    {
+      "path": "report_performance/evidence/ASSET_IO_2026-10-11/review-current.patch",
+      "original_sha256": "0cf90b9d0b37201ed6e602c1c21250f1ef950cc244a0dee74ba115ad23ff749d",
+      "export_sha256": "567deba45c058cfd939277c98b0b3c98183b9a052038cdaab2aaf0af43918942"
+    },
+    {
+      "path": "report_performance/evidence/FRAMEBUFFER_RESOLUTION_2026-10-10/sanitized-build.log",
+      "original_sha256": "ba467031049d16852d1a9cef5c21601d4929ae9b4682dd4828792ac2bc176f09",
+      "export_sha256": "36fec47ff24791ab60f3f9955b32bd8bde666aa9587f22eae67b44bba133d871"
+    },
+    {
+      "path": "report_performance/evidence/FRAMEBUFFER_RESOLUTION_2026-10-10/sanitized-frontend.log",
+      "original_sha256": "c55c33415c59f2c1b60054f15a9c0f0bfd9ad83518c7092ecdd941d9255433af",
+      "export_sha256": "78ea007108166c6a54e76fc6de6d4b2cb3ff6d6603c51d1956123cc35323741f"
+    },
+    {
+      "path": "report_performance/evidence/NATIVE_PREPARATION_2026-10-10/sanitized-build.txt",
+      "original_sha256": "812f1f4b6e7abdd348ae1b77b1168e2f99824f00c9d55177ed3362819e16b3f5",
+      "export_sha256": "5fe3e9c57de93f4ae4a5db9f6d932bdaf3b83afea629c9a400111b60d4087134"
+    },
+    {
+      "path": "report_performance/evidence/NATIVE_PREPARATION_2026-10-10/sanitized-configure.txt",
+      "original_sha256": "a817b0aac9092555e799d81068f206713ea053928ff760dc602bb0756cf3e546",
+      "export_sha256": "7aa5f5070c013f081b64fc09ca39714e5ef5966d170ae6d6ab72c5eb37f7f627"
+    },
+    {
+      "path": "report_performance/evidence/NATIVE_PREPARATION_2026-10-10/sanitized-ctest.txt",
+      "original_sha256": "a8caa312e50f430d2c51aa894a8086e30e33a2394d4bf452ff00f09d9c4c2246",
+      "export_sha256": "5c3428007af7fc2cace965ec5f710a123429d50e1c92785a3b87a58d966f9d04"
+    },
+    {
+      "path": "report_performance/evidence/NATIVE_PREPARATION_2026-10-10/validation.json",
+      "original_sha256": "c5d8a320dc3e338c584bf6279686be15848515e0c4ed4bbb6d3601623549648f",
+      "export_sha256": "27da2249b77c585f89d3d5bca27290d32994a3278da570c439c8137d32a1f17d"
+    },
+    {
+      "path": "report_performance/evidence/NATIVE_COMPLETE_2026-10-13/visual/identity.json",
+      "original_sha256": "8dbf5f2204196d8833b1c408fa05c9670b60e98d90456e29fe9a5fd267538068",
+      "export_sha256": "d090d19eb20271cc67d70935a694ebb9f77750fdd6e7f33abf83eb811fb113c9"
+    },
+    {
+      "path": "report_performance/evidence/NATIVE_COMPLETE_2026-10-13/visual/stop.json",
+      "original_sha256": "808ec8f1f1538bf4e9f938862100bc1d484694d4525e90352d223451b7bdc49f",
+      "export_sha256": "159c4c2292cce4ea716c2f4dd470a8e117ac7cf43d2248c523c422a07ccae6a3"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ball-cull-0/run-identity.json",
+      "original_sha256": "46362786762c6892797d522ca560c375dfb9c4c7ad4cd119026d1559e7a65a4f",
+      "export_sha256": "4b232125fb6fb5a94c3242fec91374f5c652f2ac7cd1797ce613923175a5c501"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ball-cull-0/vitagl_match_status.csv",
+      "original_sha256": "2e2807d6572d6f2859bcf65219101e921f377c59fd629dceef687dd9f89db69e",
+      "export_sha256": "98a399fdeb03d465fb1f2c855950a83cca38291409be74640138576b4ca58d84"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ball-cull-0/vitagl_match_status.csv.prior",
+      "original_sha256": "0cee82b2ecf81f6e22011be47fed1dfb1ed5c8803fe022c0027fd7f9f75f0841",
+      "export_sha256": "9aa3373a8e27d17b5c437d95f4bdd7fd35daa089069108bed872b3251557b67a"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ball-cull-1/run-identity.json",
+      "original_sha256": "3dbd4bb4fd0fab625fb8fbe9c3a7a1f5bd545ef0e3c048be6a28c19d5c3edf69",
+      "export_sha256": "816169c5cf2d2f9ca6a7da538208295675ad3f8c6c777ff843276c30e6e319a4"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ball-cull-1/vitagl_match_status.csv",
+      "original_sha256": "2e2807d6572d6f2859bcf65219101e921f377c59fd629dceef687dd9f89db69e",
+      "export_sha256": "98a399fdeb03d465fb1f2c855950a83cca38291409be74640138576b4ca58d84"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ball-cull-1/vitagl_match_status.csv.prior",
+      "original_sha256": "0cee82b2ecf81f6e22011be47fed1dfb1ed5c8803fe022c0027fd7f9f75f0841",
+      "export_sha256": "9aa3373a8e27d17b5c437d95f4bdd7fd35daa089069108bed872b3251557b67a"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ball-intro-close/run-identity.json",
+      "original_sha256": "f5ab406403e3a545b8fe9e39774590c34553217673e0337db576ec693de4fbc2",
+      "export_sha256": "d3fde887120af33011b6770c34a3fb072d8d3e6342867d44c154700739528eb7"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ball-intro-close/vitagl_match_status.csv",
+      "original_sha256": "b7938bb5fdec64da4dac22a25b3a4e70135b0214ca473d3d6b8fe60f90cb2b13",
+      "export_sha256": "da66ae6800c94a3b489aacfec4f2a88441ad28eaf56a7f9042cb6d450082b98a"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ball-intro-close/vitagl_match_status.csv.prior",
+      "original_sha256": "420b89c0ab28d0858667f0c3690cab59b0a9604388b731fbf76f015bebc5cace",
+      "export_sha256": "d97742d5d80e0ec269cd653abf8db17fdbc43782118c6f940c4fee7fdb296fc5"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ball-intro-control/run-identity.json",
+      "original_sha256": "9e53d2261b526ac34de071a33ba73afee2fd288f58d0ffc7103220c584789b4b",
+      "export_sha256": "b4ba6eba45b911a60039eaca3d64a5dd1e2350eef9d6eb5ae021d72f8b6fdd50"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ball-intro-control/vitagl_match_status.csv",
+      "original_sha256": "420b89c0ab28d0858667f0c3690cab59b0a9604388b731fbf76f015bebc5cace",
+      "export_sha256": "d97742d5d80e0ec269cd653abf8db17fdbc43782118c6f940c4fee7fdb296fc5"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ball-intro-control/vitagl_match_status.csv.prior",
+      "original_sha256": "23606383b8d99d559bc8df9408b4c2602c13223b205ecec64db607a8c682125e",
+      "export_sha256": "97383190684dadc5ab731d44911c739b0b630a9cea6b6861cb2414c945f391cb"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ball-packet-trace-run/run-identity.json",
+      "original_sha256": "65e3b32b2146bc2f3b3f4ea6a781b2503d4c94b35c108fb41d09eb71d2c3253d",
+      "export_sha256": "d967e3a3b287b5a47c438764d55a2df608a4a11e3634f8a3c2e76d2247134d86"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ball-packet-trace-run/vitagl_match_status.csv",
+      "original_sha256": "3495933386744f83723a57ae51911209c3c1b96fbc2e3278709ea85eed664f3d",
+      "export_sha256": "63cb01c27776af1de153d977c42898a5be9df6c153606c21ae6ca584f75cc1d4"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ball-packet-trace-run/vitagl_match_status.csv.prior",
+      "original_sha256": "420b89c0ab28d0858667f0c3690cab59b0a9604388b731fbf76f015bebc5cace",
+      "export_sha256": "d97742d5d80e0ec269cd653abf8db17fdbc43782118c6f940c4fee7fdb296fc5"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ball-packet-trace/build-identity.json",
+      "original_sha256": "491d408145312953dbe301ae6486092b112650234d02969074d6aec3bc07a8e8",
+      "export_sha256": "2461f888dfa27e43f86cedd83c6940f151752e6c273dc4a22b4275171efb7a2a"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/candidate-frame1170/run-identity.json",
+      "original_sha256": "85f14bcf44c015dbc053f83da970bb90bf9461137d0bf568cc88c65acf08b33c",
+      "export_sha256": "40e0e1da975dfefa4193d266d5e43d042669502c29a4906fe0c5e2a443c1d19c"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/candidate-frame1170/vitagl_match_status.csv",
+      "original_sha256": "973286bb82b99d5cbd8043d22c4b26d4dd3594a97247ab449f4d2c72024f3cc1",
+      "export_sha256": "09b5fbe05bc1948336c48ac46463f0b0e19c95d65c8c1b517329f658c020b140"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/candidate-frame1170/vitagl_match_status.csv.prior",
+      "original_sha256": "b908c210576ab3d667ae71631e169745d4de41f58d4944d29ac0bbe224797c07",
+      "export_sha256": "0c6a61c134b1e8f703afbe2d33c38aa5f9f3c6d5d2034ba5ded8e5e2c96f45b5"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/candidate-frame360/run-identity.json",
+      "original_sha256": "aebad278b1ed3e680617437fd4e4f8e60dad9cc4cbf096d153d15e7c1215a8e1",
+      "export_sha256": "e3e38ab5b7c1ee0afb661cc8461fbd9d931a9dd3efc22d9074fa1d71331bc7dd"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/candidate-frame360/vitagl_match_status.csv",
+      "original_sha256": "b908c210576ab3d667ae71631e169745d4de41f58d4944d29ac0bbe224797c07",
+      "export_sha256": "0c6a61c134b1e8f703afbe2d33c38aa5f9f3c6d5d2034ba5ded8e5e2c96f45b5"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/candidate-frame360/vitagl_match_status.csv.prior",
+      "original_sha256": "4720a529fbe19dd56ec45977ebc7c51235a5fba073299d3c4f6b78dc647b3c2b",
+      "export_sha256": "de46f58cfb13676acc5e01f99c410ee95282f1d2c3593ea4f1fa3e0b9918c18b"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/control-frame360/run-identity.json",
+      "original_sha256": "334edbb224bde9239419d92edec55d16cad958289769e379ffb376a470a2ed2b",
+      "export_sha256": "f9a6eb690efbf7a3f571ec06d0da3ceb364c7069ec13291afa891530aeefbb5f"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/control-frame360/vitagl_match_status.csv",
+      "original_sha256": "b908c210576ab3d667ae71631e169745d4de41f58d4944d29ac0bbe224797c07",
+      "export_sha256": "0c6a61c134b1e8f703afbe2d33c38aa5f9f3c6d5d2034ba5ded8e5e2c96f45b5"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/control-frame360/vitagl_match_status.csv.prior",
+      "original_sha256": "5b89b6eee24817adee7af9ec639451b699b7244aad5bfbcc9bea8a7d3e9184c0",
+      "export_sha256": "3e81848a98476aa67e12e1cb35db4e2146407313e880cc39bbc5660b1b228f1b"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/corrected-frame1170/run-identity.json",
+      "original_sha256": "04bf9cb1b6d9b826a121371048a2dc32967a6a2c82aa0db5e77051d19e1d61ae",
+      "export_sha256": "949e834d4e254d6a5e4dc533a33bcbcbfb6f55ada7c29cb853468dcab8e73c20"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/corrected-frame1170/vitagl_match_status.csv",
+      "original_sha256": "973286bb82b99d5cbd8043d22c4b26d4dd3594a97247ab449f4d2c72024f3cc1",
+      "export_sha256": "09b5fbe05bc1948336c48ac46463f0b0e19c95d65c8c1b517329f658c020b140"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/corrected-frame1170/vitagl_match_status.csv.prior",
+      "original_sha256": "4720a529fbe19dd56ec45977ebc7c51235a5fba073299d3c4f6b78dc647b3c2b",
+      "export_sha256": "de46f58cfb13676acc5e01f99c410ee95282f1d2c3593ea4f1fa3e0b9918c18b"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/corrected-frame360/run-identity.json",
+      "original_sha256": "1437be6d5aab8423fb6c213044240824383992fc327627b303b42a9bc5d77d0c",
+      "export_sha256": "ec3b8f65b2d3a50e24e5e80791f3854f0a29fb9fc98ee972c9097ec2087c65f9"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/corrected-frame360/vitagl_match_status.csv",
+      "original_sha256": "b908c210576ab3d667ae71631e169745d4de41f58d4944d29ac0bbe224797c07",
+      "export_sha256": "0c6a61c134b1e8f703afbe2d33c38aa5f9f3c6d5d2034ba5ded8e5e2c96f45b5"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/corrected-frame360/vitagl_match_status.csv.prior",
+      "original_sha256": "a1932b7bd4e0cdc97d924daea9a6a6322f2282974643a9d33f8b87d2bf9dbb84",
+      "export_sha256": "bb983815cfd08b2e7f96a5170455b64e3e7ffa4a70243b283822a4e9ee736dde"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/final-device-readback.json",
+      "original_sha256": "b8725bd11f161ed893f704af1934c064064aacf177d6d4589806f81854ea336c",
+      "export_sha256": "347f797416e08ce728974269271263f209fc84f906be400cdb1a0599b2a0034c"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/normal-before-vitagl_match_status.csv",
+      "original_sha256": "04f882323917249c8766fe1324c07659939a358d2810448f93784fd5138cecfc",
+      "export_sha256": "eb82fd3a320a3662944c421e5eb6cd35e77da854ef799709b55716b9a5d47246"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/normal-launch-status.csv",
+      "original_sha256": "bd45989e26fcb22572bbb1dc5de7de9ad489e0bac93e03ca50805ec4beb5a442",
+      "export_sha256": "40db977b2945828daf7d9280be8466677a65c5c7a0b66b4df4752a0d5ab8cb32"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/normal-launch-status.prior.csv",
+      "original_sha256": "08bd65a8881ac691efb70d6f70bd6ff74043f23f98ca30b47afb98e781a7ad49",
+      "export_sha256": "82a9a4563d97f768b0de191150f7d485164bec1ead51870ba018118f553fea5a"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/quiet/run-identity.json",
+      "original_sha256": "3500ab07134c3c8cb346dd322ad3dc603723a33e3b386bf4be8a55a8ac82f895",
+      "export_sha256": "1e5d7c3eea52f92d1840b61f596e709f6d0e8d0c706a77ed20bfa97a71d6f5de"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/quiet/vitagl_match_status.csv",
+      "original_sha256": "f5ede0220a13fb8bf192d9acdfb7198ddb9fafa3c352eaf7a57b580623c09b05",
+      "export_sha256": "f1b3baa656814425c062647969c2980a8d6a671c17d7efa349f3cc65ffb016b3"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/quiet/vitagl_match_status.csv.prior",
+      "original_sha256": "973286bb82b99d5cbd8043d22c4b26d4dd3594a97247ab449f4d2c72024f3cc1",
+      "export_sha256": "09b5fbe05bc1948336c48ac46463f0b0e19c95d65c8c1b517329f658c020b140"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/semantic-uv-frame1170/run-identity.json",
+      "original_sha256": "25f4d2703f77c367b39d042bed2f5d8a232ac674f39c341a830651c81dcc4120",
+      "export_sha256": "1e1a94c0e6cec9fb50ddbbdf2c311398eb93ecf8a8f88297cb2cbd06904fe817"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/semantic-uv-frame1170/vitagl_match_status.csv",
+      "original_sha256": "973286bb82b99d5cbd8043d22c4b26d4dd3594a97247ab449f4d2c72024f3cc1",
+      "export_sha256": "09b5fbe05bc1948336c48ac46463f0b0e19c95d65c8c1b517329f658c020b140"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/semantic-uv-frame1170/vitagl_match_status.csv.prior",
+      "original_sha256": "b908c210576ab3d667ae71631e169745d4de41f58d4944d29ac0bbe224797c07",
+      "export_sha256": "0c6a61c134b1e8f703afbe2d33c38aa5f9f3c6d5d2034ba5ded8e5e2c96f45b5"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/semantic-uv-frame360/run-identity.json",
+      "original_sha256": "3b1e96d075e1cc247b92dc77f35600d8528a4b77108dd2ca707c5a7115541633",
+      "export_sha256": "4a00590d87db3b737bb019fbab30449aa137165821d5a12d40b666dd8a7e71d9"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/semantic-uv-frame360/vitagl_match_status.csv",
+      "original_sha256": "b908c210576ab3d667ae71631e169745d4de41f58d4944d29ac0bbe224797c07",
+      "export_sha256": "0c6a61c134b1e8f703afbe2d33c38aa5f9f3c6d5d2034ba5ded8e5e2c96f45b5"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/semantic-uv-frame360/vitagl_match_status.csv.prior",
+      "original_sha256": "a1932b7bd4e0cdc97d924daea9a6a6322f2282974643a9d33f8b87d2bf9dbb84",
+      "export_sha256": "bb983815cfd08b2e7f96a5170455b64e3e7ffa4a70243b283822a4e9ee736dde"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/goal-net/stop-normal.json",
+      "original_sha256": "792390329d20300a51a9c95f0fb8963f62355752b009bf73b4dbef495d9c6b9a",
+      "export_sha256": "c653adad6a426f9919e07702bf17ce96bdf6b45c4d9f62a17a074428f1a3b7c4"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/mario-toad-visual/run-identity.json",
+      "original_sha256": "fb284f4eacda8353cac9dd6d2976b8ef3401f4de9886bff100d92dc230a08c6a",
+      "export_sha256": "0fc595f77769abfc70b83efe1b459333e765ef365dd5648f1b361e6ea1946623"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/mario-toad-visual/vitagl_match_status.csv",
+      "original_sha256": "4308c72d990e8223b571ad6e1f21c24c6ea5c6f8a1d444a4d1f8cff12b331d4f",
+      "export_sha256": "7e71eb6893abda6f4abb6d5f254e197c84d59d05c47b32f4baec0a16ea642e56"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/mario-toad-visual/vitagl_match_status.csv.prior",
+      "original_sha256": "0cee82b2ecf81f6e22011be47fed1dfb1ed5c8803fe022c0027fd7f9f75f0841",
+      "export_sha256": "9aa3373a8e27d17b5c437d95f4bdd7fd35daa089069108bed872b3251557b67a"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/nis-continuous-visual/run-identity.json",
+      "original_sha256": "3063a636de7f391317a9fea32e3dceca336490cc52d2b222ec2aae3eb9498354",
+      "export_sha256": "a99e9f319c3fb31559d3fc0074ca33e0c6809ebdf0263afbd00d1d8066400bab"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/nis-continuous-visual/vitagl_match_status.csv",
+      "original_sha256": "420b89c0ab28d0858667f0c3690cab59b0a9604388b731fbf76f015bebc5cace",
+      "export_sha256": "d97742d5d80e0ec269cd653abf8db17fdbc43782118c6f940c4fee7fdb296fc5"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/nis-continuous-visual/vitagl_match_status.csv.prior",
+      "original_sha256": "1a350488986c23c432b0da58d8dcdab3ee26685bcff7f0a8f78ad70bd5e6c3fb",
+      "export_sha256": "84aaa20370ea17feba3f5f1428912e249e56c7cfe7f868ffcc50b1441a30b459"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/nis-continuous/build-identity.json",
+      "original_sha256": "bbc4d88dd4f829bb954e9878a86a7f4732d4e1b2d9f723803902d440541a934b",
+      "export_sha256": "ce5e93d53932103c2c3065341ca03c62376ba6018880a77af9d03b5f1bc8de0b"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/nis-three-balls-visual/vitagl_match_status.csv",
+      "original_sha256": "7e9e333cf0245c49c95fc6b26363cfe1ffb67dd7e5f8a963e4c23a1a4fc53dde",
+      "export_sha256": "fad2e23539a47d665d63fc66c4b50db2c453e2c13bf3e8b9830ed05a51a34ddf"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/nis-three-balls-visual/vitagl_match_status.csv.prior",
+      "original_sha256": "420b89c0ab28d0858667f0c3690cab59b0a9604388b731fbf76f015bebc5cace",
+      "export_sha256": "d97742d5d80e0ec269cd653abf8db17fdbc43782118c6f940c4fee7fdb296fc5"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/nis-three-balls/build-identity.json",
+      "original_sha256": "beaf69ea9d0a90f0faa89df819c46f04a3bc76c7f90d71a6205b490a8b181150",
+      "export_sha256": "b90ca0e781f04d411bf2b0ed7732f5c4be2d5f72738d1adc2eb63a38b7327031"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/packet-scratch-quiet-1/run-identity.json",
+      "original_sha256": "b48751f5bbf70fda87dbe307f7d6c9355c8ab67cd7b87419e4866880c95395f9",
+      "export_sha256": "fb521e5d02562c3fcffd8b54d7b4925696ee135729566bbe916dd2468c1b589b"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/packet-scratch-quiet-1/vitagl_match_status.csv",
+      "original_sha256": "11fd02a43c1f90805c51ca50bcb2af6224f673183667d4e1387785d65113ec4b",
+      "export_sha256": "f7bd73305bc03adb828dab97fff63d8ecb97d856f86c374235f65c3e50717c25"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/packet-scratch-quiet-1/vitagl_match_status.csv.prior",
+      "original_sha256": "0cee82b2ecf81f6e22011be47fed1dfb1ed5c8803fe022c0027fd7f9f75f0841",
+      "export_sha256": "9aa3373a8e27d17b5c437d95f4bdd7fd35daa089069108bed872b3251557b67a"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/packet-scratch/build-identity.json",
+      "original_sha256": "779e7d805116229d42d63896b2efcce959ee3dc95e342e8275e0f00a3b59b09b",
+      "export_sha256": "1f51ad7c8d62e55e053b1af8a6b12978e75c2317f6196cd2dc9f840d488ea9fc"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth-candidate/run-identity.json",
+      "original_sha256": "5fc4e17d267f10e9216a5c3527a9d9cb69a79a845e01f1c3b264a300278cb974",
+      "export_sha256": "004cf154e5668cf073eb13485e6f2ca049d6c0d908c4825c12ea4e6a3656cdf7"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth-candidate/vitagl_match_status.csv",
+      "original_sha256": "2c4ca3fcf72eb793392662fe008d4c835d0607dcd6aa2409344f2e72fc6899b3",
+      "export_sha256": "5effbca99c1d1beca4bcb5a21d8acb5320051265f888c7a5d10f19f8a3fa4a61"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth-candidate/vitagl_match_status.csv.prior",
+      "original_sha256": "2c4ca3fcf72eb793392662fe008d4c835d0607dcd6aa2409344f2e72fc6899b3",
+      "export_sha256": "5effbca99c1d1beca4bcb5a21d8acb5320051265f888c7a5d10f19f8a3fa4a61"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth-control/run-identity.json",
+      "original_sha256": "9b167b5a173e8effa1be3f1b2978d0306b78c4fdd109d717ad3e47da823d72d6",
+      "export_sha256": "ad43afcc9d674e729e6c2c6c1dbaf6c0b19b3d78fc884948b81cdf1cbefa59dc"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth-control/vitagl_match_status.csv",
+      "original_sha256": "00c3653781d63ab31ee6193549dca31a9443e2c23d06d282a74295465a94ea65",
+      "export_sha256": "d836b082f38aef6c31b7895b80fbc29724f46318a6a3889f97492498c64770f1"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth-control/vitagl_match_status.csv.prior",
+      "original_sha256": "69ac1b5511407950d02d4b5326a236cce24f815c80b6602e68f709622eb585ec",
+      "export_sha256": "69fe8281fde6fd6f1402c88ebe7a990e3c0943c8ec973dbee63efabfacdc74d1"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth-frame1170/run-identity.json",
+      "original_sha256": "3b35edcc9b3b3b10a33be7af8ee79db0980e16293b70a29a2b11114cb9017e40",
+      "export_sha256": "2fcd72d7803c994902e64c0152796772fc80239f8089c71c90fd33f1695ac769"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth-frame1170/vitagl_match_status.csv",
+      "original_sha256": "973286bb82b99d5cbd8043d22c4b26d4dd3594a97247ab449f4d2c72024f3cc1",
+      "export_sha256": "09b5fbe05bc1948336c48ac46463f0b0e19c95d65c8c1b517329f658c020b140"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth-frame1170/vitagl_match_status.csv.prior",
+      "original_sha256": "2c4ca3fcf72eb793392662fe008d4c835d0607dcd6aa2409344f2e72fc6899b3",
+      "export_sha256": "5effbca99c1d1beca4bcb5a21d8acb5320051265f888c7a5d10f19f8a3fa4a61"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth-frame240/run-identity.json",
+      "original_sha256": "6090c4293c4f5c54630e8b99830f6f5124a4e15726c7943e9a70d8a4638b1e35",
+      "export_sha256": "7b35c29ba89e1cd55b7c1c4031cdbfcd223fb9abab5fe094e8cc650fbf653a5c"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth-frame240/vitagl_match_status.csv",
+      "original_sha256": "2c4ca3fcf72eb793392662fe008d4c835d0607dcd6aa2409344f2e72fc6899b3",
+      "export_sha256": "5effbca99c1d1beca4bcb5a21d8acb5320051265f888c7a5d10f19f8a3fa4a61"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth-frame240/vitagl_match_status.csv.prior",
+      "original_sha256": "a50b6f7ae2989c03f650b14f976d535c2d9af0b5d9523c762080c09932149597",
+      "export_sha256": "71360e5d4248c42a85725b292b8840a09da4415da0da85216ef47c9fe1d68d93"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth-quiet-1/run-identity.json",
+      "original_sha256": "3c84c4033ec3f6d191db699d5df597b903dcf767ad911153cb964adae8328956",
+      "export_sha256": "a09837cda84ed37fbcef706d6727b9459c1cfb267aa2a5993294c5be75a2e026"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth-quiet-1/vitagl_match_status.csv",
+      "original_sha256": "69ac1b5511407950d02d4b5326a236cce24f815c80b6602e68f709622eb585ec",
+      "export_sha256": "69fe8281fde6fd6f1402c88ebe7a990e3c0943c8ec973dbee63efabfacdc74d1"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth-quiet-1/vitagl_match_status.csv.prior",
+      "original_sha256": "973286bb82b99d5cbd8043d22c4b26d4dd3594a97247ab449f4d2c72024f3cc1",
+      "export_sha256": "09b5fbe05bc1948336c48ac46463f0b0e19c95d65c8c1b517329f658c020b140"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth-quiet-2/run-identity.json",
+      "original_sha256": "1b193e0174dc69209feb6cd9e6c199b4374727f60811f8abb08c4a31bd421580",
+      "export_sha256": "172a429ecf7a4a1d95b849f914f0a7f918908d535a59889759afa0ae791e7231"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth-quiet-2/vitagl_match_status.csv",
+      "original_sha256": "11fd02a43c1f90805c51ca50bcb2af6224f673183667d4e1387785d65113ec4b",
+      "export_sha256": "f7bd73305bc03adb828dab97fff63d8ecb97d856f86c374235f65c3e50717c25"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth-quiet-2/vitagl_match_status.csv.prior",
+      "original_sha256": "69ac1b5511407950d02d4b5326a236cce24f815c80b6602e68f709622eb585ec",
+      "export_sha256": "69fe8281fde6fd6f1402c88ebe7a990e3c0943c8ec973dbee63efabfacdc74d1"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth-quiet-3/run-identity.json",
+      "original_sha256": "0b1c66612f72214b740faf93de3619692929a09f184c1a0938077548dd5dc312",
+      "export_sha256": "daa3e70b23c4f7a97546a9647721b6e28e7eab4edafb0793f73ae07fd0537107"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth-quiet-3/vitagl_match_status.csv",
+      "original_sha256": "69ac1b5511407950d02d4b5326a236cce24f815c80b6602e68f709622eb585ec",
+      "export_sha256": "69fe8281fde6fd6f1402c88ebe7a990e3c0943c8ec973dbee63efabfacdc74d1"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth-quiet-3/vitagl_match_status.csv.prior",
+      "original_sha256": "69ac1b5511407950d02d4b5326a236cce24f815c80b6602e68f709622eb585ec",
+      "export_sha256": "69fe8281fde6fd6f1402c88ebe7a990e3c0943c8ec973dbee63efabfacdc74d1"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth/build-identity.json",
+      "original_sha256": "9b9dcedc9b421807a370ff812ad7c11e41a5f5537d5dee7bdd9c3134c33f732e",
+      "export_sha256": "a93c23df27d2512170e85469ab0f17659a043ea71a6df61914c0c84c374a761a"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth/final-device-readback.json",
+      "original_sha256": "a069dd933f75a1928a3ae8f25c28635585cd2a09b31da32f3481fae49bfa4168",
+      "export_sha256": "f3c8999ebdf4fcb39b4b29532472b8231f5c901cf92cf764f017f3f108183eff"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth/normal-launch-first-readback.json",
+      "original_sha256": "38be3fd9450adfe0b3d4c814e17da3ffe569b075b448cec2cbbcc4710f8797c4",
+      "export_sha256": "28ede8273063c389392ab65bbedcc1d1ec3e24126771861dfa3da4109f494d1a"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth/normal-launch-status.csv",
+      "original_sha256": "b1f7311ab2ec5a49d1741809163e8c6f2bad4984bf6e071029c1254bb79dac28",
+      "export_sha256": "d6fa188a575fc8e8afeb538f396ab3fa820935f192161e921585c3a0d3edd05b"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-depth/normal-launch-status.prior.csv",
+      "original_sha256": "69ac1b5511407950d02d4b5326a236cce24f815c80b6602e68f709622eb585ec",
+      "export_sha256": "69fe8281fde6fd6f1402c88ebe7a990e3c0943c8ec973dbee63efabfacdc74d1"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-trace-visual/run-identity.json",
+      "original_sha256": "51f103b87d111972db30af456ee15e093807a7d8f678d39a742eab57b1721115",
+      "export_sha256": "936cdae3d94f0a3ca5690e14fa9f5de609c5f7a9f36ffa00bb5fff262764b65c"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-trace-visual/vitagl_match_status.csv",
+      "original_sha256": "2e2807d6572d6f2859bcf65219101e921f377c59fd629dceef687dd9f89db69e",
+      "export_sha256": "98a399fdeb03d465fb1f2c855950a83cca38291409be74640138576b4ca58d84"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/particle-trace-visual/vitagl_match_status.csv.prior",
+      "original_sha256": "a9f20eaa5023e0277470ebb34456a0bac241bf37ae642b6d23c0a04c6f29b746",
+      "export_sha256": "8e62380697827d5f96cd582ca3b3be00fcf3e949b08c28ec720138edf9323b7c"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ramp-clamp-quiet-1/run-identity.json",
+      "original_sha256": "d642e4c1adf9b9d8732b08da61fe3af594bed7e48a357ab0df51d0634178bcf2",
+      "export_sha256": "cad017cac26cb0be34c9e93861497a6e64da8f2e17b1e3636cf677c262f7757b"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ramp-clamp-quiet-1/vitagl_match_status.csv",
+      "original_sha256": "f257019cf5d820ec146cadf43d76fe8c859c2c47cf1326bdf5659e2ab46b6f0a",
+      "export_sha256": "dd98119ea44784144c3207a3884ba450da4077210bd2e09204b1f6b329709585"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ramp-clamp-quiet-1/vitagl_match_status.csv.prior",
+      "original_sha256": "4308c72d990e8223b571ad6e1f21c24c6ea5c6f8a1d444a4d1f8cff12b331d4f",
+      "export_sha256": "7e71eb6893abda6f4abb6d5f254e197c84d59d05c47b32f4baec0a16ea642e56"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ramp-clamp-quiet-2/run-identity.json",
+      "original_sha256": "82079b40a8d73156ef924dd556e4ed1a4d2b427813c8d887870b3d902c346081",
+      "export_sha256": "7dfd1d0889f7d8a205d31ab14527e7936f9011e26eb5f2bd3bc0f10dfdc4f51f"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ramp-clamp-quiet-2/vitagl_match_status.csv",
+      "original_sha256": "f257019cf5d820ec146cadf43d76fe8c859c2c47cf1326bdf5659e2ab46b6f0a",
+      "export_sha256": "dd98119ea44784144c3207a3884ba450da4077210bd2e09204b1f6b329709585"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ramp-clamp-quiet-2/vitagl_match_status.csv.prior",
+      "original_sha256": "6b504854930eec8a8123e57d33afea9993a962c492e33e203573737c1158e997",
+      "export_sha256": "36af7a03c266f0582eaf87f63f7ef4dddb55508e7f64fcfe478f2789e39193aa"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ramp-clamp-quiet-3/run-identity.json",
+      "original_sha256": "373deb18f6498a108638422986cc1a189ee89e33dda1e76a05f6171d6b1dc60b",
+      "export_sha256": "847fd3d490eadebaf5e8f192d3bba7be1cc4f5478b3117be0b817ab8332e5782"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ramp-clamp-quiet-3/vitagl_match_status.csv",
+      "original_sha256": "a9f20eaa5023e0277470ebb34456a0bac241bf37ae642b6d23c0a04c6f29b746",
+      "export_sha256": "8e62380697827d5f96cd582ca3b3be00fcf3e949b08c28ec720138edf9323b7c"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ramp-clamp-quiet-3/vitagl_match_status.csv.prior",
+      "original_sha256": "6b504854930eec8a8123e57d33afea9993a962c492e33e203573737c1158e997",
+      "export_sha256": "36af7a03c266f0582eaf87f63f7ef4dddb55508e7f64fcfe478f2789e39193aa"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ramp-clamp-visual/run-identity.json",
+      "original_sha256": "b53424e3eed23c048cc589b33a35115e7ed75d0e48cca9bc76808fbe08e0e100",
+      "export_sha256": "1c8a2f4c6fa93e7c6fe7a42c76b857fce819eb187c551f1fa2721d71fe68b2a8"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ramp-clamp-visual/vitagl_match_status.csv",
+      "original_sha256": "0cee82b2ecf81f6e22011be47fed1dfb1ed5c8803fe022c0027fd7f9f75f0841",
+      "export_sha256": "9aa3373a8e27d17b5c437d95f4bdd7fd35daa089069108bed872b3251557b67a"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ramp-clamp-visual/vitagl_match_status.csv.prior",
+      "original_sha256": "7e9e333cf0245c49c95fc6b26363cfe1ffb67dd7e5f8a963e4c23a1a4fc53dde",
+      "export_sha256": "fad2e23539a47d665d63fc66c4b50db2c453e2c13bf3e8b9830ed05a51a34ddf"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/ramp-clamp/build-identity.json",
+      "original_sha256": "542a9895f36a355b3e63aca9427ad8bbdd38fe0497847d746ff5818d8e6515a0",
+      "export_sha256": "905aa4d3786a801aed0d1e1c3fe5271fb159a58f633e5c4f45d9a1f2065f34f3"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/command-ring-lighting-visual/run-identity.json",
+      "original_sha256": "f1429dba6f7814d0a032bbc502b59c20f9cc0150971bf386be2462da54a8f203",
+      "export_sha256": "8881037d7f337b76ddafd34666c05eeba4ed8ef69f42df0ab027a46600cec62a"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/command-ring-lighting-visual/strikers.ini",
+      "original_sha256": "47577440de855cda0d4e88fecccffd931481fdf93dc143331b6e589719762774",
+      "export_sha256": "8a92ace50774bc21de8eec059104d0d54ff77323e8ec2f7010da8d255dd094a5"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/command-ring-lighting-visual/vitagl_match_status.csv",
+      "original_sha256": "3495933386744f83723a57ae51911209c3c1b96fbc2e3278709ea85eed664f3d",
+      "export_sha256": "63cb01c27776af1de153d977c42898a5be9df6c153606c21ae6ca584f75cc1d4"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/command-ring-lighting-visual/vitagl_match_status.csv.prior",
+      "original_sha256": "3495933386744f83723a57ae51911209c3c1b96fbc2e3278709ea85eed664f3d",
+      "export_sha256": "63cb01c27776af1de153d977c42898a5be9df6c153606c21ae6ca584f75cc1d4"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/command-ring-lighting/build-identity.json",
+      "original_sha256": "a3e3a557b5ad3ff2097bb74a8752517bdf5a7e9b36122b50dede5dfc6846e225",
+      "export_sha256": "94a1fde8691f087abbd77dedda83d2d40f20c179b6bd0532707a3c9b057ad616"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/command-ring-native/build-identity.json",
+      "original_sha256": "690cd05014d8bf03254eb7334a57778775975872fc5df62319af40b401aeb761",
+      "export_sha256": "2251425a02b05a674ce8fc66115fd6e710234861517c0313d254caabaa923e4a"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/command-ring-quiet-1/run-identity.json",
+      "original_sha256": "697b29bef7ae8e0dc6da7c677e3562e9b8b3eb84913b6cfdb9020591f151d694",
+      "export_sha256": "2be92b124dce5835af0f66192286d5d573fa1455ae64d885fcf16d9d0dea4cbb"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/command-ring-quiet-1/strikers.ini",
+      "original_sha256": "a1dbdc85520a29caaebf688288dfee18143e659a408592678eefc2fe33209dba",
+      "export_sha256": "92bfda5c6a383d69f6bddd08c53ff456d05b5e286dedc7b557dcb0e8202ce4da"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/command-ring-quiet-1/vitagl_match_status.csv",
+      "original_sha256": "7b3bb54487e89d4c7c5523131cceaf47f951c080ce2ccdcc99c2f538a6b33ed4",
+      "export_sha256": "e07623b38bf98e580c72849fd9591a04483a8f251cce918b1b264a30aa2e9095"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/command-ring-quiet-1/vitagl_match_status.csv.prior",
+      "original_sha256": "1a350488986c23c432b0da58d8dcdab3ee26685bcff7f0a8f78ad70bd5e6c3fb",
+      "export_sha256": "84aaa20370ea17feba3f5f1428912e249e56c7cfe7f868ffcc50b1441a30b459"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/command-ring-quiet-2/run-identity.json",
+      "original_sha256": "9cf7a0c6f4f5bbee2db7224555b6fddfdd7bfed3a5d59950487591db0e164487",
+      "export_sha256": "9ac6bbc219cbeb83ef41662b4c8a594973da9a53e8db3e74dfd924b9b1fb60d1"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/command-ring-quiet-2/strikers.ini",
+      "original_sha256": "fd9badcf10d7d982a1966cc54a8c888f9999783cb89c4f3c675c70fab33f102a",
+      "export_sha256": "4de2bc99d32eef5ff0d2038873f48424d6c9168f7f0cbfac21be72660e639079"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/command-ring-quiet-2/vitagl_match_status.csv",
+      "original_sha256": "23606383b8d99d559bc8df9408b4c2602c13223b205ecec64db607a8c682125e",
+      "export_sha256": "97383190684dadc5ab731d44911c739b0b630a9cea6b6861cb2414c945f391cb"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/command-ring-quiet-2/vitagl_match_status.csv.prior",
+      "original_sha256": "7b3bb54487e89d4c7c5523131cceaf47f951c080ce2ccdcc99c2f538a6b33ed4",
+      "export_sha256": "e07623b38bf98e580c72849fd9591a04483a8f251cce918b1b264a30aa2e9095"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/command-ring-visual/run-identity.json",
+      "original_sha256": "12d2c9329985a9708b16403b05c497e3ede660fb03876f5036c1544a28d83d96",
+      "export_sha256": "dca6805ab592023726975fd640c46a51a654e52565f688662108091523b5b363"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/command-ring-visual/strikers.ini",
+      "original_sha256": "67fb9c7c5111562b1b9b1a97e79698222b4cc044fe07e11ead33924f7ec49e84",
+      "export_sha256": "e3d83bbb7312a45be505cd094a8ea46aa6ba7607c51b715d9c01833cf0216321"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/command-ring-visual/vitagl_match_status.csv",
+      "original_sha256": "3495933386744f83723a57ae51911209c3c1b96fbc2e3278709ea85eed664f3d",
+      "export_sha256": "63cb01c27776af1de153d977c42898a5be9df6c153606c21ae6ca584f75cc1d4"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-14/user-visual-feedback.json",
+      "original_sha256": "15cb08444ce081c279210318b63483ed0d00054d6830ca67a6452c65b3f22db5",
+      "export_sha256": "6db09e62accfbaa659767af90d2d26473dfb3b30a43c48e55233d4b9e3e40768"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/atlas-realtime20-play600/run-identity.json",
+      "original_sha256": "1ab07d42fad83c9253184ec0170c6ce6156eacbe4aa900be58d0333a85e9d1a8",
+      "export_sha256": "dbcc445252264fd5def365b3ee9fc5e02fce16a97c67aa61ba817df82c133c39"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/atlas-realtime20-play600/vitagl_match_status.csv",
+      "original_sha256": "338cabc96a1fba967bf84d020514e7920e095ea8554a600ac1bdb24f5876d4e9",
+      "export_sha256": "8a4f6882790a4093d87d493a1084ec0436822e39f71dbc80268586eb08802d27"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/atlas-realtime20-play600/vitagl_match_status.csv.prior",
+      "original_sha256": "be42830fa041371211b40ba9bd86c1e7e028344cdda7e246d2ac6954b48d80dc",
+      "export_sha256": "b1cf20c76efcea2c34ee98eb59958be8d1e8bdccda661f3dbd27c78cae8f80ea"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/build-identity.json",
+      "original_sha256": "2ad5a4833d41e10287635d7429123aacc7a2cb490971b311feb783c120765a00",
+      "export_sha256": "fb7bb05866dd2be2dcfa35d7c0911d137cee5ffd33b5d77497f57439f1e61da9"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/candidate-play600/run-identity.json",
+      "original_sha256": "b05043da41e80f0b97ec083a709807d0709c30be578b19ceec76b96207c5b720",
+      "export_sha256": "7e35589b10288c1609b04c36669f404c03caea14920c7e2bb23a42b09822dffd"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/candidate-play600/vitagl_match_status.csv",
+      "original_sha256": "e8f822c3c63963416058135ab7e0d59730d903ea58a7e819e44f7d873ec7997b",
+      "export_sha256": "9d4e459ea62dde982795a575d3996a0d29133f4801c90f4c69a82d7958667d48"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/candidate-play600/vitagl_match_status.csv.prior",
+      "original_sha256": "368cbc52e4a78e83a10e0b810f80595e08f15c1ca1e5cee7bb02664e5bf1323a",
+      "export_sha256": "ac9d134905cacf921094f9cde81928a452064d76ae590e549b002b1a3e81fa08"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/control-play600/run-identity.json",
+      "original_sha256": "a7d6839c02256346bd6f4c44caa8bb2af2e4c1e72dc664548779f3f1653ed212",
+      "export_sha256": "a0e80045db706f0c763bf137d1d00e1eda3d88e9abbae8004909d0b370c07a87"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/control-play600/vitagl_match_status.csv",
+      "original_sha256": "883f5c4770823adbb18bf5cea7275b201b913203ea61d64cc7405ab51e703c8b",
+      "export_sha256": "f4c11917b9c32071580a22573df86c86ada7e188d4dcf38dbb1e913c3162b3b0"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/control-play600/vitagl_match_status.csv.prior",
+      "original_sha256": "7d3d4df3ffede0a87a6d0e255adad66504bdfa86c7eea468bdb8b0dda78bcf22",
+      "export_sha256": "1df22265f2667695ab89e54a7e7fe12b98e7e7fd4e6c8beb840f5e56193f6683"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/final-device-readback.json",
+      "original_sha256": "4e228c42e811f4bd4825825c44c026e4efa2e853600a12b87a1679d19c99f993",
+      "export_sha256": "e860ea29affb7f424013a07ce45cdaf5eed55ac8a32f60c99abe1653cf004991"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/final-realtime20/run-identity.json",
+      "original_sha256": "2cb1fba3dbc3c4c4e0231e62ed67346bcb44b25e8aa908bb39cbd28cbbbb5c35",
+      "export_sha256": "75f856d8d24757f62072c0bf56d4eb2bbc422b9e816d0151bc7d6f441befdf35"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/final-realtime20/vitagl_match_status.csv",
+      "original_sha256": "446691a3cb505c967407bb7a51b1573da6708d0265404560c4286d845c491b5e",
+      "export_sha256": "0e21ea3876f6906a57628dc9b9c5f8f10eb66e353b2d7979d8548c0c4a15bbff"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/final-realtime20/vitagl_match_status.csv.prior",
+      "original_sha256": "338cabc96a1fba967bf84d020514e7920e095ea8554a600ac1bdb24f5876d4e9",
+      "export_sha256": "8a4f6882790a4093d87d493a1084ec0436822e39f71dbc80268586eb08802d27"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/normal-launch-status.csv",
+      "original_sha256": "f3541f9d9309282010c9540b9fb0563f0e1a5fc4c79fc0085966bbf5e2e95a0d",
+      "export_sha256": "598b921dfd42a9a28b5bed34c11af5ef6435dddf72e0208daa7eeb73288eb14a"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/normal-launch-status.prior.csv",
+      "original_sha256": "c6768bcd49f1c56d976e1223e8b2662dd0c3de08cc5d721a7bcc9a2cfcb665aa",
+      "export_sha256": "7933aee60223da010dc9f6a0f8f3e8d0b1588bd34f828a5b74f5f9803ec8dc5c"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/normal-realtime-quiet/run-identity.json",
+      "original_sha256": "63a0133292f65c6dbafbd06a2b77777e56f33078aa1503e4a2152befb3665e53",
+      "export_sha256": "5c86b492e639395161095c45de84695741cebc0f1e6b627cffd9d2d90d549f5c"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/normal-realtime-quiet/vitagl_match_status.csv",
+      "original_sha256": "c01af7044a4f9fb08f3e0991e233da0cf1b15be873a7460475f91bfc1a506726",
+      "export_sha256": "81fb5bcd7dd171fa83b2404c5d9171c8a671160e2bafd7a279e330f470fc5e1a"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/normal-realtime-quiet/vitagl_match_status.csv.prior",
+      "original_sha256": "47321d5cb8235ba05e956f9f4395d8e4b9ded83a5a3cec0980cf4d1fe0679cab",
+      "export_sha256": "bec29ad062ccb1a552cc31ee58f0070119bbc9e2caecffdf3a3fc6ad06c33357"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/palace-goal1170/run-identity.json",
+      "original_sha256": "824650c04d2de14a7be6ad0aed4584451690e49a0f95e09126ac7d74aa889262",
+      "export_sha256": "dc2a7bc3f48b97dab16c7608d4ad13ca262f202726fdf8c65a96824dd11da5f0"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/palace-goal1170/vitagl_match_status.csv",
+      "original_sha256": "7333d10eab5e2f3d34d0d5b833c6c17def0f8f1bb6301c16eeb2a4cb65684a6d",
+      "export_sha256": "c4438d9ffd63efdbf7ad0ee2ca721d2c59a4720fbfa2c946a7ac3312f9e6f117"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/palace-goal1170/vitagl_match_status.csv.prior",
+      "original_sha256": "446691a3cb505c967407bb7a51b1573da6708d0265404560c4286d845c491b5e",
+      "export_sha256": "0e21ea3876f6906a57628dc9b9c5f8f10eb66e353b2d7979d8548c0c4a15bbff"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/realtime20/run-identity.json",
+      "original_sha256": "ec395f1659542c68df0b803bd1500cc54f676bc3a0bc76791b2b3de5c2ac99cc",
+      "export_sha256": "f913fdd6a8427b0c287a1e6aaeef7e200737460cfff9c4c314e8016fdb8e3a5e"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/realtime20/vitagl_match_status.csv",
+      "original_sha256": "be42830fa041371211b40ba9bd86c1e7e028344cdda7e246d2ac6954b48d80dc",
+      "export_sha256": "b1cf20c76efcea2c34ee98eb59958be8d1e8bdccda661f3dbd27c78cae8f80ea"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/realtime20/vitagl_match_status.csv.prior",
+      "original_sha256": "e8f822c3c63963416058135ab7e0d59730d903ea58a7e819e44f7d873ec7997b",
+      "export_sha256": "9d4e459ea62dde982795a575d3996a0d29133f4801c90f4c69a82d7958667d48"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/stop-control.json",
+      "original_sha256": "792390329d20300a51a9c95f0fb8963f62355752b009bf73b4dbef495d9c6b9a",
+      "export_sha256": "c653adad6a426f9919e07702bf17ce96bdf6b45c4d9f62a17a074428f1a3b7c4"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/validated-realtime20/run-identity.json",
+      "original_sha256": "ffa0f63369e9b253cf3ddfd313121973e166b083ddcdfc147816245f0a5c8128",
+      "export_sha256": "68d86d59dbec11ff3c0bde44fe10a93ccbf3f1d595600159f15000f6ee71d267"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/validated-realtime20/vitagl_match_status.csv",
+      "original_sha256": "47321d5cb8235ba05e956f9f4395d8e4b9ded83a5a3cec0980cf4d1fe0679cab",
+      "export_sha256": "bec29ad062ccb1a552cc31ee58f0070119bbc9e2caecffdf3a3fc6ad06c33357"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/goal-shadow/validated-realtime20/vitagl_match_status.csv.prior",
+      "original_sha256": "2b53636f7636531acf8487c012fbcd895e6cc671b55a0b6a1a9a262d18d830c4",
+      "export_sha256": "2484ad4f5ab32d8bb0acb90e0393d68ed1ecbb825c18916f866e00c169cb4015"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/loading-handoff/candidate/run-identity.json",
+      "original_sha256": "28e0b586ca5c757459d7811e92b6effb2395c827821d87e3f1bdde933de14992",
+      "export_sha256": "fd0d2478a27b5efb29103ab62f41c25ae465c4a43a32d5b9dc3d199b9fba5f11"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/loading-handoff/candidate/vitagl_match_status.csv",
+      "original_sha256": "738b9bdf72a0195bcb5646139ecd19e319e5955cea647250a4885849843ee511",
+      "export_sha256": "6661b1e2d2d1d6519b58de2e173e400f83dc5d6c5292ee617dfd58cab284ff8b"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/loading-handoff/candidate/vitagl_match_status.csv.prior",
+      "original_sha256": "76d7295abd7c9f7acb912d08f0519cb37247c7f1f390a799145c0a775101a964",
+      "export_sha256": "fcd220417c6c06167eb699989855eb48c9cd4d9f6e49054189b7b8418bcc94a5"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/loading-handoff/control/run-identity.json",
+      "original_sha256": "aaa8b74822203d035bc9e203096b6983deca84e6d9085121ad6de6e5bcdc2fb3",
+      "export_sha256": "e866f4c98ea3c7bab3f2626f0f84c4d2659e33bf9fc7f34c3c34cc99ef561fc2"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/loading-handoff/control/vitagl_match_status.csv",
+      "original_sha256": "76d7295abd7c9f7acb912d08f0519cb37247c7f1f390a799145c0a775101a964",
+      "export_sha256": "fcd220417c6c06167eb699989855eb48c9cd4d9f6e49054189b7b8418bcc94a5"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/loading-handoff/control/vitagl_match_status.csv.prior",
+      "original_sha256": "b0b5d8db6d7e59a23b8e52004169472bea6ab55980faef8264b73a121979cc30",
+      "export_sha256": "6a3719474f7f5cb834e435730f023c50de37a77c673e73e16e1f782497e0635a"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/loading-handoff/final-device-readback.json",
+      "original_sha256": "5097fe9e611d2abedea4449e6b0d795bc3d097cdef3ed26beccc1c42f7d1ba71",
+      "export_sha256": "9078c41200fc5f06f497ba660200321207eee0b0d940058dc404b1829f845a36"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/loading-handoff/normal-launch-status.csv",
+      "original_sha256": "c483fea54511326619aea78d772b0f76bbdfbaa7a44fd2fba61b5d604ea7ad55",
+      "export_sha256": "a157b0b83331e26cbd6da2236c2156d708918a180c60cb2040daad5f9454a671"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/loading-handoff/normal-launch-status.prior.csv",
+      "original_sha256": "72647f99817478a284ceeae357072cd63882288628095a70687559bd71736825",
+      "export_sha256": "3a951488fee71788a83fefedb6628fa607041bfbc38dbf87caaf05939c145ab6"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/loading-handoff/quiet/run-identity.json",
+      "original_sha256": "0538f7ac3c761d2f3972a68e0517d688ff23e84aa095ee32287b949d99e12189",
+      "export_sha256": "63915e913eecb0b65d77c1b34e99750e0a76d517310d4d76e007a3069cf88076"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/loading-handoff/quiet/vitagl_match_status.csv",
+      "original_sha256": "72647f99817478a284ceeae357072cd63882288628095a70687559bd71736825",
+      "export_sha256": "3a951488fee71788a83fefedb6628fa607041bfbc38dbf87caaf05939c145ab6"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/loading-handoff/quiet/vitagl_match_status.csv.prior",
+      "original_sha256": "aa556fc324c6243d92701ae93d59ee154c87188ff1c52f0809235db59fe88250",
+      "export_sha256": "2a9b5551902805335c7f9074179f6a50f28d7d7b4b51be80a944a17b18eb9065"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/loading-handoff/removed-reference-identity.json",
+      "original_sha256": "4c252683f569a922e2c41401f7c4320a73064d4a653dbbf3306a1f8c4a994ad5",
+      "removed_from_export": true
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/loading-handoff/validated/run-identity.json",
+      "original_sha256": "d5799b273d7b93a14659dfa8ea4d4de36f32e356d888b76b9d8c09d5acb7bdc4",
+      "export_sha256": "641ba6d649ff1bfd1e255ce3885e1006d591f6268aba3352b0bfd566a4b6251b"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/loading-handoff/validated/vitagl_match_status.csv",
+      "original_sha256": "aa556fc324c6243d92701ae93d59ee154c87188ff1c52f0809235db59fe88250",
+      "export_sha256": "2a9b5551902805335c7f9074179f6a50f28d7d7b4b51be80a944a17b18eb9065"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_2026-10-15/loading-handoff/validated/vitagl_match_status.csv.prior",
+      "original_sha256": "d5128793034df3c593706dd33f4ef4771a3db6bcecbdc87347fd73510baf7933",
+      "export_sha256": "afce626ea381efe8f986d05aa121c3c6b06a9eaffe9e35b63b60c6e63f0ab968"
+    },
+    {
+      "path": "report_performance/evidence/VITAGL_RENDERER_2026-10-10/command-ring-reference-identity.json",
+      "original_sha256": "211c414a0576c9b236eb810a2ecf6508406bc335ad6a2b7a47c55b542a5297e8",
+      "export_sha256": "dde2bafac772baca36a17ce3d10b6e2f4db259d82cb254e5d88b4b04d77f15db"
+    },
+    {
+      "path": "smstrikers-port/tools/VITA_ASSET_PIPELINE.md",
+      "original_sha256": "4a8e59fc7bb949c4b0b7853a56ed4f41fa4f45962646448eba3fb04b2024aa2f",
+      "export_sha256": "7423d92f8a25c31d13b93e468f9e57a525d3b25b2cd525ff95b0c179b4b4c1af"
+    }
+  ]
+}

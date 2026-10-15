@@ -44,8 +44,7 @@ if(NOT STRIKERS_VITA)
     add_test(NAME vitagl_circular_pool COMMAND vitagl_circular_pool_test)
     find_path(STRIKERS_NATIVE_XXHASH_INCLUDE_DIR xxhash.h HINTS
         "${CMAKE_BINARY_DIR}/_deps/xxhash-src"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../build-vita-gxm-latest/_deps/xxhash-src"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../extern/aurora-vita/build/vita-host-tests/_deps/xxhash-src")
+        "${CMAKE_CURRENT_SOURCE_DIR}/../build-vita-gxm-latest/_deps/xxhash-src")
     if(STRIKERS_NATIVE_XXHASH_INCLUDE_DIR)
         add_executable(native_texture_record_test native_texture_record_test.cpp
             ../src/platform/native_texture_record.cpp)
@@ -83,37 +82,19 @@ if(NOT STRIKERS_VITA)
     target_link_libraries(native_match_transform_test PRIVATE port_flags m)
     add_test(NAME native_match_transform COMMAND native_match_transform_test)
 
-    add_executable(native_gxm_renderer_contract_test
-        native_gxm_renderer_contract_test.cpp)
-    target_compile_features(native_gxm_renderer_contract_test PRIVATE cxx_std_20)
-    target_include_directories(native_gxm_renderer_contract_test PRIVATE ../include)
-    if(NOT MSVC)
-        target_compile_options(native_gxm_renderer_contract_test PRIVATE -UNDEBUG)
-    endif()
-    add_test(NAME native_gxm_renderer_contract COMMAND native_gxm_renderer_contract_test)
 
     # Exercise the production renderer against a mock GPU/display driver with
     # the actual SDK declarations. The SDK's libc must follow the host libc.
-    find_path(STRIKERS_NATIVE_GXM_SDK_INCLUDE_DIR psp2/gxm.h
+    find_path(STRIKERS_VITA_SDK_INCLUDE_DIR psp2/gxm.h
         HINTS "$ENV{VITASDK}/arm-vita-eabi/include"
               "/usr/local/vitasdk/arm-vita-eabi/include")
-    if(UNIX AND STRIKERS_NATIVE_GXM_SDK_INCLUDE_DIR AND
+    if(UNIX AND STRIKERS_VITA_SDK_INCLUDE_DIR AND
        CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-        add_executable(native_gxm_renderer_driver_test
-            native_gxm_renderer_driver_test.cpp
-            ../src/platform/native_gxm_renderer.cpp)
-        target_compile_features(native_gxm_renderer_driver_test PRIVATE cxx_std_20)
-        target_compile_definitions(native_gxm_renderer_driver_test PRIVATE
-            PORT_VITA=1 STRIKERS_VITA_NATIVE_GXM_RENDERER=1)
-        target_include_directories(native_gxm_renderer_driver_test PRIVATE ../include)
-        target_compile_options(native_gxm_renderer_driver_test PRIVATE -UNDEBUG
-            -idirafter "${STRIKERS_NATIVE_GXM_SDK_INCLUDE_DIR}")
-        add_test(NAME native_gxm_renderer_driver COMMAND native_gxm_renderer_driver_test)
         add_executable(deferred_renderer_driver_test deferred_renderer_driver_test.cpp ../src/platform/deferred_renderer.cpp)
         target_compile_features(deferred_renderer_driver_test PRIVATE cxx_std_20)
         target_compile_definitions(deferred_renderer_driver_test PRIVATE STRIKERS_VITA_VITAGL=1)
         target_include_directories(deferred_renderer_driver_test PRIVATE ../include)
-        target_compile_options(deferred_renderer_driver_test PRIVATE -UNDEBUG -idirafter "${STRIKERS_NATIVE_GXM_SDK_INCLUDE_DIR}")
+        target_compile_options(deferred_renderer_driver_test PRIVATE -UNDEBUG -idirafter "${STRIKERS_VITA_SDK_INCLUDE_DIR}")
         find_package(Threads REQUIRED)
         target_link_libraries(deferred_renderer_driver_test PRIVATE Threads::Threads)
         add_test(NAME deferred_renderer_driver COMMAND deferred_renderer_driver_test)
@@ -121,54 +102,29 @@ if(NOT STRIKERS_VITA)
         target_compile_features(audio_out_native_driver_test PRIVATE cxx_std_20)
         target_compile_definitions(audio_out_native_driver_test PRIVATE STRIKERS_VITA_NATIVE_RUNTIME=1)
         target_include_directories(audio_out_native_driver_test PRIVATE ../include)
-        target_compile_options(audio_out_native_driver_test PRIVATE -UNDEBUG -idirafter "${STRIKERS_NATIVE_GXM_SDK_INCLUDE_DIR}")
+        target_compile_options(audio_out_native_driver_test PRIVATE -UNDEBUG -idirafter "${STRIKERS_VITA_SDK_INCLUDE_DIR}")
         target_link_libraries(audio_out_native_driver_test PRIVATE Threads::Threads)
         add_test(NAME audio_out_native_driver COMMAND audio_out_native_driver_test)
         add_executable(native_jobs_driver_test native_jobs_driver_test.cpp ../src/platform/native_jobs.cpp)
         target_compile_features(native_jobs_driver_test PRIVATE cxx_std_20)
         target_compile_definitions(native_jobs_driver_test PRIVATE STRIKERS_VITA_NATIVE_RUNTIME=1)
         target_include_directories(native_jobs_driver_test PRIVATE ../include)
-        target_compile_options(native_jobs_driver_test PRIVATE -UNDEBUG -idirafter "${STRIKERS_NATIVE_GXM_SDK_INCLUDE_DIR}")
+        target_compile_options(native_jobs_driver_test PRIVATE -UNDEBUG -idirafter "${STRIKERS_VITA_SDK_INCLUDE_DIR}")
         find_package(Threads REQUIRED)
         target_link_libraries(native_jobs_driver_test PRIVATE Threads::Threads)
         add_test(NAME native_jobs_driver COMMAND native_jobs_driver_test)
-        if(EXISTS "${STRIKERS_NATIVE_GXM_SDK_INCLUDE_DIR}/vitaGL.h")
+        if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../extern/vitaGL/source/vitaGL.h")
             add_executable(vitagl_renderer_driver_test vitagl_renderer_driver_test.cpp ../src/platform/vitagl_renderer.cpp)
             target_compile_features(vitagl_renderer_driver_test PRIVATE cxx_std_20)
             target_compile_definitions(vitagl_renderer_driver_test PRIVATE PORT_VITA=1 STRIKERS_VITA_VITAGL=1)
-            target_include_directories(vitagl_renderer_driver_test PRIVATE ../include)
-            target_compile_options(vitagl_renderer_driver_test PRIVATE -UNDEBUG -idirafter "${STRIKERS_NATIVE_GXM_SDK_INCLUDE_DIR}")
+            target_include_directories(vitagl_renderer_driver_test PRIVATE ../include ../extern/vitaGL/source)
+            target_compile_options(vitagl_renderer_driver_test PRIVATE -UNDEBUG -idirafter "${STRIKERS_VITA_SDK_INCLUDE_DIR}")
             add_test(NAME vitagl_renderer_driver COMMAND vitagl_renderer_driver_test)
         endif()
 
     endif()
 
-    add_executable(gxm_direct_probe_contract_test
-        gxm_direct_probe_contract_test.cpp
-        ../extern/aurora-vita/platforms/vita/gxm/gxm_shader_gen.cpp
-        ../extern/aurora-vita/platforms/vita/gfx/vita_vertex_pipeline.cpp)
-    target_compile_features(gxm_direct_probe_contract_test PRIVATE cxx_std_20)
-    target_include_directories(gxm_direct_probe_contract_test PRIVATE
-        ../include ../extern/aurora-vita/platforms/vita)
-    add_test(NAME gxm_direct_probe_contract COMMAND gxm_direct_probe_contract_test)
 
-    # Portable preparation contract for the future Aurora-free GXM backend:
-    # one packed vertex/index pair, immutable source lookup, zero CPU geometry
-    # retained after upload. Does not require VitaSDK or copyrighted assets.
-    add_executable(native_match_gpu_assets_test native_match_gpu_assets_test.cpp)
-    target_compile_features(native_match_gpu_assets_test PRIVATE cxx_std_20)
-    target_include_directories(native_match_gpu_assets_test PRIVATE ../include)
-    if(NOT MSVC)
-        target_compile_options(native_match_gpu_assets_test PRIVATE -UNDEBUG)
-    endif()
-    add_test(NAME native_match_gpu_assets COMMAND native_match_gpu_assets_test)
-    add_executable(native_match_uv_test native_match_uv_test.cpp)
-    target_compile_features(native_match_uv_test PRIVATE cxx_std_20)
-    target_include_directories(native_match_uv_test PRIVATE ../include)
-    if(NOT MSVC)
-        target_compile_options(native_match_uv_test PRIVATE -UNDEBUG)
-    endif()
-    add_test(NAME native_match_uv COMMAND native_match_uv_test)
     add_executable(native_model_vertices_test native_model_vertices_test.cpp)
     target_compile_features(native_model_vertices_test PRIVATE cxx_std_20)
     target_include_directories(native_model_vertices_test PRIVATE ../include)
@@ -184,15 +140,6 @@ if(NOT STRIKERS_VITA)
     endif()
     add_test(NAME native_model_sources COMMAND native_model_sources_test)
 
-    add_executable(native_match_source_bindings_test
-        native_match_source_bindings_test.cpp)
-    target_compile_features(native_match_source_bindings_test PRIVATE cxx_std_20)
-    target_include_directories(native_match_source_bindings_test PRIVATE ../include)
-    if(NOT MSVC)
-        target_compile_options(native_match_source_bindings_test PRIVATE -UNDEBUG)
-    endif()
-    add_test(NAME native_match_source_bindings
-        COMMAND native_match_source_bindings_test)
 endif()
 
 # The two tool tests, pure Python, so they are one `ctest` away.
@@ -235,11 +182,7 @@ if(UNIX)
     target_compile_options(vitagl_default_config_test PRIVATE -UNDEBUG)
     target_compile_definitions(vitagl_default_config_test PRIVATE PORT_VITA=1 STRIKERS_VITA_VITAGL=1)
     add_test(NAME vitagl_default_config COMMAND vitagl_default_config_test)
-    add_executable(vita_default_config_test vita_default_config_test.c ../src/platform/config.c)
-    target_include_directories(vita_default_config_test PRIVATE ../include)
-    target_compile_definitions(vita_default_config_test PRIVATE PORT_VITA=1)
-    add_test(NAME vita_default_config COMMAND vita_default_config_test
-        "${CMAKE_CURRENT_SOURCE_DIR}/../strikers-vita.ini.example")
+
     add_executable(benchmark_fps_test benchmark_fps_test.c ../src/platform/benchmark.c)
     target_include_directories(benchmark_fps_test PRIVATE ../include)
     target_link_libraries(benchmark_fps_test PRIVATE m)
@@ -290,8 +233,6 @@ endif()
 
 add_test(NAME tool_native_asset_adapter
          COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_native_asset_adapter.py")
-add_test(NAME tool_native_match_meshes
-         COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_native_match_meshes.py")
 
 if(UNIX)
     add_executable(strikers_compile_native_audio ../tools/compile_native_audio.cpp)

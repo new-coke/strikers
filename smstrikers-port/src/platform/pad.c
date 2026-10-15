@@ -165,11 +165,7 @@ void PADClampCircle(PADStatus* status)
     }
 }
 
-#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
-void PADControlMotor(u32 chan, u32 command)
-#else
 void PADControlMotor(s32 chan, u32 command)
-#endif
 {
     (void)chan;
     (void)command;

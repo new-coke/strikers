@@ -9,19 +9,6 @@ float s_renderScale = 544.0f / 448.0f;
 bool s_checked;
 }
 
-#if !defined(STRIKERS_VITA_NATIVE_RUNTIME)
-extern "C" void PortAuroraConfigure(AuroraConfig* cfg)
-{
-#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
-
-#else
-
-    (void)cfg;
-
-#endif
-}
-
-#endif
 extern "C" void PortFollowRenderScale(unsigned int windowHeight)
 {
     if (!s_checked)

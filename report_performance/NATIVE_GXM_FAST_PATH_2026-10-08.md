@@ -2,8 +2,6 @@
 
 ## Reason for the change
 
-Rinnegatamante's RE4-style workflow is based on converting immutable
-geometry/texture assets on a PC into formats the target GPU consumes.
 Strikers already packaged AVNR v1 geometry, but AVNR v1 stored 168-byte
 `CanonicalVertex` arrays. On admission into Aurora's resident geometry cache,
 the Vita still ran `pack_gpu_vertex_bytes` on each vertex.

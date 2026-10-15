@@ -8,20 +8,6 @@
 
 #include <aurora/gfx.h>
 
-#if defined(STRIKERS_VITA)
-
-// Native GXM owns its shader/program-cache warmup in aurora-vita's backend
-// initialization.  The legacy memory-card-screen wait below tracks Aurora's
-// asynchronous Dawn pipeline queue, which does not exist on Vita and whose old
-// aggregate counter API was removed.  Do not add a second wait/progress path on
-// Vita: by the time this stage is reached GXM has already run the configured
-// persistent-cache preload and prewarm.
-void PortShaderStageBegin(void) {}
-int PortShaderStagePending(void) { return 0; }
-int PortShaderStagePercent(void) { return 100; }
-void PortShaderStageEnd(void) {}
-
-#else
 
 namespace
 {
@@ -95,6 +81,5 @@ void PortShaderStageEnd(void)
                 queued(), seconds_since(s_waitStart));
 }
 
-#endif // STRIKERS_VITA
 
 #endif // PORT_USE_AURORA

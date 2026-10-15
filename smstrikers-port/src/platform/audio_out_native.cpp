@@ -33,7 +33,7 @@ void* audio_thread(void*)
     sceKernelChangeThreadPriority(id, 0x10000100);
     std::array<int16_t, 2048> queue{};
     size_t used = 0;
-    // AudioOut can retain a submitted block until the following call (RE4 transport).
+    // AudioOut can retain a submitted block until the following call (alternating-block transport).
     alignas(64) std::array<std::array<int16_t, 512 * 2>, 2> blocks{};
     unsigned nextBlock = 0;
     while (running.load())

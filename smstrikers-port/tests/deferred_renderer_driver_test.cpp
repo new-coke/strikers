@@ -101,5 +101,5 @@ int main(){
  gpuFailure=true;assert(r.begin_frame());assert(r.draw_scene(19,{},{},matrix,raster,material));assert(!r.end_frame());assert(r.error_code()==1282);
  gpuFailure=false;r.release_model(19);r.release_texture(17);r.shutdown();assert(released==2&&!initialized);
  assert(r.initialize()&&r.initialize_scene_program());r.shutdown();
- std::puts("RE4 deferred frontend: GPU owner, immutable geometry/uniform/copy payloads, bounded slot reuse, oversized borrowed lifetime, frame barriers, errors and lifecycle passed");
+ std::puts("Deferred frontend: GPU owner, immutable geometry/uniform/copy payloads, bounded slot reuse, oversized borrowed lifetime, frame barriers, errors and lifecycle passed");
 }

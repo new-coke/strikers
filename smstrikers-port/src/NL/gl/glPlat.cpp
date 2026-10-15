@@ -12,7 +12,7 @@
 #include "NL/gl/glRenderList.h"
 #include "NL/glx/glxSwap.h"
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
-#include "port/native_match_direct.hpp"
+#include "port/native_match_runtime.hpp"
 #endif
 #include "NL/glx/glxMemory.h"
 #include "NL/glx/glxTarget.h"
@@ -35,30 +35,6 @@
 #include "port/vita_profiler.h"
 #include <cstdlib>
 #include <cstring>
-#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
-#include <aurora_vita_backend.hpp>
-#include <aurora_vita_view_draw_capture.h>
-#include "port/profile_output.hpp"
-
-static port::ProfileOutput& PortRenderProfileOutput()
-{
-    static const bool buffered = []() {
-        const char* value = std::getenv("STRIKERS_TASK_PROFILE_BUFFERED");
-        return value != nullptr && value[0] == '1';
-    }();
-    static port::ProfileOutput output("ux0:data/strikersVita/task_profile.log", "render", buffered);
-    return output;
-}
-
-// PORT: profiling output that survives no-log builds (stderr goes nowhere on Vita).
-static FILE* PortProfileOut()
-{
-#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
-    return PortRenderProfileOutput().get();
-#endif
-    return stderr;
-}
-#endif
 
 // PAL 480i deflicker render mode (first symbol in .data)
 static GXRenderModeObj glPal480IntDf = { VI_TVMODE_PAL_INT,
@@ -115,132 +91,6 @@ static s32 glx_FBSize;
 static unsigned long long s_portDebugViewMask = (1ull << GLV_Num) - 1ull;
 static unsigned int s_portDebugViewLastUs[GLV_Num] = {};
 
-#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
-struct PortRenderViewProfileAccum
-{
-    unsigned long long wallUs;
-    unsigned long long packetTimedWallUs;
-    unsigned int packetTimedSamples;
-    unsigned long long draws;
-    unsigned long long vertices;
-    unsigned long long indices;
-    unsigned long long triangles;
-    unsigned long long gpuGeometryHits;
-    unsigned long long gpuGeometryMisses;
-    unsigned long long gpuVertices;
-    unsigned long long pipelineTranslations;
-    unsigned long long vertexTranslations;
-    unsigned long long layoutTranslations;
-    unsigned long long vertexDecodeUs;
-    unsigned long long vertexTransformUs;
-    unsigned long long textureResolveUs;
-    unsigned long long geometryCacheUs;
-    unsigned long long drawFrontendUs;
-    unsigned long long stateTranslateUs;
-    unsigned long long statePipelineUs;
-    unsigned long long pipelineResolveUs;
-    unsigned long long commandBuildUs;
-    unsigned long long submitUs;
-    unsigned long long bufferUploadUs;
-    unsigned long long streamWaitUs;
-    unsigned long long fifoProcessUs;
-    unsigned long long fifoBytes;
-    unsigned long long dlBytes;
-    unsigned long long dlCdramBytes;
-    unsigned long long dlCopyUs;
-    unsigned long long fifoBpUs;
-    unsigned long long fifoXfUs;
-    unsigned long long fifoCallListUs;
-    unsigned long long fifoDrawUs;
-    unsigned long long fifoIndexedUs;
-    unsigned long long fifoBpCount;
-    unsigned long long fifoXfCount;
-    unsigned long long fifoCallListCount;
-    unsigned long long fifoDrawCount;
-    unsigned long long fifoIndexedCount;
-    unsigned long long dlCalls;
-    unsigned int samples;
-};
-
-static PortRenderViewProfileAccum s_portRenderViewProfile[GLV_Num] = {};
-static unsigned int s_portRenderViewProfileFrames = 0;
-static unsigned int s_portRenderViewProfileWindow = 120;
-
-static const char* const s_portRenderViewNames[GLV_Num] = {
-    "ShadowTexture", "GrabTexture", "Skybox", "Shadowed", "Shadow0",
-    "ShadowBlend0", "WorldShadowed", "Unshadowed", "BigBlackPolygon",
-    "Warble", "WarbleBlend", "Characters", "CoPlanar0", "CoPlanar",
-    "Shadow1", "ShadowBlend1", "UnsortedPerspective", "DepthOfField",
-    "LingeringParticles", "Particles", "InvisiblePlane", "ElectricFence",
-    "CameraSpace", "ScreenBlur", "ScreenBlur2", "ScreenGrab", "FrontEnd",
-    "UnsortedOrtho", "Transitions3D", "Transitions", "Anark3D_BG", "Anark",
-    "Anark3D_FG", "Debug"
-};
-
-static bool PortRenderViewProfileEnabled()
-{
-    if (!PortDiagnosticsEnabled())
-        return false;
-    static int enabled = -1;
-    if (enabled < 0)
-    {
-        const char* value = std::getenv("STRIKERS_TASK_PROFILE");
-        enabled = value != nullptr && *value != '\0' && *value != '0';
-        const char* window = std::getenv("STRIKERS_TASK_PROFILE_FRAMES");
-        if (window != nullptr && *window != '\0')
-        {
-            const unsigned long parsed = std::strtoul(window, nullptr, 10);
-            if (parsed >= 10 && parsed <= 600)
-                s_portRenderViewProfileWindow = (unsigned int)parsed;
-        }
-    }
-    return enabled != 0;
-}
-
-static unsigned long long PortRenderViewPhaseDelta(const aurora::vita::gfx::FrameTelemetry& before,
-                                                   const aurora::vita::gfx::FrameTelemetry& after,
-                                                   aurora::vita::gfx::TelemetryPhase phase)
-{
-    const size_t index = (size_t)phase;
-    return after.phaseUs[index] >= before.phaseUs[index] ? after.phaseUs[index] - before.phaseUs[index] : 0ull;
-}
-
-static unsigned long long PortRenderViewCounterDelta(unsigned long long before, unsigned long long after)
-{
-    return after >= before ? after - before : 0ull;
-}
-
-static void PortRenderViewProfileFrameEnd()
-{
-    if (!PortRenderViewProfileEnabled() || ++s_portRenderViewProfileFrames < s_portRenderViewProfileWindow)
-        return;
-
-    FILE* out = PortProfileOut();
-    for (unsigned int view = 0; view < GLV_Num; ++view)
-    {
-        const PortRenderViewProfileAccum& p = s_portRenderViewProfile[view];
-        if (p.samples == 0 || (p.draws == 0 && p.wallUs < 1000ull))
-            continue;
-        std::fprintf(out,
-                     "[view-profile] view=%u name=%s frames=%u samples=%u wall_us=%llu packet_timed_samples=%u packet_timed_wall_us=%llu draws=%llu vertices=%llu indices=%llu triangles=%llu "
-                     "gpu_hit=%llu gpu_miss=%llu gpu_vertices=%llu pipe_tr=%llu vert_tr=%llu layout_tr=%llu "
-                     "decode_us=%llu transform_us=%llu texture_us=%llu geometry_us=%llu frontend_us=%llu state_us=%llu state_pipeline_us=%llu pipeline_us=%llu command_us=%llu submit_us=%llu buffer_us=%llu stream_wait_us=%llu "
-                     "fifo_us=%llu fifo_bytes=%llu dl_calls=%llu dl_bytes=%llu dl_cdram_bytes=%llu dl_copy_us=%llu bp_us=%llu bp_count=%llu xf_us=%llu xf_count=%llu calllist_us=%llu calllist_count=%llu drawcmd_us=%llu drawcmd_count=%llu indexed_us=%llu indexed_count=%llu\n",
-                     view, s_portRenderViewNames[view], s_portRenderViewProfileFrames, p.samples, p.wallUs,
-                     p.packetTimedSamples, p.packetTimedWallUs, p.draws,
-                     p.vertices, p.indices, p.triangles, p.gpuGeometryHits, p.gpuGeometryMisses, p.gpuVertices,
-                     p.pipelineTranslations, p.vertexTranslations, p.layoutTranslations, p.vertexDecodeUs,
-                     p.vertexTransformUs, p.textureResolveUs, p.geometryCacheUs, p.drawFrontendUs, p.stateTranslateUs,
-                     p.statePipelineUs, p.pipelineResolveUs, p.commandBuildUs, p.submitUs, p.bufferUploadUs,
-                     p.streamWaitUs, p.fifoProcessUs, p.fifoBytes, p.dlCalls, p.dlBytes, p.dlCdramBytes,
-                     p.dlCopyUs, p.fifoBpUs, p.fifoBpCount, p.fifoXfUs, p.fifoXfCount, p.fifoCallListUs,
-                     p.fifoCallListCount, p.fifoDrawUs, p.fifoDrawCount, p.fifoIndexedUs, p.fifoIndexedCount);
-    }
-    PortRenderProfileOutput().flush_report();
-    std::memset(s_portRenderViewProfile, 0, sizeof(s_portRenderViewProfile));
-    s_portRenderViewProfileFrames = 0;
-}
-#endif
 
 extern "C" int PortDebugRenderViewEnabled(unsigned int view)
 {
@@ -276,15 +126,6 @@ struct PortDebugRenderViewTimer
     explicit PortDebugRenderViewTimer(unsigned int inView)
         : view(inView), started(0)
     {
-#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
-        profile = PortRenderViewProfileEnabled();
-        packetSample = glx_PacketProfileSampledView((eGLView)view);
-        if (profile)
-        {
-            before = aurora::vita::telemetry().frame();
-            fifoBefore = aurora::vita::gfx::fifo_profile_accumulator();
-        }
-#endif
         started = port_monotonic_ns();
     }
 
@@ -296,77 +137,10 @@ struct PortDebugRenderViewTimer
         // not immediately replace the gameplay cost with an empty-view sample.
         if (us >= 100u)
             s_portDebugViewLastUs[view] = us;
-#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
-        if (profile && view < GLV_Num)
-        {
-            const aurora::vita::gfx::FrameTelemetry& after = aurora::vita::telemetry().frame();
-            const aurora::vita::gfx::TelemetryCounters& bc = before.counters;
-            const aurora::vita::gfx::TelemetryCounters& ac = after.counters;
-            PortRenderViewProfileAccum& p = s_portRenderViewProfile[view];
-            p.wallUs += us;
-            p.samples++;
-            if (packetSample)
-            {
-                p.packetTimedWallUs += us;
-                ++p.packetTimedSamples;
-            }
-            p.draws += ac.draws >= bc.draws ? ac.draws - bc.draws : 0;
-            p.vertices += ac.vertices >= bc.vertices ? ac.vertices - bc.vertices : 0;
-            p.indices += ac.indices >= bc.indices ? ac.indices - bc.indices : 0;
-            p.triangles += ac.triangles >= bc.triangles ? ac.triangles - bc.triangles : 0;
-            p.gpuGeometryHits += ac.gpuGeometryHits >= bc.gpuGeometryHits ? ac.gpuGeometryHits - bc.gpuGeometryHits : 0;
-            p.gpuGeometryMisses += ac.gpuGeometryMisses >= bc.gpuGeometryMisses ? ac.gpuGeometryMisses - bc.gpuGeometryMisses : 0;
-            p.gpuVertices += ac.gpuVertices >= bc.gpuVertices ? ac.gpuVertices - bc.gpuVertices : 0;
-            p.pipelineTranslations += ac.pipelineTranslations >= bc.pipelineTranslations ? ac.pipelineTranslations - bc.pipelineTranslations : 0;
-            p.vertexTranslations += ac.vertexTranslations >= bc.vertexTranslations ? ac.vertexTranslations - bc.vertexTranslations : 0;
-            p.layoutTranslations += ac.layoutTranslations >= bc.layoutTranslations ? ac.layoutTranslations - bc.layoutTranslations : 0;
-            p.vertexDecodeUs += PortRenderViewPhaseDelta(before, after, aurora::vita::gfx::TelemetryPhase::VertexDecode);
-            p.vertexTransformUs += PortRenderViewPhaseDelta(before, after, aurora::vita::gfx::TelemetryPhase::VertexTransform);
-            p.textureResolveUs += PortRenderViewPhaseDelta(before, after, aurora::vita::gfx::TelemetryPhase::TextureResolve);
-            p.geometryCacheUs += PortRenderViewPhaseDelta(before, after, aurora::vita::gfx::TelemetryPhase::GeometryCache);
-            p.drawFrontendUs += PortRenderViewPhaseDelta(before, after, aurora::vita::gfx::TelemetryPhase::DrawFrontend);
-            p.stateTranslateUs += PortRenderViewPhaseDelta(before, after, aurora::vita::gfx::TelemetryPhase::StateTranslate);
-            p.statePipelineUs += PortRenderViewPhaseDelta(before, after, aurora::vita::gfx::TelemetryPhase::StatePipeline);
-            p.pipelineResolveUs += PortRenderViewPhaseDelta(before, after, aurora::vita::gfx::TelemetryPhase::PipelineResolve);
-            p.commandBuildUs += PortRenderViewPhaseDelta(before, after, aurora::vita::gfx::TelemetryPhase::CommandBuild);
-            p.submitUs += PortRenderViewPhaseDelta(before, after, aurora::vita::gfx::TelemetryPhase::Submit);
-            p.bufferUploadUs += PortRenderViewPhaseDelta(before, after, aurora::vita::gfx::TelemetryPhase::BufferUpload);
-            p.streamWaitUs += PortRenderViewPhaseDelta(before, after, aurora::vita::gfx::TelemetryPhase::StreamWait);
-
-            const aurora::vita::gfx::FifoProfile& fifoAfter = aurora::vita::gfx::fifo_profile_accumulator();
-            p.fifoProcessUs += PortRenderViewCounterDelta(fifoBefore.processUs, fifoAfter.processUs);
-            p.fifoBytes += PortRenderViewCounterDelta(fifoBefore.bytes, fifoAfter.bytes);
-            p.dlBytes += PortRenderViewCounterDelta(fifoBefore.dlBytes, fifoAfter.dlBytes);
-            p.dlCdramBytes += PortRenderViewCounterDelta(fifoBefore.dlCdramBytes, fifoAfter.dlCdramBytes);
-            p.dlCopyUs += PortRenderViewCounterDelta(fifoBefore.dlCopyUs, fifoAfter.dlCopyUs);
-            p.dlCalls += fifoAfter.dlCalls >= fifoBefore.dlCalls ? fifoAfter.dlCalls - fifoBefore.dlCalls : 0;
-            const size_t bp = (size_t)aurora::vita::gfx::FifoCommandClass::Bp;
-            const size_t xf = (size_t)aurora::vita::gfx::FifoCommandClass::Xf;
-            const size_t callList = (size_t)aurora::vita::gfx::FifoCommandClass::CallList;
-            const size_t draw = (size_t)aurora::vita::gfx::FifoCommandClass::Draw;
-            const size_t indexed = (size_t)aurora::vita::gfx::FifoCommandClass::Indexed;
-            p.fifoBpUs += PortRenderViewCounterDelta(fifoBefore.us[bp], fifoAfter.us[bp]);
-            p.fifoXfUs += PortRenderViewCounterDelta(fifoBefore.us[xf], fifoAfter.us[xf]);
-            p.fifoCallListUs += PortRenderViewCounterDelta(fifoBefore.us[callList], fifoAfter.us[callList]);
-            p.fifoDrawUs += PortRenderViewCounterDelta(fifoBefore.us[draw], fifoAfter.us[draw]);
-            p.fifoIndexedUs += PortRenderViewCounterDelta(fifoBefore.us[indexed], fifoAfter.us[indexed]);
-            p.fifoBpCount += fifoAfter.count[bp] >= fifoBefore.count[bp] ? fifoAfter.count[bp] - fifoBefore.count[bp] : 0;
-            p.fifoXfCount += fifoAfter.count[xf] >= fifoBefore.count[xf] ? fifoAfter.count[xf] - fifoBefore.count[xf] : 0;
-            p.fifoCallListCount += fifoAfter.count[callList] >= fifoBefore.count[callList] ? fifoAfter.count[callList] - fifoBefore.count[callList] : 0;
-            p.fifoDrawCount += fifoAfter.count[draw] >= fifoBefore.count[draw] ? fifoAfter.count[draw] - fifoBefore.count[draw] : 0;
-            p.fifoIndexedCount += fifoAfter.count[indexed] >= fifoBefore.count[indexed] ? fifoAfter.count[indexed] - fifoBefore.count[indexed] : 0;
-        }
-#endif
     }
 
     unsigned int view;
     unsigned long long started;
-#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
-    bool profile = false;
-    bool packetSample = false;
-    aurora::vita::gfx::FrameTelemetry before{};
-    aurora::vita::gfx::FifoProfile fifoBefore{};
-#endif
 };
 
 // Performance metric string array
@@ -444,12 +218,6 @@ void glplatAbortFrame()
 {
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
     port::directmatch::discard_present();
-#elif defined(PORT_VITA)
-    // On GameCube an aborted frame never reaches VI.  The Vita outer loop owns
-    // the actual buffer swap, so tell it not to present this partially rendered
-    // backbuffer.  Without this, FE loading/discard frames alternate with good
-    // frames and look like severe unsynchronised flashing.
-    aurora::vita::discard_present();
 #endif
     glplatFrameAllocNextFrame();
     glx_NumVirtMisses = 0;
@@ -611,9 +379,6 @@ void glplatSendFrame()
             for (unsigned int i = 0; i < 5; ++i)
                 std::fprintf(PortProfileOut(), "[render-profile] %-12s mean_us=%llu max_us=%llu total_us=%llu\n",
                              names[i], totals[i] / (1000ull * profileFrames), maxima[i] / 1000ull, totals[i] / 1000ull);
-#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
-            PortRenderProfileOutput().flush_report();
-#endif
             for (unsigned int i = 0; i < 5; ++i)
                 totals[i] = maxima[i] = 0;
             profileFrames = 0;
@@ -721,11 +486,6 @@ static void glx_SendViews()
     GXFogAdjTable fogAdjTable;
 
     glx_SendReset();
-#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
-    // Diagnostic markers are ordered in the same FIFO as the draw commands.
-    // 255 denotes work outside a named gameplay view.
-    aurora_vita_view_draw_mark(255, glGetCurrentFrame());
-#endif
 
     renderList = gl_ViewGetRenderList((eGLView)9);
     if (!renderList->IsEmpty())
@@ -751,9 +511,6 @@ static void glx_SendViews()
         {
             continue;
         }
-#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
-        aurora_vita_view_draw_mark((unsigned int)view, glGetCurrentFrame());
-#endif
 
         PortProfilerRenderViewScope viewProfile((unsigned int)view);
         PortDebugRenderViewTimer viewTimer((unsigned int)view);
@@ -894,16 +651,10 @@ static void glx_SendViews()
     }
 
     glx_SendEnd();
-#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
-    aurora_vita_view_draw_mark(255, glGetCurrentFrame());
-#endif
     if (glx_ViewFence < 0)
     {
         glx_StopMetrics();
     }
-#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
-    PortRenderViewProfileFrameEnd();
-#endif
 
 #endif
 }

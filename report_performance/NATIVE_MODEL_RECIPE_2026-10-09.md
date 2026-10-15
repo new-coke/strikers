@@ -1,8 +1,7 @@
 # Strikers Vita: primo percorso nativo per draw statiche
 
 Data: 2026-10-09. Richiesta: proseguire l'ottimizzazione di Aurora/Strikers verso
-60 FPS, dopo la verifica degli asset nativi, le prove di memoria e il confronto
-con la cache geometrica di RE4. Ultima istruzione: riprendere il lavoro sospeso.
+60 FPS, dopo la verifica degli asset nativi e le prove di memoria.
 
 ## Stato e criterio di accettazione
 

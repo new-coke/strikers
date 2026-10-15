@@ -37,3 +37,6 @@ extracted/
 
 # Local Codex checkouts and build scratch are not project sources.
 /.codex/
+
+# Retired local checkout retained to preserve preexisting uncommitted work.
+/smstrikers-port/extern/aurora-vita/

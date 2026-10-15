@@ -1,5 +1,5 @@
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
-#include "port/native_match_direct.hpp"
+#include "port/native_match_runtime.hpp"
 #include "port/deferred_renderer.hpp"
 #include "port/native_model_sources.hpp"
 #include "port/native_match_transform.hpp"
@@ -70,7 +70,7 @@ void consume_writes(){
 }
 const void* userdata(const glModelPacket& p,eGLUserData type){if(!p.userData)return nullptr;auto handle=reinterpret_cast<const uintptr_t*>(p.userData)[type];return handle?glUserGetData(reinterpret_cast<const void*>(handle)):nullptr;}
 void report(){auto* f=std::fopen("ux0:data/strikersVita/vitagl_match_status.csv","wb");if(!f)return;
- std::fprintf(f,"# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n%u,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%d,%s,%s\n",unsigned(glGetCurrentFrame()),draws,textured,hud,characters,invalid,records,decoded,resident,dynamic,gpu.error_code(),gpu.last_error(),failure);std::fclose(f);
+ std::fprintf(f,"# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n%u,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%d,%s,%s\n",unsigned(glGetCurrentFrame()),draws,textured,hud,characters,invalid,records,decoded,resident,dynamic,gpu.error_code(),gpu.last_error(),failure);std::fclose(f);
  if(timingFrames){f=std::fopen("ux0:data/strikersVita/native_renderer_timing.csv","w");if(f){std::fprintf(f,"frames,fence_us,upload_us,draw_calls_us,queue_us,draws,dynamic_bytes,frontend_wait_us,command_bytes,slot_waits\n%llu,%llu,%llu,%llu,%llu,%u,%llu,%llu,%llu,%u\n",timingFrames,timings.fenceUs,timings.uploadUs,timings.drawUs,timings.queueUs,timings.draws,timings.dynamicVertexBytes,timings.frontendWaitUs,timings.commandBytes,timings.slotWaits);std::fclose(f);}}
 }
 uint32_t texture_for(const PlatTexture* p){
@@ -101,8 +101,6 @@ bool preload() noexcept{if(started)return true;const auto* profile=std::getenv("
 bool begin_frame() noexcept{frameDiscarded=false;frameDrawStart=draws;frameStartNs=PortDiagnosticsEnabled()?port_monotonic_ns():0;consume_writes();return preload()&&gpu.begin_frame();}
 bool end_frame() noexcept{bool result=gpu.end_frame(!frameDiscarded);if(result)PortNativeRetrace();trace_present(result&&!frameDiscarded);const auto t=gpu.completed_timing();if(t.drawUs||t.fenceUs){++timingFrames;timings.fenceUs+=t.fenceUs;timings.uploadUs+=t.uploadUs;timings.drawUs+=t.drawUs;timings.queueUs+=t.queueUs;timings.draws+=t.draws;timings.dynamicVertexBytes+=t.dynamicVertexBytes;timings.frontendWaitUs+=t.frontendWaitUs;timings.commandBytes+=t.commandBytes;timings.slotWaits+=t.slotWaits;}if(glGetCurrentFrame()%60==0||!result)report();return result;}
 void discard_present() noexcept{frameDiscarded=true;}
-void present_native() noexcept{}
-void finish() noexcept{}
 void clear_depth() noexcept{gpu.clear_depth();}
 void set_fog(float start,float end,bool enabled,unsigned type,std::array<float,4> color) noexcept{viewFog={start,end,float(enabled),float(type)};viewFogColor=color;}
 void shutdown() noexcept{gpu.shutdown();sources.clear();geometry.clear();textures.clear();shadowAtlas=0;started=false;}

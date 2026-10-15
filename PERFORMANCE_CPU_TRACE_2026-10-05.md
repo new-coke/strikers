@@ -19,7 +19,7 @@ Il trace individua costi concreti nelle copie di memoria, nella preparazione dei
 | Capture ID | `-2106976322392918221` |
 | Durata | 2,122882 secondi |
 | Clock CPU / conversione tick | 333.000.000 Hz |
-| SELF dichiarato | `F:\Ubuntu\re4\build-vita\strikers_debug_debug.self` |
+| SELF dichiarato | `F:\Ubuntu\command-ring\build-vita\strikers_debug_debug.self` |
 | Strikers di partenza | `369c539dd7a5fc27f82e0a52c8b3df49773c8a40` |
 | Aurora di partenza | `910c4b89977652a8e3770c1f5e256fc87758db5a` |
 

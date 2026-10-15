@@ -1,4 +1,4 @@
-# RE4 asset workflow integration, 2026-10-05
+# Strikers asset workflow integration, 2026-10-05
 
 ## Implemented scope
 
@@ -9,18 +9,13 @@ game's paths, callbacks, partial-read rules, memory publication or region/save
 identity. Usage and cross-port integration are documented in
 [VITA_ASSET_PIPELINE.md](smstrikers-port/tools/VITA_ASSET_PIPELINE.md).
 
-Analyzed RE4 revision: `dee72109dd06c0cf52e2fd21c095b3d09b23cad7`.
-The packer is adapted under CC0-1.0; the full upstream license and the precise
-source references are in
-[UPSTREAM.md](smstrikers-port/tools/asset_pipeline/UPSTREAM.md).
-The reader is a local implementation; no FIOS ABI shim or proprietary packer is
-required. Game-specific preparation is separated from the container layer.
-
-Original assets are retained byte for byte. The RE4 SMD/BIN/TPL-to-VRM/VRT native
-room compiler is not a Strikers GLG/GLT converter and is not integrated as one.
-Offline native geometry/texture compilation needs a Strikers-specific compiler
-and matching renderer consumer; it remains separate work. This change does not
-remove TEV, alter texture quality or move scene meshes to CDRAM.
+The container layer is distributed under CC0-1.0, with the complete license
+preserved beside the source. Container details are documented in
+[FORMAT.md](smstrikers-port/tools/asset_pipeline/FORMAT.md).
+The C reader uses the selected platform file APIs. Original assets remain
+byte-identical. Offline geometry/texture preparation requires a matching
+Strikers compiler and renderer consumer; packaging alone does not reduce
+steady-state rendering work.
 
 ## Real-disc result
 

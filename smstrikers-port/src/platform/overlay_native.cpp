@@ -31,8 +31,6 @@ const PortDebugSession* PortDebugGetSession(){return &session;}
 int PortDebugPushCommand(const PortDebugCommand* c){if(!c||count==32)return 0;commands[(head+count)&31]=*c;++count;return 1;}
 int PortDebugPopCommand(PortDebugCommand* c){if(!c||!count)return 0;*c=commands[head];head=(head+1)&31;--count;return 1;}
 }
-void PortVitaShaderCacheBeginLoading(){}
-void PortVitaShaderCacheEndLoading(bool){}
-void PortVitaShaderCacheEnterGameplay(){PortBenchRendererGameplayStart();}
-void PortVitaShaderCacheLeaveGameplay(){PortBenchRendererGameplayEnd();}
+void PortVitaEnterGameplay(){PortBenchRendererGameplayStart();}
+void PortVitaLeaveGameplay(){PortBenchRendererGameplayEnd();}
 #endif

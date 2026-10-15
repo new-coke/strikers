@@ -2,7 +2,7 @@
 #include "port/native_runtime.hpp"
 #include "port/native_jobs.hpp"
 #include "port/config.h"
-#include "port/native_match_direct.hpp"
+#include "port/native_match_runtime.hpp"
 #include <psp2/ctrl.h>
 #include <psp2/power.h>
 #include <psp2/kernel/threadmgr.h>
@@ -12,7 +12,7 @@ namespace port::native_runtime {
 bool initialize() noexcept {
  sceCtrlSetSamplingMode(SCE_CTRL_MODE_ANALOG);
  const int frontAffinity=sceKernelChangeThreadCpuAffinityMask(sceKernelGetThreadId(),SCE_KERNEL_CPU_MASK_USER_2);
- std::fprintf(stderr,"[vitagl-runtime] RE4 topology frontend=CPU2 renderer=CPU1 jobs/audio=CPU0 affinity_rc=%08x\n",unsigned(frontAffinity));
+ std::fprintf(stderr,"[vitagl-runtime] Thread topology frontend=CPU2 renderer=CPU1 jobs/audio=CPU0 affinity_rc=%08x\n",unsigned(frontAffinity));
  if(frontAffinity<0)return false;
  const char* cpu=std::getenv("STRIKERS_CPU_MHZ");const int mhz=cpu?std::atoi(cpu):444;
  if(scePowerSetArmClockFrequency(mhz)<0||scePowerGetArmClockFrequency()<mhz)scePowerSetArmClockFrequency(444);

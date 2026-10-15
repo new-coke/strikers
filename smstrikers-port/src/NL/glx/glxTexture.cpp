@@ -6,7 +6,7 @@
 #include "NL/glx/glxTexture.h"
 #include "port/endian.h"
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
-#include "port/native_match_direct.hpp"
+#include "port/native_match_runtime.hpp"
 #endif
 #include "dolphin/os.h"
 #include "port/texture_packs.h"

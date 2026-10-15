@@ -1,0 +1,82 @@
+[  3%] Built target xxhash
+[ 21%] Built target aurora_vita_common
+[ 21%] Building CXX object CMakeFiles/aurora_vita_backend.dir/lib/gx/fifo.cpp.o
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/lib/gx/fifo.cpp:13:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/lib/gx/display_list_shadow.hpp:4:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/lib/gx/../../platforms/vita/gfx/vita_hash_map.hpp:3:
+/tmp/strikers-native-preparation-host-sanitized/_deps/robin_hood-src/src/include/robin_hood.h:1445:33: warning: builtin __has_trivial_copy is deprecated; use __is_trivially_copyable instead [-Wdeprecated-builtins]
+ 1445 |         Cloner<Table, IsFlat && ROBIN_HOOD_IS_TRIVIALLY_COPYABLE(Node)>()(o, *this);
+      |                                 ^
+/tmp/strikers-native-preparation-host-sanitized/_deps/robin_hood-src/src/include/robin_hood.h:210:51: note: expanded from macro 'ROBIN_HOOD_IS_TRIVIALLY_COPYABLE'
+  210 | #    define ROBIN_HOOD_IS_TRIVIALLY_COPYABLE(...) __has_trivial_copy(__VA_ARGS__)
+      |                                                   ^
+1 warning generated.
+[ 23%] Linking CXX static library libaurora_vita_backend.a
+[ 96%] Built target aurora_vita_backend
+[ 98%] Building CXX object CMakeFiles/aurora_vita_native_model_prepared_test.dir/tests/vita_native_model_prepared_test.cpp.o
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/tests/vita_native_model_prepared_test.cpp:3:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/platforms/vita/gx/aurora_gx_bridge.hpp:5:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/platforms/vita/gx/../gfx/vita_draw_adapter.hpp:3:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/platforms/vita/gx/../gfx/vita_renderer.hpp:2:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/platforms/vita/gx/../gfx/vita_buffer_pool.hpp:3:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/platforms/vita/gx/../gfx/vita_hash_map.hpp:3:
+/tmp/strikers-native-preparation-host-sanitized/_deps/robin_hood-src/src/include/robin_hood.h:1445:33: warning: builtin __has_trivial_copy is deprecated; use __is_trivially_copyable instead [-Wdeprecated-builtins]
+ 1445 |         Cloner<Table, IsFlat && ROBIN_HOOD_IS_TRIVIALLY_COPYABLE(Node)>()(o, *this);
+      |                                 ^
+/tmp/strikers-native-preparation-host-sanitized/_deps/robin_hood-src/src/include/robin_hood.h:210:51: note: expanded from macro 'ROBIN_HOOD_IS_TRIVIALLY_COPYABLE'
+  210 | #    define ROBIN_HOOD_IS_TRIVIALLY_COPYABLE(...) __has_trivial_copy(__VA_ARGS__)
+      |                                                   ^
+/Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/tests/vita_native_model_prepared_test.cpp:11:9: warning: 'CHECK' macro redefined [-Wmacro-redefined]
+   11 | #define CHECK(x) do { if (!(x)) { std::fprintf(stderr,"FAIL %d: %s\n",__LINE__,#x); std::exit(1); } } while (false)
+      |         ^
+/Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/tests/../lib/gx/../internal.hpp:125:9: note: previous definition is here
+  125 | #define CHECK(cond, msg, ...) ASSERT(cond, msg, ##__VA_ARGS__)
+      |         ^
+2 warnings generated.
+[100%] Linking CXX executable aurora_vita_native_model_prepared_test
+[100%] Built target aurora_vita_native_model_prepared_test
+[  4%] Built target xxhash
+[ 22%] Built target aurora_vita_common
+[ 98%] Built target aurora_vita_backend
+[100%] Building CXX object CMakeFiles/aurora_vita_native_model_textured_test.dir/tests/vita_native_model_textured_test.cpp.o
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/tests/vita_native_model_textured_test.cpp:5:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/platforms/vita/aurora_vita_backend.hpp:7:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/platforms/vita/integration/vita_feature_coverage.hpp:6:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/platforms/vita/integration/../gfx/vita_hash_map.hpp:3:
+/tmp/strikers-native-preparation-host-sanitized/_deps/robin_hood-src/src/include/robin_hood.h:1445:33: warning: builtin __has_trivial_copy is deprecated; use __is_trivially_copyable instead [-Wdeprecated-builtins]
+ 1445 |         Cloner<Table, IsFlat && ROBIN_HOOD_IS_TRIVIALLY_COPYABLE(Node)>()(o, *this);
+      |                                 ^
+/tmp/strikers-native-preparation-host-sanitized/_deps/robin_hood-src/src/include/robin_hood.h:210:51: note: expanded from macro 'ROBIN_HOOD_IS_TRIVIALLY_COPYABLE'
+  210 | #    define ROBIN_HOOD_IS_TRIVIALLY_COPYABLE(...) __has_trivial_copy(__VA_ARGS__)
+      |                                                   ^
+1 warning generated.
+[100%] Linking CXX executable aurora_vita_native_model_textured_test
+[100%] Built target aurora_vita_native_model_textured_test
+[  4%] Built target xxhash
+[ 22%] Built target aurora_vita_common
+[ 98%] Built target aurora_vita_backend
+[ 98%] Linking CXX executable aurora_vita_geometry_recipe_test
+[100%] Built target aurora_vita_geometry_recipe_test
+[  3%] Built target xxhash
+[ 21%] Built target aurora_vita_common
+[ 96%] Built target aurora_vita_backend
+[ 98%] Building CXX object CMakeFiles/aurora_vita_native_model_registry_dispatch_test.dir/tests/vita_native_model_registry_dispatch_test.cpp.o
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/tests/vita_native_model_registry_dispatch_test.cpp:4:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/platforms/vita/aurora_vita_backend.hpp:7:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/platforms/vita/integration/vita_feature_coverage.hpp:6:
+In file included from /Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/platforms/vita/integration/../gfx/vita_hash_map.hpp:3:
+/tmp/strikers-native-preparation-host-sanitized/_deps/robin_hood-src/src/include/robin_hood.h:1445:33: warning: builtin __has_trivial_copy is deprecated; use __is_trivially_copyable instead [-Wdeprecated-builtins]
+ 1445 |         Cloner<Table, IsFlat && ROBIN_HOOD_IS_TRIVIALLY_COPYABLE(Node)>()(o, *this);
+      |                                 ^
+/tmp/strikers-native-preparation-host-sanitized/_deps/robin_hood-src/src/include/robin_hood.h:210:51: note: expanded from macro 'ROBIN_HOOD_IS_TRIVIALLY_COPYABLE'
+  210 | #    define ROBIN_HOOD_IS_TRIVIALLY_COPYABLE(...) __has_trivial_copy(__VA_ARGS__)
+      |                                                   ^
+/Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/tests/vita_native_model_registry_dispatch_test.cpp:15:9: warning: 'CHECK' macro redefined [-Wmacro-redefined]
+   15 | #define CHECK(expr) do { if (!(expr)) { \
+      |         ^
+/Users/robin994/Documents/Code/strikersVita/smstrikers-port/extern/aurora-vita/tests/../lib/gx/../internal.hpp:125:9: note: previous definition is here
+  125 | #define CHECK(cond, msg, ...) ASSERT(cond, msg, ##__VA_ARGS__)
+      |         ^
+2 warnings generated.
+[100%] Linking CXX executable aurora_vita_native_model_registry_dispatch_test
+[100%] Built target aurora_vita_native_model_registry_dispatch_test

@@ -1,7 +1,7 @@
 #if defined(STRIKERS_VITA_VITAGL)
 #include "port/deferred_renderer.hpp"
 #include "port/host.h"
-#include "../../extern/re4-renderer/gx_command_buffer.h"
+#include "../../extern/command-buffer/command_buffer.hpp"
 #include <psp2/kernel/threadmgr.h>
 #include <psp2/kernel/cpu.h>
 #include <pthread.h>
@@ -15,11 +15,11 @@ namespace port::render
 {
 struct DeferredRenderer::Impl
 {
-    // RE4's bounded command ring: storage is CPU memory, never the GL scratch pool.
+    // Bounded command ring: storage is CPU memory, never the GL scratch pool.
     static constexpr unsigned Slots = 8;
     static constexpr size_t SlotBytes = 2 * 1024 * 1024;
     Renderer core;
-    std::array<Re4GXCommandBuffer, Slots> buffers{};
+    std::array<RenderCommandBuffer, Slots> buffers{};
     std::array<void*, Slots> storage{};
     std::array<bool, Slots> busy{};
     pthread_t worker{};
@@ -117,7 +117,7 @@ struct DeferredRenderer::Impl
         }
         std::fprintf(
             stderr,
-            "[vitagl-backend] RE4 ring: 8 x 2 MiB, immutable commands, publish every 16 draws\n");
+            "[vitagl-backend] Command ring: 8 x 2 MiB, immutable commands, publish every 16 draws\n");
         return true;
     }
     void publish()
@@ -295,7 +295,7 @@ bool DeferredRenderer::draw_scene(uint32_t model, std::span<const ModelVertex> v
     const size_t vertexBytes = model ? 0 : vertices.size_bytes(),
                  indexBytes = model ? 0 : indices.size_bytes();
     // Rare oversized CPU arrays use a synchronized borrowed-pointer call,
-    // exactly like RE4's pointer-bearing API calls. The normal path copies.
+    // with result-bearing pointer calls. The normal path copies.
     if (vertexBytes > Impl::SlotBytes - sizeof(Draw) - 32 ||
         indexBytes > Impl::SlotBytes - sizeof(Draw) - 32 - vertexBytes)
         return d.sync(

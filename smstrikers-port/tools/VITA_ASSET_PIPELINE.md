@@ -1,7 +1,7 @@
 # Reusable asset preparation and Strikers PSARC support
 
-Implemented 2026-10-05. Source analysis and attribution:
-[asset_pipeline/UPSTREAM.md](asset_pipeline/UPSTREAM.md).
+Implemented 2026-10-05. Container format and license:
+[asset_pipeline/FORMAT.md](asset_pipeline/FORMAT.md).
 
 The pipeline extracts the disc's live filesystem, removes duplicate payloads,
 packages a single PSARC and checks every archived file against its source using
@@ -103,7 +103,7 @@ name collisions before writing, preventing silent file replacement on macOS or
 Windows. Use `--no-dedup` for a reference archive with separate payloads.
 
 `asset_pipeline/psarc.py` is the game-independent container layer. It can be
-copied with its CC0 license/provenance files. `asset_pipeline/adapters.py` owns
+copied with its CC0 license and format documentation. `asset_pipeline/adapters.py` owns
 game discovery and validation; the current GameCube adapter invokes the existing
 `extract-disc.py`, which must accompany it. A new engine's adapter should emit
 validated roots and game-specific metadata, leaving the container code alone.
@@ -119,21 +119,14 @@ encryption, absolute-path manifests and flags are rejected. Entry path digests
 are validated by the host verifier; runtime indexing uses the validated path
 manifest and does not use MD5 lookup.
 
-## What transfers from RE4
+## Implemented asset preparation
 
-Implemented here: ISO extraction, removal of padding, identical-content
-deduplication, PSARC packing, complete source round-trip validation, retained
-disc identity, selectable runtime archive reads, reusable container/reader and
-separate game adapters.
-
-RE4's native-room compiler consumes SMD/BIN/TPL and emits VRM/VRT files used by
-its own renderer. Strikers consumes GLG packets, GLT bundles and its own
-animation/material structures. Those conversions cannot be applied to Strikers
-by replacing a filename or byte-swapping every file. A Strikers native compiler
-must preserve animated/deformed meshes, TEV semantics, palette/mip behavior and
-resource retirement, and provide a matching Aurora consumer. This change does
-not implement that renderer path at the 2026-10-05 packaging snapshot. All
-original assets remain available.
+The pipeline provides ISO extraction, padding removal, identical-content
+deduplication, PSARC packing, full round-trip validation, retained disc
+identity and selectable archive reads. Native asset conversion must preserve
+Strikers geometry, animation and material contracts and provide a matching
+renderer consumer. The 2026-10-05 packaging snapshot did not implement that
+renderer path.
 
 The 2026-10-06 follow-up adds a bounded GLT/static-GLG adapter and matching
 Aurora AVNR compiler/consumer. See [NATIVE_ASSETS.md](NATIVE_ASSETS.md) for

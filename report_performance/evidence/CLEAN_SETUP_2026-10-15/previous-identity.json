@@ -1,0 +1,10 @@
+{
+  "artifacts_sha256": {
+    "strikers": "17aa654dab3c4991552cf53481d303fe072816b9dad05952563c70cacf6949f8",
+    "strikers.map": "5e35b48508219404830e15862bde924997fc5cb72e93005cd055a50b37c8a589",
+    "strikers.velf": "a9bfbc592ed18d667e2bb9d6ae8af85b19af435e695239591cabc5bbc5cc1408",
+    "strikers_vita.self": "971aadfbc977fb751f228595966f6df4b2a054d881ec38ac8a09c0fc45d55592",
+    "strikers_vita.vpk": "f7dc040fe58adaf77262f80d8c41c5baf81b14a7f706f1991c71ec9902c20212"
+  },
+  "reason": "accepted normal-rendering rollback before source cleanup build"
+}

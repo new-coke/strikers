@@ -1,4 +1,4 @@
-#if (defined(PORT_VITA) && (defined(STRIKERS_VITA_NATIVE_GXM_RENDERER) || defined(STRIKERS_VITA_VITAGL))) || defined(STRIKERS_NATIVE_TEXTURE_TEST)
+#if (defined(PORT_VITA) && defined(STRIKERS_VITA_VITAGL)) || defined(STRIKERS_NATIVE_TEXTURE_TEST)
 #include "port/native_texture_record.hpp"
 #define XXH_INLINE_ALL
 #include <xxhash.h>

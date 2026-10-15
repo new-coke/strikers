@@ -368,14 +368,12 @@ void TransitionTask::StateTransition(unsigned int from, unsigned int to)
     int i;
 
 #if defined(PORT_VITA)
-    const bool shaderLoadingWindow = to == 4 || to == 2 || to == 0x80000;
-    if (shaderLoadingWindow)
+    const bool loadingWindow = to == 4 || to == 2 || to == 0x80000;
+    if (loadingWindow)
     {
-        // Leave gameplay shader-cache mode before reopening vitaShaRK for any
-        // variants that genuinely belong to this loading transition.
+        // Close the gameplay measurement window before loading another scene.
         if (g_pGame != NULL)
-            PortVitaShaderCacheLeaveGameplay();
-        PortVitaShaderCacheBeginLoading();
+            PortVitaLeaveGameplay();
     }
 #endif
 
@@ -540,12 +538,10 @@ void TransitionTask::StateTransition(unsigned int from, unsigned int to)
     }
 
 #if defined(PORT_VITA)
-    if (shaderLoadingWindow)
+    if (loadingWindow)
     {
-        // Last chance to compile/prewarm before interactive rendering resumes.
-        PortVitaShaderCacheEndLoading(to == 2 && g_pGame != NULL);
         if (to == 2 && g_pGame != NULL)
-            PortVitaShaderCacheEnterGameplay();
+            PortVitaEnterGameplay();
     }
 #endif
 }

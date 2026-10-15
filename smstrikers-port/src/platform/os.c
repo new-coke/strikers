@@ -16,11 +16,6 @@
 extern void strikers_native_notify_memory_write(const void*,size_t);
 #define PORT_AURORA_MEMORY_PREPARE(addr,bytes) ((void)0)
 #define PORT_AURORA_MEMORY_WRITE(addr,bytes) strikers_native_notify_memory_write((addr),(bytes))
-#elif defined(STRIKERS_VITA) && defined(PORT_USE_AURORA)
-extern void aurora_vita_prepare_memory_write(const void* address, size_t bytes);
-extern void aurora_vita_notify_memory_write(const void* address, size_t bytes);
-#define PORT_AURORA_MEMORY_PREPARE(addr, bytes) aurora_vita_prepare_memory_write((addr), (bytes))
-#define PORT_AURORA_MEMORY_WRITE(addr, bytes) aurora_vita_notify_memory_write((addr), (bytes))
 #else
 #define PORT_AURORA_MEMORY_PREPARE(addr, bytes) ((void)0)
 #define PORT_AURORA_MEMORY_WRITE(addr, bytes) ((void)0)

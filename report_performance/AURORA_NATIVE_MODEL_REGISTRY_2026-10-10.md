@@ -94,7 +94,7 @@ No existing Vita setting was changed; do not enable mode 2 in the stable
 build solely because this source refactor compiled on the host. To roll
 back just the R1 source migration, revert only the new registry header,
 the new test target/changes and the `glxSend.cpp` adapter patch; preserve
-all unrelated RE4/VitaGL experimental work currently in the Aurora worktree.
+all unrelated rendering experimental work currently in the Aurora worktree.
 
 ## Validation
 

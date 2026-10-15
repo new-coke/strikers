@@ -3,16 +3,12 @@
 #include "NL/nlConfig.h"
 #include "NL/glx/glxMemory.h"
 #include "port/overlay.h"   // PORT: PortGfxArenaStats
-#if defined(PORT_VITA) && defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
-#include "port/native_match_direct.hpp"
+#if defined(PORT_VITA) && defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "port/native_match_runtime.hpp"
 #endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
-#include "../../../extern/aurora-vita/lib/gx/native_model_recipe.hpp"
-#include "../../../extern/aurora-vita/lib/gx/native_model_options.hpp"
-#endif
 #if defined(STRIKERS_VITA)
 #include <psp2/kernel/sysmem.h>
 #endif
@@ -627,16 +623,12 @@ void glplatResourceRelease(unsigned long long marker)
 {
     int level = (int)(marker & 0xFFFFFFFF);
 
-#if defined(PORT_VITA) && defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
+#if defined(PORT_VITA) && defined(STRIKERS_VITA_NATIVE_RUNTIME)
     // Remove native mesh bindings before the bump allocator reuses these
     // DisplayList addresses (ABA-safe resource generations).
     port::directmatch::on_resource_release(static_cast<uint32_t>(level));
 #endif
 
-#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
-    if (aurora::gx::fifo::native_model_prepared_enabled())
-        aurora::gx::fifo::release_native_model_sources(static_cast<uint32_t>(level));
-#endif
 
     n_phys = (u32)(marker >> 32);
 
