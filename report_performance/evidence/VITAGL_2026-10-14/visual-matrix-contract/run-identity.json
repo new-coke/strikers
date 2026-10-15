@@ -1,0 +1,78 @@
+{
+  "self_sha256": "a41c950066ff96d65e3f208ba0c90f2d61f2b17851057461a8711fdbb46a7389",
+  "ini_sha256": "8ee1ce4ee9155f2a9b9b26d620a8dbdd9534f500ba3d584f1b6d5c59fb2ab7a8",
+  "normal_ini_sha256": "3c013d70b7eb2f8a33c805c3343bbe4534782bf7dd93a81e7aea3f9fe05926e2",
+  "config": {
+    "diagnostics": "1",
+    "fps_overlay": "0",
+    "benchmark": "0",
+    "task_profile": "0",
+    "asset_io_profile": "0",
+    "vita_view_draw_capture": "0",
+    "vita_test_match": "1",
+    "vita_frameskip": "0",
+    "fixed_dt": "16.666666667",
+    "seed": "0x53545249",
+    "frame_capture": "ux0:data/strikersVita/vitagl_visual_matrix.csv",
+    "frame_capture_frames": "180",
+    "frame_capture_skip": "0",
+    "frame_capture_match_only": "1",
+    "frame_capture_play_only": "1",
+    "vita_snapshot_play_frame": "120",
+    "vita_snapshot_match_frame": "0",
+    "log": "ux0:data/strikersVita/vitagl_visual_matrix.log",
+    "vitagl_timing": "1"
+  },
+  "start": 1792002910.266986,
+  "statuses": [
+    {
+      "time": 1792002937.826226,
+      "text": "# vitagl_match_v7 backend=VitaGL aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n60,37118,37118,928,2198,1,80,82,405,6656,0,none,skin_selectors\n"
+    },
+    {
+      "time": 1792002944.39049,
+      "text": "# vitagl_match_v7 backend=VitaGL aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n120,76251,76251,1872,4427,1,80,82,408,14780,0,none,skin_selectors\n"
+    },
+    {
+      "time": 1792002951.0528908,
+      "text": "# vitagl_match_v7 backend=VitaGL aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n180,115143,115143,1872,6596,1,160,152,413,22035,0,none,skin_selectors\n"
+    },
+    {
+      "time": 1792002957.734664,
+      "text": "# vitagl_match_v7 backend=VitaGL aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n240,153107,153107,1872,8831,1,160,152,419,28300,0,none,skin_selectors\n"
+    },
+    {
+      "time": 1792002960.922217,
+      "text": "# vitagl_match_v7 backend=VitaGL aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n300,185345,185345,1872,10751,1,160,152,419,29590,0,none,skin_selectors\n"
+    },
+    {
+      "time": 1792002964.095849,
+      "text": "# vitagl_match_v7 backend=VitaGL aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n360,216357,216357,1872,12645,1,160,152,419,30790,0,none,skin_selectors\n"
+    },
+    {
+      "time": 1792002970.660827,
+      "text": "# vitagl_match_v7 backend=VitaGL aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n420,236602,236602,1872,19520,119,170,153,454,35117,0,none,invalid_matrix\n"
+    },
+    {
+      "time": 1792002973.904852,
+      "text": "# vitagl_match_v7 backend=VitaGL aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n480,253648,253648,1872,26378,239,170,153,462,39497,0,none,invalid_matrix\n"
+    },
+    {
+      "time": 1792002992.7217002,
+      "text": "# vitagl_match_v7 backend=VitaGL aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n540,272114,272114,1872,33342,359,170,153,466,43877,0,none,invalid_matrix\n"
+    }
+  ],
+  "prior_cores": [
+    "psp2core-1791883756-0x00000521c5-eboot.bin.psp2dmp",
+    "psp2core-1791999337-0x00043f38d3-eboot.bin.psp2dmp",
+    "psp2core-1792001391-0x000c372671-eboot.bin.psp2dmp",
+    "psp2core-1792002100-0x00043d35f7-eboot.bin.psp2dmp"
+  ],
+  "launch": "Launched.",
+  "crash_names": [
+    "psp2core-1792002978-0x000450308d-eboot.bin.psp2dmp"
+  ],
+  "manual_recovery_required": true,
+  "error": "RuntimeError('New application crash: psp2core-1792002978-0x000450308d-eboot.bin.psp2dmp')",
+  "end": 1792002997.0032902
+}

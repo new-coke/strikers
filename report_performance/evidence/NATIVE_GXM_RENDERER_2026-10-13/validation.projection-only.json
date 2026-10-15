@@ -1,0 +1,127 @@
+{
+  "date": "2026-10-13T18:12:42.837493+02:00",
+  "root_commit": "a175e0a15ce0215d94075c9142162fa5be9d3f82",
+  "aurora_commit": "be08d453b852df6b25e2a0a841cf7a431d13201b",
+  "source_dirty": true,
+  "sources": {
+    "smstrikers-port/include/port/native_gxm_renderer.hpp": "a536ef07ba60b0511405750e8cd0ce21d058419ee4af30761b9dc542953b5947",
+    "smstrikers-port/src/platform/native_gxm_renderer.cpp": "e46dc2cc5e78a333071095a4f5b55d8ffb6f5073ebdeab62c127956f126b7916",
+    "smstrikers-port/include/port/native_match_direct.hpp": "16906ec1d7b3ea77de75db914edafef7bbccd16c41d932e7132f86c4ac17e0db",
+    "smstrikers-port/src/platform/native_match_direct.cpp": "ffe04c2faee1e7ee40b514d79800d04378955a8eec9b33950aef73e5b2988f5c",
+    "smstrikers-port/src/Game/main.cpp": "55c2c260e5e5c8befd7287cbc56132a28e9b266b14a167cbbee7143e4c1f52ab",
+    "smstrikers-port/CMakeLists.txt": "633ffe662f995d28d99adf55ad61e029627f97d2e9ce7f745b610c690c1ec8a0",
+    "smstrikers-port/build-vita-native-gxm.sh": "67bb53d8e0d313696b57a91a5b54d73f416fafde7b8ad6ddd0b04d5c4b636071",
+    "smstrikers-port/include/port/native_match_transform.hpp": "5e8cb2786b942e15d2cd972b7c85243538b4143ed581e43351783d624afb4cd9"
+  },
+  "options": {
+    "STRIKERS_VITA_NATIVE_GXM_RENDERER": "ON",
+    "STRIKERS_VITA_NATIVE_MATCH_DIRECT": "ON",
+    "STRIKERS_VITA_GX_THREAD": "ON",
+    "STRIKERS_VITA_PROFILER": "OFF",
+    "STRIKERS_VITA_PROFILE_AUTOSTART": "OFF",
+    "STRIKERS_VITA_FAST_PROFILER_BUILD": "OFF",
+    "AURORA_VITA_ASYNC_GX": "ON"
+  },
+  "artifacts": {
+    "strikers": {
+      "sha256": "e543f4dacc6d47c4c16300824f16f1ac2584628e7a37a5a9b53880db785a6f25",
+      "bytes": 19993720
+    },
+    "strikers.velf": {
+      "sha256": "2adbd71110fbcf6c260812aacff756e60aa1fa321ed569be1b00370a3d213202",
+      "bytes": 22107906
+    },
+    "strikers.map": {
+      "sha256": "8edc0fe02be8c03528b43b6fe6781eb719de25e288b0444839c0857965518c7d",
+      "bytes": 11343904
+    },
+    "strikers_vita.self": {
+      "sha256": "37b48995bfac299abfbf09ae2ff1f061532a55ec842f680100ca25d09f9e3dff",
+      "bytes": 3632077
+    },
+    "strikers_vita.vpk": {
+      "sha256": "e91ed5b7e1077353b883ba1dd828d602b4a030ae30f2bd38b7098c34b42ce439",
+      "bytes": 3612848
+    },
+    "strikers_vita.previous.self": {
+      "sha256": "d8778c3441e6856dee4f3f2b390a5f2c5969277f1037eb25ed26e5bdfbe95927",
+      "bytes": 3630266
+    }
+  },
+  "expanded_catalog_sha256": "f23352c248dd4ed8a291af619fbb9eca89ff805c7931804482186ac2aff62326",
+  "checks": {
+    "native_ctest": "5/5 passed",
+    "aurora_regression_ctest": "38/38 passed",
+    "asan_ubsan": "production renderer/mock driver with 1800 real meshes passed",
+    "cross_sdk_warnings_as_errors": "native renderer passed",
+    "main_legacy_and_aurora_bridge_syntax": "passed after snapshot/projection corrections",
+    "full_vita_build": "ELF VELF SELF VPK passed",
+    "vpk_embedded_self_equal": true,
+    "vpk_archive_integrity": true,
+    "binary_audit": "PASS: 12942 executable symbols inspected; native GXM draw/present found; no GL/vgl/vita2d entry points or libraries.",
+    "object_aurora_references": {
+      "renderer": [],
+      "bridge": [
+        "U aurora::gx::fifo::worker_running()",
+        "U aurora::gx::fifo::run_sync_native(void (*)(void*), void*)",
+        "U aurora::gx::fifo::run_async_native(void (*)(void*), void const*, unsigned int)",
+        "U aurora::gx::fifo::set_native_match_strict_gx(bool)",
+        "U aurora::gx::fifo::native_match_suppressed_gx_bytes()",
+        "U aurora::gx::fifo::native_match_suppressed_gx_callbacks()",
+        "U aurora::gx::fifo::wait_idle()",
+        "U aurora::vita::gfx::memory_write_epoch()",
+        "U aurora::vita::gfx::memory_ranges_match(aurora::vita::gfx::MemoryRevisionCheck const*, unsigned int)",
+        "U aurora::vita::gfx::memory_range_revision(void const*, unsigned int)",
+        "U aurora::vita::gfx::Renderer::shutdown()",
+        "U aurora::vita::gxbridge::DrawSink::shutdown()",
+        "U aurora::vita::renderer()",
+        "U aurora::vita::draw_sink()"
+      ]
+    },
+    "mvp_admission": "NaN, positive/negative Inf in all 16 components rejected before queue; 4/4 CTest passed",
+    "projection_oracle": "1153 comparisons against actual GLX conversion and original six-coefficient projection; near/far regression passed",
+    "readback_driver": "GPU/display fences, current scanout identity, in-scene/mismatched-display/error rejection passed"
+  },
+  "hardware": {
+    "deployed_in_this_turn": true,
+    "new_renderer_tested_on_device": false,
+    "visual_equivalence": false,
+    "fps_gain_measured": false,
+    "reported_black_scene_before_fix": true,
+    "installed_self_sha256": "37b48995bfac299abfbf09ae2ff1f061532a55ec842f680100ca25d09f9e3dff"
+  },
+  "remaining": [
+    "Aurora boot compatibility and FIFO worker",
+    "Aurora source-write revisions",
+    "textures/materials/lighting/TEV",
+    "PN skinning",
+    "EFB shadows/HUD/video/full pass ordering"
+  ],
+  "test_sources": {
+    "smstrikers-port/tests/native_gxm_renderer_contract_test.cpp": "30c18c72c329168451deaa1c336f9c2deb2f810c50ed05feafc80fbb12597540",
+    "smstrikers-port/tests/native_gxm_renderer_driver_test.cpp": "a3544f5cd02449cdbead50db2e402b7b92e5175fe8fa6e1b6d5ad3352f16af2b",
+    "smstrikers-port/tests/CMakeLists.txt": "15ba0af1ad910ae9965d3628e4befd142e0cecc44dc4af4cf76906da1e835e07",
+    "smstrikers-port/tests/native_match_transform_test.cpp": "a7b4c35a12961f02f2ab991d2fd57f938d5409d9c249b5e5dcc1d2e5a24d59fb"
+  },
+  "correction": {
+    "trigger": "native_nonfinite_mvp stopped at frame 352 after 44188 native draws",
+    "change": "Reject and count invalid MVP on producer before queue; retain strict owner validation",
+    "failure_status": "native-status.mvp-error.csv",
+    "failure_validation": "validation.mvp-error.json",
+    "failure_installation": "install-identity.mvp-error.json",
+    "previous_artifacts": {
+      "strikers.previous.elf": "702f706d3d9c900d86ff493622ef7fd810c47b76d6544233d1b91c40b3aa8070",
+      "strikers.previous.velf": "dbd21937f86e19d2e55aeeb3e0d83431aeb0335cf5f014c3308a6cbdd15ca805",
+      "strikers.previous.map": "5fabc89a475e09d27b214957b23589301fb09c4592ff8e67dfd1fb7bd418fb5b",
+      "strikers_vita.previous.self": "dab57d27225a24986745952c2899a927cb3d3d1b7e9a15a5a5eab82091c5d46d",
+      "strikers_vita.previous.vpk": "076c900e6d2ea694dbfcee5de90769bb465da5ce0c4b210be28cbf23c311d90c"
+    }
+  },
+  "visual_correction": {
+    "trigger": "User confirmed black scene, audio only; d8778c34 installed SELF continued to accept draws without driver errors",
+    "change": "Compose NL column-layout model/view with the original six row-layout projection coefficients; synchronize/verify presented surface for opt-in INI snapshot",
+    "before_validation": "validation.black-scene.json",
+    "before_installation": "install-identity.black-scene.json",
+    "before_status": "native-status.black-scene.csv"
+  }
+}

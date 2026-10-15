@@ -122,7 +122,6 @@ bool AsyncImage::Update(bool autoswap)
 
         if (shouldReplace)
         {
-            glFinish();
             glTextureReplace(mImageInstance->m_pTextureResource->m_glTextureHandle, m_loadBuffer, mTextureSize);
             glDiscardFrame(1);
             res = true;
@@ -159,7 +158,6 @@ bool AsyncImage::CanSwapTextures() const
  */
 void AsyncImage::SwapTextures()
 {
-    glFinish();
     glTextureReplace(mImageInstance->m_pTextureResource->m_glTextureHandle, m_loadBuffer, mTextureSize);
     glDiscardFrame(1);
 }

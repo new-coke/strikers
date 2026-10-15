@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-15",
+  "backend": "VitaGL",
+  "change": "goal material gloss blend and four GX-style specular lights",
+  "artifacts_sha256": {
+    "strikers": "30157f5c5d0cd7d6c11e56cb6248fe2d2cc8aa9ab46d10d4b6d208ac671d5afe",
+    "strikers.map": "dd11424fc923ee09e0d8bdb882c09f885f55da76b6f7a58a6995719b78aac51a",
+    "strikers.velf": "01ccab93e50e0c12a341801bc9bec3b703915517f3a9b4406ace0312dc82b519",
+    "strikers_vita.self": "caf36d888b0392042c3d043306434df25c9c8dd298ac8ea7631b8a164aeed65d",
+    "strikers_vita.vpk": "d9281fc413d93604f2bb8b581e67d802d6a0bdd42c856f7bd93f6fb5645a0eb6",
+    "libstrikers_vitagl.a": "e107159de830f005120ce2bdc40d0f0be567d087946d13f0d700bbdefd12e544"
+  },
+  "sources_sha256": {
+    "include/port/scene_specular.hpp": "bf22bcac7f299c92d1f28e3507d29f8984d0db1a1de579012356a6b7a8ba4786",
+    "include/port/scene_shaders.hpp": "d76a5f6e63d0cf2d427247886222524c16c7e35be3e890f8dcf5f4921dff2acd",
+    "include/port/renderer.hpp": "c0cf42aaf4b9347c46c1bc2e5f9562e5c6a426347a354e2032fc00d3dcc637bb",
+    "src/platform/vitagl_renderer.cpp": "150cd0ecfd14fd5caf78d76aa2f41abd8e29176da8a8624dd9e72c291f4349d3",
+    "src/platform/native_match_runtime.cpp": "5907ec0462ab6d89491c7530b8b207b54c3abfefa3d1896046063cbdb3f5da70",
+    "tests/vitagl_renderer_driver_test.cpp": "fdabb74676ffbf76060e82822064411380758244190ce9da4e46e7a288def079"
+  },
+  "cmake": {
+    "STRIKERS_AURORA": "OFF",
+    "STRIKERS_VITA_VITAGL": "ON",
+    "STRIKERS_VITA_NATIVE_GXM_RENDERER": "OFF",
+    "STRIKERS_VITA_GX_THREAD": "OFF",
+    "STRIKERS_VITA_PROFILER": "OFF",
+    "STRIKERS_VITA_PROFILE_AUTOSTART": "OFF",
+    "STRIKERS_VITA_FAST_PROFILER_BUILD": "OFF"
+  },
+  "vitagl_flags": [
+    "READBACKS_SPEEDHACK=1",
+    "HAVE_SHADER_CACHE=1",
+    "NO_DEBUG=1",
+    "DRAW_SPEEDHACK=1",
+    "STORE_DEPTH_STENCIL=1"
+  ],
+  "provider_units": 30,
+  "aurora_sdl_gx_graphics_symbols": 0,
+  "glfinish_glflush_calls": 0,
+  "vpk_self_identical": true,
+  "previous_self_sha256": "eb4f47bdedc146836aa8726262b941e6303d0ccc5db015ba5a36ae90f0e6ea79",
+  "host_tests": "VitaGL driver and deferred frontend ASan/UBSan passed",
+  "hardware_status": "rejected: reflection weight incorrectly attenuated base diffuse; corrected before final delivery"
+}

@@ -1,3 +1,10 @@
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "Game/Sys/CallStackDumper.h"
+#include "dolphin/os.h"
+#include <cstdlib>
+namespace {void NativeException(unsigned short error,OSContext*,unsigned long dsisr,unsigned long address){OSReport("[native-exception] error=%u status=%08lx address=%08lx\n",error,dsisr,address);std::abort();}}
+void InstallCallStackDumper(){OSSetErrorHandler(OS_ERROR_DSI,NativeException);}
+#else
 // PORT: this file reads PowerPC registers out of OSContext, which do not exist on a host.
 #if !defined(PORT_USE_AURORA)
 
@@ -3613,3 +3620,5 @@ void InstallCallStackDumper()
 }
 
 #endif // !PORT_USE_AURORA
+
+#endif

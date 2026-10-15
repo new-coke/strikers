@@ -1,0 +1,12 @@
+{
+  "same_self": true,
+  "match_frame": 1170,
+  "modes": [
+    0,
+    1
+  ],
+  "pixel_changed_pct": 1.4248238357843137,
+  "rgb_mean_absolute_difference": 0.36942401960784316,
+  "ball_roi_mean_absolute_difference": 0.03501077254539858,
+  "interpretation": "The ball surface is essentially unchanged; no evidence that disabling culling fixes this scene. Keep normal culling0. Other changed pixels are principally scene back faces."
+}

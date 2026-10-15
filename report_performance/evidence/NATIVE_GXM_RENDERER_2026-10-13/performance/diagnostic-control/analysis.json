@@ -1,0 +1,23 @@
+{
+  "path": "/Users/robin994/Documents/Code/strikersVita/report_performance/evidence/NATIVE_GXM_RENDERER_2026-10-13/performance/diagnostic-control/native_fence_diag0.csv",
+  "sha256": "c89dbabf85e8bbcc35651a9ad3ecb068768657b1f86a97d7ccaf44e158d71bf4",
+  "metadata": [
+    "# strikers-frame-capture-v1 diagnostics=0 fps_overlay=0",
+    "# play_only=1 counter=live_play",
+    "# actual_cpu_mhz=444 actual_gpu_mhz=222 actual_bus_mhz=222 actual_xbar_mhz=166"
+  ],
+  "samples": 120,
+  "all_gameplay": true,
+  "live_play_only": true,
+  "match_frame_first": 120,
+  "match_frame_last": 239,
+  "elapsed_fps": 6.268189174993999,
+  "mean_ms": 159.53570833333333,
+  "median_ms": 163.9435,
+  "p95_ms": 165.745,
+  "p99_ms": 170.049,
+  "deadline_60_pct": 0.0,
+  "deadline_30_pct": 0.0,
+  "tasks_median_ms": 163.694,
+  "present_median_ms": 0.246
+}

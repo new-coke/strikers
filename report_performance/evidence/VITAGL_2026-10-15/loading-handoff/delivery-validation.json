@@ -1,0 +1,20 @@
+{
+  "host_tests": {
+    "registered": 46,
+    "passed": 46,
+    "failed": 0,
+    "command": "ctest --test-dir smstrikers-port/.tmp/native-gxm-host --output-on-failure -j4",
+    "full_output_sha256": "c34e1874fc45599516b2cca728cf28a45b7e2626d84cb8716d6e9f3110d55c96"
+  },
+  "sanitizer_tests": "VitaGL, deferred driver and actual scheduler passed ASan/UBSan before final Vita build",
+  "device_self_sha256": "971aadfbc977fb751f228595966f6df4b2a054d881ec38ac8a09c0fc45d55592",
+  "device_identity": "final-device-readback.json",
+  "remote_branch": "origin/main",
+  "base_commit": "a175e0a15ce0215d94075c9142162fa5be9d3f82",
+  "preserved_local_only": [
+    "three pre-existing Aurora submodule edits unused by VitaGL",
+    "build products",
+    "raw logs and raw PPM/crash backups"
+  ],
+  "whitespace_policy": "application sources checked; imported VitaGL bytes and hash-bound raw evidence preserve original whitespace through path-scoped attributes"
+}

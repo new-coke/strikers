@@ -273,13 +273,19 @@ void count_usage(void* user, const char* name)
 
 extern "C" {
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+void CARDInit(void)
+#else
 void CARDInit(const char* game, const char* maker)
+#endif
 {
     ensure_dirs();
+    #if !defined(STRIKERS_VITA_NATIVE_RUNTIME)
     if (game != nullptr)
         std::memcpy(s_game, game, sizeof s_game);
     if (maker != nullptr)
         std::memcpy(s_maker, maker, sizeof s_maker);
+    #endif
 }
 
 s32 CARDProbeEx(s32 chan, s32* memSize, s32* sectorSize)
@@ -412,7 +418,7 @@ s32 CARDClose(CARDFileInfo* fileInfo)
     return CARD_RESULT_READY;
 }
 
-s32 CARDReadAsync(const CARDFileInfo* fileInfo, void* buf, s32 length, s32 offset, CARDCallback cb)
+s32 CARDReadAsync(CARDFileInfo* fileInfo, void* buf, s32 length, s32 offset, CARDCallback cb)
 {
     s32 result = CARD_RESULT_READY;
     if (fileInfo == nullptr || buf == nullptr || length < 0 || offset < 0 || !valid_chan(fileInfo->chan)) {
@@ -437,7 +443,7 @@ s32 CARDReadAsync(const CARDFileInfo* fileInfo, void* buf, s32 length, s32 offse
     return result;
 }
 
-s32 CARDWriteAsync(const CARDFileInfo* fileInfo, const void* buf, s32 length, s32 offset, CARDCallback cb)
+s32 CARDWriteAsync(CARDFileInfo* fileInfo, void* buf, s32 length, s32 offset, CARDCallback cb)
 {
     s32 result = CARD_RESULT_READY;
     if (fileInfo == nullptr || buf == nullptr || length < 0 || offset < 0 || !valid_chan(fileInfo->chan)) {
@@ -487,7 +493,7 @@ s32 CARDGetStatus(s32 chan, s32 fileNo, CARDStat* stat)
     return CARD_RESULT_READY;
 }
 
-s32 CARDSetStatus(s32 chan, s32 fileNo, const CARDStat* stat)
+s32 CARDSetStatus(s32 chan, s32 fileNo, CARDStat* stat)
 {
     if (!valid_chan(chan) || stat == nullptr)
         return CARD_RESULT_FATAL_ERROR;
@@ -500,7 +506,7 @@ s32 CARDSetStatus(s32 chan, s32 fileNo, const CARDStat* stat)
     return CARD_RESULT_READY;
 }
 
-s32 CARDSetStatusAsync(s32 chan, s32 fileNo, const CARDStat* stat, CARDCallback cb)
+s32 CARDSetStatusAsync(s32 chan, s32 fileNo, CARDStat* stat, CARDCallback cb)
 {
     const s32 result = CARDSetStatus(chan, fileNo, stat);
     callback(cb, chan, result);

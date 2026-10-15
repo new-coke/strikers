@@ -1,3 +1,6 @@
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "port/native_match_direct.hpp"
+#endif
 #include "Game/FE/LidOpenMessage.h"
 #include "types.h"
 #include "Game/Audio/AudioLoader.h"
@@ -54367,6 +54370,14 @@ static inline void UncompressLidMessage(const unsigned char* compressed, int com
  */
 static void DisplayMessage(int imagewidth, int imageheight, const unsigned char* datastart, int datasize, unsigned long color, bool centered)
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    lastImageWidth=imagewidth;lastImageHeight=imageheight;lastImageData=datastart;lastImageSize=datasize;
+    unsigned char* expanded=(unsigned char*)nlMalloc((imagewidth*imageheight)/8,32,true);
+    UncompressLidMessage(datastart,datasize,expanded);
+    port::directmatch::draw_message_bitmap(imagewidth,imageheight,expanded,color,centered);
+    delete[] expanded;
+#else
+
     unsigned int centeredFlag;
     int yStart;
     unsigned char* expanded;
@@ -54465,6 +54476,8 @@ static void DisplayMessage(int imagewidth, int imageheight, const unsigned char*
     VISetNextFrameBuffer(fb);
     VIFlush();
     VIWaitForRetrace();
+
+#endif
 }
 
 /**

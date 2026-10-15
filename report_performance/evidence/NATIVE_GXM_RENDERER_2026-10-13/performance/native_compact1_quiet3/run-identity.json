@@ -1,0 +1,127 @@
+{
+  "started": "2026-10-13T22:22:12.315076+02:00",
+  "label": "native_compact1_quiet3",
+  "self_sha256": "ccfe94c1521d8e5667a74d8471d0304bcbb4b992e5ff8c7338d20149f2505517",
+  "ini_sha256": "5708acb3d38f3e7ae86116c888177a9e559c2925a562b1f999735ec875aaa6ff",
+  "normal_ini_sha256": "7db19fd763528598cc11757a2f1b7918b324f8cf21e0f00d2c2e2440d8d1164f",
+  "config": {
+    "gxm_disable": "0x8",
+    "gxm_shader_profile": "WARM",
+    "diagnostics": "0",
+    "fps_overlay": "0",
+    "vita_test_match": "1",
+    "vita_frameskip": "0",
+    "seed": "0x53545249",
+    "fixed_dt": "16.666666667",
+    "frame_capture": "ux0:data/strikersVita/native_compact1_quiet3.csv",
+    "frame_capture_frames": "120",
+    "frame_capture_match_only": "1",
+    "frame_capture_play_only": "1",
+    "frame_capture_skip": "120",
+    "vita_snapshot_match_frame": "0",
+    "vita_snapshot_play_frame": "0",
+    "gxm_native_visual_debug": "0",
+    "vita_debug_menu": "0",
+    "benchmark": "0",
+    "task_profile": "0",
+    "gxm_native_slot_fence": "0",
+    "gxm_native_timing": "0",
+    "gxm_native_compact_vertices": "1"
+  },
+  "quiet": true,
+  "statuses": [
+    {
+      "time": "2026-10-13T22:22:14.661544+02:00",
+      "text": "# native_match_v5 gx_fallback=0 live_game=1 gpu_material=vertex_color_preview texture_samples=0 skinning=cpu_pn_preview projection=glx_six_coeff visual_debug=0\n# renderer=strikers_native_gxm gxm_owner=aurora_fifo native_error=0x00000000\n# error=none mesh_manifest=4779 native_pipeline=1\n# uv_sidecar=uploaded (texture_binding=not_connected)\n# dynamic_slot_fence=0 timing=0\n# compact_vertices=0 input_vertices=47015318 output_vertices=47015318\n# first_invalid_mvp frame=364 view=11 bits=7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 \nframe,callbacks,native_draws_queued,native_draws_accepted,native_draws_rejected,unsupported_view,unsupported_material,unsupported_raster,unsupported_geometry,missing_asset,upload_errors,queue_errors,present_errors,gx_suppressed_bytes,gx_suppressed_callbacks,skinned_rejected,user_effect_rejected,color_preview_candidates,color_preview_draws,preview_textured,preview_lit,plain_unlit_draws,invalid_matrix_identity,source_registrations,source_releases,source_hits,source_unbound,source_dirty_rehash,source_invalid,source_misses,source_unsafe,invalid_mvp,dynamic_queued,dynamic_source_missing,dynamic_invalid\n1920,702617,452282,452282,0,45309,0,83796,0,0,0,0,0,1089864,3505,0,92504,342129,341149,341149,300483,0,0,669,1,342129,0,475,0,0,112,980,111133,0,0\n"
+    },
+    {
+      "time": "2026-10-13T22:22:36.289611+02:00",
+      "text": "# native_match_v5 gx_fallback=0 live_game=1 gpu_material=vertex_color_preview texture_samples=0 skinning=cpu_pn_preview projection=glx_six_coeff visual_debug=0\n# renderer=strikers_native_gxm gxm_owner=aurora_fifo native_error=0x00000000\n# error=none mesh_manifest=4779 native_pipeline=1\n# uv_sidecar=uploaded (texture_binding=not_connected)\n# dynamic_slot_fence=0 timing=0\n# compact_vertices=1 input_vertices=0 output_vertices=0\nframe,callbacks,native_draws_queued,native_draws_accepted,native_draws_rejected,unsupported_view,unsupported_material,unsupported_raster,unsupported_geometry,missing_asset,upload_errors,queue_errors,present_errors,gx_suppressed_bytes,gx_suppressed_callbacks,skinned_rejected,user_effect_rejected,color_preview_candidates,color_preview_draws,preview_textured,preview_lit,plain_unlit_draws,invalid_matrix_identity,source_registrations,source_releases,source_hits,source_unbound,source_dirty_rehash,source_invalid,source_misses,source_unsafe,invalid_mvp,dynamic_queued,dynamic_source_missing,dynamic_invalid\n0,0,0,0,0,0,0,0,0,0,0,0,0,6,0,0,0,0,0,0,0,0,0,28,0,0,0,0,0,0,0,0,0,0,0\n"
+    },
+    {
+      "time": "2026-10-13T22:22:46.708730+02:00",
+      "text": "# native_match_v5 gx_fallback=0 live_game=1 gpu_material=vertex_color_preview texture_samples=0 skinning=cpu_pn_preview projection=glx_six_coeff visual_debug=0\n# renderer=strikers_native_gxm gxm_owner=aurora_fifo native_error=0x00000000\n# error=none mesh_manifest=4779 native_pipeline=1\n# uv_sidecar=uploaded (texture_binding=not_connected)\n# dynamic_slot_fence=0 timing=0\n# compact_vertices=1 input_vertices=226252 output_vertices=164420\nframe,callbacks,native_draws_queued,native_draws_accepted,native_draws_rejected,unsupported_view,unsupported_material,unsupported_raster,unsupported_geometry,missing_asset,upload_errors,queue_errors,present_errors,gx_suppressed_bytes,gx_suppressed_callbacks,skinned_rejected,user_effect_rejected,color_preview_candidates,color_preview_draws,preview_textured,preview_lit,plain_unlit_draws,invalid_matrix_identity,source_registrations,source_releases,source_hits,source_unbound,source_dirty_rehash,source_invalid,source_misses,source_unsafe,invalid_mvp,dynamic_queued,dynamic_source_missing,dynamic_invalid\n120,78711,43509,43509,0,4839,0,15108,0,0,0,0,0,73251,237,0,13368,39585,39585,39585,36635,0,0,669,0,39585,0,340,0,0,112,0,3924,0,0\n"
+    },
+    {
+      "time": "2026-10-13T22:22:51.927013+02:00",
+      "text": "# native_match_v5 gx_fallback=0 live_game=1 gpu_material=vertex_color_preview texture_samples=0 skinning=cpu_pn_preview projection=glx_six_coeff visual_debug=0\n# renderer=strikers_native_gxm gxm_owner=aurora_fifo native_error=0x00000000\n# error=none mesh_manifest=4779 native_pipeline=1\n# uv_sidecar=uploaded (texture_binding=not_connected)\n# dynamic_slot_fence=0 timing=0\n# compact_vertices=1 input_vertices=644522 output_vertices=457454\nframe,callbacks,native_draws_queued,native_draws_accepted,native_draws_rejected,unsupported_view,unsupported_material,unsupported_raster,unsupported_geometry,missing_asset,upload_errors,queue_errors,present_errors,gx_suppressed_bytes,gx_suppressed_callbacks,skinned_rejected,user_effect_rejected,color_preview_candidates,color_preview_draws,preview_textured,preview_lit,plain_unlit_draws,invalid_matrix_identity,source_registrations,source_releases,source_hits,source_unbound,source_dirty_rehash,source_invalid,source_misses,source_unsafe,invalid_mvp,dynamic_queued,dynamic_source_missing,dynamic_invalid\n360,222245,127512,127512,0,10830,0,39079,0,0,0,0,0,212664,715,0,39580,118950,118950,118950,109837,0,0,669,1,118950,0,350,0,0,112,0,8562,0,0\n"
+    },
+    {
+      "time": "2026-10-13T22:23:02.374171+02:00",
+      "text": "# native_match_v5 gx_fallback=0 live_game=1 gpu_material=vertex_color_preview texture_samples=0 skinning=cpu_pn_preview projection=glx_six_coeff visual_debug=0\n# renderer=strikers_native_gxm gxm_owner=aurora_fifo native_error=0x00000000\n# error=none mesh_manifest=4779 native_pipeline=1\n# uv_sidecar=uploaded (texture_binding=not_connected)\n# dynamic_slot_fence=0 timing=0\n# compact_vertices=1 input_vertices=4831422 output_vertices=1968226\n# first_invalid_mvp frame=364 view=11 bits=7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 \nframe,callbacks,native_draws_queued,native_draws_accepted,native_draws_rejected,unsupported_view,unsupported_material,unsupported_raster,unsupported_geometry,missing_asset,upload_errors,queue_errors,present_errors,gx_suppressed_bytes,gx_suppressed_callbacks,skinned_rejected,user_effect_rejected,color_preview_candidates,color_preview_draws,preview_textured,preview_lit,plain_unlit_draws,invalid_matrix_identity,source_registrations,source_releases,source_hits,source_unbound,source_dirty_rehash,source_invalid,source_misses,source_unsafe,invalid_mvp,dynamic_queued,dynamic_source_missing,dynamic_invalid\n480,261523,155236,155236,0,13390,0,42354,0,0,0,0,0,280944,955,0,43326,135298,135066,135066,123049,0,0,669,1,135298,0,369,0,0,112,232,20170,0,0\n"
+    },
+    {
+      "time": "2026-10-13T22:23:07.596916+02:00",
+      "text": "# native_match_v5 gx_fallback=0 live_game=1 gpu_material=vertex_color_preview texture_samples=0 skinning=cpu_pn_preview projection=glx_six_coeff visual_debug=0\n# renderer=strikers_native_gxm gxm_owner=aurora_fifo native_error=0x00000000\n# error=none mesh_manifest=4779 native_pipeline=1\n# uv_sidecar=uploaded (texture_binding=not_connected)\n# dynamic_slot_fence=0 timing=0\n# compact_vertices=1 input_vertices=8926587 output_vertices=3367276\n# first_invalid_mvp frame=364 view=11 bits=7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 \nframe,callbacks,native_draws_queued,native_draws_accepted,native_draws_rejected,unsupported_view,unsupported_material,unsupported_raster,unsupported_geometry,missing_asset,upload_errors,queue_errors,present_errors,gx_suppressed_bytes,gx_suppressed_callbacks,skinned_rejected,user_effect_rejected,color_preview_candidates,color_preview_draws,preview_textured,preview_lit,plain_unlit_draws,invalid_matrix_identity,source_registrations,source_releases,source_hits,source_unbound,source_dirty_rehash,source_invalid,source_misses,source_unsafe,invalid_mvp,dynamic_queued,dynamic_source_missing,dynamic_invalid\n600,304492,185070,185070,0,15515,0,46568,0,0,0,0,0,349224,1195,0,48247,155792,155430,155430,140598,0,0,669,1,155792,0,442,0,0,112,362,29640,0,0\n"
+    },
+    {
+      "time": "2026-10-13T22:23:12.818494+02:00",
+      "text": "# native_match_v5 gx_fallback=0 live_game=1 gpu_material=vertex_color_preview texture_samples=0 skinning=cpu_pn_preview projection=glx_six_coeff visual_debug=0\n# renderer=strikers_native_gxm gxm_owner=aurora_fifo native_error=0x00000000\n# error=none mesh_manifest=4779 native_pipeline=1\n# uv_sidecar=uploaded (texture_binding=not_connected)\n# dynamic_slot_fence=0 timing=0\n# compact_vertices=1 input_vertices=12751075 output_vertices=4578524\n# first_invalid_mvp frame=364 view=11 bits=7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 \nframe,callbacks,native_draws_queued,native_draws_accepted,native_draws_rejected,unsupported_view,unsupported_material,unsupported_raster,unsupported_geometry,missing_asset,upload_errors,queue_errors,present_errors,gx_suppressed_bytes,gx_suppressed_callbacks,skinned_rejected,user_effect_rejected,color_preview_candidates,color_preview_draws,preview_textured,preview_lit,plain_unlit_draws,invalid_matrix_identity,source_registrations,source_releases,source_hits,source_unbound,source_dirty_rehash,source_invalid,source_misses,source_unsafe,invalid_mvp,dynamic_queued,dynamic_source_missing,dynamic_invalid\n720,346858,212277,212277,0,17965,0,51845,0,0,0,0,0,417504,1435,0,53892,176377,176015,176015,158920,0,0,669,1,176377,0,453,0,0,112,362,36262,0,0\n"
+    },
+    {
+      "time": "2026-10-13T22:23:18.038898+02:00",
+      "text": "# native_match_v5 gx_fallback=0 live_game=1 gpu_material=vertex_color_preview texture_samples=0 skinning=cpu_pn_preview projection=glx_six_coeff visual_debug=0\n# renderer=strikers_native_gxm gxm_owner=aurora_fifo native_error=0x00000000\n# error=none mesh_manifest=4779 native_pipeline=1\n# uv_sidecar=uploaded (texture_binding=not_connected)\n# dynamic_slot_fence=0 timing=0\n# compact_vertices=1 input_vertices=15393627 output_vertices=5456061\n# first_invalid_mvp frame=364 view=11 bits=7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 \nframe,callbacks,native_draws_queued,native_draws_accepted,native_draws_rejected,unsupported_view,unsupported_material,unsupported_raster,unsupported_geometry,missing_asset,upload_errors,queue_errors,present_errors,gx_suppressed_bytes,gx_suppressed_callbacks,skinned_rejected,user_effect_rejected,color_preview_candidates,color_preview_draws,preview_textured,preview_lit,plain_unlit_draws,invalid_matrix_identity,source_registrations,source_releases,source_hits,source_unbound,source_dirty_rehash,source_invalid,source_misses,source_unsafe,invalid_mvp,dynamic_queued,dynamic_source_missing,dynamic_invalid\n840,374168,229730,229730,0,20050,0,55277,0,0,0,0,0,485784,1675,0,56497,189038,188676,188676,169764,0,0,669,1,189038,0,455,0,0,112,362,41054,0,0\n"
+    },
+    {
+      "time": "2026-10-13T22:23:23.428605+02:00",
+      "text": "# native_match_v5 gx_fallback=0 live_game=1 gpu_material=vertex_color_preview texture_samples=0 skinning=cpu_pn_preview projection=glx_six_coeff visual_debug=0\n# renderer=strikers_native_gxm gxm_owner=aurora_fifo native_error=0x00000000\n# error=none mesh_manifest=4779 native_pipeline=1\n# uv_sidecar=uploaded (texture_binding=not_connected)\n# dynamic_slot_fence=0 timing=0\n# compact_vertices=1 input_vertices=18387735 output_vertices=6550825\n# first_invalid_mvp frame=364 view=11 bits=7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 \nframe,callbacks,native_draws_queued,native_draws_accepted,native_draws_rejected,unsupported_view,unsupported_material,unsupported_raster,unsupported_geometry,missing_asset,upload_errors,queue_errors,present_errors,gx_suppressed_bytes,gx_suppressed_callbacks,skinned_rejected,user_effect_rejected,color_preview_candidates,color_preview_draws,preview_textured,preview_lit,plain_unlit_draws,invalid_matrix_identity,source_registrations,source_releases,source_hits,source_unbound,source_dirty_rehash,source_invalid,source_misses,source_unsafe,invalid_mvp,dynamic_queued,dynamic_source_missing,dynamic_invalid\n960,409144,253543,253543,0,22320,0,58535,0,0,0,0,0,554064,1915,0,60502,205192,204830,204830,183886,0,0,669,1,205192,0,458,0,0,112,362,48713,0,0\n"
+    },
+    {
+      "time": "2026-10-13T22:23:28.617736+02:00",
+      "text": "# native_match_v5 gx_fallback=0 live_game=1 gpu_material=vertex_color_preview texture_samples=0 skinning=cpu_pn_preview projection=glx_six_coeff visual_debug=0\n# renderer=strikers_native_gxm gxm_owner=aurora_fifo native_error=0x00000000\n# error=none mesh_manifest=4779 native_pipeline=1\n# uv_sidecar=uploaded (texture_binding=not_connected)\n# dynamic_slot_fence=0 timing=0\n# compact_vertices=1 input_vertices=21689535 output_vertices=7754665\n# first_invalid_mvp frame=364 view=11 bits=7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 \nframe,callbacks,native_draws_queued,native_draws_accepted,native_draws_rejected,unsupported_view,unsupported_material,unsupported_raster,unsupported_geometry,missing_asset,upload_errors,queue_errors,present_errors,gx_suppressed_bytes,gx_suppressed_callbacks,skinned_rejected,user_effect_rejected,color_preview_candidates,color_preview_draws,preview_textured,preview_lit,plain_unlit_draws,invalid_matrix_identity,source_registrations,source_releases,source_hits,source_unbound,source_dirty_rehash,source_invalid,source_misses,source_unsafe,invalid_mvp,dynamic_queued,dynamic_source_missing,dynamic_invalid\n1080,452791,282660,282660,0,24720,0,62675,0,0,0,0,0,622344,2155,0,66812,225429,225067,225067,202373,0,0,669,1,225429,0,458,0,0,112,362,57593,0,0\n"
+    },
+    {
+      "time": "2026-10-13T22:23:33.900150+02:00",
+      "text": "# native_match_v5 gx_fallback=0 live_game=1 gpu_material=vertex_color_preview texture_samples=0 skinning=cpu_pn_preview projection=glx_six_coeff visual_debug=0\n# renderer=strikers_native_gxm gxm_owner=aurora_fifo native_error=0x00000000\n# error=none mesh_manifest=4779 native_pipeline=1\n# uv_sidecar=uploaded (texture_binding=not_connected)\n# dynamic_slot_fence=0 timing=0\n# compact_vertices=1 input_vertices=24657513 output_vertices=8726989\n# first_invalid_mvp frame=364 view=11 bits=7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 \nframe,callbacks,native_draws_queued,native_draws_accepted,native_draws_rejected,unsupported_view,unsupported_material,unsupported_raster,unsupported_geometry,missing_asset,upload_errors,queue_errors,present_errors,gx_suppressed_bytes,gx_suppressed_callbacks,skinned_rejected,user_effect_rejected,color_preview_candidates,color_preview_draws,preview_textured,preview_lit,plain_unlit_draws,invalid_matrix_identity,source_registrations,source_releases,source_hits,source_unbound,source_dirty_rehash,source_invalid,source_misses,source_unsafe,invalid_mvp,dynamic_queued,dynamic_source_missing,dynamic_invalid\n1200,496337,311856,311856,0,27110,0,67154,0,0,0,0,0,690624,2395,0,72182,249639,249041,249041,222782,0,0,669,1,249639,0,475,0,0,112,598,62815,0,0\n"
+    },
+    {
+      "time": "2026-10-13T22:23:39.131582+02:00",
+      "text": "# native_match_v5 gx_fallback=0 live_game=1 gpu_material=vertex_color_preview texture_samples=0 skinning=cpu_pn_preview projection=glx_six_coeff visual_debug=0\n# renderer=strikers_native_gxm gxm_owner=aurora_fifo native_error=0x00000000\n# error=none mesh_manifest=4779 native_pipeline=1\n# uv_sidecar=uploaded (texture_binding=not_connected)\n# dynamic_slot_fence=0 timing=0\n# compact_vertices=1 input_vertices=27619833 output_vertices=9695389\n# first_invalid_mvp frame=364 view=11 bits=7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 \nframe,callbacks,native_draws_queued,native_draws_accepted,native_draws_rejected,unsupported_view,unsupported_material,unsupported_raster,unsupported_geometry,missing_asset,upload_errors,queue_errors,present_errors,gx_suppressed_bytes,gx_suppressed_callbacks,skinned_rejected,user_effect_rejected,color_preview_candidates,color_preview_draws,preview_textured,preview_lit,plain_unlit_draws,invalid_matrix_identity,source_registrations,source_releases,source_hits,source_unbound,source_dirty_rehash,source_invalid,source_misses,source_unsafe,invalid_mvp,dynamic_queued,dynamic_source_missing,dynamic_invalid\n1320,541498,342098,342098,0,29510,0,71804,0,0,0,0,0,758904,2635,0,77997,274961,274123,274123,244255,0,0,669,1,274961,0,475,0,0,112,838,67975,0,0\n"
+    },
+    {
+      "time": "2026-10-13T22:23:44.351286+02:00",
+      "text": "# native_match_v5 gx_fallback=0 live_game=1 gpu_material=vertex_color_preview texture_samples=0 skinning=cpu_pn_preview projection=glx_six_coeff visual_debug=0\n# renderer=strikers_native_gxm gxm_owner=aurora_fifo native_error=0x00000000\n# error=none mesh_manifest=4779 native_pipeline=1\n# uv_sidecar=uploaded (texture_binding=not_connected)\n# dynamic_slot_fence=0 timing=0\n# compact_vertices=1 input_vertices=30617661 output_vertices=10905685\n# first_invalid_mvp frame=364 view=11 bits=7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 \nframe,callbacks,native_draws_queued,native_draws_accepted,native_draws_rejected,unsupported_view,unsupported_material,unsupported_raster,unsupported_geometry,missing_asset,upload_errors,queue_errors,present_errors,gx_suppressed_bytes,gx_suppressed_callbacks,skinned_rejected,user_effect_rejected,color_preview_candidates,color_preview_draws,preview_textured,preview_lit,plain_unlit_draws,invalid_matrix_identity,source_registrations,source_releases,source_hits,source_unbound,source_dirty_rehash,source_invalid,source_misses,source_unsafe,invalid_mvp,dynamic_queued,dynamic_source_missing,dynamic_invalid\n1560,598674,378243,378243,0,34004,0,77828,0,0,0,0,0,897552,3127,0,85058,305587,304607,304607,270061,0,0,669,1,305587,0,475,0,0,112,980,73636,0,0\n"
+    },
+    {
+      "time": "2026-10-13T22:23:54.792687+02:00",
+      "text": "# native_match_v5 gx_fallback=0 live_game=1 gpu_material=vertex_color_preview texture_samples=0 skinning=cpu_pn_preview projection=glx_six_coeff visual_debug=0\n# renderer=strikers_native_gxm gxm_owner=aurora_fifo native_error=0x00000000\n# error=none mesh_manifest=4779 native_pipeline=1\n# uv_sidecar=uploaded (texture_binding=not_connected)\n# dynamic_slot_fence=0 timing=0\n# compact_vertices=1 input_vertices=35918541 output_vertices=13386565\n# first_invalid_mvp frame=364 view=11 bits=7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 \nframe,callbacks,native_draws_queued,native_draws_accepted,native_draws_rejected,unsupported_view,unsupported_material,unsupported_raster,unsupported_geometry,missing_asset,upload_errors,queue_errors,present_errors,gx_suppressed_bytes,gx_suppressed_callbacks,skinned_rejected,user_effect_rejected,color_preview_candidates,color_preview_draws,preview_textured,preview_lit,plain_unlit_draws,invalid_matrix_identity,source_registrations,source_releases,source_hits,source_unbound,source_dirty_rehash,source_invalid,source_misses,source_unsafe,invalid_mvp,dynamic_queued,dynamic_source_missing,dynamic_invalid\n1680,631075,401234,401234,0,37862,0,79520,0,0,0,0,0,962664,3265,0,87220,316578,315598,315598,279012,0,0,669,1,316578,0,475,0,0,112,980,85636,0,0\n"
+    },
+    {
+      "time": "2026-10-13T22:24:05.238661+02:00",
+      "text": "# native_match_v5 gx_fallback=0 live_game=1 gpu_material=vertex_color_preview texture_samples=0 skinning=cpu_pn_preview projection=glx_six_coeff visual_debug=0\n# renderer=strikers_native_gxm gxm_owner=aurora_fifo native_error=0x00000000\n# error=none mesh_manifest=4779 native_pipeline=1\n# uv_sidecar=uploaded (texture_binding=not_connected)\n# dynamic_slot_fence=0 timing=0\n# compact_vertices=1 input_vertices=41299678 output_vertices=15904335\n# first_invalid_mvp frame=364 view=11 bits=7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 \nframe,callbacks,native_draws_queued,native_draws_accepted,native_draws_rejected,unsupported_view,unsupported_material,unsupported_raster,unsupported_geometry,missing_asset,upload_errors,queue_errors,present_errors,gx_suppressed_bytes,gx_suppressed_callbacks,skinned_rejected,user_effect_rejected,color_preview_candidates,color_preview_draws,preview_textured,preview_lit,plain_unlit_draws,invalid_matrix_identity,source_registrations,source_releases,source_hits,source_unbound,source_dirty_rehash,source_invalid,source_misses,source_unsafe,invalid_mvp,dynamic_queued,dynamic_source_missing,dynamic_invalid\n1800,665993,426072,426072,0,41702,0,81440,0,0,0,0,0,1026264,3385,0,89860,329195,328215,328215,289589,0,0,669,1,329195,0,475,0,0,112,980,97857,0,0\n"
+    },
+    {
+      "time": "2026-10-13T22:24:15.653374+02:00",
+      "text": "# native_match_v5 gx_fallback=0 live_game=1 gpu_material=vertex_color_preview texture_samples=0 skinning=cpu_pn_preview projection=glx_six_coeff visual_debug=0\n# renderer=strikers_native_gxm gxm_owner=aurora_fifo native_error=0x00000000\n# error=none mesh_manifest=4779 native_pipeline=1\n# uv_sidecar=uploaded (texture_binding=not_connected)\n# dynamic_slot_fence=0 timing=0\n# compact_vertices=1 input_vertices=41299678 output_vertices=15904335\n# first_invalid_mvp frame=364 view=11 bits=7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 \nframe,callbacks,native_draws_queued,native_draws_accepted,native_draws_rejected,unsupported_view,unsupported_material,unsupported_raster,unsupported_geometry,missing_asset,upload_errors,queue_errors,present_errors,gx_suppressed_bytes,gx_suppressed_callbacks,skinned_rejected,user_effect_rejected,color_preview_candidates,color_preview_draws,preview_textured,preview_lit,plain_unlit_draws,invalid_matrix_identity,source_registrations,source_releases,source_hits,source_unbound,source_dirty_rehash,source_invalid,source_misses,source_unsafe,invalid_mvp,dynamic_queued,dynamic_source_missing,dynamic_invalid\n1800,665993,426072,426072,0,41702,0,81440,0,0,0,0,0,1026264,3385,0,89860,329195,328215,328215,289589,0,0,669,1,329195,0,475,0,0,112,980,97857,0,0\n"
+    }
+  ],
+  "launch_response": "Launched.",
+  "analysis": {
+    "path": "/Users/robin994/Documents/Code/strikersVita/report_performance/evidence/NATIVE_GXM_RENDERER_2026-10-13/performance/native_compact1_quiet3/native_compact1_quiet3.csv",
+    "sha256": "d6163ea75993a7bc16d9d2e52a71e9a2d18c581bdb00d5880c2a9dcaeac1a1bb",
+    "metadata": [
+      "# strikers-frame-capture-v1 diagnostics=0 fps_overlay=0",
+      "# play_only=1 counter=live_play",
+      "# actual_cpu_mhz=444 actual_gpu_mhz=222 actual_bus_mhz=222 actual_xbar_mhz=166"
+    ],
+    "samples": 120,
+    "all_gameplay": true,
+    "live_play_only": true,
+    "match_frame_first": 120,
+    "match_frame_last": 239,
+    "elapsed_fps": 10.476688451485206,
+    "mean_ms": 95.45000833333333,
+    "median_ms": 97.0255,
+    "p95_ms": 101.824,
+    "p99_ms": 111.237,
+    "deadline_60_pct": 0.0,
+    "deadline_30_pct": 0.0,
+    "tasks_median_ms": 96.7955,
+    "present_median_ms": 0.236
+  },
+  "capture_complete": true,
+  "ini_restored_verified": true,
+  "final_kill_response": "Killed.",
+  "process_stopped": true,
+  "finished": "2026-10-13T22:24:17.446818+02:00"
+}

@@ -341,3 +341,5 @@ GLRenderList* gl_ViewGetRenderList(eGLView view)
 {
     return views[view]->renderList;
 }
+
+const glView* glViewGetState(eGLView view){return views[view];}

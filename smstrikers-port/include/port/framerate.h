@@ -37,6 +37,7 @@ enum
 };
 
 // Once per RunAllTasks: the display clock in OSGetTick units, stepping whole display periods while present waits for the vblank.
+void PortNativeRetrace(void);
 int PortTaskClockFrame(unsigned int* ticks);
 
 // The clock a task added mid-frame records: returns 1 with the display clock in ticks, or 0 for the host clock.

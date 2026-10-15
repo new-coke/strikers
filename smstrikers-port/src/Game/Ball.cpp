@@ -1751,6 +1751,7 @@ static inline void CalcBallRotationFromVelocity(nlQuaternion& qOrientationDelta,
 void cBall::UpdateOrientation(float fDeltaT)
 {
     nlQuaternion qOrientationDelta;
+    nlQuatIdentity(qOrientationDelta);
     nlVector3 v3AngVel;
     float fInvAng;
     nlQuaternion qNewOrientation;

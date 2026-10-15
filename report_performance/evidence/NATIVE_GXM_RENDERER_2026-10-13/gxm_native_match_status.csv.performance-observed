@@ -1,0 +1,7 @@
+# native_match_v5 gx_fallback=0 live_game=1 gpu_material=vertex_color_preview texture_samples=0 skinning=cpu_pn_preview projection=glx_six_coeff visual_debug=1
+# renderer=strikers_native_gxm gxm_owner=aurora_fifo native_error=0x00000000
+# error=none mesh_manifest=4779 native_pipeline=1
+# uv_sidecar=uploaded (texture_binding=not_connected)
+# first_invalid_mvp frame=364 view=11 bits=7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 
+frame,callbacks,native_draws_queued,native_draws_accepted,native_draws_rejected,unsupported_view,unsupported_material,unsupported_raster,unsupported_geometry,missing_asset,upload_errors,queue_errors,present_errors,gx_suppressed_bytes,gx_suppressed_callbacks,skinned_rejected,user_effect_rejected,color_preview_candidates,color_preview_draws,preview_textured,preview_lit,plain_unlit_draws,invalid_matrix_identity,source_registrations,source_releases,source_hits,source_unbound,source_dirty_rehash,source_invalid,source_misses,source_unsafe,invalid_mvp,dynamic_queued,dynamic_source_missing,dynamic_invalid
+1920,691881,453120,453120,0,55320,0,75368,0,0,0,0,0,1066578,2811,0,77927,298928,298562,298562,259890,0,0,669,1,298928,0,478,0,0,112,366,154558,0,1150

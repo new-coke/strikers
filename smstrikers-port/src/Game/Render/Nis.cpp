@@ -22,6 +22,13 @@
 #include "NL/nlFormat.h"
 
 #include "types.h"
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "port/config.h"
+#include "NL/gl/gl.h"
+#include "Game/Player.h"
+#include "Game/PoseAccumulator.h"
+#include <cstdio>
+#endif
 
 #include "NL/nlBind.h"
 
@@ -285,10 +292,37 @@ void Nis::Render()
         if (mBallId[i] >= 0 && numBalls < mHeader->numBalls
             && numBalls < NisPlayer::Instance()->mMaxNumBallsVisible)
         {
+            DrawableBall* ball = nullptr;
             if (mBallId[i] == 0)
             {
-                snapshot.mBall.mVisible = true;
-                snapshot.mBall.EvaluateFrom(*pDC);
+                ball = &snapshot.mBall;
+            }
+            else if (snapshot.mNumNisExtraBalls < 2)
+            {
+                ball = &snapshot.mNisExtraBalls[snapshot.mNumNisExtraBalls++];
+            }
+            if (ball)
+            {
+                ball->mRenderSnapshot = &snapshot;
+                ball->mVisible = true;
+                ball->EvaluateFrom(*pDC);
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+                if (PortDiagnosticsEnabled() && glGetCurrentFrame() % 60 == 0)
+                {
+                    static bool first = true;
+                    FILE* trace = std::fopen("ux0:data/strikersVita/native_ball_pose.log", first ? "w" : "a");
+                    first = false;
+                    if (trace)
+                    {
+                        const cPlayer* player = static_cast<const cPlayer*>(pDC->mCharacter);
+                        const int node = player->m_nBallJointIndex;
+                        const auto& trans = pDC->mPoseAccumulator->m_trans.mData[node];
+                        std::fprintf(trace, "frame=%u nis=%s character=%d ball_id=%d time=%.5f root=%.3f,%.3f,%.3f ball_node=%d nodes=%d local=%.3f,%.3f,%.3f identity=%u weight=%.3f ball=%.3f,%.3f,%.3f quat=%.3f,%.3f,%.3f,%.3f\n",
+                            unsigned(glGetCurrentFrame()),mHeader->name,i,mBallId[i],fTime,rootTrans.x,rootTrans.y,rootTrans.z,node,pDC->mPoseAccumulator->GetNumNodes(),trans.t.x,trans.t.y,trans.t.z,unsigned(trans.bIdentity),trans.fAccumulatedWeight,ball->mPosition.x,ball->mPosition.y,ball->mPosition.z,ball->mOrientation.x,ball->mOrientation.y,ball->mOrientation.z,ball->mOrientation.w);
+                        std::fclose(trace);
+                    }
+                }
+#endif
             }
             numBalls++;
         }

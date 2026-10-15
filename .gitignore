@@ -21,6 +21,8 @@ smstrikers-port/dist/
 
 .DS_Store
 *.ppm
+*.ppm.*
+*.psp2dmp
 *.pyc
 __pycache__/
 extracted/
@@ -30,6 +32,7 @@ extracted/
 .debug/
 
 *.log
+*.log.*
 /ab-artifacts/
 
 # Local Codex checkouts and build scratch are not project sources.

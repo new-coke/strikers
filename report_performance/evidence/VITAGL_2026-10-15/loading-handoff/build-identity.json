@@ -1,0 +1,125 @@
+{
+  "date": "2026-10-15",
+  "backend": "VitaGL",
+  "change": "retain last displayed image on resource-invalid engine passes; rebase monotonic time after synchronous scene state transitions; preserve accepted VitaGL materials and realtime simulation",
+  "artifacts_sha256": {
+    "strikers": "17aa654dab3c4991552cf53481d303fe072816b9dad05952563c70cacf6949f8",
+    "strikers.map": "5e35b48508219404830e15862bde924997fc5cb72e93005cd055a50b37c8a589",
+    "strikers.velf": "a9bfbc592ed18d667e2bb9d6ae8af85b19af435e695239591cabc5bbc5cc1408",
+    "strikers_vita.self": "971aadfbc977fb751f228595966f6df4b2a054d881ec38ac8a09c0fc45d55592",
+    "strikers_vita.vpk": "f7dc040fe58adaf77262f80d8c41c5baf81b14a7f706f1991c71ec9902c20212",
+    "libstrikers_vitagl.a": "e107159de830f005120ce2bdc40d0f0be567d087946d13f0d700bbdefd12e544"
+  },
+  "sources_sha256": {
+    "include/port/scene_specular.hpp": "bf22bcac7f299c92d1f28e3507d29f8984d0db1a1de579012356a6b7a8ba4786",
+    "include/port/scene_shaders.hpp": "a647bb2051e306eef8efe65619e0e247b7c7de1001229edda5be24379ad5c4c9",
+    "include/port/renderer.hpp": "0decb94479da986cd5c495311e87782ffa501657adf1c199914d3baf857d5cac",
+    "src/platform/vitagl_renderer.cpp": "8eee9f84d596afa0a2d1010e3a7b3407880552dbfc70d64186d91ff00977c295",
+    "src/platform/native_match_runtime.cpp": "626eb11d6a829c92a675cad0597acc68bd8d14d2e9aef4c9f160220bb6a232a8",
+    "tests/vitagl_renderer_driver_test.cpp": "537a8675fd7316f6b2e961dc814bfc8389978b99aab58ee1206785575835ec5d",
+    "tests/native_model_vertices_test.cpp": "619c193f17d5cf258561f2b2495a4ed5386d6fa2fd8a0588006d6570c7b009ff",
+    "CMakeLists.txt": "d281da283304ea0f31aac6fd02f20b5b4378f8336f17ed20d648277cca4244f5",
+    "include/port/native_match_direct.hpp": "e7d41731b9c742e84d248f3d380f96589ce2db02ee818581a2c19fbd6f71c64c",
+    "include/port/deferred_renderer.hpp": "f08539fc20025e5a7aa4d01b33c2e1f3fd683d74b4188e7406a0aa9849e20cd1",
+    "src/platform/deferred_renderer.cpp": "12795508a0764622250f1efdec32856c20f220fd0801f9c171ad5bb89795e060",
+    "src/NL/gl/glPlat.cpp": "0196e17bac87813280bafc0da0e39778c2e9a92835dc6324a99dd5253a7f8a38",
+    "tests/deferred_renderer_driver_test.cpp": "2f822a6f9155ebed84b979f8fee0aec8cb71557246a3e713ce767d464b8fbaf4",
+    "tests/simulation_task_clock_test.cpp": "30b7908d91a02913cac5f026c358dc72a68e0dd5a63fe59845c78cbad1a384b2",
+    "include/port/simulation_clock.hpp": "e9d97fdb32c4aab5e7610adf72980cad6d895920df3d73895bd4d07976ad81ad",
+    "src/NL/nlTask.cpp": "fda942af1b4caab685139b6c2724f59ba344b7c8104d713553cfd1fd6a3bf64b",
+    "src/Game/FixedUpdateTask.cpp": "5eb0728fbc34acd913fc34d3fa9d887e6316354921513b8709d6ef7e3609db51",
+    "src/Game/Render/RenderShadow.cpp": "dbd2f7701b5adc64220b03a18d6069208356e002224d1e52966e10d45f6e31ef",
+    "src/Game/Drawable/DrawableModel.cpp": "c3875e5c0b853c9fdfaa86ad57bdabd132444f177a50635c931f0024949e3fe5",
+    "src/Game/main.cpp": "7ac735bf3c114bf0a86c965adb0e203ab3ac5fa413c52f7e70ecb62fcfde3aad",
+    "src/platform/vi.c": "45f64585d5ad72858c11f7a05d977b52dfd04686e90f456eef7628cfb0fbe76b",
+    "include/port/native_model_vertices.hpp": "dceffc5b4bd42fcb36c0b931d3d984f5817f69abab02fd3cd586e1580135b7af",
+    "tools/vita_vitagl_validation.py": "37b6cb2ae3d5725bb6977990a580c3c56c846d79d0cb442d7ffe7b1fba9c449c",
+    "src/Game/ReplayManager.cpp": "09d019e6e380f96d000d94e4204d4290e9f00474b4e91250d8074f2451f60e9e"
+  },
+  "cmake": {
+    "STRIKERS_AURORA": "OFF",
+    "STRIKERS_VITA_VITAGL": "ON",
+    "STRIKERS_VITA_NATIVE_GXM_RENDERER": "OFF",
+    "STRIKERS_VITA_GX_THREAD": "OFF",
+    "STRIKERS_VITA_PROFILER": "OFF",
+    "STRIKERS_VITA_PROFILE_AUTOSTART": "OFF",
+    "STRIKERS_VITA_FAST_PROFILER_BUILD": "OFF",
+    "STRIKERS_VITA_AUDIO_THREAD": "ON",
+    "STRIKERS_VITA_GXM_DIRECT_PROBE": "OFF"
+  },
+  "vitagl_flags": [
+    "READBACKS_SPEEDHACK=1",
+    "HAVE_SHADER_CACHE=1",
+    "NO_DEBUG=1",
+    "DRAW_SPEEDHACK=1",
+    "STORE_DEPTH_STENCIL=1"
+  ],
+  "provider_units": 30,
+  "aurora_sdl_gx_graphics_symbols": 0,
+  "glfinish_glflush_calls": 0,
+  "vpk_self_identical": true,
+  "previous_self_sha256": "091304cecf54b2ee565ff36384d334ab1fa3ccbfb9eadfc7ec80393c10552ed6",
+  "host_tests": "VitaGL driver (100 aborted passes), deferred frontend and actual task scheduler, ASan/UBSan passed",
+  "hardware_status": "owner accepted retained LOADING without black interval; transition trace and quiet capture complete; normal SELF/INI readback and fresh progression verified",
+  "hardware_visual": {
+    "loading_capture": "validated/debug_frame_3d_1.png",
+    "capture_inspection": "original LOADING bitmap retained after initial resource-invalid pass",
+    "prior_accepted_models_particles_goals_shadows": {
+      "self_sha256": "091304cecf54b2ee565ff36384d334ab1fa3ccbfb9eadfc7ec80393c10552ed6",
+      "evidence": "../goal-shadow/owner-visual-acceptance.json"
+    },
+    "loading_transition_owner_acceptance": "LOADING resta visibile, nessun intervallo nero",
+    "owner_acceptance_evidence": "owner-visual-acceptance.json"
+  },
+  "base_commit": "a175e0a15ce0215d94075c9142162fa5be9d3f82",
+  "uncommitted_source": true,
+  "build_directory": "/Users/robin994/Documents/Code/strikersVita/smstrikers-port/build-vita-gxm-latest",
+  "normal_ini_sha256": "3c013d70b7eb2f8a33c805c3343bbe4534782bf7dd93a81e7aea3f9fe05926e2",
+  "hardware_fps": {
+    "analysis": {
+      "path": "/Users/robin994/Documents/Code/strikersVita/report_performance/evidence/VITAGL_2026-10-15/loading-handoff/quiet/loading_normal_quiet.csv",
+      "sha256": "d7df811a5e2184e8dd7735a4af166e8327b1adf41f89dfaa03a0ff5bd44e5950",
+      "metadata": [
+        "# strikers-frame-capture-v1 diagnostics=0 fps_overlay=0",
+        "# play_only=1 counter=live_play",
+        "# actual_cpu_mhz=444 actual_gpu_mhz=222 actual_bus_mhz=222 actual_xbar_mhz=166"
+      ],
+      "samples": 240,
+      "all_gameplay": true,
+      "live_play_only": true,
+      "match_frame_first": 120,
+      "match_frame_last": 359,
+      "elapsed_fps": 19.140151044501966,
+      "mean_ms": 52.24619166666667,
+      "median_ms": 50.3455,
+      "p95_ms": 69.999,
+      "p99_ms": 106.252,
+      "deadline_60_pct": 0.0,
+      "deadline_30_pct": 0.0,
+      "tasks_median_ms": 49.4945,
+      "present_median_ms": 0.7005
+    },
+    "runs": 1,
+    "fixed_dt": 0,
+    "test_fps_limit": null,
+    "target_fps": 60,
+    "target_reached": false,
+    "normal_ini_restored_after_measurement": true,
+    "comparative_claim": false,
+    "limitation": "one short normal-speed sample; gameplay phase is not pixel-matched to prior 0913 run"
+  },
+  "final_delivery": {
+    "evidence": "final-device-readback.json",
+    "self_and_ini_byte_readback_verified": true,
+    "self_sha256": "971aadfbc977fb751f228595966f6df4b2a054d881ec38ac8a09c0fc45d55592",
+    "normal_ini_sha256": "3c013d70b7eb2f8a33c805c3343bbe4534782bf7dd93a81e7aea3f9fe05926e2",
+    "runtime_progression_verified": true,
+    "fresh_frames": [
+      60,
+      120
+    ],
+    "new_crashes": 0,
+    "left_running_with_normal_config": true
+  },
+  "loading_transition_evidence": "transition-summary.json"
+}

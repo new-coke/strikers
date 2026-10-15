@@ -66,6 +66,10 @@ public:
     /*  0x1AAC */ int mNumExplodables;
     /*  0x1AB0 */ nlVector3 mCameraUp;
     /*  0x1ABC */ float mFrameBlendPercent;
+    // NIS can animate three separate balls. These are presentation-only and
+    // are rebuilt by Nis::Render, outside the gameplay replay serialization.
+    DrawableBall mNisExtraBalls[2];
+    unsigned mNumNisExtraBalls = 0;
 }; // total size: 0x1AC0
 
 template <typename T>
@@ -91,6 +95,8 @@ void RenderSnapshot::Replay(T& frame)
 {
     typedef RenderSnapshotFrameTraits<T> FrameTraits;
     LoadFrame& loadFrame = reinterpret_cast<LoadFrame&>(frame);
+    if (FrameTraits::IsLoadFrame)
+        mNumNisExtraBalls = 0;
     nlVector3* pos;
 
     for (int i = 0; i < 10; i++)

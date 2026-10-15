@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-13T18:31:30.647286+02:00",
+  "self_sha256": "032ab9474cfd8dbc04955309854f75b19ba6ca9d21770444efa17df586ed7134",
+  "normal_ini_sha256": "7db19fd763528598cc11757a2f1b7918b324f8cf21e0f00d2c2e2440d8d1164f",
+  "capture_ini_sha256": "b7bed638b342456b1869873a4995fa0fe85468a16bec1f721729094c2e1e945c",
+  "snapshot": "debug_frame_play_120.ppm",
+  "fps_measurement": false,
+  "kill_response": "Error: cannot kill the app. Is the TITLEID correct?",
+  "launch_response": "Launched.",
+  "snapshot_sha256": "e572c821de2967e453c4343baaa8601ef195cd8c987da5897cdbb8a7afbcb3a6",
+  "runtime_status": "# native_match_v4 gx_fallback=0 live_game=1 gpu_material=vertex_color_preview texture_samples=0 skinning=not_supported projection=glx_six_coeff visual_debug=1\n# renderer=strikers_native_gxm gxm_owner=aurora_fifo native_error=0x00000000\n# error=none mesh_manifest=4779 native_pipeline=1\n# first_invalid_mvp frame=321 view=11 bits=7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 \nframe,callbacks,native_draws_queued,native_draws_accepted,native_draws_rejected,unsupported_view,unsupported_material,unsupported_raster,unsupported_geometry,missing_asset,upload_errors,queue_errors,present_errors,gx_suppressed_bytes,gx_suppressed_callbacks,skinned_rejected,user_effect_rejected,color_preview_candidates,color_preview_draws,preview_textured,preview_lit,plain_unlit_draws,invalid_matrix_identity,source_registrations,source_releases,source_hits,source_unbound,source_dirty_rehash,source_invalid,source_misses,source_unsafe,invalid_mvp\n1680,610207,299566,299566,0,39019,0,72970,12559,0,0,0,0,954904,3115,47491,81502,345099,299566,299566,263825,0,0,669,1,300460,32080,475,0,0,112,894\n",
+  "coverage_sha256": "e8a5dcd9bed18efecfd793291735bc531054ad2fb300a40c12962912666c8063",
+  "ini_restored_verified": true,
+  "pixel_statistics": {
+    "width": 960,
+    "height": 544,
+    "rgb_black_pixels": 642,
+    "pixels": 522240,
+    "black_fraction": 0.0012293198529411764,
+    "distinct_rgb_colors": 37
+  },
+  "visual_correctness": false,
+  "finding": "Source coverage fixed: missing static sidecar sources are zero and presented field geometry is visible as a pale vertex-color preview. Textures, lit materials and indexed-PN characters remain unsupported."
+}

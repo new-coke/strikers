@@ -20,7 +20,7 @@
 #include "port/config.h"
 
 #include <cstdio>
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
 #include <aurora_vita_shader_debug.h>
 #include "port/overlay.h"
 #include <algorithm>
@@ -98,7 +98,7 @@ static const char* const kDebugPageNames[kDebugBasePageCount] = {
 };
 static unsigned short sDebugMenuText[6][64];
 
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
 // Snapshot once on entry, sorted by actual game draw frequency; no sorting or
 // renderer locks in the game/render frame loop.
 static AuroraVitaDebugFragment sDebugFragments[1024];
@@ -118,7 +118,7 @@ static int FragmentRowIndex(int page, int row)
     return 2 + (page - kDebugBasePageCount - 1) * 4 + row;
 }
 #else
-static int DebugPageCount() { return kDebugBasePageCount; }
+static int DebugPageCount() { return 8; }
 #endif
 
 static const char* DebugPageName(int page)
@@ -179,8 +179,12 @@ static void ToWide(const char* src, unsigned short* dst, unsigned int capacity)
 
 static void FormatDebugLabel(int page, int row, char* out, unsigned int outSize)
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    const unsigned int flags=0,caps=0;
+#else
     const unsigned int flags = aurora_vita_debug_runtime_flags();
     const unsigned int caps = aurora_vita_debug_runtime_capabilities();
+#endif
     const char* label = "-";
     const char* value = "";
 
@@ -197,7 +201,7 @@ static void FormatDebugLabel(int page, int row, char* out, unsigned int outSize)
         return;
     }
 
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
     if (page >= kDebugBasePageCount)
     {
         if (page == kDebugBasePageCount && row == 0)
@@ -266,6 +270,7 @@ static void FormatDebugLabel(int page, int row, char* out, unsigned int outSize)
         if (row == 2) { label = "WHITE DIFFUSE"; value = OnOff(g_bWhiteDiffuse != 0); }
         if (row == 3) { label = "FRUSTUM CULLING"; value = OnOff(g_bClipToFrustum != 0); }
         break;
+#if !defined(STRIKERS_VITA_NATIVE_RUNTIME)
     case 8:
         if (row == 0) { label = "STATIC GEOMETRY GPU"; value = (caps & DR_STATIC_GEOMETRY) ? OnOff((flags & DR_STATIC_GEOMETRY) != 0) : "N/A"; }
         if (row == 1) { label = "STREAMED GPU VERTEX"; value = "LOCKED"; }
@@ -278,6 +283,7 @@ static void FormatDebugLabel(int page, int row, char* out, unsigned int outSize)
         if (row == 2) { label = "STATIC STABLE ONLY"; value = OnOff((flags & DR_STATIC_STABLE_ONLY) != 0); }
         if (row == 3) { label = "RUNTIME SHADER COMPILE"; value = OnOff(aurora_vita_debug_shader_runtime_compile() != 0); }
         break;
+#endif
     default:
         break;
     }
@@ -287,7 +293,7 @@ static void FormatDebugLabel(int page, int row, char* out, unsigned int outSize)
 
 static void ToggleDebugOption(int page, int row)
 {
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
     if (page >= kDebugBasePageCount)
     {
         if (page == kDebugBasePageCount && row == 0)
@@ -314,7 +320,9 @@ static void ToggleDebugOption(int page, int row)
         return;
     }
 #endif
+#if !defined(STRIKERS_VITA_NATIVE_RUNTIME)
     unsigned int flags = aurora_vita_debug_runtime_flags();
+#endif
     switch (page)
     {
     case 0:
@@ -351,6 +359,7 @@ static void ToggleDebugOption(int page, int row)
             PortDebugRenderViewToggle((unsigned int)entry.view);
         }
         break;
+#if !defined(STRIKERS_VITA_NATIVE_RUNTIME)
     case 8:
         if (row == 0 && (aurora_vita_debug_runtime_capabilities() & DR_STATIC_GEOMETRY)) flags ^= DR_STATIC_GEOMETRY;
         if (row == 2) flags ^= DR_LIT_VERTEX;
@@ -364,6 +373,7 @@ static void ToggleDebugOption(int page, int row)
         if (row < 3) aurora_vita_debug_set_runtime_flags(flags);
         if (row == 3) aurora_vita_debug_set_shader_runtime_compile(!aurora_vita_debug_shader_runtime_compile());
         break;
+#endif
     default:
         break;
     }
@@ -391,7 +401,7 @@ PauseMenuScene::PauseMenuScene(PauseMenuScene::ScreenContext context)
         mContext = SC_DEBUG;
         mDebugMenuRequested = false;
     }
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
     // A shader shared by HUD and pause screens may be disabled during tests.
     // Keep every kind of pause menu accessible, not only the debug variant.
     aurora_vita_shader_debug_bypass(1);
@@ -403,7 +413,7 @@ void PauseMenuScene::OpenDebugMenu()
 {
     if (FrontEnd::m_bInPauseMenuState)
         return;
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
     if (!PortVitaDebugMenuEnabled())
         return;
     // Pause-menu rendering remains visible even when a common HUD shader is
@@ -435,7 +445,7 @@ bool PauseMenuScene::DebugMenuRequested()
  */
 PauseMenuScene::~PauseMenuScene()
 {
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
     aurora_vita_shader_debug_bypass(0);
 #endif
 }

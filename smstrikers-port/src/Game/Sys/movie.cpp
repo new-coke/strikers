@@ -10,6 +10,9 @@
 #include "NL/nlMemory.h"
 #include "NL/nlString.h"
 #include "dolphin/thp/THPInfo.h"
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "port/native_match_direct.hpp"
+#endif
 #include "port/audio.h"   // PORT: is anything pulling?
 
 extern "C"
@@ -112,7 +115,9 @@ bool MovieStart(const char* szFilename, bool bSound, bool bLoopMovie)
     pTex[1]->Prepare();
     pTex[2]->Prepare();
 
+#if !defined(STRIKERS_VITA_NATIVE_RUNTIME)
     GXInvalidateTexAll();
+#endif
 
     size = THPSimpleCalcNeedMemory(bufCount, size);
 
@@ -302,11 +307,17 @@ bool MoviePlay()
         return false;
     }
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    port::directmatch::finish();
+#else
     GXSetDrawDone();
     GXFlush();
+#endif
     nlServiceFileSystem();
     OSYieldThread();
+#if !defined(STRIKERS_VITA_NATIVE_RUNTIME)
     GXWaitDrawDone();
+#endif
 
     int error = THPSimpleDecode(0);
     if (error == 1 || error == 2)
@@ -314,7 +325,9 @@ bool MoviePlay()
         return false;
     }
 
+#if !defined(STRIKERS_VITA_NATIVE_RUNTIME)
     GXInvalidateTexAll();
+#endif
     pTex[0]->Prepare();
     pTex[1]->Prepare();
     pTex[2]->Prepare();

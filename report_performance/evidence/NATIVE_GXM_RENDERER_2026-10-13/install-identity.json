@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-13T18:30:07.740977+02:00",
+  "host": "192.168.1.79",
+  "title_id": "SMSVITA01",
+  "phase": "installed_verified",
+  "candidate_self_sha256": "032ab9474cfd8dbc04955309854f75b19ba6ca9d21770444efa17df586ed7134",
+  "candidate_pack_sha256": "9018aaef5ba70b2c462eb4085b1fa03e0d8126eed9df216cc7107aa882c19888",
+  "candidate_vpk_sha256": "004ffa8040bababe2bfa0988e51c5bbd1a5511ae9378f7fbae9e7ff82336257d",
+  "rollback_self": "/Users/robin994/Documents/Code/strikersVita/smstrikers-port/build-vita-gxm-latest/strikers_vita.previous.self",
+  "rollback_pack": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/native-gxm-direct-20261013/gxm_native_match_meshes_expanded_preview.bin",
+  "ini_changed": false,
+  "launch_requested": false,
+  "ini_sha256": "7db19fd763528598cc11757a2f1b7918b324f8cf21e0f00d2c2e2440d8d1164f",
+  "effective_native_settings": {
+    "gxm_native_match_direct": "1",
+    "gxm_direct_probe": "0",
+    "vita_test_match": "1",
+    "diagnostics": "0",
+    "gxm_shader_profile": "WARM"
+  },
+  "previous_status_sha256": "1907fd1049e6ae33a200fc15519b830be7bc7ea28060ea1941b6bbc5fd5529bc",
+  "kill_response": "Killed.",
+  "installed": {
+    "gxm_native_match_meshes.bin": {
+      "path": "ux0:/data/strikersVita/gxm_native_match_meshes.bin",
+      "sha256": "9018aaef5ba70b2c462eb4085b1fa03e0d8126eed9df216cc7107aa882c19888",
+      "bytes": 14881806,
+      "previous_sha256": "f23352c248dd4ed8a291af619fbb9eca89ff805c7931804482186ac2aff62326"
+    },
+    "eboot.bin": {
+      "path": "ux0:/app/SMSVITA01/eboot.bin",
+      "sha256": "032ab9474cfd8dbc04955309854f75b19ba6ca9d21770444efa17df586ed7134",
+      "bytes": 3633136,
+      "previous_sha256": "bfd9cf13a469d96ec38dd442331a1ac46bd517f22709e455441d4cd6ae0653d0"
+    }
+  },
+  "completed_at": "2026-10-13T18:31:16.749802+02:00",
+  "cleanup_errors": []
+}

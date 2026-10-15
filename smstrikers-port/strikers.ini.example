@@ -218,10 +218,11 @@
 # Separate per-view skin matrix preparation experiment, default 0.
 # vita_skin_packets = 0
 
-# Vita: adaptive gameplay frameskip. Default 0; 1 lets the simulation catch up
-# to wall time and drops up to three rendered frames through glDiscardFrame.
-# Restart the game after changing either setting. Frameskip is inactive when
-# fixed_dt is nonzero; use fixed_dt = 0 for normal gameplay with frameskip.
+# VitaGL: simulation consumes real elapsed time at the original 50 Hz physics
+# rate, independently of render FPS. No gameplay frames are discarded.
+# vita_frameskip is retained only for old INI compatibility and has no effect.
+# fixed_dt must remain 0 for real-time gameplay; nonzero is a deterministic
+# capture clock and deliberately advances by one chosen duration per image.
 # vita_frameskip = 0
 # fixed_dt = 0
 
@@ -310,6 +311,47 @@
 # Independently collect producer/consumer cache events without enabling the
 # admission census. Diagnostic-only: mutex accounting affects frame times.
 # gxm_native_model_metrics = 0
+
+# Strict live-game direct GXM bridge: rendering remains incomplete.
+# Requires STRIKERS_VITA_NATIVE_MATCH_DIRECT=ON. With
+# STRIKERS_VITA_NATIVE_GXM_RENDERER=ON, Strikers owns the GXM renderer and
+# submits resident static mesh IDs or owned dynamic model snapshots directly.
+# Native dynamic snapshots preview CPU-skinned and indexed-PN geometry;
+# pose/color/UV arrays are owned before the worker consumes them.
+# The full mesh catalog is gxm_native_match_meshes.bin; the optional matching
+# gxm_native_match_uvs.bin supplies UV streams and warms texture programs.
+# Texture binding, complete lights/materials, HUD clipping and EFB/shadow
+# passes remain unfinished. The current pass uses vertex colors, so geometry
+# may appear white/flat. Unsupported packets are dropped, without GX fallback.
+# Aurora bootstrap/FIFO/revision services are still linked by the bridge;
+# Aurora's old GXM draw sink/renderer are released at graphics handoff.
+# Game/demo selection remains driven by vita_test_match, never code-forced.
+# Status and errors: ux0:data/strikersVita/gxm_native_match_status.csv.
+# gxm_native_match_direct = 0
+# Experimental retirement of dynamic frame buffers using per-slot GPU
+# notifications. Default 0 retains the global Finish control. No FPS gain is
+# implied; compare the same SELF with only this setting changed.
+# gxm_native_slot_fence = 0
+# Native CPU phase counters; default off, attribution only. Timings overlap
+# producer waits and must not be added together as elapsed frame time.
+# gxm_native_timing = 0
+# Within-draw indexing of dynamic snapshots by original vertex + PN slot.
+# Default off until matched image/FPS verification; no cross-frame reuse.
+# gxm_native_compact_vertices = 0
+
+# Standalone no-GX experiment, not the game renderer. Only works in a Vita
+# executable built with STRIKERS_VITA_GXM_DIRECT_PROBE=ON (default OFF). Runs
+# before game/audio/GX initialization and exits after 60 warmup + 300 samples.
+# 1: one synthetic colored mesh, saved to gxm_direct_probe.csv.
+# 2: GPU-ready static GLG meshes from a PRIVATE offline scene sidecar,
+#    ux0:data/strikersVita/gxm_direct_static_scene.bin; saved to
+#    gxm_direct_static_scene.csv. Select 1..256 direct draws per frame with
+#    gxm_direct_scene_draws (default 64). This is NOT live gameplay or its
+#    materials/characters/HUD: it tests real static game geometry with the
+#    standalone native GXM renderer, no GX decoder/translation/fallback.
+# Unsupported material/mesh aborts the test; START+SELECT interrupts.
+# gxm_direct_probe = 1
+# gxm_direct_scene_draws = 64
 
 # Which disc the data came from, when the data cannot say: the id is read from sys/boot.bin
 # beside `files` or from an image's first bytes, and an extraction of `files` alone is taken

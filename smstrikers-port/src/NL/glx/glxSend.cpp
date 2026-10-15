@@ -1,3 +1,16 @@
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "NL/glx/glxSend.h"
+#include "port/native_match_direct.hpp"
+bool g_bAllowLighting=true,g_bAllowSpecular=true;
+void glx_SendFrame_cb(eGLView v,unsigned long f,const glModelPacket* p){port::directmatch::on_packet(v,f,p);}
+void glx_SendReset(){}
+void glx_SendEnd(){}
+void glx_PrepareSkinPackets(eGLView,GLRenderList*){}
+void glx_FinishSkinPackets(){}
+void glx_ReportSkinPackets(FILE*){}
+bool glx_PacketProfileSampledView(eGLView){return false;}
+void glx_ReportPacketProfile(FILE*){}
+#else
 #include "NL/glx/glxSend.h"
 #include "port/config.h"
 #include "port/texfilter.h"
@@ -27,6 +40,9 @@ extern "C" int port_region_owns(const void*);  // src/platform/memalloc.cpp
 #include "NL/glx/glxMatrix.h"
 #include "NL/glx/glxTexture.h"
 #include "NL/glx/glxDisplayList.h"
+#if defined(PORT_VITA) && defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
+#include "port/native_match_direct.hpp"
+#endif
 #include "dolphin/gx/GXDispList.h"
 #include "dolphin/gx/GXBump.h"
 #include "dolphin/gx/GXCull.h"
@@ -36,7 +52,7 @@ extern "C" int port_region_owns(const void*);  // src/platform/memalloc.cpp
 #include "types.h"
 #include "dolphin/gx/GXVert.h"
 #include <string.h>
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
 #include "port/host.h"
 #include "port/skin_matrix_packets.hpp"
 #include "NL/gl/glRenderList.h"
@@ -3295,6 +3311,14 @@ bool native_replay_try(eGLView view,unsigned long flags,const glModelPacket* p)
  */
 void glx_SendFrame_cb(eGLView view, unsigned long flags, const glModelPacket* p)
 {
+#if defined(PORT_VITA) && defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
+    if(port::directmatch::enabled()) {
+        // The full render list is the source; never call the GX draw/state
+        // consumer or silently switch back to it for an unsupported packet.
+        port::directmatch::on_packet(view,flags,p);
+        return;
+    }
+#endif
     PortPacketProfileScope packetProfile(view);
 #if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
     bool nativeModelRecording=false;
@@ -3678,3 +3702,5 @@ void glx_SendFrame_cb(eGLView view, unsigned long flags, const glModelPacket* p)
 }
 
 const u32 glv_MatrixChanged = 0x20;
+
+#endif

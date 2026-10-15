@@ -1,0 +1,31 @@
+{
+  "self_sha256": "ccfe94c1521d8e5667a74d8471d0304bcbb4b992e5ff8c7338d20149f2505517",
+  "target_live_play_frame": 120,
+  "control_sha256": "12fcd79bc090fc2da242b371f8ab11e55dd8baf138635c282a132cd45f32a2c9",
+  "compact_sha256": "12fcd79bc090fc2da242b371f8ab11e55dd8baf138635c282a132cd45f32a2c9",
+  "byte_identical": true,
+  "changed_pixels": 0,
+  "changed_pct": 0.0,
+  "mean_absolute_rgb_error_255": 0.0,
+  "whole_renderer_visual_gate": "FAIL: white materials, missing textures/HUD",
+  "mode0_runtime": [
+    "# native_match_v5 gx_fallback=0 live_game=1 gpu_material=vertex_color_preview texture_samples=0 skinning=cpu_pn_preview projection=glx_six_coeff visual_debug=0",
+    "# renderer=strikers_native_gxm gxm_owner=aurora_fifo native_error=0x00000000",
+    "# error=none mesh_manifest=4779 native_pipeline=1",
+    "# uv_sidecar=uploaded (texture_binding=not_connected)",
+    "# dynamic_slot_fence=0 timing=1",
+    "# compact_vertices=0 input_vertices=35918541 output_vertices=35918541",
+    "# native_timing attribution_only=1 frames=1680 prepare_us=74233310 present_wait_us=162869 fence_us=7373756 upload_us=3791770 draw_us=1823062 display_queue_us=51434 dynamic_bytes=718370820 draws=402914 global_finishes=1674 slot_waits=0",
+    "# first_invalid_mvp frame=364 view=11 bits=7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 "
+  ],
+  "mode1_runtime": [
+    "# native_match_v5 gx_fallback=0 live_game=1 gpu_material=vertex_color_preview texture_samples=0 skinning=cpu_pn_preview projection=glx_six_coeff visual_debug=0",
+    "# renderer=strikers_native_gxm gxm_owner=aurora_fifo native_error=0x00000000",
+    "# error=none mesh_manifest=4779 native_pipeline=1",
+    "# uv_sidecar=uploaded (texture_binding=not_connected)",
+    "# dynamic_slot_fence=0 timing=1",
+    "# compact_vertices=1 input_vertices=41299678 output_vertices=15904335",
+    "# native_timing attribution_only=1 frames=1800 prepare_us=45026647 present_wait_us=171843 fence_us=7480720 upload_us=2730068 draw_us=1911288 display_queue_us=53331 dynamic_bytes=318086700 draws=427872 global_finishes=1794 slot_waits=0",
+    "# first_invalid_mvp frame=364 view=11 bits=7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 "
+  ]
+}

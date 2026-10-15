@@ -1,0 +1,106 @@
+{
+  "asset": "extracted/ux0/data/strikersVita/game/files/art/Environment/Peach_Toad_Stadium/Peach_Toad_Stadium.glg",
+  "asset_sha256": "ae66023da5f7e632f1bd8910d5ec3e540e725974119aca92bf782b9e3502e77e",
+  "models": [
+    {
+      "id": "0d34c40d",
+      "name": "peach_toad_stadium/end_frame",
+      "original_texconfig": 17,
+      "lit_texconfig": 49,
+      "gloss_raw": 12,
+      "gloss_weight": 0.19047619047619047
+    },
+    {
+      "id": "7693fb5e",
+      "name": "peach_toad_stadium/belltower_goal",
+      "original_texconfig": 17,
+      "lit_texconfig": 49,
+      "gloss_raw": 13,
+      "gloss_weight": 0.20634920634920634
+    }
+  ],
+  "material_reference": "src/NL/glx/glxSend.cpp case 0x31/0x35/0x39, final konst colour selector 0x0f",
+  "specular_reference": [
+    "src/NL/glx/glxSend.cpp glx_LoadSpecular",
+    "src/Dolphin/gx/GXLight.c GXInitSpecularDir"
+  ],
+  "specular_max_lights": 4,
+  "old_specular_max_lights": 1,
+  "reflection_equation": "lit_diffuse + gloss_texture * specular_channel * (GlossLevel / 63)",
+  "specular_equation": "c^2 / (exponent/2 + (1-exponent/2)*c^2), gated by dot(N,-incoming)>=0",
+  "old_specular_equation": "pow(dot(N,normalize(nonunit_incoming+view_direction)),exponent)",
+  "user_symptom": "i pali sono opachi e sembrano fuori contesto",
+  "tev_reference": "case 0x31 final (ZERO,KONST,CPREV,C0): K3 * reflected_colour + saved_diffuse",
+  "uv_bug": {
+    "source_diffuse_stream": 3,
+    "source_gloss_stream": 7,
+    "native_gloss_slot": "extraUv[3]",
+    "old_remap_source": "extraUv[0], absent for Diffuse+Gloss",
+    "fix": "preserve semantic stream slots through shader attributes",
+    "source_stream_ids": [
+      0,
+      1,
+      2,
+      3,
+      7
+    ],
+    "actual_goal_gloss_samples": [
+      {
+        "vertex": 209,
+        "gloss_uv": [
+          -0.365234375,
+          0.3056640625
+        ]
+      },
+      {
+        "vertex": 208,
+        "gloss_uv": [
+          -0.3828125,
+          0.306640625
+        ]
+      },
+      {
+        "vertex": 217,
+        "gloss_uv": [
+          -0.3828125,
+          0.3056640625
+        ]
+      },
+      {
+        "vertex": 208,
+        "gloss_uv": [
+          -0.3828125,
+          0.306640625
+        ]
+      },
+      {
+        "vertex": 216,
+        "gloss_uv": [
+          -0.400390625,
+          0.306640625
+        ]
+      },
+      {
+        "vertex": 206,
+        "gloss_uv": [
+          -0.3994140625,
+          0.3056640625
+        ]
+      },
+      {
+        "vertex": 214,
+        "gloss_uv": [
+          -0.4169921875,
+          0.3056640625
+        ]
+      },
+      {
+        "vertex": 214,
+        "gloss_uv": [
+          -0.4169921875,
+          0.3056640625
+        ]
+      }
+    ]
+  }
+}

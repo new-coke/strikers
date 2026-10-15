@@ -1,0 +1,11 @@
+{
+  "self_sha256": "3e7eab486e69a7c193451b16b38cab983ce1c25f3598b18aeb9d1f5b3f1ddbb6",
+  "elf_sha256": "a5b3794e69d33f9379fff37729b608016fe40bbe3bdf5596354c8f7a707ecff7",
+  "map_sha256": "ee9ada7f1316349fb5a863d0bc08b06e83b867b232093496a5806aa7f244c82b",
+  "velf_sha256": "56598ad79baefa1e5366049c8de2d7701986bd6fc258c01caf58de4da7b34a4d",
+  "provider_sha256": "e1b81ef2e9b6cd7439bdeb73e63a0e4466ad3faa7fb434bea77d98cd6e2d0f38",
+  "provider": "extern/vitaGL source snapshot, SKIP_SPLASHSCREEN HAVE_SCRATCH_MEMORY HAVE_SHADER_CACHE",
+  "splash_symbols": 0,
+  "init_return_false_is_success": true,
+  "worker_mask": "SCE_KERNEL_CPU_MASK_USER_2"
+}

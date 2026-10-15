@@ -90,6 +90,9 @@ void NetMeshModelLoader::LoadGeometryFromModel()
 
         while (iv.index < pPacket->numVertices)
         {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+            const s32 idx=static_cast<const u16*>(pList->list)[iv.index];
+#else
             u16* ptr;
             if (((u16*)&pList->indices)[1] != 0)
             {
@@ -115,12 +118,17 @@ void NetMeshModelLoader::LoadGeometryFromModel()
 
             // PORT: FIFO indices are big-endian.
             s32 idx = port_be16(ptr);
+#endif
             if (idx > maxVertex)
             {
                 maxVertex = idx;
             }
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+            m_TriStripIndices[m_CurrentTriStripIndex]=idx+vertexOffset;
+#else
             *(u16*)((u8*)m_TriStripIndices + iv.offset) = idx + vertexOffset;
+#endif
             iv.index++;
             iv.offset += 2;
             m_CurrentTriStripIndex++;
@@ -239,6 +247,9 @@ void NetMeshModelLoader::ReadEdgesFromGeometryPacket(const glModelPacket& packet
 
         for (s32 j = 0; j < 3; j++)
         {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+            *pVtx=static_cast<const u16*>(pList->list)[i-2+j];
+#else
             if (((u16*)&pList->indices)[1] != 0)
             {
                 s32 base = i - 2;
@@ -269,6 +280,7 @@ void NetMeshModelLoader::ReadEdgesFromGeometryPacket(const glModelPacket& packet
 
             // PORT: FIFO indices are big-endian.
             *pVtx = port_be16(ptr);
+#endif
             if (*pVtx > maxVertex)
                 maxVertex = *pVtx;
             pVtx++;

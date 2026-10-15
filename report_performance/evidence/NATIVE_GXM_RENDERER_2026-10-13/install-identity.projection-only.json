@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-13T18:12:43.041037+02:00",
+  "host": "192.168.1.79",
+  "title_id": "SMSVITA01",
+  "phase": "installed_verified",
+  "candidate_self_sha256": "37b48995bfac299abfbf09ae2ff1f061532a55ec842f680100ca25d09f9e3dff",
+  "candidate_pack_sha256": "f23352c248dd4ed8a291af619fbb9eca89ff805c7931804482186ac2aff62326",
+  "candidate_vpk_sha256": "e91ed5b7e1077353b883ba1dd828d602b4a030ae30f2bd38b7098c34b42ce439",
+  "rollback_self": "/Users/robin994/Documents/Code/strikersVita/smstrikers-port/build-vita-gxm-latest/strikers_vita.previous.self",
+  "rollback_pack": "/Users/robin994/Documents/Code/strikersVita/ab-artifacts/native-gxm-direct-20261013/gxm_native_match_meshes_expanded_preview.bin",
+  "ini_changed": false,
+  "launch_requested": false,
+  "ini_sha256": "7db19fd763528598cc11757a2f1b7918b324f8cf21e0f00d2c2e2440d8d1164f",
+  "effective_native_settings": {
+    "gxm_native_match_direct": "1",
+    "gxm_direct_probe": "0",
+    "vita_test_match": "1",
+    "diagnostics": "0",
+    "gxm_shader_profile": "WARM"
+  },
+  "previous_status_sha256": "dc653e73e99471bd0b3ae102af3343a95bec0b576136daacf06c217407c114b3",
+  "kill_response": "Error: cannot kill the app. Is the TITLEID correct?",
+  "installed": {
+    "gxm_native_match_meshes.bin": {
+      "path": "ux0:/data/strikersVita/gxm_native_match_meshes.bin",
+      "sha256": "f23352c248dd4ed8a291af619fbb9eca89ff805c7931804482186ac2aff62326",
+      "bytes": 6508182,
+      "previous_sha256": "f23352c248dd4ed8a291af619fbb9eca89ff805c7931804482186ac2aff62326"
+    },
+    "eboot.bin": {
+      "path": "ux0:/app/SMSVITA01/eboot.bin",
+      "sha256": "37b48995bfac299abfbf09ae2ff1f061532a55ec842f680100ca25d09f9e3dff",
+      "bytes": 3632077,
+      "previous_sha256": "d8778c3441e6856dee4f3f2b390a5f2c5969277f1037eb25ed26e5bdfbe95927"
+    }
+  },
+  "completed_at": "2026-10-13T18:13:07.675711+02:00",
+  "cleanup_errors": []
+}

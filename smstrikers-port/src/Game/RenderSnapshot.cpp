@@ -17,7 +17,7 @@
 #include "Game/Effects/EmissionManager.h"
 #include "Game/Character.h"
 #if defined(PORT_VITA)
-#include <aurora_vita_backend.hpp>
+#include "port/native_jobs.hpp"
 #include <cstdlib>
 #endif
 
@@ -173,8 +173,9 @@ void RenderSnapshot::Free()
  */
 void RenderSnapshot::Grab()
 {
+    mNumNisExtraBalls = 0;
 #if defined(PORT_VITA)
-    if (VitaGameParallelEnabled() && aurora::vita::worker_threads() != 0)
+    if (VitaGameParallelEnabled() && port::jobs::worker_threads() != 0)
     {
         unsigned int serialMask = 0;
         for (int i = 0; i < 10; ++i)
@@ -188,7 +189,7 @@ void RenderSnapshot::Grab()
             }
         }
         CharacterGrabJob job = { this, serialMask };
-        (void)aurora::vita::parallel_for(10, aurora::vita::game_execution_lanes()>=4 ? 2 : 3, GrabCharacters, &job);
+        (void)port::jobs::parallel_for(10, port::jobs::game_execution_lanes()>=4 ? 2 : 3, GrabCharacters, &job);
     }
     else
     {
@@ -390,7 +391,7 @@ void RenderSnapshot::Render(float deltaTime) const
         }
 
 #if defined(PORT_VITA)
-        const bool parallelSkin = VitaGameParallelEnabled() && aurora::vita::worker_threads() != 0;
+        const bool parallelSkin = VitaGameParallelEnabled() && port::jobs::worker_threads() != 0;
         if (parallelSkin)
         {
             // ShaderSkinMesh::Pose mutates only the character-owned pose matrix
@@ -412,7 +413,7 @@ void RenderSnapshot::Render(float deltaTime) const
             }
 
             CharacterSkinPoseJob poseJob = { this, serialMask };
-            (void)aurora::vita::parallel_for(10, aurora::vita::game_execution_lanes()>=4 ? 2 : 3, PoseCharacterSkins, &poseJob);
+            (void)port::jobs::parallel_for(10, port::jobs::game_execution_lanes()>=4 ? 2 : 3, PoseCharacterSkins, &poseJob);
 
             // GX state emission remains strictly ordered on CPU0. Only the
             // matrix/morph preparation above is parallel.
@@ -437,6 +438,8 @@ void RenderSnapshot::Render(float deltaTime) const
         }
 
         mBall.Render();
+        for (unsigned i = 0; i < mNumNisExtraBalls; ++i)
+            mNisExtraBalls[i].Render();
     }
 
     mpNetMeshPositiveX->Render();
@@ -467,11 +470,12 @@ void RenderSnapshot::RenderDebugInfo(const RenderSnapshot& previous, const Rende
  */
 void RenderSnapshot::Blend(const float* blendFactors, const RenderSnapshot& lhs, const RenderSnapshot& rhs)
 {
+    mNumNisExtraBalls = 0;
     mFrameBlendPercent = blendFactors[0];
     mValid = true;
 
 #if defined(PORT_VITA)
-    if (VitaGameParallelEnabled() && aurora::vita::worker_threads() != 0)
+    if (VitaGameParallelEnabled() && port::jobs::worker_threads() != 0)
     {
         // DrawableCharacter::Blend lazily allocates its pose accumulator. Keep
         // those rare first allocations on CPU0 because the legacy allocator was
@@ -489,13 +493,13 @@ void RenderSnapshot::Blend(const float* blendFactors, const RenderSnapshot& lhs,
         }
 
         CharacterBlendJob characterJob = { this, &lhs, &rhs, blendFactors, serialCharacterMask };
-        (void)aurora::vita::parallel_for(10, aurora::vita::game_execution_lanes()>=4 ? 2 : 3, BlendCharacters, &characterJob);
+        (void)port::jobs::parallel_for(10, port::jobs::game_execution_lanes()>=4 ? 2 : 3, BlendCharacters, &characterJob);
 
         // Powerups and explosion fragments are pure value interpolation with
         // disjoint destinations. Batch them into one job so the barrier cost is
         // amortized over 170 objects.
         SnapshotObjectBlendJob objectJob = { this, &lhs, &rhs, blendFactors };
-        (void)aurora::vita::parallel_for(170, 48, BlendSnapshotObjects, &objectJob);
+        (void)port::jobs::parallel_for(170, 48, BlendSnapshotObjects, &objectJob);
     }
     else
     {

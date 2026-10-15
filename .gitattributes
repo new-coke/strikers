@@ -1,0 +1,5 @@
+
+# Preserve imported provider bytes and hash-bound device evidence verbatim.
+# Their original formatting is not application source style.
+smstrikers-port/extern/vitaGL/** -whitespace
+report_performance/evidence/** -whitespace

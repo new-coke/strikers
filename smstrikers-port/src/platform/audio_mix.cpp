@@ -5,7 +5,7 @@
 #include "port/audio_sample_view.hpp"
 #include "port/native_audio.hpp"
 
-#if defined(PORT_USE_AURORA)
+#if defined(PORT_USE_AURORA) || defined(STRIKERS_VITA_NATIVE_RUNTIME)
 
 #include <cmath>
 #include <cstdio>
@@ -874,7 +874,7 @@ extern "C" void PortAudioMixFinishDump(void) {
         std::fprintf(stderr, "[port] audio: wrote %lu frames of dump\n", s_dumpFrames);
 }
 
-#else // !PORT_USE_AURORA
+#else // Neither the desktop Aurora runtime nor the native Vita runtime.
 
 extern "C" void PortAudioMixRender(short* dest) { (void)dest; }
 extern "C" void PortAudioMixFinishDump(void) {}

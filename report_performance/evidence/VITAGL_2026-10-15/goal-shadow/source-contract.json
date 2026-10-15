@@ -1,0 +1,32 @@
+{
+  "reference": "original-longplay-reference.png",
+  "reference_stadium": "The Palace, confirmed by the owner",
+  "projected_character_shadow": {
+    "source_format": "GX_CTF_A8 (0x27)",
+    "wrong_channel": "red/luminance",
+    "correct_channel": "framebuffer alpha coverage",
+    "source_partitions": "4 columns x 3 rows; 160 x 148 logical pixels",
+    "destination": "one 320 x 240 atlas; 80 x 74 coverage per 80 x 80 cell",
+    "retention": "only updated cells overwritten; cached cells and zero padding retained",
+    "target_changes_per_resolve": 2
+  },
+  "static_goal_shadow": {
+    "wrong_uniforms": "shadow/pass0_colour and shadow/pass1_colour were both white RGB, so saturate(texture + 1) erased the shadow",
+    "source_contract": "src/NL/glx/glxSend.cpp normal material 0x07/0x27: K1=GLTS_ShadowLevel/63, K2=1-K1",
+    "source_assets": "The_Palace/pitch_shadow_01 and Mario_Stadium/netshadow_01/_02 are textured geometry, not shadow volumes"
+  },
+  "goal_reflection": {
+    "material_0x31": "clamp(light_ramp*lighting_range) * diffuse + gloss_level * gloss * specular",
+    "material_0x39": "clamp(light_ramp*lighting_range) * diffuse + gloss_level * gloss * specular * self_illum",
+    "correction": "0x39 modulates the reflection with self_illum; it does not add self_illum to the diffuse colour"
+  },
+  "native_bounds": "host-order u16 source indices; finite bounded float/S16 position arrays; no GX FIFO header offset",
+  "simulation": {
+    "physics_tick_seconds": 0.02,
+    "normal_clock": "one monotonic 64-bit elapsed interval per task pass",
+    "frameskip": "adaptive gameplay frame-discard scheduler removed; original asset/loading transition suppression retained",
+    "catchup": "maximum 16 physics steps per render, retain debt, clamp interpolation to completed poses",
+    "discontinuity_seconds": 2,
+    "deterministic_capture": "explicit fixed_dt only; normal and performance validation default fixed_dt=0"
+  }
+}

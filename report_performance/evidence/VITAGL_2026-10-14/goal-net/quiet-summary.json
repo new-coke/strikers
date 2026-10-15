@@ -1,0 +1,30 @@
+{
+  "analysis": {
+    "path": "/Users/robin994/Documents/Code/strikersVita/report_performance/evidence/VITAGL_2026-10-14/goal-net/quiet/goal_semantic_uv_quiet.csv",
+    "sha256": "d02934cf3ee9b65c963ed49bf46dbd934f3088d4c5b3da8b574207560959313c",
+    "metadata": [
+      "# strikers-frame-capture-v1 diagnostics=0 fps_overlay=0",
+      "# play_only=1 counter=live_play",
+      "# actual_cpu_mhz=444 actual_gpu_mhz=222 actual_bus_mhz=222 actual_xbar_mhz=166"
+    ],
+    "samples": 300,
+    "all_gameplay": true,
+    "live_play_only": true,
+    "match_frame_first": 600,
+    "match_frame_last": 899,
+    "elapsed_fps": 28.904624566502893,
+    "mean_ms": 34.59654,
+    "median_ms": 34.521,
+    "p95_ms": 39.122,
+    "p99_ms": 50.854,
+    "deadline_60_pct": 0.0,
+    "deadline_30_pct": 27.666666666666668,
+    "tasks_median_ms": 33.612,
+    "present_median_ms": 0.8295
+  },
+  "runs": 1,
+  "new_crashes": 0,
+  "normal_ini_restored_after_measurement": true,
+  "comparative_claim": false,
+  "limitation": "same seed, fixed timestep and live window; observed gameplay progression differs from eb4f, so this is a standalone sample"
+}

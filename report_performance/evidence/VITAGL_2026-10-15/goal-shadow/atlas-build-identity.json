@@ -1,0 +1,108 @@
+{
+  "date": "2026-10-15",
+  "backend": "VitaGL",
+  "change": "material-specific light clamp, alpha coverage atlas with correct orientation, original projected shadows, native bounds, common realtime task clock without gameplay frame discard",
+  "artifacts_sha256": {
+    "strikers": "cd6af6854e916b0b20c09823c4b6364de3daf069abb7519b66d9fdd10e12fda8",
+    "strikers.map": "5c5f784907d5a2a8c38f22e2250a5cf2e7c853ce8aa1b50e7925db8753a0c41c",
+    "strikers.velf": "02dc99bb2263302542a4b8a6a6755f37bb2960633d1f52cdfa04903ec3a1d6a8",
+    "strikers_vita.self": "5bc498656f97f338c4515b9acb5e63c10e64d45b8adf9cec171cd030a696a4da",
+    "strikers_vita.vpk": "76141c086a48cc7fe7387c3387c0f58dcaba96d2deaf8f0c0b638dd34db13011",
+    "libstrikers_vitagl.a": "e107159de830f005120ce2bdc40d0f0be567d087946d13f0d700bbdefd12e544"
+  },
+  "sources_sha256": {
+    "include/port/scene_specular.hpp": "bf22bcac7f299c92d1f28e3507d29f8984d0db1a1de579012356a6b7a8ba4786",
+    "include/port/scene_shaders.hpp": "a647bb2051e306eef8efe65619e0e247b7c7de1001229edda5be24379ad5c4c9",
+    "include/port/renderer.hpp": "523749ee98c7d6797896e0b3304ef2ec741bfa6bcc6b50e682273fd1ff37d2ae",
+    "src/platform/vitagl_renderer.cpp": "8b0f48417ef675ddeb7c3b25f1584abd3416f309ee5b131ba9553d9ed2d081cd",
+    "src/platform/native_match_runtime.cpp": "c34bdfd38281b89c834d83e83295646f68d8c323788274b8290f5d444d3c4da8",
+    "tests/vitagl_renderer_driver_test.cpp": "5a929772da0cff53be17302739690df978ea4674940e5126ff5ae247b14e4c51",
+    "tests/native_model_vertices_test.cpp": "619c193f17d5cf258561f2b2495a4ed5386d6fa2fd8a0588006d6570c7b009ff",
+    "CMakeLists.txt": "d281da283304ea0f31aac6fd02f20b5b4378f8336f17ed20d648277cca4244f5",
+    "include/port/simulation_clock.hpp": "e9d97fdb32c4aab5e7610adf72980cad6d895920df3d73895bd4d07976ad81ad",
+    "src/NL/nlTask.cpp": "62e8f768abbbe90fcf7821a4f30720d9a758c248845d2074f0dbb8080dbc7fe9",
+    "src/Game/FixedUpdateTask.cpp": "fd553f3ee4c042e4cb6be3c89aca462dbfb079a6c1779cf0e5dd232e2ccef992",
+    "src/Game/Render/RenderShadow.cpp": "dbd2f7701b5adc64220b03a18d6069208356e002224d1e52966e10d45f6e31ef",
+    "src/Game/Drawable/DrawableModel.cpp": "c3875e5c0b853c9fdfaa86ad57bdabd132444f177a50635c931f0024949e3fe5",
+    "src/Game/main.cpp": "7d7d8ec2e47e6d6d0f94347837da589fc6ec7667c4ecb095ee775e2691b1c4a1",
+    "src/platform/vi.c": "51b0982bc5858788f7f23debbc18525dfb491b41971891ab7aeb15d804694f36",
+    "include/port/native_model_vertices.hpp": "dceffc5b4bd42fcb36c0b931d3d984f5817f69abab02fd3cd586e1580135b7af",
+    "tools/vita_vitagl_validation.py": "ffa1946c68263227a92628b0e459c1097e3d82d4725466613c251e4fcc5a3934"
+  },
+  "cmake": {
+    "STRIKERS_AURORA": "OFF",
+    "STRIKERS_VITA_VITAGL": "ON",
+    "STRIKERS_VITA_NATIVE_GXM_RENDERER": "OFF",
+    "STRIKERS_VITA_GX_THREAD": "OFF",
+    "STRIKERS_VITA_PROFILER": "OFF",
+    "STRIKERS_VITA_PROFILE_AUTOSTART": "OFF",
+    "STRIKERS_VITA_FAST_PROFILER_BUILD": "OFF"
+  },
+  "vitagl_flags": [
+    "READBACKS_SPEEDHACK=1",
+    "HAVE_SHADER_CACHE=1",
+    "NO_DEBUG=1",
+    "DRAW_SPEEDHACK=1",
+    "STORE_DEPTH_STENCIL=1"
+  ],
+  "provider_units": 30,
+  "aurora_sdl_gx_graphics_symbols": 0,
+  "glfinish_glflush_calls": 0,
+  "vpk_self_identical": true,
+  "previous_self_sha256": "eb4f47bdedc146836aa8726262b941e6303d0ccc5db015ba5a36ae90f0e6ea79",
+  "host_tests": "VitaGL driver, deferred frontend and sparse-semantic geometry ASan/UBSan passed",
+  "hardware_status": "pending original-material clamp, A8 projected shadow coverage and realtime simulation validation",
+  "hardware_visual": {
+    "frames": [
+      360,
+      1170
+    ],
+    "goal_posts_human_acceptance": "Ora sono corretti",
+    "previous_models_and_particles_accepted": true,
+    "ball_frame1170_pixel_identical_to_eb4": true,
+    "new_crashes": 0
+  },
+  "base_commit": "a175e0a15ce0215d94075c9142162fa5be9d3f82",
+  "uncommitted_source": true,
+  "build_directory": "/Users/robin994/Documents/Code/strikersVita/smstrikers-port/build-vita-gxm-latest",
+  "normal_ini_sha256": "3c013d70b7eb2f8a33c805c3343bbe4534782bf7dd93a81e7aea3f9fe05926e2",
+  "hardware_fps": {
+    "analysis": {
+      "path": "/Users/robin994/Documents/Code/strikersVita/report_performance/evidence/VITAGL_2026-10-14/goal-net/quiet/goal_semantic_uv_quiet.csv",
+      "sha256": "d02934cf3ee9b65c963ed49bf46dbd934f3088d4c5b3da8b574207560959313c",
+      "metadata": [
+        "# strikers-frame-capture-v1 diagnostics=0 fps_overlay=0",
+        "# play_only=1 counter=live_play",
+        "# actual_cpu_mhz=444 actual_gpu_mhz=222 actual_bus_mhz=222 actual_xbar_mhz=166"
+      ],
+      "samples": 300,
+      "all_gameplay": true,
+      "live_play_only": true,
+      "match_frame_first": 600,
+      "match_frame_last": 899,
+      "elapsed_fps": 28.904624566502893,
+      "mean_ms": 34.59654,
+      "median_ms": 34.521,
+      "p95_ms": 39.122,
+      "p99_ms": 50.854,
+      "deadline_60_pct": 0.0,
+      "deadline_30_pct": 27.666666666666668,
+      "tasks_median_ms": 33.612,
+      "present_median_ms": 0.8295
+    },
+    "runs": 1,
+    "new_crashes": 0,
+    "normal_ini_restored_after_measurement": true,
+    "comparative_claim": false,
+    "limitation": "same seed, fixed timestep and live window; observed gameplay progression differs from eb4f, so this is a standalone sample"
+  },
+  "final_delivery": {
+    "evidence": "goal-net/final-device-readback.json",
+    "self_and_ini_byte_readback_verified": true,
+    "normal_ini_sha256": "3c013d70b7eb2f8a33c805c3343bbe4534782bf7dd93a81e7aea3f9fe05926e2",
+    "runtime_progression_verified": true,
+    "last_verified_global_frame": 120,
+    "new_crashes": 0,
+    "left_running_with_normal_config": true
+  }
+}

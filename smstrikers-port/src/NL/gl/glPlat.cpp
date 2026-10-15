@@ -11,6 +11,9 @@
 #include "NL/gl/glAppAttach.h"
 #include "NL/gl/glRenderList.h"
 #include "NL/glx/glxSwap.h"
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "port/native_match_direct.hpp"
+#endif
 #include "NL/glx/glxMemory.h"
 #include "NL/glx/glxTarget.h"
 #include "NL/glx/glxSend.h"
@@ -32,7 +35,7 @@
 #include "port/vita_profiler.h"
 #include <cstdlib>
 #include <cstring>
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
 #include <aurora_vita_backend.hpp>
 #include <aurora_vita_view_draw_capture.h>
 #include "port/profile_output.hpp"
@@ -50,7 +53,7 @@ static port::ProfileOutput& PortRenderProfileOutput()
 // PORT: profiling output that survives no-log builds (stderr goes nowhere on Vita).
 static FILE* PortProfileOut()
 {
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
     return PortRenderProfileOutput().get();
 #endif
     return stderr;
@@ -112,7 +115,7 @@ static s32 glx_FBSize;
 static unsigned long long s_portDebugViewMask = (1ull << GLV_Num) - 1ull;
 static unsigned int s_portDebugViewLastUs[GLV_Num] = {};
 
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
 struct PortRenderViewProfileAccum
 {
     unsigned long long wallUs;
@@ -273,7 +276,7 @@ struct PortDebugRenderViewTimer
     explicit PortDebugRenderViewTimer(unsigned int inView)
         : view(inView), started(0)
     {
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
         profile = PortRenderViewProfileEnabled();
         packetSample = glx_PacketProfileSampledView((eGLView)view);
         if (profile)
@@ -293,7 +296,7 @@ struct PortDebugRenderViewTimer
         // not immediately replace the gameplay cost with an empty-view sample.
         if (us >= 100u)
             s_portDebugViewLastUs[view] = us;
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
         if (profile && view < GLV_Num)
         {
             const aurora::vita::gfx::FrameTelemetry& after = aurora::vita::telemetry().frame();
@@ -358,7 +361,7 @@ struct PortDebugRenderViewTimer
 
     unsigned int view;
     unsigned long long started;
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
     bool profile = false;
     bool packetSample = false;
     aurora::vita::gfx::FrameTelemetry before{};
@@ -439,7 +442,9 @@ void glplatFinish()
  */
 void glplatAbortFrame()
 {
-#if defined(PORT_VITA)
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    port::directmatch::discard_present();
+#elif defined(PORT_VITA)
     // On GameCube an aborted frame never reaches VI.  The Vita outer loop owns
     // the actual buffer swap, so tell it not to present this partially rendered
     // backbuffer.  Without this, FE loading/discard frames alternate with good
@@ -555,6 +560,10 @@ static inline void glx_SendFrame(bool bSend)
  */
 void glplatSendFrame()
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    glx_SendFrame(true);glx_SendViews();glplatFrameAllocNextFrame();glx_NumVirtMisses=0;glx_VirtLatency=0;
+#else
+
     static int profile = -1;
     static unsigned int profileFrames;
     static unsigned int profileWindow = 120;
@@ -602,7 +611,7 @@ void glplatSendFrame()
             for (unsigned int i = 0; i < 5; ++i)
                 std::fprintf(PortProfileOut(), "[render-profile] %-12s mean_us=%llu max_us=%llu total_us=%llu\n",
                              names[i], totals[i] / (1000ull * profileFrames), maxima[i] / 1000ull, totals[i] / 1000ull);
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
             PortRenderProfileOutput().flush_report();
 #endif
             for (unsigned int i = 0; i < 5; ++i)
@@ -612,6 +621,8 @@ void glplatSendFrame()
     }
     glx_NumVirtMisses = 0U;
     glx_VirtLatency = 0;
+
+#endif
 }
 
 // Begin/end GP performance-metric capture. Both were inlined (and erased by
@@ -680,6 +691,24 @@ struct PortProfilerRenderViewScope
  */
 static void glx_SendViews()
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    for(unsigned view=0;view<GLV_Num;++view){
+        const auto v=(eGLView)view;if(!glViewGetEnable(v)||!PortDebugRenderViewEnabled(view))continue;
+        const auto* state=glViewGetState(v);const auto* list=gl_ViewGetRenderList(v);
+        if(list->IsEmpty()&&state->filter==0&&view!=0&&view!=25)continue;
+        bool fog=glx_bFog&&(view==3||view==6||view==7||view==11||(view==2&&glx_bFogSky));
+        const auto color=glx_GetFogColour();
+        port::directmatch::set_fog(glx_FogStart,glx_FogEnd,fog,glx_FogType,{color.r/255.f,color.g/255.f,color.b/255.f,color.a/255.f});
+        port::directmatch::begin_view(v);
+        if(state->bClearDepth)port::directmatch::clear_depth();
+        if(view==17){glx_DOFUpdate(glConstantGet("dof/range").x);glx_DOFGrab();}
+        if(view==9)glx_ColourGrab();if(view==10)glx_OffsetGrab();if(view==15)glx_ShadowGrab();
+        gl_ViewIterate(v,glx_SendFrame_cb);
+        if(view==0)glx_ShadowTextureGrab();
+        if(state->filter==6)glGrabFrameBufferToTexture(glGetTexture("target/grab_texture"),PortLogicalFrameWidth()/2,224,0,0,PortLogicalFrameWidth(),448);
+    }
+#else
+
     GLRenderList* renderList;
     nlVector4 dofRange;
     bool isEmpty;
@@ -692,7 +721,7 @@ static void glx_SendViews()
     GXFogAdjTable fogAdjTable;
 
     glx_SendReset();
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
     // Diagnostic markers are ordered in the same FIFO as the draw commands.
     // 255 denotes work outside a named gameplay view.
     aurora_vita_view_draw_mark(255, glGetCurrentFrame());
@@ -722,7 +751,7 @@ static void glx_SendViews()
         {
             continue;
         }
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
         aurora_vita_view_draw_mark((unsigned int)view, glGetCurrentFrame());
 #endif
 
@@ -865,15 +894,17 @@ static void glx_SendViews()
     }
 
     glx_SendEnd();
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
     aurora_vita_view_draw_mark(255, glGetCurrentFrame());
 #endif
     if (glx_ViewFence < 0)
     {
         glx_StopMetrics();
     }
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
     PortRenderViewProfileFrameEnd();
+#endif
+
 #endif
 }
 
@@ -882,6 +913,10 @@ static void glx_SendViews()
  */
 void glx_Fog(bool enable)
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    port::directmatch::set_fog(glx_FogStart,glx_FogEnd,enable,glx_FogType,{glx_FogColour.r/255.f,glx_FogColour.g/255.f,glx_FogColour.b/255.f,glx_FogColour.a/255.f});
+#else
+
     if (enable)
     {
         s32 r = (s32)(glx_FogIntensity * glx_FogColour.r);
@@ -898,6 +933,8 @@ void glx_Fog(bool enable)
     {
         GXSetFog(GX_FOG_NONE, 0.f, 0.f, 0.f, 0.f, glx_FogColour);
     }
+
+#endif
 }
 
 /**
@@ -941,6 +978,10 @@ static gl_ScreenInfo* s_portScreenInfo;
 
 extern "C" void PortApplyAspectChange(void)
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    glx_rmode.fbWidth=PortLogicalFrameWidth();if(s_portScreenInfo)s_portScreenInfo->ScreenWidth=PortLogicalFrameWidth();
+#else
+
     const unsigned int width = PortLogicalFrameWidth();
 
     glx_rmode.fbWidth = (u16)width;
@@ -955,10 +996,22 @@ extern "C" void PortApplyAspectChange(void)
 
     if (s_portScreenInfo != NULL)
         s_portScreenInfo->ScreenWidth = (int)width;
+
+#endif
 }
 
 bool glplatStartup(gl_ScreenInfo* screenInfo)
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    if(!glxInitMemory()||!port::directmatch::preload())return false;
+    s_portScreenInfo=screenInfo;screenInfo->ScreenWidth=PortLogicalFrameWidth();screenInfo->ScreenHeight=448;
+    for(unsigned i=0;i<4;++i)screenInfo->ColourDepth[i]=8;
+    screenInfo->ZDepth=32;screenInfo->StencilDepth=0;screenInfo->PixelCentre=.5f;screenInfo->FSAA=false;
+    glx_TargetFPS=60;glx_VideoMode=VideoMode_NTSC;glx_bProgressiveMode=true;glx_CopyDispScaleFactor=1;
+    glx_rmode.fbWidth=PortLogicalFrameWidth();glx_rmode.efbHeight=glx_rmode.xfbHeight=448;
+    glxInitSwap(nullptr,nullptr);glxInitTex();glxInitTargets();return true;
+#else
+
     u32 fbSize;
     u32 totalSize;
     void* fbMem;
@@ -1115,6 +1168,8 @@ bool glplatStartup(gl_ScreenInfo* screenInfo)
     glxInitTargets();
     VMSetLogStatsCallback((VMLogStatsCallback)virt_cb);
     return true;
+
+#endif
 }
 
 /**
@@ -1122,7 +1177,13 @@ bool glplatStartup(gl_ScreenInfo* screenInfo)
  */
 void glx_SetPal50Mode()
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    glx_TargetFPS=60;glx_bProgressiveMode=true;
+#else
+
     glx_SwitchVideoMode(&glPal480IntDf, VideoMode_PAL);
+
+#endif
 }
 
 /**
@@ -1130,7 +1191,13 @@ void glx_SetPal50Mode()
  */
 void glx_SetRGB60Mode()
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    glx_TargetFPS=60;glx_bProgressiveMode=true;
+#else
+
     glx_SwitchVideoMode(&GXEurgb60Hz480IntDf, VideoMode_PAL60);
+
+#endif
 }
 
 /**
@@ -1138,8 +1205,14 @@ void glx_SetRGB60Mode()
  */
 void glx_SetInterlacedMode()
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    glx_TargetFPS=60;glx_bProgressiveMode=true;
+#else
+
     glx_SwitchVideoMode(&GXNtsc480IntDf, VideoMode_NTSC);
     glx_bProgressiveMode = 0;
+
+#endif
 }
 
 /**
@@ -1147,8 +1220,14 @@ void glx_SetInterlacedMode()
  */
 void glx_SetProgressiveMode()
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    glx_TargetFPS=60;glx_bProgressiveMode=true;
+#else
+
     glx_SwitchVideoMode(&GXNtsc480Prog, VideoMode_NTSC);
     glx_bProgressiveMode = 1;
+
+#endif
 }
 
 /**
@@ -1165,6 +1244,10 @@ u32 glx_GetResetCode()
  */
 void glx_SwitchVideoMode(_GXRenderModeObj* rmode, eVideoMode mode)
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    glx_VideoMode=mode;glx_TargetFPS=60;glx_rmode.fbWidth=PortLogicalFrameWidth();glx_rmode.efbHeight=glx_rmode.xfbHeight=448;
+#else
+
     glx_VideoMode = mode;
     GXAdjustForOverscan(rmode, &glx_rmode, 0, 0x10);
     if (mode == 1)
@@ -1206,6 +1289,8 @@ void glx_SwitchVideoMode(_GXRenderModeObj* rmode, eVideoMode mode)
     GXSetDispCopySrc(0, 0, glx_rmode.fbWidth, glx_rmode.efbHeight);
     GXSetDispCopyDst(glx_rmode.fbWidth, glx_rmode.xfbHeight);
     GXSetDispCopyYScale(glx_CopyDispScaleFactor);
+
+#endif
 }
 
 /**

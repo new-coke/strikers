@@ -1,0 +1,216 @@
+/*
+ * This file is part of vitaGL
+ * Copyright 2017, 2018, 2019, 2020 Rinnegatamante
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published
+ * by the Free Software Foundation, version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/* 
+ * gpu_utils.h:
+ * Header file for the GPU utilities exposed by gpu_utils.c
+ */
+
+#ifndef _GPU_UTILS_H_
+#define _GPU_UTILS_H_
+
+#include "debug_utils.h"
+#include "mem_utils.h"
+
+uint8_t *vgl_reserve_data_pool(uint32_t size);
+extern uint32_t vgl_framecount; // Current frame number since application started
+
+// Align a value to the requested alignment
+#define VGL_ALIGN(x, a) (((x) + ((a)-1)) & ~((a)-1))
+#define ALIGNBLOCK(x, a) (((x) + ((a)-1)) / a)
+
+// Alloc a generic memblock into sceGxm mapped memory with alignment
+void *gpu_alloc_mapped_aligned(size_t alignment, size_t size, vglMemType type);
+
+// Alloc a generic memblock into sceGxm mapped memory
+static inline __attribute__((always_inline)) void *gpu_alloc_mapped(size_t size, vglMemType type) {
+	return gpu_alloc_mapped_aligned(MEM_ALIGNMENT, size, type);
+}
+
+// Alloc a generic memblock into sceGxm mapped memory and marks it for garbage collection
+static inline __attribute__((always_inline)) void *gpu_alloc_mapped_temp(size_t size) {
+#ifdef DISABLE_CIRCULAR_POOL
+	// Allocating memblock and marking it for garbage collection
+	void *res = gpu_alloc_mapped(size, VGL_MEM_MAIN);
+
+#ifdef LOG_ERRORS
+	if (!res) {
+		vgl_log("%s:%d gpu_alloc_mapped_temp failed with a requested size of 0x%08X\n", __FILE__, __LINE__, size);
+	}
+#endif
+
+	mark_as_dirty(res);
+	return res;
+#else
+	return vgl_reserve_data_pool(size);
+#endif
+}
+
+// Alloc into sceGxm mapped memory a vertex USSE memblock
+void *gpu_vertex_usse_alloc_mapped(size_t size, unsigned int *usse_offset);
+
+// Dealloc from sceGxm mapped memory a vertex USSE memblock
+void gpu_vertex_usse_free_mapped(void *addr);
+
+// Alloc into sceGxm mapped memory a fragment USSE memblock
+void *gpu_fragment_usse_alloc_mapped(size_t size, unsigned int *usse_offset);
+
+// Dealloc from sceGxm mapped memory a fragment USSE memblock
+void gpu_fragment_usse_free_mapped(void *addr);
+
+// Calculate bpp for a requested texture format
+static inline __attribute__((always_inline)) int tex_format_to_bytespp(SceGxmTextureFormat format) {
+	// Calculating bpp for the requested texture format
+	switch (format & 0x9F000000) {
+	case SCE_GXM_TEXTURE_BASE_FORMAT_P4:
+		return 0;
+	case SCE_GXM_TEXTURE_BASE_FORMAT_U8:
+	case SCE_GXM_TEXTURE_BASE_FORMAT_S8:
+	case SCE_GXM_TEXTURE_BASE_FORMAT_P8:
+		return 1;
+	case SCE_GXM_TEXTURE_BASE_FORMAT_U4U4U4U4:
+	case SCE_GXM_TEXTURE_BASE_FORMAT_U8U3U3U2:
+	case SCE_GXM_TEXTURE_BASE_FORMAT_U1U5U5U5:
+	case SCE_GXM_TEXTURE_BASE_FORMAT_U5U6U5:
+	case SCE_GXM_TEXTURE_BASE_FORMAT_S5S5U6:
+	case SCE_GXM_TEXTURE_BASE_FORMAT_U8U8:
+	case SCE_GXM_TEXTURE_BASE_FORMAT_S8S8:
+		return 2;
+	case SCE_GXM_TEXTURE_BASE_FORMAT_U8U8U8:
+	case SCE_GXM_TEXTURE_BASE_FORMAT_S8S8S8:
+		return 3;
+	case SCE_GXM_TEXTURE_BASE_FORMAT_F16F16F16F16:
+		return 8;
+	case SCE_GXM_TEXTURE_BASE_FORMAT_U8U8U8U8:
+	case SCE_GXM_TEXTURE_BASE_FORMAT_S8S8S8S8:
+	case SCE_GXM_TEXTURE_BASE_FORMAT_F32:
+	case SCE_GXM_TEXTURE_BASE_FORMAT_U32:
+	case SCE_GXM_TEXTURE_BASE_FORMAT_S32:
+	default:
+		return 4;
+	}
+}
+
+static inline __attribute__((always_inline)) SceGxmTransferFormat tex_format_to_transfer(SceGxmTextureFormat format) {
+	// Calculating transfer format for the requested texture format
+	switch (format & 0x9F000000) {
+	case SCE_GXM_TEXTURE_BASE_FORMAT_U1U5U5U5:
+		return SCE_GXM_TRANSFER_FORMAT_U1U5U5U5_ABGR;
+	case SCE_GXM_TEXTURE_BASE_FORMAT_U5U6U5:
+		return SCE_GXM_TRANSFER_FORMAT_U5U6U5_BGR;
+	case SCE_GXM_TEXTURE_BASE_FORMAT_U4U4U4U4:
+		return SCE_GXM_TRANSFER_FORMAT_U4U4U4U4_ABGR;
+	case SCE_GXM_TEXTURE_BASE_FORMAT_U8U8U8:
+		return SCE_GXM_TRANSFER_FORMAT_U8U8U8_BGR;
+	case SCE_GXM_TEXTURE_BASE_FORMAT_U8U8:
+		return SCE_GXM_TRANSFER_FORMAT_U8U8_GR;
+	case SCE_GXM_TEXTURE_BASE_FORMAT_U8:
+		return SCE_GXM_TRANSFER_FORMAT_U8_R;
+	case SCE_GXM_TEXTURE_BASE_FORMAT_U8U8U8U8:
+		return SCE_GXM_TRANSFER_FORMAT_U8U8U8U8_ABGR;
+	default:
+		return 0xFFFFFFFF;
+	}
+}
+
+// Alloc a texture
+void gpu_alloc_texture(uint32_t w, uint32_t h, SceGxmTextureFormat format, const void *data, texture *tex, uint8_t src_bpp, uint32_t (*read_cb)(void *), void (*write_cb)(void *, uint32_t), GLboolean fast_store);
+
+// Alloc a cube texture
+void gpu_alloc_cube_texture(uint32_t w, uint32_t h, SceGxmTextureFormat format, SceGxmTransferFormat src_format, const void *data, texture *tex, uint8_t src_bpp, int index);
+
+// Alloc a compresseed texture
+void gpu_alloc_compressed_texture(int32_t level, uint32_t w, uint32_t h, SceGxmTextureFormat format, uint32_t image_size, const void *data, texture *tex, uint8_t src_bpp, GLboolean uncompressed);
+
+// Alloc a compressed cube texture
+void gpu_alloc_compressed_cube_texture(uint32_t w, uint32_t h, SceGxmTextureFormat format, uint32_t image_size, const void *data, texture *tex, uint8_t src_bpp, GLboolean uncompressed, int index);
+
+// Alloc a paletted texture
+void gpu_alloc_paletted_texture(int32_t level, uint32_t w, uint32_t h, SceGxmTextureFormat format, const void *data, texture *tex, uint8_t src_bpp, uint32_t (*read_cb)(void *));
+
+// Alloc a planar texture
+void gpu_alloc_planar_texture(uint32_t w, uint32_t h, SceGxmTextureFormat format, const void *data, texture *tex);
+
+// Dealloc a texture data
+static inline __attribute__((always_inline)) void gpu_free_texture_data(texture *tex) {
+	// Deallocating texture
+	if (tex->data != NULL) {
+#ifdef HAVE_TEX_CACHE
+		if (tex->last_frame == OBJ_CACHED) {
+			char fname[256], hash[24]; \
+			sprintf(hash, "%llX", tex->hash); \
+			sprintf(fname, "%s/%c%c/%s.raw", vgl_file_cache_path, hash[0], hash[1], hash); \
+			sceIoRemove(fname);
+			tex->data = NULL;
+			return;
+		} else {
+			if (tex == vgl_uncached_tex_head) {
+				vgl_uncached_tex_head = tex->next;
+			}
+			if (tex == vgl_uncached_tex_tail) {
+				vgl_uncached_tex_tail = tex->prev;
+			}
+			if (tex->next) {
+				tex->next->prev = tex->prev;
+			}
+			if (tex->prev) {
+				tex->prev->next = tex->next;
+			}
+			tex->next = NULL;
+			tex->prev = NULL;
+		}
+#endif
+#ifndef TEXTURES_SPEEDHACK
+		if (vgl_framecount - tex->last_frame > FRAME_PURGE_FREQ) {
+			vgl_free(tex->data);
+		} else
+#endif
+		{
+			mark_as_dirty(tex->data);
+		}
+		tex->data = NULL;
+	}
+	if (tex->palette_data != NULL) {
+#ifndef TEXTURES_SPEEDHACK
+		if (vgl_framecount - tex->last_frame > FRAME_PURGE_FREQ) {
+			vgl_free(tex->palette_data);
+		} else
+#endif
+		{
+			mark_as_dirty(tex->palette_data);
+		}
+		tex->palette_data = NULL;
+	}
+}
+
+// Dealloc a texture
+static inline __attribute__((always_inline)) void gpu_free_texture(texture *tex) {
+	gpu_free_texture_data(tex);
+	tex->status = TEX_UNUSED;
+}
+
+// Alloc a palette
+void *gpu_alloc_palette(const void *data, uint32_t w, uint32_t bpe);
+
+// Dealloc a palette
+void gpu_free_palette(void *pal);
+
+// Generate mipmaps for a given texture
+void gpu_alloc_mipmaps(int level, texture *tex);
+
+#endif

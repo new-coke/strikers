@@ -491,6 +491,38 @@ int PortTaskClockCurrent(unsigned int* ticks)
 // uncapped.
 unsigned long long PortFramePeriodNs(void) { return frame_period_ns(); }
 
+// The native display queue owns the physical wait. Advance the game/test
+// retrace exactly once for each submitted frame without a second vblank wait.
+void PortNativeRetrace(void)
+{
+    // VitaGL already paces physical presentation. Honour an explicit slower
+    // render cap by waiting before the next input/task pass, without dropping
+    // frames or changing the simulation clock.
+    static u64 nextDeadline;
+    static int explicitLimit = -1;
+    if (explicitLimit < 0)
+    {
+        const char* value = getenv("STRIKERS_FPS_LIMIT");
+        explicitLimit = value != NULL && *value != '\0';
+    }
+    if (explicitLimit || s_limitOverride >= 0.0)
+    {
+        const u64 period = frame_period_ns();
+        const u64 now = now_ns();
+        if (period != 0)
+        {
+            if (nextDeadline == 0) nextDeadline = now;
+            else if (now > nextDeadline + period) nextDeadline = now - period;
+            nextDeadline += period;
+            if (nextDeadline > now) s_deferredDeadline = nextDeadline;
+        }
+        else nextDeadline = 0;
+    }
+    ++s_retrace_count;
+    if(s_pre_cb)s_pre_cb(s_retrace_count);
+    if(s_post_cb)s_post_cb(s_retrace_count);
+}
+
 u32 VIGetRetraceCount(void) { return s_retrace_count; }
 
 VIRetraceCallback VISetPreRetraceCallback(VIRetraceCallback cb)

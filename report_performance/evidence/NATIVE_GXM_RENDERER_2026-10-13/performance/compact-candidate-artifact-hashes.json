@@ -1,0 +1,34 @@
+{
+  "artifacts": {
+    "strikers": {
+      "sha256": "2059f1899fc6b77bbc29696f3f062479b8732ab4420549dd506a9cec914d216e",
+      "bytes": 20025984
+    },
+    "strikers.velf": {
+      "sha256": "924f626a96e8ba18f987ca8d8314e98cfac8bb28bb8e2bf98c43e379b965dec3",
+      "bytes": 22149126
+    },
+    "strikers.map": {
+      "sha256": "be99c1dba0518246ef7997b15fa67869b22ca3b9ddf44834d1052c68cd396709",
+      "bytes": 11373255
+    },
+    "strikers_vita.self": {
+      "sha256": "ccfe94c1521d8e5667a74d8471d0304bcbb4b992e5ff8c7338d20149f2505517",
+      "bytes": 3651578
+    },
+    "strikers_vita.vpk": {
+      "sha256": "0cad668a52be17e8aa37c7d3876c097fd4333eed6e407ab3e65933d87cf27ddf",
+      "bytes": 3632194
+    }
+  },
+  "audit": {
+    "vpk_self_identical": true,
+    "native_renderer_no_aurora_symbols": true,
+    "profiler_options_all_OFF": true
+  },
+  "source": {
+    "smstrikers-port/src/platform/native_match_direct.cpp": "1a4558361ace2307dca7665370a9a4d5dc42397df889555041696f8adb08bc37",
+    "smstrikers-port/src/platform/native_gxm_renderer.cpp": "ebe9a423d09f80125dd4c06bde22ef14a86ffb415846a272a2ab83be93ab851e",
+    "smstrikers-port/include/port/native_model_vertices.hpp": "84802275e090274f6cf229da75394cbd18534b6d0cdd052d0a16a1f0a69f6a5f"
+  }
+}

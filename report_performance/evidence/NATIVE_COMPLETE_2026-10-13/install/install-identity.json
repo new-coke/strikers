@@ -1,0 +1,8 @@
+{
+  "started": "2026-10-13T23:22:43.224630+02:00",
+  "candidate_sha256": "ffb1553548bcc0291ca93a08a1a920ea520fa38b72ab2a6479e51caa948b61ce",
+  "control_sha256": "ccfe94c1521d8e5667a74d8471d0304bcbb4b992e5ff8c7338d20149f2505517",
+  "kill_response": "Killed.",
+  "installed_verified": true,
+  "normal_ini_sha256": "7db19fd763528598cc11757a2f1b7918b324f8cf21e0f00d2c2e2440d8d1164f"
+}

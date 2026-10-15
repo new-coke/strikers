@@ -5,6 +5,9 @@
 #include "NL/nlBind.h"
 #include "NL/nlFunction.h"
 #include "Game/main.h"
+#if defined(PORT_VITA)
+#include "Game/Ball.h"
+#endif
 
 #if defined(PORT_USE_AURORA)
 #if defined(PORT_VITA)
@@ -16,6 +19,7 @@
 #include <psp2/power.h>
 #include <psp2/display.h>
 #include <psp2/gxm.h>
+#include <vector>
 #include <SDL3/SDL_events.h>
 #else
 #include <aurora/aurora.h>
@@ -40,16 +44,43 @@ extern "C" void PortDebugFrame(void);   // PORT: defined in Game.cpp
 #endif
 #include <stdio.h>   // PORT: snprintf
 #endif
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include <psp2/ctrl.h>
+#include <psp2/kernel/processmgr.h>
+#include <psp2/kernel/sysmem.h>
+#include <psp2/kernel/threadmgr.h>
+#include <psp2/power.h>
+#include <psp2/display.h>
+#include <psp2/gxm.h>
+#include <vector>
+#include "port/aspect.h"
+#include "port/framerate.h"
+#include "port/overlay.h"
+#include "port/launch.h"
+#include "port/native_runtime.hpp"
+#include "port/asset_io_capture.hpp"
+extern "C" void PortDebugFrame(void);
+extern "C" void PortInvokePadSamplingCallback(void);
+#endif
 #include "port/benchmark.h"
 #include "port/audio.h"
 #include "port/vita_profiler.h"
 #if defined(PORT_VITA)
+#if !defined(STRIKERS_VITA_NATIVE_RUNTIME)
 #include "port/vita_performance_capture.hpp"
-#include "port/asset_io_capture.hpp"
 #include "port/vita_view_draw_capture.hpp"
+#endif
 #include "port/native_assets.hpp"
 #include "port/native_audio.hpp"
+#if defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
+#include "port/native_match_direct.hpp"
+#endif
+#if defined(STRIKERS_VITA_GXM_DIRECT_PROBE)
+#include "port/native_gxm_direct_probe.hpp"
+#endif
+#if !defined(STRIKERS_VITA_NATIVE_RUNTIME)
 #include <aurora_vita_shader_debug.h>
+#endif
 #endif
 #include "port/determinism.h"
 #include "port/config.h"
@@ -398,10 +429,17 @@ static void VitaBootRelease()
 // display queue wait and disk write are intentionally not part of normal play.
 static void VitaMaybeCaptureFrame()
 {
+#if defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
+    const bool nativeRenderer=port::directmatch::uses_own_renderer();
+#else
+    const bool nativeRenderer=false;
+#endif
     static bool initialized = false;
     static unsigned long target = 0;
     static unsigned long matchTarget = 0;
     static unsigned long playTarget = 0;
+    static float goalSnapshotX = 0;
+    unsigned long selectedPlayFrame = 0;
     static unsigned long heavyFrames = 0;
     if (!initialized)
     {
@@ -413,6 +451,8 @@ static void VitaMaybeCaptureFrame()
         if(matchValue!=NULL)matchTarget=strtoul(matchValue,NULL,10);
         const char* playValue=getenv("STRIKERS_VITA_SNAPSHOT_PLAY_FRAME");
         if(playValue!=NULL)playTarget=strtoul(playValue,NULL,10);
+        const char* goalValue=getenv("STRIKERS_VITA_SNAPSHOT_GOAL_X");
+        if(goalValue!=NULL&&PortDiagnosticsEnabled())goalSnapshotX=fabsf(strtof(goalValue,NULL));
     }
     if (target == 0 && matchTarget == 0 && playTarget == 0)
         return;
@@ -422,6 +462,8 @@ static void VitaMaybeCaptureFrame()
         PortBenchLive live;PortBenchGetLive(&live);
         if(playTarget) {
             if(!live.playActive||live.playFrames<playTarget)return;
+            if(goalSnapshotX>0&&(!g_pBall||fabsf(g_pBall->m_v3Position.x)<goalSnapshotX))return;
+            selectedPlayFrame=live.playFrames;
             shotLabel=playTarget;
         } else {
             if(!live.matchActive||live.frames<matchTarget)return;
@@ -430,18 +472,35 @@ static void VitaMaybeCaptureFrame()
     } else if(!PortDiagnosticsEnabled())return;
 #if defined(STRIKERS_VITA_GX_THREAD)
     // Async-GX builds need an explicit fence before reading renderer state.
-    aurora::vita::wait_for_render_idle();
+#if !defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    if (!nativeRenderer) aurora::vita::wait_for_render_idle();
+#endif
 #endif
     if(!matchTarget && !playTarget) {
-        if (aurora::vita::telemetry().frame().counters.triangles < 10000)return;
+#if !defined(STRIKERS_VITA_NATIVE_RUNTIME)
+        if (!nativeRenderer && aurora::vita::telemetry().frame().counters.triangles < 10000)return;
+#endif
         if (++heavyFrames != target)return;
     }
     // After the single shot, remove every subsequent fence/readback from play.
     target=0;matchTarget=0;playTarget=0;
-    sceGxmDisplayQueueFinish();
     SceDisplayFrameBuf fb = {};
     fb.size = sizeof(fb);
-    const int result = sceDisplayGetFrameBuf(&fb, SCE_DISPLAY_SETBUF_IMMEDIATE);
+    int result=0;
+    std::vector<uint8_t> nativePixels;
+#if defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
+    if (nativeRenderer) {
+        if (!port::directmatch::readback_presented_rgba8(nativePixels)) result=-1;
+        else {
+            fb.base=nativePixels.data();fb.width=960;fb.height=544;fb.pitch=960;
+            fb.pixelformat=SCE_DISPLAY_PIXELFORMAT_A8B8G8R8;
+        }
+    } else
+#endif
+    {
+        sceGxmDisplayQueueFinish();
+        result=sceDisplayGetFrameBuf(&fb,SCE_DISPLAY_SETBUF_IMMEDIATE);
+    }
     if (result < 0 || fb.base == NULL || fb.width == 0 || fb.width > 4096
         || fb.height == 0 || fb.height > 4096 || fb.pitch < fb.width || fb.pixelformat != 0)
     {
@@ -474,8 +533,10 @@ static void VitaMaybeCaptureFrame()
             ok = false;
     }
     free(row);
-    OSReport("[vita] snapshot 3d_frame=%lu aurora_frame=%lu ok=%d path=%s\n",
-             heavyFrames, (unsigned long)aurora::vita::telemetry().frame().frame, ok ? 1 : 0, path);
+    OSReport("[vita] snapshot 3d_frame=%lu renderer=%s ok=%d path=%s\n",
+             heavyFrames,nativeRenderer?"strikers_native_gxm":"aurora",ok ? 1 : 0,path);
+    if(goalSnapshotX>0&&g_pBall)
+        OSReport("[vita] goal snapshot live_frame=%lu ball_x=%.3f threshold=%.3f\n",selectedPlayFrame,g_pBall->m_v3Position.x,goalSnapshotX);
 }
 #endif
 
@@ -575,10 +636,11 @@ static void Initialize()
 #endif
 
     {
-        static const char* const kTeamVars[4][2] = {
+        static const char* const kTeamVars[5][2] = {
             {"STRIKERS_TEAM1", "team1"}, {"STRIKERS_TEAM2", "team2"},
-            {"STRIKERS_SIDEKICK1", "sidekick1"}, {"STRIKERS_SIDEKICK2", "sidekick2"}};
-        for (int i = 0; i < 4; ++i)
+            {"STRIKERS_SIDEKICK1", "sidekick1"}, {"STRIKERS_SIDEKICK2", "sidekick2"},
+            {"STRIKERS_STADIUM", "stadium"}};
+        for (int i = 0; i < 5; ++i)
         {
             const char* v = getenv(kTeamVars[i][0]);
             if (v != NULL && *v != '\0')
@@ -600,6 +662,11 @@ static void Initialize()
     g_bFrameStatsOnScreen = GetConfigBool(Config::Global(), "Frame_Stats_On_Screen", false);
     g_bFrameStatsOnDisk = GetConfigBool(Config::Global(), "Frame_Stats_On_Disk", false);
     g_bRunSimAndRenderInLockStep = GetConfigBool(Config::Global(), "lockstep", false);
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    // Native gameplay always consumes elapsed time through the original
+    // 50 Hz accumulator, independently of the number of presented images.
+    g_bRunSimAndRenderInLockStep = false;
+#endif
 
     // PORT: 64 bytes fits a console Event and its payload; a host Event is larger.
     {
@@ -964,6 +1031,9 @@ static VitaShaderProfile PortVitaReadShaderProfile()
 
 static void PortVitaSampleRendererStats()
 {
+#if defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
+    if (port::directmatch::uses_own_renderer()) return;
+#endif
     if (!PortDiagnosticsEnabled())
         return;
     const aurora::vita::PerformanceSnapshot perf = aurora::vita::completed_performance_snapshot();
@@ -1028,6 +1098,9 @@ static void PortVitaSampleRendererStats()
 
 void PortVitaShaderCacheBeginLoading()
 {
+#if defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
+    if (port::directmatch::uses_own_renderer()) return;
+#endif
     if (s_vitaShaderProfile != VITA_SHADER_SEALED)
         return;
     if (!aurora::vita::runtime_shader_compilation_enabled())
@@ -1036,6 +1109,9 @@ void PortVitaShaderCacheBeginLoading()
 
 void PortVitaShaderCacheEndLoading(bool enteringGameplay)
 {
+#if defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
+    if (port::directmatch::uses_own_renderer()) return;
+#endif
     if (s_vitaShaderProfile == VITA_SHADER_CONTROL)
         return;
 
@@ -1158,7 +1234,7 @@ static void PortFollowDisplayRefresh()
 #endif
 }
 
-static void PortPumpAuroraEvents()
+static void PortPumpHostEvents()
 {
 #if defined(PORT_VITA)
     SDL_PumpEvents();
@@ -1240,11 +1316,33 @@ static void PortPumpAuroraEvents()
 }
 #endif
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+static bool s_portRunning=true;
+static const char* s_portExitReason=nullptr;
+static unsigned long s_portFrame=0;
+static void PortPumpHostEvents() {s_portRunning=port::native_runtime::pump();}
+#endif
+
 int main(int argc, char* argv[])
 {
 #if defined(PORT_VITA)
     // The master INI gate must be resolved before any runtime file is opened.
     (void)PortConfigLoad();
+#if defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    port::directmatch::enable(true);
+#else
+    if(const char* setting=getenv("STRIKERS_GXM_NATIVE_MATCH_DIRECT"))
+        port::directmatch::enable(strcmp(setting,"1")==0);
+#endif
+#endif
+#if defined(STRIKERS_VITA_GXM_DIRECT_PROBE)
+    // Self-contained GXM-only probe. Run before audio, the game engine or any
+    // Aurora GX initialization so zero GX commands are issued in this mode.
+    if (const char* direct = getenv("STRIKERS_GXM_DIRECT_PROBE");
+        direct != nullptr && (strcmp(direct, "1") == 0 || strcmp(direct, "2") == 0))
+        return port::run_native_gxm_direct_probe(unsigned(direct[0] - '0'));
+#endif
 #if !defined(STRIKERS_VITA_NO_LOGS)
     // Keep the Vita diagnostics on the memory card. stderr is deliberately
     // unbuffered so the last useful line survives a crash or forced exit.
@@ -1287,7 +1385,17 @@ int main(int argc, char* argv[])
 #if defined(PORT_VITA)
     // Register only the shaders used by actual gameplay draws when opted in.
     // With the menu disabled this adds no per-draw counters to the GXM path.
+#if !defined(STRIKERS_VITA_NATIVE_RUNTIME)
     aurora_vita_shader_debug_capture(PortVitaDebugMenuEnabled());
+#endif
+#endif
+
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    if(!port::native_runtime::initialize())return 1;
+    port::initialize_native_assets();
+    PortSetWindowAspect(960,544);
+    PortSetDisplayRefresh(60.0,1);
+    glxVitaReserveResourceArena();
 #endif
 
 #if defined(PORT_USE_AURORA)
@@ -1995,6 +2103,28 @@ int main(int argc, char* argv[])
     }
 
     Initialize();
+#if defined(PORT_VITA) && defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
+    // Startup owns the native context and shaders before any game draw.
+    if (!port::directmatch::preload())
+    {
+        OSReport("[vita] native match preload failed; see gxm_native_match_status.csv\n");
+        PortAudioStop();
+        PortNativeAudioShutdown();
+        port::directmatch::shutdown();
+#if !defined(STRIKERS_VITA_NATIVE_RUNTIME)
+        aurora::vita::shutdown();
+#endif
+        port::shutdown_native_assets();
+        VitaBootRelease();
+        return 1;
+    }
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    // Direct-to-match startup has no previously displayed front-end frame.
+    // Keep the game's localized loading bitmap on screen while invalid
+    // resource passes and the first complete scene are being prepared.
+    DisplayLoadingMessageFast();
+#endif
+#endif
     PortProfilerStart();
 
     fopen("flushfile.txt", "r");
@@ -2011,7 +2141,7 @@ int main(int argc, char* argv[])
         InstallCallStackDumper();
     }
 
-#if defined(PORT_USE_AURORA)
+#if defined(PORT_USE_AURORA) || defined(STRIKERS_VITA_NATIVE_RUNTIME)
 #if !defined(PORT_VITA)
     PortShaderStageBegin();   // PORT: logs the pipeline queue the boot memory card screen waits for
 #endif
@@ -2020,13 +2150,26 @@ int main(int argc, char* argv[])
     {
         // PORT: the deferred limiter sleep goes before the event pump so the frame reads input after it.
         PortLimiterFlush();
-        PortPumpAuroraEvents();
+        PortPumpHostEvents();
         PortDebugFrame();
 #if defined(PORT_VITA)
         PortBenchFrameBegin();
         PortProfilerFrameMark();
-        if (!aurora::vita::begin_frame())
-            continue;              // minimised or surface lost; nothing to draw
+        bool ownNativeRenderer = false;
+#if defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
+        ownNativeRenderer = port::directmatch::uses_own_renderer();
+#endif
+#if !defined(STRIKERS_VITA_NATIVE_RUNTIME)
+        if (!ownNativeRenderer && !aurora::vita::begin_frame())
+            continue;
+#endif              // minimised or surface lost; nothing to draw
+#if defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
+        if (!port::directmatch::begin_frame())
+        {
+            s_portExitReason = "native GXM begin_frame failed";
+            break;
+        }
+#endif
 #else
         // PORT: ReturnToFE leaves the pause flag set, so it is a pause only while a match exists.
         PortDiscordUpdate(FrontEnd::m_bInPauseMenuState && g_pGame != NULL ? 1 : 0);
@@ -2070,15 +2213,25 @@ int main(int argc, char* argv[])
         // PORT: the audio clock. MusyX runs only inside this call; see include/port/audio.h.
         PortAudioUpdate();
 #if defined(PORT_VITA)
-        aurora::vita::end_frame();
+#if defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
+        if (!port::directmatch::end_frame())
+        {
+            s_portExitReason = "native GXM end_frame failed";
+            break;
+        }
+#endif
+#if !defined(STRIKERS_VITA_NATIVE_RUNTIME)
+        if (!ownNativeRenderer) aurora::vita::end_frame();
+#endif
         if (g_vitaBootUi.active)
         {
-            // The first Aurora present has now replaced the temporary CPU
+            // The first renderer present has now replaced the temporary CPU
             // framebuffer. Finish that one queue entry before releasing CDRAM.
             sceGxmDisplayQueueFinish();
             VitaBootRelease();
         }
-        if (PortDiagnosticsEnabled())
+#if !defined(STRIKERS_VITA_NATIVE_RUNTIME)
+        if (!ownNativeRenderer && PortDiagnosticsEnabled())
         {
             const aurora::vita::PerformanceSnapshot perf = aurora::vita::completed_performance_snapshot();
             PortProfilerRendererSample sample = {};
@@ -2097,17 +2250,25 @@ int main(int argc, char* argv[])
             sample.nativeTimingsSampled = perf.nativeTimingsSampled ? 1u : 0u;
             PortProfilerRecordRendererSample(&sample);
         }
-        port::capture_completed_performance(g_pGame != NULL && g_pGame->IsGameplayOrOvertime());
-        port::capture_asset_io(g_pGame != NULL && g_pGame->IsGameplayOrOvertime());
-        port::capture_view_draw(g_pGame != NULL && g_pGame->IsGameplayOrOvertime());
+        if (!ownNativeRenderer)
+        {
+            // Aurora snapshots/readback are invalid after graphics handoff.
+            // The native renderer reports its own coverage and error status.
+            port::capture_completed_performance(g_pGame != NULL && g_pGame->IsGameplayOrOvertime());
+            port::capture_view_draw(g_pGame != NULL && g_pGame->IsGameplayOrOvertime());
+        }
+#endif
         VitaMaybeCaptureFrame();
+        port::capture_asset_io(g_pGame != NULL && g_pGame->IsGameplayOrOvertime());
 #else
         aurora_end_frame();
 #endif
         s_portFrame++;
 #if defined(PORT_VITA)
+        #if !defined(STRIKERS_VITA_NATIVE_RUNTIME)
         if (PortDiagnosticsEnabled() && (s_portFrame % 60u) == 0u)
             PortVitaSampleRendererStats();
+#endif
 #endif
         PortBenchFrameEnd();
     }
@@ -2119,7 +2280,14 @@ int main(int argc, char* argv[])
     PortAudioStop();
     PortNativeAudioShutdown();
     PortProfilerStop();
+#if defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
+    port::directmatch::shutdown();
+#endif
+#if !defined(STRIKERS_VITA_NATIVE_RUNTIME)
     aurora::vita::shutdown();
+#else
+    port::native_runtime::shutdown();
+#endif
     port::shutdown_native_assets();
     VitaBootRelease();
     sceKernelExitProcess(0);

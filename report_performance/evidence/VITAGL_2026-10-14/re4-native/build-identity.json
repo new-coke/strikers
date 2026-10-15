@@ -1,0 +1,51 @@
+{
+  "artifacts_sha256": {
+    "strikers": "59c0e987f74bf9ff46cdccb6112db4e40c4eea404a660cc5c34e2f745bb36fe9",
+    "strikers.map": "c715f1375f275635dfed13ce427a92ed11fdfb766fe8a7760f2061cb2b9379bf",
+    "strikers.velf": "dc75c81fbd9b40ac43cc367174438199511016e3170b772bacc53ae805c5a8a7",
+    "strikers_vita.self": "cb840b99f3c949e161d0b930062ca89256802b1e33e3426b0738c3a30bc75487",
+    "strikers_vita.vpk": "c474025d87be9fd366f6de206bebf7a1378e95ed15f6572acbf979c529828d45",
+    "libstrikers_vitagl.a": "b7610afb5e994c30c750dd29113662693875f7a31f37056a5ebe31d2325f495f"
+  },
+  "sources_sha256": {
+    "src/platform/deferred_renderer.cpp": "0e57a93c6deb122c03b5e6a67463172634cffd37662e791cba9da7c4105223a1",
+    "src/platform/vitagl_renderer.cpp": "7b1e1166b770b6faf399fadacb6440fbc1db0545b6960927940b547f97c7d3aa",
+    "src/platform/audio_mix.cpp": "4f55e066bb2df4aac4c8f6b4caff809256064ba93b2b1e719b43a4b53186f2f0",
+    "src/platform/audio_out_native.cpp": "b276ef70e0ab733c4e9f05f48de3af8ef334b46d2f989fcf04ae0c0916e6d19d",
+    "src/platform/native_runtime.cpp": "833f73127ca214688d085b86aeecab7764779d054cb998fe55651bf2f174d003",
+    "src/platform/native_jobs.cpp": "5eda682d46657354ff6bc70adf2c74c19e0c45afc95613d1aab6ac7dc6a6a200",
+    "include/Game/Drawable/DrawableBall.h": "6457bb92db8b3a484f5e7912d4aec87e2a8a44a8f683b09693d920b8f9a499b8",
+    "src/Game/Drawable/DrawableBall.cpp": "4a6982a06642b1df497185dd62423afa98b534afade1782920f2797db31937cb",
+    "src/Game/Ball.cpp": "64ca3d09f877c54b245bed9d1181fa4329dd937dd8ef4532cdab2716f53e7ef6",
+    "extern/re4-renderer/gx_command_buffer.h": "e639b754e40c1400b54ed955d66b6d3d560647568d050bf502d988a81c3f12d5"
+  },
+  "cmake": {
+    "STRIKERS_AURORA": "OFF",
+    "STRIKERS_VITA_VITAGL": "ON",
+    "STRIKERS_VITA_GX_THREAD": "OFF",
+    "STRIKERS_VITA_NATIVE_GXM_RENDERER": "OFF",
+    "STRIKERS_VITA_PROFILER": "OFF",
+    "STRIKERS_VITA_PROFILE_AUTOSTART": "OFF",
+    "STRIKERS_VITA_FAST_PROFILER_BUILD": "OFF"
+  },
+  "vitagl_flags": [
+    "READBACKS_SPEEDHACK=1",
+    "HAVE_SHADER_CACHE=1",
+    "NO_DEBUG=1",
+    "DRAW_SPEEDHACK=1"
+  ],
+  "provider_units": 30,
+  "re4": {
+    "repository": "https://github.com/Rinnegatamante/re4",
+    "commit": "24c03d65b2a5896ef6d56dab1d8e9110ae19e0ae",
+    "original": "platform/renderer/gx_command_buffer.h",
+    "sha256": "e639b754e40c1400b54ed955d66b6d3d560647568d050bf502d988a81c3f12d5"
+  },
+  "native_audio_software_mixer_linked": true,
+  "host_checks": [
+    "deferred frontend ASan/UBSan",
+    "native audio ASan/UBSan",
+    "native jobs ASan/UBSan"
+  ],
+  "hardware_verified": false
+}

@@ -1,0 +1,38 @@
+{
+  "host": "192.168.1.79",
+  "action": "run",
+  "time_unix": 1791920467.3881862,
+  "label": "native_dynamic_visual",
+  "kill": "Killed.",
+  "config": {
+    "gxm_disable": "0x8",
+    "gxm_shader_profile": "WARM",
+    "diagnostics": "1",
+    "fps_overlay": "0",
+    "vita_test_match": "1",
+    "vita_frameskip": "0",
+    "seed": "0x53545249",
+    "fixed_dt": "16.666666667",
+    "frame_capture": "ux0:data/strikersVita/native_dynamic_visual.csv",
+    "frame_capture_frames": "240",
+    "frame_capture_match_only": "1",
+    "frame_capture_play_only": "1",
+    "frame_capture_skip": "0",
+    "vita_snapshot_match_frame": "0",
+    "vita_snapshot_play_frame": "120",
+    "log": "ux0:data/strikersVita/native_dynamic_visual.log",
+    "gxm_native_visual_debug": "1"
+  },
+  "ini": {
+    "path": "ux0:/data/strikersVita/strikers.ini",
+    "sha256": "edc246d44fa1473a55c6e52263a54e1e5cfc8167bd55007128dbe9c656179d4b",
+    "previous_sha256": "7db19fd763528598cc11757a2f1b7918b324f8cf21e0f00d2c2e2440d8d1164f",
+    "remote_backup": null,
+    "local_backup": "/Users/robin994/Documents/Code/strikersVita/report_performance/evidence/NATIVE_GXM_RENDERER_2026-10-13/native-dynamic-20261013/visual/strikers.ini.before"
+  },
+  "eboot_sha256": "a866c5b4351e8b5bf95b4351f5508a4d542d108ddd7f92a23f734f6479bcc232",
+  "launch_confirm": "startup-log",
+  "launch": "Launched.",
+  "started_before_input": true,
+  "startup_log_confirmed": true
+}

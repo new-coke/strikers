@@ -1,0 +1,82 @@
+=== THREADS ===
+    SMSVITA01
+        ID: 0x40010003
+        Stop reason: 0x30004 (Data abort exception)
+        Status: 0x1 (Running)
+        PC: 0x812df9f0 (strikers@1 + 0x2639f0)
+    SceCommonDialogWorker
+        ID: 0x400100c3
+        Stop reason: 0x0 (No reason)
+        Status: 0x8 (Waiting)
+        PC: 0xe00150b4 (SceLibKernel@1 + 0x6304)
+    pthread
+        ID: 0x40010121
+        Stop reason: 0x0 (No reason)
+        Status: 0x2 ()
+        PC: 0xe00150b4 (SceLibKernel@1 + 0x6304)
+    vitaGL Garbage Collector
+        ID: 0x40010153
+        Stop reason: 0x0 (No reason)
+        Status: 0x8 (Waiting)
+        PC: 0xe00150b4 (SceLibKernel@1 + 0x6304)
+    SceGxmDisplayQueue
+        ID: 0x40010161
+        Stop reason: 0x0 (No reason)
+        Status: 0x8 (Waiting)
+        PC: 0xe00154c4 (SceLibKernel@1 + 0x6714)
+    pthread
+        ID: 0x400101cd
+        Stop reason: 0x0 (No reason)
+        Status: 0x2 ()
+        PC: 0x81338588 (strikers@1 + 0x2bc588)
+
+=== THREAD "SMSVITA01" <0x40010003> CRASHED (Data abort exception) ===
+
+DISASSEMBLY AROUND PC: 0x812df9f0 (ARM):
+[90m[0m
+[90m812639e0 <glBlitNamedFramebuffer+0x234>:[0m
+[90m812639e0:	ee07 3a90 	vmov	s15, r3[0m
+[90m812639e4:	eef8 7ae7 	vcvt.f32.s32	s15, s15[0m
+[90m812639e8:	ee83 6a27 	vdiv.f32	s12, s6, s15[0m
+[90m812639ec:	eec7 6a27 	vdiv.f32	s13, s14, s15[0m
+[91m!!! 		edc2 5a0d 	vstr	s11, [r2, #52]	@ 0x34 !!![0m
+[90m812639f4:	ed82 5a0f 	vstr	s10, [r2, #60]	@ 0x3c[0m
+[90m812639f8:	ed82 5a09 	vstr	s10, [r2, #36]	@ 0x24[0m
+[90m812639fc:	edc2 5a0b 	vstr	s11, [r2, #44]	@ 0x2c[0m
+[90m[0m
+
+DISASSEMBLY AROUND LR: 0x812df8e2 (Thumb):
+[90m[0m
+[90m812638d2 <glBlitNamedFramebuffer+0x126>:[0m
+[90m812638d2:	e9cd 6601 	strd	r6, r6, [sp, #4][0m
+[90m812638d6:	6828      	ldr	r0, [r5, #0][0m
+[90m812638d8:	f059 e862 	blx	812bc9a0 <sceGxmSetBackStencilFunc>[0m
+[90m812638dc:	2040      	movs	r0, #64	@ 0x40[0m
+[90m812638de:	f026 fc0b 	bl	8128a0f8 <vgl_reserve_data_pool>[0m
+[91m!!! 		f24f 2331 	movw	r3, #62001	@ 0xf231 !!![0m
+[90m812638e6:	4602      	mov	r2, r0[0m
+[90m812638e8:	f2c8 1334 	movt	r3, #33076	@ 0x8134[0m
+[90m812638ec:	781b      	ldrb	r3, [r3, #0][0m
+[90m812638ee:	2b00      	cmp	r3, #0[0m
+[90m812638f0:	Address 0x812638f0 is out of bounds.[0m
+[90m[0m
+[90m[0m
+REGISTERS:
+    R0: 0x81b62758
+    R1: 0x0
+    R2: 0x710a82aa
+    R3: 0x3c0
+    R4: 0x8169d838
+    R5: 0x816a663c
+    R6: 0xff
+    R7: 0x8169f4ac
+    R8: 0x816e90e8
+    R9: 0x8169f444
+    R10: 0x816e8520
+    R11: 0x220
+    R12: 0x713c7040
+    SP: 0x818c04e8
+    PC: 0x812df9f0 (strikers@1 + 0x2639f0)
+    LR: 0x812df8e3 (strikers@1 + 0x2638e3)
+
+STACK CONTENTS AROUND SP:

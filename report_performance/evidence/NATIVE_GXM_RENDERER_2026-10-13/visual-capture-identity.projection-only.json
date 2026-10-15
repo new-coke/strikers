@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-13T18:14:00.414052+02:00",
+  "self_sha256": "37b48995bfac299abfbf09ae2ff1f061532a55ec842f680100ca25d09f9e3dff",
+  "normal_ini_sha256": "7db19fd763528598cc11757a2f1b7918b324f8cf21e0f00d2c2e2440d8d1164f",
+  "capture_ini_sha256": "4d07fd88a5a8bc2e0d05fe18abf731be5f1ecd078ee9bc0ac323f54357d1deb1",
+  "snapshot": "debug_frame_play_120.ppm",
+  "fps_measurement": false,
+  "kill_response": "Error: cannot kill the app. Is the TITLEID correct?",
+  "launch_response": "Launched.",
+  "snapshot_sha256": "b750a819405416da33fcbd8c9feb9d7bc64e2521a2de76edaae4aff3a563b834",
+  "runtime_status": "# native_match_v3 gx_fallback=0 live_game=1 gpu_material=vertex_color_preview texture_samples=0 skinning=not_supported\n# renderer=strikers_native_gxm gxm_owner=aurora_fifo native_error=0x00000000\n# error=none mesh_manifest=1800 native_pipeline=1\n# first_invalid_mvp frame=349 view=11 bits=7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 7fc00000 \nframe,callbacks,native_draws_queued,native_draws_accepted,native_draws_rejected,unsupported_view,unsupported_material,unsupported_raster,unsupported_geometry,missing_asset,upload_errors,queue_errors,present_errors,gx_suppressed_bytes,gx_suppressed_callbacks,skinned_rejected,user_effect_rejected,color_preview_candidates,color_preview_draws,preview_textured,preview_lit,plain_unlit_draws,invalid_matrix_identity,source_registrations,source_releases,source_hits,source_unbound,source_dirty_rehash,source_invalid,source_misses,source_unsafe,invalid_mvp\n1680,623047,118184,118184,0,38513,0,76695,12813,0,0,0,0,958470,3184,42555,84992,356120,118184,118184,102737,0,0,669,1,118648,33458,184,0,191201,112,464\n",
+  "ini_restored_verified": true,
+  "pixel_statistics": {
+    "width": 960,
+    "height": 544,
+    "rgb_black_pixels": 511684,
+    "pixels": 522240,
+    "black_fraction": 0.9797870710784313,
+    "distinct_rgb_colors": 13
+  },
+  "visual_correctness": false,
+  "finding": "Presented color surface is predominantly black; ball and edge geometry only. Projection correction alone did not produce a useful scene."
+}

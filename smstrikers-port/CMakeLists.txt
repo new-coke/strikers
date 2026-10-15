@@ -54,6 +54,18 @@ option(STRIKERS_VITA_AUDIO_THREAD "Run the Vita MusyX software mixer on a dedica
 option(STRIKERS_VITA_GX_THREAD "Run the Vita GX FIFO frontend on a dedicated consumer thread" OFF)
 option(STRIKERS_VITA_GXM_LEAN_RENDER
     "Compile out GLX native-model/replay experiments and per-packet probes from the Vita GXM game hot path" OFF)
+option(STRIKERS_VITA_GXM_DIRECT_PROBE
+    "Compile an isolated native GXM-only draw probe (requires gxm_direct_probe=1 in the INI to run)" OFF)
+option(STRIKERS_VITA_NATIVE_MATCH_DIRECT
+    "Use typed engine geometry/material submission without a GX FIFO" OFF)
+option(STRIKERS_VITA_VITAGL "Use the Strikers VitaGL graphics backend" OFF)
+option(STRIKERS_VITA_NATIVE_GXM_RENDERER
+    "Use the Strikers-owned GXM renderer in the strict native-match bridge" OFF)
+if(STRIKERS_VITA_NATIVE_GXM_RENDERER AND
+   (NOT STRIKERS_VITA OR NOT STRIKERS_VITA_NATIVE_MATCH_DIRECT ))
+    message(FATAL_ERROR
+        "STRIKERS_VITA_NATIVE_GXM_RENDERER requires Vita and NATIVE_MATCH_DIRECT")
+endif()
 option(STRIKERS_VITA_GXM_DIRECT_STREAM_WRITE
     "Write packed Vita GXM vertex/index streams directly into GPU-visible ring pages" OFF)
 option(STRIKERS_VITA_GXM_DIRECT_DRAW_SUBMIT
@@ -73,6 +85,17 @@ set(STRIKERS_VITA_STATIC_GEOMETRY_MB "8" CACHE STRING
 # Aurora is a drop-in replacement for the Dolphin SDK: it defines the real GX/VI/PAD/DVD/CARD/SI
 # symbols over WebGPU and SDL3.
 option(STRIKERS_AURORA "Build against Aurora (real GX/PAD/CARD/DVD)" ON)
+# Vita is a native application. Aurora is a desktop dependency only.
+if(STRIKERS_VITA)
+    set(STRIKERS_AURORA OFF CACHE BOOL "Build against Aurora" FORCE)
+    set(STRIKERS_VITA_NATIVE_MATCH_DIRECT ON CACHE BOOL "Native game producer" FORCE)
+    set(STRIKERS_VITA_NATIVE_GXM_RENDERER OFF CACHE BOOL "GXM backend removed" FORCE)
+    set(STRIKERS_VITA_VITAGL ON CACHE BOOL "VitaGL renderer" FORCE)
+    set(STRIKERS_VITA_GX_THREAD OFF CACHE BOOL "GX consumer removed" FORCE)
+    set(STRIKERS_VITA_GXM_LEAN_RENDER ON CACHE BOOL "Legacy experiments removed" FORCE)
+    list(APPEND PORT_DEFINES STRIKERS_VITA_NATIVE_RUNTIME=1)
+endif()
+
 
 # include/msl links only the Metrowerks headers whose names do not collide with host ones, so
 # <stdio.h>, <math.h> and the rest resolve to the host.
@@ -88,13 +111,7 @@ if(STRIKERS_AURORA AND NOT STRIKERS_VITA)
         "${CMAKE_CURRENT_SOURCE_DIR}/extern/aurora/include")
 endif()
 if(STRIKERS_VITA)
-    list(PREPEND PORT_INCLUDES
-        "${CMAKE_CURRENT_SOURCE_DIR}/include/port/aurora-overlay"
-        "${CMAKE_CURRENT_SOURCE_DIR}/extern/aurora-vita/include")
-    list(APPEND PORT_INCLUDES
-        "${CMAKE_CURRENT_SOURCE_DIR}/extern/aurora-vita/platforms/vita"
-        "${CMAKE_CURRENT_SOURCE_DIR}/extern/aurora-vita/platforms/vita/gfx"
-        "${CMAKE_CURRENT_SOURCE_DIR}/extern/aurora-vita/platforms/vita/integration")
+    list(PREPEND PORT_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/include/port/native-sdk")
 endif()
 if(STRIKERS_VITA AND STRIKERS_VITA_PROFILER)
     if(NOT STRIKERS_VITADEBUGGER_ROOT)
@@ -120,6 +137,9 @@ endif()
 
 set(PORT_DEFINES
     TARGET_PC=1
+    $<$<BOOL:${STRIKERS_VITA}>:STRIKERS_VITA_NATIVE_RUNTIME=1>
+    $<$<BOOL:${STRIKERS_VITA}>:STRIKERS_VITA_NATIVE_MATCH_DIRECT=1>
+    $<$<BOOL:${STRIKERS_VITA}>:STRIKERS_VITA_VITAGL=1>
     PORT_BUILD_TYPE="${PORT_BUILD_TYPE_STR}"
     # MSVC's <math.h> defines M_PI and friends only when this is set; every other libc defines them
     # unconditionally, so nlMath.cpp's `M_PI / 2.0f` compiled everywhere except Windows.
@@ -152,9 +172,34 @@ if(STRIKERS_VITA AND STRIKERS_VITA_GX_THREAD)
     list(APPEND PORT_DEFINES STRIKERS_VITA_GX_THREAD=1)
 endif()
 if(STRIKERS_VITA AND STRIKERS_VITA_GXM_LEAN_RENDER)
-    # Aurora's GXM owner/FIFO and its async reference-count fix are unchanged.
-    # OFF restores the experimental GLX producer for explicit R1-R3 research.
+    # Compile out the retired probes and native-GXM replay experiments.
     list(APPEND PORT_DEFINES STRIKERS_VITA_GXM_LEAN_RENDER=1)
+endif()
+if(STRIKERS_VITA AND STRIKERS_VITA_GXM_DIRECT_PROBE)
+    list(APPEND PORT_DEFINES STRIKERS_VITA_GXM_DIRECT_PROBE=1)
+endif()
+if(STRIKERS_VITA AND STRIKERS_VITA_NATIVE_MATCH_DIRECT)
+    # Apply this opt-in only to the native source registration/draw points. A
+    # global target definition would force recompilation of all ~500 gameplay
+    # translation units and broaden the experimental ABI for no benefit.
+    set_property(SOURCE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/NL/glx/glxSend.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/NL/glx/glxSwap.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/NL/glx/glxDisplayList.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/NL/glx/glxMemory.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/Game/GL/gluSkinMesh.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/native_match_direct.cpp"
+        APPEND PROPERTY COMPILE_DEFINITIONS
+        STRIKERS_VITA_NATIVE_MATCH_DIRECT=1)
+endif()
+if(STRIKERS_VITA_NATIVE_GXM_RENDERER)
+    set_property(SOURCE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/native_match_direct.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/native_gxm_renderer.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/native_texture_record.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/native_match_runtime.cpp"
+        APPEND PROPERTY COMPILE_DEFINITIONS
+        STRIKERS_VITA_NATIVE_GXM_RENDERER=1)
 endif()
 if(STRIKERS_VITA AND STRIKERS_VITA_PROFILER)
     list(APPEND PORT_DEFINES STRIKERS_VITA_PROFILER=1)
@@ -190,6 +235,12 @@ if(STRIKERS_MAIN_COMPILE_DEFINITIONS)
     # so A/B performance builds do not invalidate every game object file.
     set_source_files_properties(src/Game/main.cpp PROPERTIES
         COMPILE_DEFINITIONS "${STRIKERS_MAIN_COMPILE_DEFINITIONS}")
+endif()
+if(STRIKERS_VITA AND STRIKERS_VITA_NATIVE_MATCH_DIRECT)
+    # Append AFTER the existing main.cpp defaults, otherwise the PROPERTIES
+    # assignment above overwrites the native-match entrypoint gate.
+    set_property(SOURCE src/Game/main.cpp APPEND PROPERTY COMPILE_DEFINITIONS
+        STRIKERS_VITA_NATIVE_MATCH_DIRECT=1)
 endif()
 if(MSVC AND STRIKERS_AURORA)
     # Aurora's Windows Dawn package contains only a Release archive, so its C++ ABI is /MT with
@@ -367,6 +418,14 @@ if(STRIKERS_AURORA AND STRIKERS_VITA)
     set(AURORA_VITA_NATIVE_GX_TEXTURES ${STRIKERS_VITA_NATIVE_GX_TEXTURES} CACHE BOOL "" FORCE)
     include("${AURORA_VITA_ROOT}/cmake/aurora_vita_embed.cmake")
     aurora_add_vita_backend()
+    if(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
+        # Only the FIFO source needs the strict native gate. Defining it on the
+        # entire backend recompiles every GXM shader/allocator TU needlessly.
+        # Keep cached stable GXM objects bit-for-bit unchanged.
+        set_property(SOURCE "${AURORA_VITA_ROOT}/lib/gx/fifo.cpp"
+            APPEND PROPERTY COMPILE_DEFINITIONS
+            STRIKERS_VITA_NATIVE_MATCH_DIRECT=1)
+    endif()
     if(STRIKERS_VITA_FAST_PROFILER_BUILD)
         # Aurora's target-local -O3 is intentionally overridden only for diagnostic
         # builds.  This keeps the normal Vita release profile unchanged while making
@@ -482,6 +541,11 @@ list(APPEND ODE_SOURCES ${ODE_EXTRA_SOURCES})
 file(GLOB_RECURSE PLATFORM_SOURCES CONFIGURE_DEPENDS
      "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/*.cpp"
      "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/*.c")
+if(STRIKERS_VITA)
+    list(REMOVE_ITEM PLATFORM_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/native_gxm_renderer.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/aurora_compat.c")
+endif()
 
 # Camera and world chunks are decoded immutably by their runtime loaders. The
 # endian C files below are now malformed-buffer validators used only by tests.
@@ -544,6 +608,11 @@ endif()
 
 if(STRIKERS_VITA)
     list(REMOVE_ITEM PLATFORM_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/native_match_direct.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/native_gxm_direct_scene.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/native_gxm_direct_probe.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/overlay_vita.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/audio_out.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/launch.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/morphwatch.c"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/crashlog.c")
@@ -937,10 +1006,41 @@ if(STRIKERS_AURORA AND NOT STRIKERS_VITA)
 endif()
 
 if(STRIKERS_VITA)
-    find_package(SDL3 CONFIG REQUIRED)
+    # Build the checked-in provider, with one renderer owner and no background splash.
+    file(GLOB _strikers_vitagl_sources CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/extern/vitaGL/source/*.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/extern/vitaGL/source/utils/*.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/extern/vitaGL/source/utils/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/extern/vitaGL/source/utils/preprocessor/*.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/extern/vitaGL/source/utils/preprocessor/*.cpp")
+    add_library(strikers_vitagl STATIC ${_strikers_vitagl_sources})
+    target_include_directories(strikers_platform BEFORE PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/extern/vitaGL/source")
+    target_include_directories(strikers_vitagl PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/extern/vitaGL/source")
+    target_compile_definitions(strikers_vitagl PRIVATE SKIP_SPLASHSCREEN=1 HAVE_SCRATCH_MEMORY=1
+        VGL_GIT_HASH="strikers-source-snapshot" HAVE_SHADER_CACHE=1
+        READBACKS_SPEEDHACK=1 DRAW_SPEEDHACK=1 NO_DEBUG=1 SKIP_ERROR_HANDLING=1
+        # Main-scene depth must survive the intermediate framebuffer copies
+        # before particles. Keep the requested speed flags enabled.
+        STORE_DEPTH_STENCIL=1)
+    target_compile_options(strikers_vitagl PRIVATE -O3 -ffast-math -fshort-wchar -fno-short-enums -mtune=cortex-a9 -mfpu=neon
+        -mfp16-format=ieee -Wno-incompatible-pointer-types -Wno-stringop-overflow)
+endif()
+
+if(STRIKERS_VITA)
+    # AVNR record hashes use xxHash independently of Aurora. The version and
+    # digest match the existing asset-file ABI; a fresh build fetches it itself.
+    include(FetchContent)
+    FetchContent_Declare(xxhash
+        URL "https://github.com/Cyan4973/xxHash/archive/refs/tags/v0.8.3.tar.gz"
+        URL_HASH SHA256=aae608dfe8213dfd05d909a57718ef82f30722c392344583d3f39050c7f29a80
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+        SOURCE_SUBDIR strikers_headers_only)
+    FetchContent_MakeAvailable(xxhash)
+    target_include_directories(strikers_platform PRIVATE "${xxhash_SOURCE_DIR}")
     target_link_options(strikers PRIVATE -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/strikers.map)
     target_link_libraries(strikers PRIVATE
-        aurora::vita_backend SDL3::SDL3-static
+        strikers_vitagl vitashark SceShaccCgExt taihen_stub SceShaccCg_stub mathneon
+        SceCommonDialog_stub SceKernelDmacMgr_stub SceKernelThreadMgr_stub SceSysmem_stub SceProcessmgr_stub
         SceCtrl_stub SceAudio_stub SceAudioIn_stub ScePower_stub SceRtc_stub
         SceIofilemgr_stub SceAppMgr_stub SceDisplay_stub SceGxm_stub
         SceSysmodule_stub SceVideodec_stub SceLibKernel_stub pthread m)

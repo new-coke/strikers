@@ -51,7 +51,7 @@ _Static_assert(sizeof(PortABIEnumProbe) == 4, "Vita port requires 32-bit enums (
 #include <stdarg.h>
 
 // GCC has no -fdeclspec, and the decomp's __declspecs only place PowerPC sections.
-#if defined(__SWITCH__) && !defined(__clang__)
+#if (defined(__SWITCH__) || defined(PORT_VITA)) && !defined(__clang__)
 #define __declspec(x)
 #endif
 
@@ -59,6 +59,9 @@ _Static_assert(sizeof(PortABIEnumProbe) == 4, "Vita port requires 32-bit enums (
 #if defined(PORT_USE_AURORA)
 #include "port/gx_tags.h"
 #include "port/aurora_compat.h"
+#endif
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "port/native_sdk.h"
 #endif
 #ifndef __cplusplus
 // dolphin/types.h would pull this in from its TARGET_PC branch, which the port disables to keep

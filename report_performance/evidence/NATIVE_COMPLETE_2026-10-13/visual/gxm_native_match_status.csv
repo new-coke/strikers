@@ -1,0 +1,3 @@
+# native_match_v6 aurora=0 gx_fifo=0 texture_decoder=native skinning=native_gpu views=34
+frame,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure
+660,230143,230143,2552,70697,1605,218,168,659,68853,0,none,native_list

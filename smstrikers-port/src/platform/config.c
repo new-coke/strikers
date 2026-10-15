@@ -26,7 +26,11 @@
 #if defined(PORT_VITA)
 #define PORT_VITA_DEFAULTS_BEGIN "# --- STRIKERS VALIDATED DEFAULTS BEGIN ---"
 #define PORT_VITA_DEFAULTS_END "# --- STRIKERS VALIDATED DEFAULTS END ---"
+#if defined(STRIKERS_VITA_VITAGL)
+#define PORT_VITA_DEFAULTS_REVISION "2026-10-14-vitagl"
+#else
 #define PORT_VITA_DEFAULTS_REVISION "2026-10-11-current-gxm-baseline"
+#endif
 
 typedef struct VitaDefaultConfigEntry
 {
@@ -38,6 +42,35 @@ typedef struct VitaDefaultConfigEntry
 // INI from this table when missing and refresh an outdated managed block;
 // leave an already current file untouched to avoid redundant storage writes.
 static const VitaDefaultConfigEntry s_vita_defaults[] = {
+#if defined(STRIKERS_VITA_VITAGL)
+    { "diagnostics", "0" },
+    { "fps_overlay", "0" },
+    { "vita_test_match", "0" },
+    { "vita_frameskip", "0" },
+    { "vita_debug_menu", "0" },
+    { "seed", "0x53545249" },
+    { "fixed_dt", "0" },
+    { "frame_capture", "" },
+    { "frame_capture_frames", "0" },
+    { "frame_capture_match_only", "1" },
+    { "frame_capture_play_only", "1" },
+    { "frame_capture_skip", "600" },
+    { "vita_snapshot_match_frame", "0" },
+    { "vita_snapshot_play_frame", "0" },
+    { "log", "ux0:data/strikersVita/vitagl.log" },
+    { "asset_archive", "ux0:data/strikersVita/sms.psarc" },
+    { "native_asset_archive", "ux0:data/strikersVita/sms-native-gxm-static.psarc" },
+    { "native_assets", "1" },
+    { "vita_native_audio", "1" },
+    { "vita_native_video", "1" },
+    { "task_profile", "0" },
+    { "asset_io_profile", "0" },
+    { "vita_view_draw_capture", "0" },
+    { "benchmark", "0" },
+    { "cpu_mhz", "500" },
+    { "gpu_mhz", "222" },
+    { "vitagl_timing", "0" },
+#else
     // Confirmed runtime baseline; keep these in sync with the device INI.
     { "gxm_disable", "0x8" },
     { "gxm_shader_profile", "WARM" },
@@ -108,6 +141,7 @@ static const VitaDefaultConfigEntry s_vita_defaults[] = {
     { "task_profile_buffered", "1" },
     { "vita_skin_packets", "0" },
     { "gxm_local_draw_batching", "0" },
+#endif
 };
 #endif
 

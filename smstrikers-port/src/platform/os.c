@@ -12,7 +12,11 @@
 #include "port/config.h"
 #include "port/region.h"
 
-#if defined(STRIKERS_VITA) && defined(PORT_USE_AURORA)
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+extern void strikers_native_notify_memory_write(const void*,size_t);
+#define PORT_AURORA_MEMORY_PREPARE(addr,bytes) ((void)0)
+#define PORT_AURORA_MEMORY_WRITE(addr,bytes) strikers_native_notify_memory_write((addr),(bytes))
+#elif defined(STRIKERS_VITA) && defined(PORT_USE_AURORA)
 extern void aurora_vita_prepare_memory_write(const void* address, size_t bytes);
 extern void aurora_vita_notify_memory_write(const void* address, size_t bytes);
 #define PORT_AURORA_MEMORY_PREPARE(addr, bytes) aurora_vita_prepare_memory_write((addr), (bytes))
@@ -30,8 +34,8 @@ extern void aurora_vita_notify_memory_write(const void* address, size_t bytes);
 #define PORT_ARENA_SIZE (192u * 1024u * 1024u)
 #endif
 
-#if defined(PORT_USE_AURORA)
-// Aurora's SDK headers reach the console's low-memory globals as offsets from OSBaseAddress.
+#if defined(PORT_USE_AURORA) || defined(STRIKERS_VITA_NATIVE_RUNTIME)
+// Native host's SDK headers reach the console's low-memory globals as offsets from OSBaseAddress.
 #define PORT_MEM1_SIZE (24u * 1024u * 1024u)   // retail MEM1
 #if defined(STRIKERS_VITA)
 #define PORT_MEM1_HOST_ALLOC (64u * 1024u)

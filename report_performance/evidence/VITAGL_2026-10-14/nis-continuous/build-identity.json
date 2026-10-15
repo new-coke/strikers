@@ -1,0 +1,64 @@
+{
+  "artifacts_sha256": {
+    "strikers": "559c20edc50f105629eb27596d78c323b6fdc356df7f06aa3650dfb9f37a85eb",
+    "strikers.map": "713cd7cb141880ed600f462cb7ba92e6e3dce8de02878cba3bbcccdb273788c7",
+    "strikers.velf": "a3500fb35dec04dd50bafc9e471bcd93b929767f94bb0e5062289a9613b857b1",
+    "strikers_vita.self": "bedd7fdf1c1952124d42435562add46c068ff4a7a8fe8436271328dec5ad6f8f",
+    "strikers_vita.vpk": "d4d0563b15e0975bbc0a2e31a796f4d7dd1c27a54fad185b9c5c6f1dd1d88913",
+    "libstrikers_vitagl.a": "b7610afb5e994c30c750dd29113662693875f7a31f37056a5ebe31d2325f495f"
+  },
+  "sources_sha256": {
+    "src/platform/deferred_renderer.cpp": "2162cbcd107189c752a0912a7a8a4175fdea51af4121cd81f28a8b3520eaaca4",
+    "src/platform/vitagl_renderer.cpp": "7b1e1166b770b6faf399fadacb6440fbc1db0545b6960927940b547f97c7d3aa",
+    "src/platform/audio_mix.cpp": "4f55e066bb2df4aac4c8f6b4caff809256064ba93b2b1e719b43a4b53186f2f0",
+    "src/platform/audio_out_native.cpp": "b276ef70e0ab733c4e9f05f48de3af8ef334b46d2f989fcf04ae0c0916e6d19d",
+    "src/platform/native_runtime.cpp": "833f73127ca214688d085b86aeecab7764779d054cb998fe55651bf2f174d003",
+    "src/platform/native_jobs.cpp": "5eda682d46657354ff6bc70adf2c74c19e0c45afc95613d1aab6ac7dc6a6a200",
+    "include/Game/Drawable/DrawableBall.h": "6457bb92db8b3a484f5e7912d4aec87e2a8a44a8f683b09693d920b8f9a499b8",
+    "src/Game/Drawable/DrawableBall.cpp": "4a6982a06642b1df497185dd62423afa98b534afade1782920f2797db31937cb",
+    "src/Game/Ball.cpp": "64ca3d09f877c54b245bed9d1181fa4329dd937dd8ef4532cdab2716f53e7ef6",
+    "extern/re4-renderer/gx_command_buffer.h": "e639b754e40c1400b54ed955d66b6d3d560647568d050bf502d988a81c3f12d5",
+    "include/port/scene_shaders.hpp": "42f5568ce8c9a97775ba88f5f06d35be6d30d4c466daa5e3ce675acf29a72d08",
+    "include/port/renderer.hpp": "9d7784b74d742fbf8f40f82df070929b9eed443f870b3e4b95fcf0a4f1591ac5",
+    "include/port/native_match_direct.hpp": "40a9645c3793628a086979daa03a143f0fb62bcd7c389f0416df390a1f0c3591",
+    "src/platform/native_match_runtime.cpp": "9d6cb379b4f9ddd5300859dfaa633d884f14bb71d64946152c11755d8df9864d",
+    "src/Game/Drawable/DrawableModel.cpp": "251905d7320579e01486a94d8f8aa157578f623f63012287a6a4372cb1577bd6",
+    "src/Game/NisPlayer.cpp": "292a9293e8609428da9c43d9934a8b336132362c5c0f32d008eaa950fb47c5f8",
+    "src/Game/ReplayManager.cpp": "ff4ad2c97dca389a5785f243c80dbc5c04381632f4441ecb68ef1d4867c8907a",
+    "src/Game/Render/Nis.cpp": "2e5fa8697b39551402964ecb2cfa438e06345818a4c2de57be4940c3a8e55897",
+    "include/port/nis_render_state.hpp": "aef9ebc6541d435b7ff0880d2f7ec92a4e398f0dc7634d65e10977aa24c2d44f"
+  },
+  "cmake": {
+    "STRIKERS_AURORA": "OFF",
+    "STRIKERS_VITA_VITAGL": "ON",
+    "STRIKERS_VITA_GX_THREAD": "OFF",
+    "STRIKERS_VITA_NATIVE_GXM_RENDERER": "OFF",
+    "STRIKERS_VITA_PROFILER": "OFF",
+    "STRIKERS_VITA_PROFILE_AUTOSTART": "OFF",
+    "STRIKERS_VITA_FAST_PROFILER_BUILD": "OFF"
+  },
+  "vitagl_flags": [
+    "READBACKS_SPEEDHACK=1",
+    "HAVE_SHADER_CACHE=1",
+    "NO_DEBUG=1",
+    "DRAW_SPEEDHACK=1"
+  ],
+  "provider_units": 30,
+  "re4": {
+    "repository": "https://github.com/Rinnegatamante/re4",
+    "commit": "24c03d65b2a5896ef6d56dab1d8e9110ae19e0ae",
+    "original": "platform/renderer/gx_command_buffer.h",
+    "sha256": "e639b754e40c1400b54ed955d66b6d3d560647568d050bf502d988a81c3f12d5"
+  },
+  "native_audio_software_mixer_linked": true,
+  "host_checks": [
+    "deferred frontend ASan/UBSan",
+    "native audio ASan/UBSan",
+    "native jobs ASan/UBSan"
+  ],
+  "hardware_verified": false,
+  "lighting": "preserve game lighting/range (2x by default) on light-ramp diffuse stage before specular and emission",
+  "compiled_application_glfinish_glflush_calls": 0,
+  "diagnostic": "INI diagnostics-gated packet traces for ball every 60 frames",
+  "nis": "continuous intro rendering and shared snapshot ownership guard; animation ball pose tracing diagnostics-only"
+}

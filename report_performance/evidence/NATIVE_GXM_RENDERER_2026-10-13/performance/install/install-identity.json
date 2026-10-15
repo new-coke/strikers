@@ -1,0 +1,7 @@
+{
+  "started": "2026-10-13T21:57:16.295650+02:00",
+  "candidate_sha256": "5df279f3ede2dab10022542218db3948a71252cb32fb2145ee374cfd9b543dff",
+  "control_sha256": "a866c5b4351e8b5bf95b4351f5508a4d542d108ddd7f92a23f734f6479bcc232",
+  "kill_response": "Killed.",
+  "error": "error_perm('550 File not found.')"
+}

@@ -10,6 +10,9 @@
 #include "NL/platvmath.h"
 #include "dolphin/PPCArch.h"
 #include "dolphin/os/OSCache.h"
+#if defined(PORT_VITA) && defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
+#include "port/native_match_direct.hpp"
+#endif
 
 #define qr0 0
 
@@ -45,6 +48,9 @@ void ShaderSkinMesh::StitchModel()
     {
         if (glGetRasterState(pPacket->state.raster, GLS_SolidOffset) != 1)
             continue;
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+        port::directmatch::on_stitch_selectors(pPacket,stitchArray[packetIndex],pPacket->numVertices);
+#else
         DisplayList* dl = dlGetStruct(pPacket->indexBuffer);
         u8* pWrite = (u8*)dl->list;
         if (*(pWrite += 3) != 0xff)
@@ -59,6 +65,11 @@ void ShaderSkinMesh::StitchModel()
         // were stitched in.  Publish the patched PNMTXIDX bytes as well so
         // Vita/Aurora never observes the pre-stitch 0xff placeholders.
         DCFlushRangeNoSync(dl->list, dl->size);
+#if defined(PORT_VITA) && defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
+        port::directmatch::on_stitch_selectors(
+            pPacket, stitchArray[packetIndex], pPacket->numVertices);
+#endif
+#endif
     }
     PPCSync();
 }

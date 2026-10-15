@@ -6,11 +6,15 @@
 #include "port/config.h"
 #include "port/vita_profiler.h"
 #include "port/framerate.h" // PORT: PortTaskClockFrame
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "port/determinism.h"
+#include "port/simulation_clock.hpp"
+#endif
 
 #include <cstdio>
 #include <cstdlib>
 
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
 #include <aurora_vita_backend.hpp>
 #include "port/profile_output.hpp"
 #include "NL/glx/glxSend.h"
@@ -30,7 +34,7 @@ static port::ProfileOutput& PortTaskProfileOutput()
 // PORT: profiling output that survives no-log builds (stderr goes nowhere on Vita).
 static FILE* PortProfileOut()
 {
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
     return PortTaskProfileOutput().get();
 #endif
     return stderr;
@@ -121,7 +125,7 @@ void TaskProfileReport()
                      slot.maxNs / 1000ull,
                      slot.calls);
     }
-#if defined(PORT_VITA)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
     {
         const aurora::vita::PerformanceSnapshot perf = aurora::vita::performance_snapshot();
         static uint64_t s_lastChunks = 0;
@@ -330,6 +334,12 @@ void nlTaskManager::RunAllTasks()
     nlTask* taskIterator;
     s32 currentTicker;
     const bool profileTasks = TaskProfileEnabled();
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    static port::SimulationFrameClock simulationClock;
+    const bool realtime = !PortFixedTimestep();
+    if (!realtime) simulationClock.reset();
+    const float frameDelta = realtime ? simulationClock.sample(port_monotonic_ns()) : 0.f;
+#endif
 
     currentTask = nlDLRingGetStart<nlTask>(m_pInstance->m_lTaskList);
     if (currentTask != NULL)
@@ -347,6 +357,13 @@ void nlTaskManager::RunAllTasks()
             }
             m_pInstance->m_PrevState = (u32)m_pInstance->m_CurrState;
             m_pInstance->m_CurrState = (u32)m_pInstance->m_PendingState;
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+            // Synchronous state changes may load a scene. Exclude that work
+            // from the next animation/physics interval, including warm loads
+            // shorter than the suspend threshold. Rendering hitches still
+            // contribute their full time on ordinary passes.
+            if (realtime) (void)simulationClock.sample(port_monotonic_ns());
+#endif
         }
 
         taskIterator = nlDLRingGetStart<nlTask>(m_pInstance->m_lTaskList);
@@ -372,7 +389,11 @@ void nlTaskManager::RunAllTasks()
                 {
                     clampedDeltaTime = g_fTaskTimeUpperBound;
                 }
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+                deltaTime = (realtime ? frameDelta : clampedDeltaTime) * m_pInstance->m_TimeDilation;
+#else
                 deltaTime = clampedDeltaTime * m_pInstance->m_TimeDilation;
+#endif
                 m_pInstance->m_fCurrentTimeDelta = deltaTime;
                 if (profileTasks)
                 {

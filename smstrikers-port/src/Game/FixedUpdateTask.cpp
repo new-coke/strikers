@@ -22,7 +22,10 @@
 #include <algorithm>
 #include <cstdlib>
 #if defined(PORT_VITA)
-#include <aurora_vita_backend.hpp>
+#include "port/native_jobs.hpp"
+#include "port/config.h"
+#include "port/simulation_clock.hpp"
+#include <cstdio>
 #endif
 
 float g_fFixedUpdateTick = 0.02f;
@@ -61,60 +64,40 @@ bool PortGameParallelEnabled()
     return enabled;
 }
 
-bool PortGameplayFrameskipEnabled()
+void ReportSimulationTime(float dt, float expectedDt, unsigned steps, uint64_t now, bool active, uint64_t cpuNs)
 {
-    static int initialized;
-    static bool enabled;
-    if (!initialized)
+    if (!PortDiagnosticsEnabled()) return;
+    static uint64_t previous = 0, window = 0;
+    static double wall = 0, supplied = 0, expected = 0, simulated = 0, cpu = 0;
+    static unsigned frames = 0, ticks = 0, maxSteps = 0;
+    static bool first = true;
+    if (!active)
     {
-        const char* value = getenv("STRIKERS_VITA_FRAMESKIP");
-        enabled = value != NULL && value[0] != '\0' && value[0] != '0';
-        initialized = 1;
+        previous = window = 0;
+        wall = supplied = expected = simulated = cpu = 0;
+        frames = ticks = maxSteps = 0;
+        return;
     }
-    return enabled;
-}
-
-// Rendering can temporarily fall far below the 60 Hz target while the Vita GX
-// backend is being optimized. Do not turn that into slow motion: measure the
-// real wall time between gameplay updates, let the existing fixed-update loop
-// consume that elapsed time, and use the engine's native glDiscardFrame path to
-// drop a few presentations while the simulation catches up.
-float PortGameplayWallDelta(float fallbackDt)
-{
-    static unsigned long long s_lastNs;
-    const unsigned long long now = port_monotonic_ns();
-    float result = fallbackDt;
-
-    if (s_lastNs != 0 && now > s_lastNs)
+    if (!previous) { previous = window = now; return; }
+    wall += double(now - previous) * 1.e-9;
+    previous = now;
+    supplied += dt;
+    expected += expectedDt;
+    simulated += steps * double(g_fSimulationTick);
+    cpu += double(cpuNs) * 1.e-6;
+    ++frames; ticks += steps; maxSteps = std::max(maxSteps, steps);
+    if (now - window < 2000000000ull) return;
+    if (auto* f = std::fopen("ux0:data/strikersVita/native_simulation_timing.csv", first ? "w" : "a"))
     {
-        const double seconds = (double)(now - s_lastNs) / 1000000000.0;
-        // Bound pathological pauses/loading hitches so one stalled frame cannot
-        // request hundreds of physics steps. 500 ms still covers the current
-        // 3-5 FPS debugging regime without forcing slow motion.
-        result = (float)std::min(seconds, 0.5);
+        if (first) std::fputs("wall_seconds,task_seconds,simulation_seconds,render_frames,physics_steps,max_steps_per_frame,pending_seconds,deterministic,simulation_cpu_ms,expected_simulation_seconds\n", f);
+        std::fprintf(f,"%.6f,%.6f,%.6f,%u,%u,%u,%.6f,%d,%.3f,%.6f\n", wall, supplied, simulated,
+            frames, ticks, maxSteps, FixedUpdateTask::mAccumulatedDeltaT, PortFixedTimestep(),cpu,expected);
+        std::fclose(f); first = false;
     }
-    s_lastNs = now;
-    return result;
+    window = now; wall = supplied = expected = simulated = cpu = 0; frames = ticks = maxSteps = 0;
 }
 
-void PortScheduleGameplayFrameSkip(float wallDt)
-{
-    double limitHz = 60.0;
-    PortFrameLimitInfo(&limitHz, nullptr, nullptr, nullptr);
-    if (limitHz < 20.0 || limitHz > 240.0)
-        limitHz = 60.0;
 
-    const double frameSeconds = 1.0 / limitHz;
-    if ((double)wallDt <= frameSeconds * 1.5)
-        return;
-
-    int missed = (int)((double)wallDt / frameSeconds) - 1;
-    if (missed < 1)
-        return;
-    if (missed > 3)
-        missed = 3;
-    glDiscardFrame(missed);
-}
 #endif
 } // namespace
 
@@ -167,24 +150,30 @@ void FixedUpdateTask::DecrementFrameLock(float fDeltaT)
  */
 void FixedUpdateTask::Run(float dt)
 {
+#if defined(PORT_VITA)
+    const uint64_t simulationNow = port_monotonic_ns();
+    unsigned steps = 0;
+    float expectedDt = 0;
+#endif
     if (nlTaskManager::m_pInstance->m_CurrState == 2)
     {
         float simulationTick;
 
-#if defined(PORT_VITA)
-        float gameplayDt = dt;
-        if (!PortFixedTimestep() && PortGameplayFrameskipEnabled())
-        {
-            gameplayDt = PortGameplayWallDelta(dt);
-            PortScheduleGameplayFrameSkip(gameplayDt);
-        }
-#else
         const float gameplayDt = dt;
+
+        const float scaledGameplayDt = gameplayDt * mTimeScale;
+        mAccumulatedDeltaT += scaledGameplayDt;
+#if defined(PORT_VITA)
+        expectedDt = scaledGameplayDt;
 #endif
 
-        mAccumulatedDeltaT += gameplayDt * mTimeScale;
-
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+        // Carry any remaining debt into the next frame instead of discarding
+        // a presentation or allowing an unbounded catch-up stall.
+        while (mAccumulatedDeltaT >= g_fFixedUpdateTick && port::simulation_step_budget(steps))
+#else
         while (g_bRunSimAndRenderInLockStep || mAccumulatedDeltaT >= g_fFixedUpdateTick)
+#endif
         {
             UseFixedUpdatePad();
 
@@ -199,6 +188,9 @@ void FixedUpdateTask::Run(float dt)
             }
 
             CallFixedUpdateTasks();
+#if defined(PORT_VITA)
+            ++steps;
+#endif
 
             if (g_bRunSimAndRenderInLockStep)
             {
@@ -206,6 +198,11 @@ void FixedUpdateTask::Run(float dt)
             }
         }
     }
+
+#if defined(PORT_VITA)
+    ReportSimulationTime(dt, expectedDt, steps, simulationNow, nlTaskManager::m_pInstance->m_CurrState == 2,
+        port_monotonic_ns()-simulationNow);
+#endif
 
     UseDefaultPad();
     UpdatePlatPad(dt);
@@ -222,10 +219,10 @@ void FixedUpdateTask::AIUpdateTask(float fDeltaT)
 void FixedUpdateTask::PrePhysicsAITask(float fDeltaT)
 {
 #if defined(PORT_VITA)
-    if (PortGameParallelEnabled() && aurora::vita::worker_threads() != 0)
+    if (PortGameParallelEnabled() && port::jobs::worker_threads() != 0)
     {
         PrePhysicsPoseJob job = {};
-        (void)aurora::vita::parallel_for(10, aurora::vita::game_execution_lanes()>=4 ? 2 : 3, PreparePlayerPoses, &job);
+        (void)port::jobs::parallel_for(10, port::jobs::game_execution_lanes()>=4 ? 2 : 3, PreparePlayerPoses, &job);
 
         // Physics objects and the held ball are deliberately committed in the
         // original deterministic character order on CPU0.

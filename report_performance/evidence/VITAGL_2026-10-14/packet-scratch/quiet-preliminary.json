@@ -1,0 +1,26 @@
+{
+  "path": "/Users/robin994/Documents/Code/strikersVita/report_performance/evidence/VITAGL_2026-10-14/packet-scratch-quiet-1/vitagl_scratch_quiet_1.csv",
+  "sha256": "c50742e8bf486cd0331ef0dbd1c86c1b832516142e7d338555f9bf0c8da046c0",
+  "metadata": [
+    "# strikers-frame-capture-v1 diagnostics=0 fps_overlay=0",
+    "# play_only=1 counter=live_play",
+    "# actual_cpu_mhz=444 actual_gpu_mhz=222 actual_bus_mhz=222 actual_xbar_mhz=166"
+  ],
+  "samples": 300,
+  "all_gameplay": true,
+  "live_play_only": true,
+  "match_frame_first": 600,
+  "match_frame_last": 899,
+  "elapsed_fps": 28.862066835695757,
+  "mean_ms": 34.647553333333335,
+  "median_ms": 34.235,
+  "p95_ms": 41.546,
+  "p99_ms": 57.534,
+  "deadline_60_pct": 0.0,
+  "deadline_30_pct": 28.0,
+  "tasks_median_ms": 33.5075,
+  "present_median_ms": 0.737,
+  "control_mean_fps": 25.11046465974109,
+  "preliminary_fps_change_pct": 14.940393285391917,
+  "candidate_repetitions": 1
+}

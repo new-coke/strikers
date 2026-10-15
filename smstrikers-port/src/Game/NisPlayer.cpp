@@ -1,4 +1,5 @@
 #include "Game/NisPlayer.h"
+#include "port/nis_render_state.hpp"
 #include <stdlib.h>
 #include "Game/Camera/CameraMan.h"
 #include "Game/Character.h"
@@ -60,7 +61,7 @@ NisPlayer::NisPlayer()
     : InterpreterCore(10)
     , mActive(false)
     , mDictSize(0)
-    , mMaxNumBallsVisible(1)
+    , mMaxNumBallsVisible(3)
     , mLoadingFromBack(false)
     , mUsedFromFront(0)
     , mUsedFromBack(0x70800)
@@ -418,6 +419,7 @@ static inline void HideAllActors()
         snapshot.mCharacters[i].mVisible = false;
     }
     snapshot.mBall.mVisible = false;
+    snapshot.mNumNisExtraBalls = 0;
 }
 
 /**
@@ -429,7 +431,7 @@ void NisPlayer::Render() const
     nlTaskManager* taskManager = nlTaskManager::m_pInstance;
     unsigned long currentState = taskManager->m_CurrState;
 
-    if (currentState != 0x100 || ((taskManager->m_PrevState == 0x100) && (currentState != 1)))
+    if (!port::nis_controls_render_snapshot(currentState, taskManager->m_PrevState))
     {
         return;
     }

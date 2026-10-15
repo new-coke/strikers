@@ -1,0 +1,13 @@
+{
+  "control_self": "eb4f47bdedc146836aa8726262b941e6303d0ccc5db015ba5a36ae90f0e6ea79",
+  "candidate_self": "5979ec0909713a2aa722f01d67aaff460609a000b42be5ed1900cabd04757a19",
+  "same_frame": 360,
+  "changed_pct": 0.49460018382352944,
+  "mean_absolute_rgb": 0.09905726613562092,
+  "bounds": [
+    111,
+    290,
+    891,
+    378
+  ]
+}

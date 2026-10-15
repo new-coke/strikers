@@ -1,0 +1,25 @@
+[
+  {
+    "path": "/Users/robin994/Documents/Code/strikersVita/report_performance/evidence/NATIVE_GXM_RENDERER_2026-10-13/performance/current-quiet-1/native_current_quiet1.csv",
+    "sha256": "366afed93b8b2ea36adbec939ec1707598405ed242f17c9401459492744ce847",
+    "metadata": [
+      "# strikers-frame-capture-v1 diagnostics=0 fps_overlay=0",
+      "# play_only=1 counter=live_play",
+      "# actual_cpu_mhz=444 actual_gpu_mhz=222 actual_bus_mhz=222 actual_xbar_mhz=166"
+    ],
+    "samples": 300,
+    "all_gameplay": true,
+    "live_play_only": true,
+    "match_frame_first": 600,
+    "match_frame_last": 899,
+    "elapsed_fps": 10.227889306281476,
+    "mean_ms": 97.77188333333334,
+    "median_ms": 41.032,
+    "p95_ms": 166.988,
+    "p99_ms": 178.277,
+    "deadline_60_pct": 0.0,
+    "deadline_30_pct": 2.3333333333333335,
+    "tasks_median_ms": 40.755,
+    "present_median_ms": 0.2415
+  }
+]

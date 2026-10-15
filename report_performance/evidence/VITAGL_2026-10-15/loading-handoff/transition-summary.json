@@ -1,0 +1,166 @@
+{
+  "control": {
+    "self_sha256": "40b1d4359756e92161b172cb566b1da06494cb788ed50848d87c7162c83875e2",
+    "trace_sha256": "96a0ec59219ce0634865e61b1b6a0cf2b474e0b301915541d1ebeb5c375fd554",
+    "rows": 470,
+    "aborted_passes": 3,
+    "aborted_presented": 3,
+    "zero_draw_presented": 3,
+    "first_content_frame": 3,
+    "aborted_rows": [
+      {
+        "frame": "1",
+        "start_ns": "3682020000",
+        "end_ns": "13312484000",
+        "state": "2",
+        "loading": "0",
+        "discarded": "1",
+        "presented": "1",
+        "draws": "0"
+      },
+      {
+        "frame": "2",
+        "start_ns": "13312781000",
+        "end_ns": "13351501000",
+        "state": "2",
+        "loading": "0",
+        "discarded": "1",
+        "presented": "1",
+        "draws": "0"
+      },
+      {
+        "frame": "25",
+        "start_ns": "19056220000",
+        "end_ns": "19080625000",
+        "state": "256",
+        "loading": "0",
+        "discarded": "1",
+        "presented": "1",
+        "draws": "0"
+      }
+    ],
+    "gpu_error": 0,
+    "new_crashes": 0,
+    "complete": true,
+    "normal_ini_restored": true,
+    "empty_display_until_content_seconds": [
+      {
+        "after_frame": 1,
+        "next_content_frame": 3,
+        "seconds": 3.712657
+      },
+      {
+        "after_frame": 2,
+        "next_content_frame": 3,
+        "seconds": 3.67364
+      },
+      {
+        "after_frame": 25,
+        "next_content_frame": 26,
+        "seconds": 2.916875
+      }
+    ]
+  },
+  "candidate": {
+    "self_sha256": "8a763a0077073686ef4290b265283dec49acf28b17b28feefaa6040719b13c55",
+    "trace_sha256": "cf83e637f46c243ea0067c50fd785d39cbfd18861b957fdd8e2f26a3a7bcf441",
+    "rows": 480,
+    "aborted_passes": 3,
+    "aborted_presented": 0,
+    "zero_draw_presented": 0,
+    "first_content_frame": 3,
+    "aborted_rows": [
+      {
+        "frame": "1",
+        "start_ns": "3676933000",
+        "end_ns": "13305077000",
+        "state": "2",
+        "loading": "0",
+        "discarded": "1",
+        "presented": "0",
+        "draws": "0"
+      },
+      {
+        "frame": "2",
+        "start_ns": "13305355000",
+        "end_ns": "13381549000",
+        "state": "2",
+        "loading": "0",
+        "discarded": "1",
+        "presented": "0",
+        "draws": "0"
+      },
+      {
+        "frame": "25",
+        "start_ns": "18997153000",
+        "end_ns": "19020757000",
+        "state": "256",
+        "loading": "0",
+        "discarded": "1",
+        "presented": "0",
+        "draws": "0"
+      }
+    ],
+    "gpu_error": 0,
+    "new_crashes": 0,
+    "complete": true,
+    "normal_ini_restored": true
+  },
+  "validated": {
+    "self_sha256": "971aadfbc977fb751f228595966f6df4b2a054d881ec38ac8a09c0fc45d55592",
+    "trace_sha256": "559d90ea2fd21523b8a71760add674fedc2d1f42adae78f1ed971e2f4df2b520",
+    "rows": 496,
+    "aborted_passes": 3,
+    "aborted_presented": 0,
+    "zero_draw_presented": 0,
+    "first_content_frame": 3,
+    "aborted_rows": [
+      {
+        "frame": "1",
+        "start_ns": "3544493000",
+        "end_ns": "13190283000",
+        "state": "2",
+        "loading": "0",
+        "discarded": "1",
+        "presented": "0",
+        "draws": "0"
+      },
+      {
+        "frame": "2",
+        "start_ns": "13190590000",
+        "end_ns": "13266988000",
+        "state": "2",
+        "loading": "0",
+        "discarded": "1",
+        "presented": "0",
+        "draws": "0"
+      },
+      {
+        "frame": "24",
+        "start_ns": "23203506000",
+        "end_ns": "23221620000",
+        "state": "256",
+        "loading": "0",
+        "discarded": "1",
+        "presented": "0",
+        "draws": "0"
+      }
+    ],
+    "gpu_error": 0,
+    "new_crashes": 0,
+    "complete": true,
+    "normal_ini_restored": true
+  },
+  "startup_loading_capture": {
+    "path": "validated/debug_frame_3d_1.png",
+    "sha256": "a05e7ad569ad31229517452fc941d72494d01ded0573fe5917766b7de341a076",
+    "nonblack_pixels": 1355,
+    "human_inspection": "original orange LOADING bitmap visible, retained after initial resource-invalid pass",
+    "instrumented_capture": true
+  },
+  "limitations": [
+    "Trace records application presentation decisions and draw submission, not external display latency.",
+    "Readback pauses the instrumented validation; these captures do not measure quiet FPS.",
+    "First scene preparation still takes time; the last valid image remains on screen during that work."
+  ]
+}

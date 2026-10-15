@@ -1,0 +1,12 @@
+{
+  "artifacts_sha256": {
+    "strikers": "4a7f9a956d5915b11efe31c201f28c8d826393f73db1d4c2f4ebbc2ebfdcaebf",
+    "strikers.velf": "cca4867b30bd8ffa741df6aa224d6ad9fa0dcd08482884c494ca014098b3f365",
+    "strikers.map": "6ae5bd4d9fb35697dbd9039787c82dec6179d820038464cbc29ffd3ff8787d10",
+    "strikers_vita.self": "a41c950066ff96d65e3f208ba0c90f2d61f2b17851057461a8711fdbb46a7389",
+    "strikers_vita.vpk": "f0bbabf558fb75060332de94baf62191b13b583152c108df5acecbeae39ffb99",
+    "libstrikers_vitagl.a": "072a269b2a06a0be3ab4766e35e8c37cbba7900b5a30e777196a4998151eb6b5"
+  },
+  "source_sha256": "185b080414dba0e24bcc611e39f92480e1b1f786add1d7ab3f4fb827fbc30f1d",
+  "change": "matrix ownership matching GLX; invalid producer transform rejected before driver; bounded transform provenance log"
+}

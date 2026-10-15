@@ -1,5 +1,6 @@
 #pragma once
-#include "gfx/vita_native_assets.hpp"
+#include <cstdint>
+#include <vector>
 namespace port {
 void initialize_native_assets() noexcept;
 void shutdown_native_assets() noexcept;

@@ -41,7 +41,7 @@
 #include "ctype_api.h"
 #include "Game/Drawable/DrawableCharacter.h"
 #if defined(PORT_VITA)
-#include <aurora_vita_backend.hpp>
+#include "port/native_jobs.hpp"
 #include <vector>
 #endif
 
@@ -1597,7 +1597,7 @@ void World::Render()
     if (g_bClipToFrustum)
     {
 #if defined(PORT_VITA)
-        if (VitaWorldParallelEnabled() && aurora::vita::worker_threads() != 0)
+        if (VitaWorldParallelEnabled() && port::jobs::worker_threads() != 0)
         {
             // Keep the AVL traversal, lazy world-matrix materialization and all
             // draw/state mutation on CPU0. CPU2 receives only immutable sphere
@@ -1674,7 +1674,7 @@ void World::Render()
                 job.entries = cullEntries.data();
                 for (int plane = 0; plane < 6; ++plane)
                     job.planes[plane] = pWorld->m_frustumPlane[plane];
-                (void)aurora::vita::parallel_for(cullEntries.size(), 24, VitaCullRange, &job);
+                (void)port::jobs::parallel_for(cullEntries.size(), 24, VitaCullRange, &job);
             }
 
             for (size_t i = 0; i < cullEntries.size(); ++i)

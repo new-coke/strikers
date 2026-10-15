@@ -5,6 +5,9 @@
 #include "NL/nlString.h"
 #include "NL/glx/glxTexture.h"
 #include "port/endian.h"
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "port/native_match_direct.hpp"
+#endif
 #include "dolphin/os.h"
 #include "port/texture_packs.h"
 #include <stdlib.h>
@@ -95,6 +98,9 @@ inline void TexDestructor::CallDestructor(const unsigned long& index, PlatTextur
  */
 void glx_BackupTexMarkerLevel(int level)
 {
+    #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    port::directmatch::on_texture_release(level);
+    #endif
     while (currentMarkerLevel != level)
     {
         TexDestructor texDtor;
@@ -544,7 +550,9 @@ bool glplatLoadTextureBundle(const char* filename)
     nlFree(pDictionary);
     nlFree(pHeader);
     nlClose(pFile);
+#if !defined(STRIKERS_VITA_NATIVE_RUNTIME)
     GXInvalidateTexAll();
+#endif
     glx_FreeMemory1(filename);
 
     return true;
@@ -609,7 +617,9 @@ static bool glxParseTextureBundle(const char* filedata, unsigned long fileSize)
         }
     }
 
+#if !defined(STRIKERS_VITA_NATIVE_RUNTIME)
     GXInvalidateTexAll();
+#endif
     return true;
 }
 #pragma dont_inline off
@@ -872,6 +882,11 @@ static inline GXTexFmt* glx_GetGXFormatTable()
  */
 void PlatTexture::Prepare()
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    DCStoreRange(m_SwizzledData,GCTextureSize(m_Format,m_Width,m_Height,m_Levels,-1));
+    if(m_PaletteData&&m_nPaletteEntries>0)DCStoreRange(m_PaletteData,m_nPaletteEntries*2);
+#else
+
     DCStoreRange(m_SwizzledData, GCTextureSize(m_Format, m_Width, m_Height, m_Levels, -1));
     if (m_nPaletteEntries > 0)
     {
@@ -886,6 +901,8 @@ void PlatTexture::Prepare()
     }
     GXInitTexObj(&m_TexObj, m_SwizzledData, m_Width, m_Height, glx_GetGXFormatTable()[m_Format], GX_CLAMP, GX_CLAMP, m_Levels > 1 ? 1 : 0);
     GXInitTexObjLOD(&m_TexObj, (m_Levels == 1) ? GX_LINEAR : GX_LIN_MIP_LIN, GX_LINEAR, 0.0f, (float)(m_MaxLevel - 1), 0.0f, GX_DISABLE, GX_DISABLE, GX_ANISO_1);
+
+#endif
 }
 
 #pragma dont_inline on
@@ -984,6 +1001,9 @@ void glplatTextureReplace(uintptr_t handle, const void* textureData, unsigned lo
     }
     DCStoreRange(pTex->m_SwizzledData, GCTextureSize(pTex->m_Format, pTex->m_Width, pTex->m_Height, pTex->m_Levels, -1));
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    pTex->Prepare();
+#else
     if (pTex->m_nPaletteEntries > 0)
     {
         DCStoreRange(pTex->m_PaletteData, pTex->m_nPaletteEntries * 2);
@@ -1001,5 +1021,6 @@ void glplatTextureReplace(uintptr_t handle, const void* textureData, unsigned lo
     GXInitTexObj(&pTex->m_TexObj, pTex->m_SwizzledData, pTex->m_Width, pTex->m_Height, glx_GetGXFormatTable()[pTex->m_Format], GX_CLAMP, GX_CLAMP, pTex->m_Levels > 1 ? 1 : 0);
     GXInitTexObjLOD(&pTex->m_TexObj, (pTex->m_Levels == 1) ? GX_LINEAR : GX_LIN_MIP_LIN, GX_LINEAR, 0.0f, (float)(pTex->m_MaxLevel - 1), 0.0f, GX_DISABLE, GX_DISABLE, GX_ANISO_1);
     PortTextureCreated(&pTex->m_TexObj, NULL); // PORT: texture packs
+#endif
 }
 #pragma dont_inline off

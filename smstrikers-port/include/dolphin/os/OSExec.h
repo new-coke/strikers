@@ -22,8 +22,13 @@ typedef void (*appInitCallback)(void (*)(char*));
 typedef void* (*appGetEntryCallback)();
 typedef void (*AppLoaderCallback)(appInitCallback*, appGetNextCallback*, appGetEntryCallback*);
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+extern OSExecParams* __OSExecParams;
+extern s32 __OSAppLoaderOffset;
+#else
 OSExecParams* __OSExecParams AT_ADDRESS(0x800030F0);
 s32 __OSAppLoaderOffset AT_ADDRESS(0x800030F4);
+#endif
 
 void OSExecv(const char* dolfile, const char** argv);
 void OSExecl(const char* dolfile, const char* arg0, ...);

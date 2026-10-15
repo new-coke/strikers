@@ -1,0 +1,2 @@
+frames,fence_us,upload_us,draw_calls_us,queue_us,draws,dynamic_bytes
+480,57888,2788996,6896567,552056,253648,156133224

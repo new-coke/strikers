@@ -1,0 +1,61 @@
+{
+  "self_sha256": "eb4f47bdedc146836aa8726262b941e6303d0ccc5db015ba5a36ae90f0e6ea79",
+  "ini_sha256": "91ea7c56923903f2467307616ce265de1d75069d1151ffc95cee2e294313c0bf",
+  "normal_ini_sha256": "3c013d70b7eb2f8a33c805c3343bbe4534782bf7dd93a81e7aea3f9fe05926e2",
+  "config": {
+    "diagnostics": "1",
+    "fps_overlay": "0",
+    "benchmark": "0",
+    "task_profile": "0",
+    "asset_io_profile": "0",
+    "vita_view_draw_capture": "0",
+    "vita_test_match": "1",
+    "vita_frameskip": "0",
+    "fixed_dt": "16.666666667",
+    "seed": "0x53545249",
+    "frame_capture": "ux0:data/strikersVita/vitagl_depth_frame240.csv",
+    "frame_capture_frames": "0",
+    "frame_capture_skip": "0",
+    "frame_capture_match_only": "1",
+    "frame_capture_play_only": "1",
+    "vita_snapshot_play_frame": "0",
+    "vita_snapshot_match_frame": "240",
+    "log": "ux0:data/strikersVita/vitagl_depth_frame240.log",
+    "vitagl_timing": "0",
+    "vita_particle_trace": "1"
+  },
+  "start": 1792048729.720376,
+  "statuses": [
+    {
+      "time": 1792048757.265745,
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n60,37118,37118,928,2198,1,80,82,405,6656,0,none,skin_selectors\n"
+    },
+    {
+      "time": 1792048763.762988,
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n120,76251,76251,1872,4427,1,80,82,408,14780,0,none,skin_selectors\n"
+    },
+    {
+      "time": 1792048770.265924,
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n180,115143,115143,1872,6596,1,160,152,413,22035,0,none,skin_selectors\n"
+    },
+    {
+      "time": 1792048777.083972,
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n240,153107,153107,1872,8831,1,160,152,419,28300,0,none,skin_selectors\n"
+    }
+  ],
+  "visual_only": true,
+  "prior_cores": [
+    "psp2core-1791883756-0x00000521c5-eboot.bin.psp2dmp",
+    "psp2core-1791999337-0x00043f38d3-eboot.bin.psp2dmp",
+    "psp2core-1792001391-0x000c372671-eboot.bin.psp2dmp",
+    "psp2core-1792002100-0x00043d35f7-eboot.bin.psp2dmp",
+    "psp2core-1792002978-0x000450308d-eboot.bin.psp2dmp"
+  ],
+  "launch": "Launched.",
+  "started_before_input": true,
+  "startup_log_confirmed": true,
+  "complete": true,
+  "restored": true,
+  "kill": "Killed.",
+  "end": 1792048786.117103
+}

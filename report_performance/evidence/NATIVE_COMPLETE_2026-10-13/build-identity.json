@@ -1,0 +1,23 @@
+{
+  "strikers": {
+    "bytes": 14246040,
+    "sha256": "7f918742fa7ac77ae9a608caf3aef4e6d41d28231a514c710d6905597a6d02f3"
+  },
+  "strikers.velf": {
+    "bytes": 15681718,
+    "sha256": "faeb190777364d7e12be0faed3e9473e304c33113bc2c0e089065a32fad1e11e"
+  },
+  "strikers.map": {
+    "bytes": 10835518,
+    "sha256": "a28c13f27755267fdea9be6769c08e02a9a4b43f93f7b6d98d2d74c202780dbc"
+  },
+  "strikers_vita.self": {
+    "bytes": 2088801,
+    "sha256": "5dbc8b06b02958648af1715cc01e792a2dcda591395b246807d5cf6d74e54432"
+  },
+  "strikers_vita.vpk": {
+    "bytes": 2073288,
+    "sha256": "97c576c25b6b8810d7fead9f0f5b4ecd09fce98c8856ffedf03de06b6df2b1de"
+  },
+  "removed_symbols_count": 0
+}

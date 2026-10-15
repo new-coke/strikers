@@ -517,7 +517,6 @@ void update()
     if (signature == s_signature)
         return;
     s_signature = signature;
-    glFinish();
     for (auto& font : s_fonts)
         paintFont(font);
     paintLegends();
@@ -633,7 +632,6 @@ extern "C" void PortPromptsLegendsLoaded()
         memcpy(s_originals[i].data() + 1056, tex->m_PaletteData, 512);
         s_loaded[i] = true;
     }
-    glFinish();
     paintLegends();
 }
 

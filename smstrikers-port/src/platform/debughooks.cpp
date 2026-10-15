@@ -6,6 +6,7 @@
 #include "dolphin/types.h"
 #include "NL/plat/plataudio.h"
 
+#if !defined(STRIKERS_VITA_NATIVE_RUNTIME)
 void InstallFloatingPointExceptionHandler(void)
 {
     std::fprintf(stderr, "[port] floatingPointExceptions: ignored; the host does not "
@@ -17,6 +18,8 @@ void InstallCallStackDumper(void)
     std::fprintf(stderr, "[port] callStackDumper: ignored; src/platform/crashlog.c "
                          "already reports a backtrace on a fatal signal.\n");
 }
+
+#endif
 
 // EFB-to-XFB vertical scale; the port renders at Aurora's size, so this is 1.
 #if !defined(PORT_VITA)

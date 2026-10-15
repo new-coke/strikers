@@ -3,6 +3,10 @@
 #include "NL/nlString.h"
 #include "dolphin/os/OSCache.h"
 #include "dolphin/PPCArch.h"
+#if defined(PORT_VITA) && defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
+#include "port/native_match_direct.hpp"
+#include "NL/glx/glxMemory.h"
+#endif
 #if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
 #include "NL/glx/glxMemory.h"
 #include "../../../extern/aurora-vita/lib/gx/native_model_registry.hpp"
@@ -38,6 +42,12 @@ DisplayList* dlMakeDisplayList(const glModelPacket* packet, bool permanent)
         }
     }
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    const u32 size=(numVertices*sizeof(u16)+31u)&~31u;
+    u8* p=(u8*)(permanent?glResourceAlloc(size,GLM_VertexData):glFrameAlloc(size,GLM_VertexData));
+    memcpy(p,(const void*)packet->indexBuffer,numVertices*sizeof(u16));
+    memset(p+numVertices*sizeof(u16),0,size-numVertices*sizeof(u16));
+#else
     // The color stream is one direct byte; all other attributes repeat the
     // same big-endian index. The stream layout is constant for the entire DL.
     const u32 indexedStreams = numStreams - (hasColor ? 1u : 0u);
@@ -68,6 +78,7 @@ DisplayList* dlMakeDisplayList(const glModelPacket* packet, bool permanent)
         }
     }
 
+#endif
     DisplayList* pList = (DisplayList*)(permanent ? glResourceAlloc(sizeof(DisplayList), GLM_Header)
                                                 : glFrameAlloc(sizeof(DisplayList), GLM_Header));
     pList->magic = DISPLAY_LIST_HEADER;
@@ -78,6 +89,13 @@ DisplayList* dlMakeDisplayList(const glModelPacket* packet, bool permanent)
 
     DCFlushRangeNoSync(pList->list, pList->size);
     PPCSync();
+
+#if defined(PORT_VITA) && defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
+    if (permanent)
+        port::directmatch::on_display_list_created(
+            packet, reinterpret_cast<uintptr_t>(pList),
+            glx_GetResourceMarkerLevel());
+#endif
 
 #if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
     if (permanent && aurora::gx::fifo::native_model_prepared_enabled())

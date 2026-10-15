@@ -1,0 +1,94 @@
+{
+  "self_sha256": "8a763a0077073686ef4290b265283dec49acf28b17b28feefaa6040719b13c55",
+  "ini_sha256": "6da0faf80b96da58b69ea309fd34785f3174cda2a02d52e5f06116d17d87b2d3",
+  "normal_ini_sha256": "3c013d70b7eb2f8a33c805c3343bbe4534782bf7dd93a81e7aea3f9fe05926e2",
+  "config": {
+    "diagnostics": "1",
+    "fps_overlay": "0",
+    "benchmark": "0",
+    "task_profile": "0",
+    "asset_io_profile": "0",
+    "vita_view_draw_capture": "0",
+    "vita_test_match": "1",
+    "vita_frameskip": "0",
+    "fixed_dt": "0",
+    "seed": "0x53545249",
+    "frame_capture": "ux0:data/strikersVita/loading_candidate.csv",
+    "frame_capture_frames": "30",
+    "frame_capture_skip": "0",
+    "frame_capture_match_only": "1",
+    "frame_capture_play_only": "1",
+    "vita_snapshot_play_frame": "0",
+    "vita_snapshot_match_frame": "0",
+    "log": "ux0:data/strikersVita/loading_candidate.log",
+    "vitagl_timing": "0",
+    "vitagl_transition_trace": "1",
+    "log_nis": "1",
+    "stadium": "The_Palace"
+  },
+  "start": 1792068478.829437,
+  "statuses": [
+    {
+      "time": 1792068511.104065,
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n60,35224,35224,352,2050,1,160,152,419,5212,0,none,skin_selectors\n"
+    },
+    {
+      "time": 1792068517.6442728,
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n120,60248,60248,352,7627,1,181,155,550,8706,0,none,skin_selectors\n"
+    },
+    {
+      "time": 1792068521.4196649,
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n180,76638,76638,352,10744,1,184,158,569,12402,0,none,skin_selectors\n"
+    },
+    {
+      "time": 1792068524.9128041,
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n240,96270,96270,352,15418,1,184,159,581,16212,0,none,skin_selectors\n"
+    },
+    {
+      "time": 1792068531.7864552,
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n300,118302,118302,352,19596,1,184,160,590,19825,0,none,skin_selectors\n"
+    },
+    {
+      "time": 1792068534.976833,
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n360,129329,129329,420,20987,1,197,169,645,21095,0,none,skin_selectors\n"
+    }
+  ],
+  "visual_only": false,
+  "prior_cores": [
+    "psp2core-1791883756-0x00000521c5-eboot.bin.psp2dmp",
+    "psp2core-1791999337-0x00043f38d3-eboot.bin.psp2dmp",
+    "psp2core-1792001391-0x000c372671-eboot.bin.psp2dmp",
+    "psp2core-1792002100-0x00043d35f7-eboot.bin.psp2dmp",
+    "psp2core-1792002978-0x000450308d-eboot.bin.psp2dmp"
+  ],
+  "launch": "Launched.",
+  "started_before_input": true,
+  "startup_log_confirmed": true,
+  "analysis": {
+    "path": "/Users/robin994/Documents/Code/strikersVita/report_performance/evidence/VITAGL_2026-10-15/loading-handoff/candidate/loading_candidate.csv",
+    "sha256": "439686764d14457eaeff145bbbb6e41441d07ba39ca9e2d4d9ba2491fd99872e",
+    "metadata": [
+      "# strikers-frame-capture-v1 diagnostics=1 fps_overlay=0",
+      "# play_only=1 counter=live_play",
+      "# actual_cpu_mhz=444 actual_gpu_mhz=222 actual_bus_mhz=222 actual_xbar_mhz=166"
+    ],
+    "samples": 30,
+    "all_gameplay": true,
+    "live_play_only": true,
+    "match_frame_first": 0,
+    "match_frame_last": 29,
+    "elapsed_fps": 14.633553860990018,
+    "mean_ms": 68.3361,
+    "median_ms": 61.7595,
+    "p95_ms": 99.221,
+    "p99_ms": 205.65,
+    "deadline_60_pct": 0.0,
+    "deadline_30_pct": 0.0,
+    "tasks_median_ms": 47.1985,
+    "present_median_ms": 13.8435
+  },
+  "complete": true,
+  "restored": true,
+  "kill": "Killed.",
+  "end": 1792068542.9655092
+}

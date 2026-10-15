@@ -1,0 +1,8 @@
+{
+  "reference_stadium": "The Palace",
+  "reference": "original-longplay-reference.png",
+  "candidate": "validated-realtime20/debug_frame_play_1.png",
+  "candidate_self_sha256": "091304cecf54b2ee565ff36384d334ab1fa3ccbfb9eadfc7ec80393c10552ed6",
+  "reply": "Sì, ora sono corretti",
+  "scope": "poles and shadows compared to the original longplay"
+}

@@ -3,10 +3,13 @@
 #include "NL/nlConfig.h"
 #include "NL/glx/glxMemory.h"
 #include "port/overlay.h"   // PORT: PortGfxArenaStats
+#if defined(PORT_VITA) && defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
+#include "port/native_match_direct.hpp"
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
 #include "../../../extern/aurora-vita/lib/gx/native_model_recipe.hpp"
 #include "../../../extern/aurora-vita/lib/gx/native_model_options.hpp"
 #endif
@@ -513,8 +516,8 @@ static void ResourceAllocRelease(int level)
  * Offset/Address/Size: 0x440 | 0x801B6D68 | size: 0xB4
  */
 #if defined(STRIKERS_VITA)
-extern "C" void aurora_vita_prepare_memory_write(const void* address, size_t bytes) noexcept;
-extern "C" void aurora_vita_notify_memory_write(const void* address, size_t bytes) noexcept;
+extern "C" void strikers_native_prepare_memory_write(const void* address, size_t bytes) noexcept;
+extern "C" void strikers_native_notify_memory_write(const void* address, size_t bytes) noexcept;
 static void* glplatResourceAllocRaw(unsigned long size, eGLMemory memType);
 /* Resource and frame arenas are reused (marker release, double-buffered
  * frames). Publish every handed-out range as written so Aurora never serves
@@ -524,8 +527,8 @@ void* glplatResourceAlloc(unsigned long size, eGLMemory memType)
     void* block = glplatResourceAllocRaw(size, memType);
     if (block != NULL && size != 0)
     {
-        aurora_vita_prepare_memory_write(block, size);
-        aurora_vita_notify_memory_write(block, size);
+        strikers_native_prepare_memory_write(block, size);
+        strikers_native_notify_memory_write(block, size);
     }
     return block;
 }
@@ -624,7 +627,13 @@ void glplatResourceRelease(unsigned long long marker)
 {
     int level = (int)(marker & 0xFFFFFFFF);
 
-#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER)
+#if defined(PORT_VITA) && defined(STRIKERS_VITA_NATIVE_MATCH_DIRECT)
+    // Remove native mesh bindings before the bump allocator reuses these
+    // DisplayList addresses (ABA-safe resource generations).
+    port::directmatch::on_resource_release(static_cast<uint32_t>(level));
+#endif
+
+#if defined(PORT_VITA) && !defined(STRIKERS_VITA_GXM_LEAN_RENDER) && !defined(STRIKERS_VITA_NATIVE_RUNTIME)
     if (aurora::gx::fifo::native_model_prepared_enabled())
         aurora::gx::fifo::release_native_model_sources(static_cast<uint32_t>(level));
 #endif
@@ -704,20 +713,22 @@ void glplatFrameAllocNextFrame()
     // Everything the new frame half held is rewritten this frame.
     if (n_frame[newFrame][0] != 0)
     {
-        aurora_vita_prepare_memory_write((const void*)p_frame[newFrame][0], n_frame[newFrame][0]);
-        aurora_vita_notify_memory_write((const void*)p_frame[newFrame][0], n_frame[newFrame][0]);
+        strikers_native_prepare_memory_write((const void*)p_frame[newFrame][0], n_frame[newFrame][0]);
+        strikers_native_notify_memory_write((const void*)p_frame[newFrame][0], n_frame[newFrame][0]);
     }
     if (n_frame[newFrame][1] != 0)
     {
-        aurora_vita_prepare_memory_write((const void*)p_frame[newFrame][1], n_frame[newFrame][1]);
-        aurora_vita_notify_memory_write((const void*)p_frame[newFrame][1], n_frame[newFrame][1]);
+        strikers_native_prepare_memory_write((const void*)p_frame[newFrame][1], n_frame[newFrame][1]);
+        strikers_native_notify_memory_write((const void*)p_frame[newFrame][1], n_frame[newFrame][1]);
     }
 #endif
     n_frame[newFrame][0] = 0;
     n_frame[newFrame][1] = 0;
 
+#if !defined(STRIKERS_VITA_NATIVE_RUNTIME)
     GXInvalidateVtxCache();
     GXInvalidateTexAll();
+#endif
 }
 
 /**

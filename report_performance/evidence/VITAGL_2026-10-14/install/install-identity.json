@@ -1,0 +1,9 @@
+{
+  "self_sha256": "76a43dd5aa6a16858648adc2a4de3bdda1bb6c99ebb988b795944f84a91ff985",
+  "time": 1791999270.7227688,
+  "replaced_sha256": "92f5ca4598abfa54cdb02135ee809d959392a7515c42acd2b9da5b8a5b100167",
+  "kill": "Error: cannot kill the app. Is the TITLEID correct?",
+  "activate": "Launched.",
+  "kill_retry": "Killed.",
+  "verified": true
+}

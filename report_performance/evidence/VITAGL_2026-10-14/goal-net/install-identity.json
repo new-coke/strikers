@@ -1,0 +1,9 @@
+{
+  "self_sha256": "7af37271783528d3c294d8c3a2c3935567e7892afa9c21a64e1bf124c283fd2f",
+  "time": 1792051073.2029262,
+  "replaced_sha256": "5979ec0909713a2aa722f01d67aaff460609a000b42be5ed1900cabd04757a19",
+  "kill": "Error: cannot kill the app. Is the TITLEID correct?",
+  "rollback_sha256": "ccfe94c1521d8e5667a74d8471d0304bcbb4b992e5ff8c7338d20149f2505517",
+  "verified": true,
+  "retained_remote_rollback": "eboot.bin.vitagl-previous"
+}

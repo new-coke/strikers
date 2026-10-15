@@ -15,6 +15,14 @@
 #include "Game/Render/Jumbotron.h"
 #include "Game/Render/CrowdManager.h"
 #include "Game/WorldManager.h"
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "port/config.h"
+#include "port/native_match_direct.hpp"
+#include "port/native_model_vertices.hpp"
+#include <cmath>
+#include <cstdio>
+#include <cstring>
+#endif
 
 const u32 GLTT_BumpLocal_bit = 1 << (int)GLTT_BumpLocal;
 
@@ -169,6 +177,11 @@ static inline void* FindStream(glModelPacket* pPacket, int streamID)
  */
 static void Fresnelify(glModelPacket* pPacket, eGLView view)
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    // Fresnel alpha is evaluated by the native vertex shader for this view.
+    (void)pPacket;(void)view;
+#else
+
     nlMatrix4 viewMat;
     nlMatrix4 objectMat;
     nlMatrix4 modelview;
@@ -325,6 +338,8 @@ static void Fresnelify(glModelPacket* pPacket, eGLView view)
             index++;
         }
     }
+
+#endif
 }
 
 /**
@@ -332,6 +347,25 @@ static void Fresnelify(glModelPacket* pPacket, eGLView view)
  */
 void DrawableModel::DrawModel(const nlMatrix4& worldMatrix)
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    if (PortDiagnosticsEnabled() && (!std::isfinite(worldMatrix.m41) || !std::isfinite(worldMatrix.m11)))
+    {
+        static unsigned logged = 0;
+        if (logged++ < 4)
+        {
+            FILE* f = std::fopen("ux0:data/strikersVita/native_invalid_objects.log", logged == 1 ? "w" : "a");
+            if (f)
+            {
+                std::fprintf(f, "model=%08x ball=%u flags=%08lx packets=%u\n", m_pModel ? m_pModel->id : 0,
+                    unsigned(m_pModel && m_pModel->id == BallModelID), m_uObjectCreationFlags, m_pModel ? m_pModel->numPackets : 0);
+                const float values[]{m_translation.x,m_translation.y,m_translation.z,m_orientation.x,m_orientation.y,m_orientation.z,m_orientation.w,m_scale};
+                std::fprintf(f,"translation,quaternion,scale");
+                for(float value:values){u32 bits;std::memcpy(&bits,&value,4);std::fprintf(f," %08x",bits);}
+                std::fputc('\n',f);std::fclose(f);
+            }
+        }
+    }
+#endif
     void* pLightData = NULL;
     void* pSpecularData = NULL;
     void* pEnvData = NULL;
@@ -584,6 +618,10 @@ void DrawableModel::DrawModel(const nlMatrix4& worldMatrix)
             return;
     }
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    if (m_pModel->id == BallModelID && PortDiagnosticsEnabled())
+        port::directmatch::note_ball_packets(newModel);
+#endif
     glViewAttachModel(view, m_uRenderLayer, newModel);
 
     if (m_bRenderPlanarShadow)
@@ -660,8 +698,8 @@ void GetAABBDimensions(const glModel* model, AABBDimensions& dimensions, uintptr
     glModelPacket* packet;
     int vertexIndex;
     packetOffset = 0;
-    nlVector3 min;
-    nlVector3 max;
+    nlVector3 min = {};
+    nlVector3 max = {};
 
     while (packetIndex < model->numPackets)
     {
@@ -669,6 +707,34 @@ void GetAABBDimensions(const glModel* model, AABBDimensions& dimensions, uintptr
         DisplayList* list = dlGetStruct(packet->indexBuffer);
         vertexIndex = 0;
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+        const glModelStream* stream = nullptr;
+        for (unsigned i = 0; i < packet->numStreams; ++i)
+            if (packet->streams[i].id == 0 || packet->streams[i].id == 13)
+                stream = &packet->streams[i];
+        std::span<const u16> indices;
+        bool valid = true;
+        if (packet->indexBuffer)
+        {
+            if (list && (!list->list || list->size < packet->numVertices * sizeof(u16)))
+                valid = false;
+            else
+                indices = {list ? static_cast<const u16*>(list->list) :
+                    reinterpret_cast<const u16*>(packet->indexBuffer), packet->numVertices};
+        }
+        std::array<float,3> low{}, high{};
+        if (valid && stream && stream->address && port::nativegxm::model_position_bounds(
+            {{reinterpret_cast<const u8*>(stream->address), stream->dataSize},
+             stream->stride, stream->beData == 0}, indices, packet->numVertices, low, high))
+        {
+            for (unsigned i = 0; i < 3; ++i)
+            {
+                if (first || low[i] < min.e[i]) min.e[i] = low[i];
+                if (first || high[i] > max.e[i]) max.e[i] = high[i];
+            }
+            first = 0;
+        }
+#else
         while (vertexIndex < packet->numVertices)
         {
             u16* pVert;
@@ -760,6 +826,7 @@ void GetAABBDimensions(const glModel* model, AABBDimensions& dimensions, uintptr
             first = 0;
             vertexIndex++;
         }
+#endif
 
         packetOffset += sizeof(glModelPacket);
         packetIndex++;

@@ -355,6 +355,9 @@ void ModeledScreenTransition::RenderOutline() const
 
             for (int iVertex = 0; iVertex < (int)packet.numVertices; iVertex++)
             {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+                const u16 vertex=static_cast<const u16*>(pList->list)[iVertex];
+#else
                 const u16* p;
                 if (((u16*)&pList->indices)[1] != 0)
                 {
@@ -379,6 +382,7 @@ void ModeledScreenTransition::RenderOutline() const
 
                 // PORT: FIFO indices are big-endian.
                 u16 vertex = port_be16(p);
+#endif
                 int index = vertex;
                 const glModelStream& stream = packet.streams[0];
 

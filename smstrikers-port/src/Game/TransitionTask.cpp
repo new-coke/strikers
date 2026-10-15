@@ -771,7 +771,6 @@ void TransitionTask::DestroyGameState()
         nlSingleton<FEResourceManager>::Instance()->Run(1.0f);
         nlSingleton<FESceneManager>::Instance()->Update(1.0f);
         nlSingleton<FESceneManager>::Instance()->RenderActiveScenes();
-        glFinish();
         glEndFrame();
         glSendFrame();
     }

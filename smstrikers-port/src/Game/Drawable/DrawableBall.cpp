@@ -32,6 +32,7 @@ static glModel* BallBlurCB(glModel* pModel, eGLView& view, unsigned long& uLayer
 void DrawableBall::EvaluateFrom(DrawableCharacter& character)
 {
     mPosition = character.GetBallPosition();
+    mPrevOrientation = mOrientation;
     mOrientation = character.GetBallOrientation();
 }
 
@@ -83,6 +84,8 @@ inline void DrawableBall::RenderMotionBlur(DrawableObject& obj) const
     DrawableModel::SetBallShadowDisabled(1);
 
     mSaved = obj.GetWorldMatrix();
+    const nlQuaternion savedOrientation = obj.m_orientation;
+    const bool savedMatrixUpToDate = obj.m_worldMatrixUpToDate;
     savedBlurCB = obj.GetCallback();
     obj.m_CB = BallBlurCB;
 
@@ -109,7 +112,9 @@ inline void DrawableBall::RenderMotionBlur(DrawableObject& obj) const
     }
 
     DrawableModel::SetBallShadowDisabled(savedBallShadowDisabled);
+    obj.m_orientation = savedOrientation;
     obj.m_worldMatrix = mSaved;
+    obj.m_worldMatrixUpToDate = savedMatrixUpToDate;
     obj.m_CB = savedBlurCB;
     obj.m_uObjectCreationFlags = uSavedFlags;
 }

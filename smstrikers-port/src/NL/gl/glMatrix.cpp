@@ -4,6 +4,11 @@
 
 #include "NL/platvmath.h"
 #include <string.h>
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "port/config.h"
+#include <cmath>
+#include <cstdio>
+#endif
 
 static uintptr_t gl_IdentityMatrix = 0xFFFFFFFF;   // PORT: an address
 
@@ -44,6 +49,26 @@ void glMatrixOrthographic(nlMatrix4& m, float width, float height)
  */
 void glSetMatrix(uintptr_t matrix, const nlMatrix4& m)
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    if (PortDiagnosticsEnabled())
+    {
+        bool finite = true;
+        for (float value : m.e) finite &= std::isfinite(value);
+        static unsigned logged = 0;
+        if (!finite && logged++ < 4)
+        {
+            FILE* f = std::fopen("ux0:data/strikersVita/native_matrix_producers.log", logged == 1 ? "w" : "a");
+            if (f)
+            {
+                std::fprintf(f, "matrix=%08lx caller=%08lx setter=%08lx\n", (unsigned long)matrix,
+                    (unsigned long)__builtin_return_address(0), (unsigned long)&glSetMatrix);
+                for (float value : m.e) { u32 bits; memcpy(&bits, &value, sizeof bits); std::fprintf(f, "%08x ", bits); }
+                std::fputc('\n', f);
+                std::fclose(f);
+            }
+        }
+    }
+#endif
     glplatSetMatrix(matrix, m);
 }
 

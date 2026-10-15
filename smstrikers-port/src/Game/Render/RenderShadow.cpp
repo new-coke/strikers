@@ -11,6 +11,7 @@
 #include "NL/nlString.h"
 #if defined(PORT_VITA)
 #include <cstdlib>
+#include "port/config.h"
 #endif
 
 const unsigned long UnlitProgram = glGetProgram("3d unlit");
@@ -57,14 +58,12 @@ void ShadowStartup()
     const nlVector4& result = glConstantGet("target/pshadow_num");
     MaxProjectedShadows = (int)result.x;
 #if defined(PORT_VITA)
-    // Vita A/B: projected character shadows render ten silhouettes into an EFB
-    // atlas and resolve them through recurring GXCopyTex operations. Besides
-    // being expensive ordering boundaries on GXM, hardware currently loses one
-    // team/atlas row. Use the game's existing blob-shadow path as the Vita
-    // correctness/performance baseline. Set STRIKERS_VITA_PROJECTED_SHADOWS=1
-    // only when explicitly validating the projected path.
+    // Keep the original projected silhouettes. The VitaGL atlas copies alpha
+    // coverage for every row; blobs remain an explicit diagnostic fallback.
     const char* projected = std::getenv("STRIKERS_VITA_PROJECTED_SHADOWS");
-    g_bShadowBlobs = !(projected != nullptr && projected[0] == '1');
+    g_bShadowBlobs = projected != nullptr && projected[0] == '0';
+    if (PortDiagnosticsEnabled())
+        OSReport("[shadow] native_a8_v1 projected=%u partitions=%d\n", unsigned(!g_bShadowBlobs), MaxProjectedShadows);
 #endif
 }
 

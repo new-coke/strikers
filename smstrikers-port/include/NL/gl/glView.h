@@ -36,6 +36,8 @@ struct glView
     /* 0xF8 */ glViewIterateCallback postViewCallback;
 };
 
+const glView* glViewGetState(eGLView view);
+
 bool glViewSetEnable(eGLView view, bool enable);
 bool glViewGetEnable(eGLView view);
 eGLTarget glViewSetFilterSource(eGLView view, eGLTarget target);

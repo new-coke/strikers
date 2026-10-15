@@ -1,4 +1,5 @@
 #include "NL/nlLexicalCast.h"
+#include "port/nis_render_state.hpp"
 #include "NL/nlConfig.h"
 #include "Game/ReplayManager.h"
 #include "Game/Camera/CameraMan.h"
@@ -10,6 +11,7 @@
 #include "Game/main.h"
 #include "NL/nlAlgorithm.h"
 #include "Game/TrophyTextures.h"
+#include <algorithm>
 
 extern float g_fSimulationTick;
 extern float g_fFixedUpdateTick;
@@ -272,7 +274,8 @@ void ReplayManager::EventHandler(Event* event)
 
 static bool NisOverridesReplayBuffer()
 {
-    return (nlTaskManager::m_pInstance->m_CurrState == 0x100) || (nlTaskManager::m_pInstance->m_PrevState == 0x100 && nlTaskManager::m_pInstance->m_CurrState == 1);
+    return port::nis_controls_render_snapshot(nlTaskManager::m_pInstance->m_CurrState,
+                                             nlTaskManager::m_pInstance->m_PrevState);
 }
 
 /**
@@ -284,6 +287,12 @@ void ReplayManager::RenderSnapshotAt(float deltaTime)
     mBlend[1] = FixedUpdateTask::mAccumulatedDeltaT / g_fFixedUpdateTick;
     mBlend[2] = FixedUpdateTask::mAccumulatedDeltaT / g_fFixedUpdateTick;
     mDeltaTime = FixedUpdateTask::mAccumulatedDeltaT;
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    // A bounded catch-up pass can leave more than one tick pending. Blend
+    // only between the two completed snapshots; never extrapolate a pose.
+    mBlend[0] = mBlend[1] = mBlend[2] = std::clamp(mBlend[0],0.f,1.f);
+    mDeltaTime = std::clamp(mDeltaTime,0.f,g_fFixedUpdateTick);
+#endif
 
     DoPotentialDebugReplay(deltaTime);
 

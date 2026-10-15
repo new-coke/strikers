@@ -1,0 +1,34 @@
+{
+  "time_utc": "2026-10-15T08:05:01.221845+00:00",
+  "self_sha256": "7af37271783528d3c294d8c3a2c3935567e7892afa9c21a64e1bf124c283fd2f",
+  "normal_ini_sha256": "3c013d70b7eb2f8a33c805c3343bbe4534782bf7dd93a81e7aea3f9fe05926e2",
+  "statuses": [
+    {
+      "frame": 60,
+      "gpu_error": 0,
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n60,35986,35986,400,2066,1,160,152,419,5960,0,none,skin_selectors\n"
+    },
+    {
+      "frame": 120,
+      "gpu_error": 0,
+      "text": "# vitagl_match_v8 backend=VitaGL deferred=RE4 aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34\nframe,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure\n120,64130,64130,400,6171,1,170,153,461,8220,0,none,skin_selectors\n"
+    }
+  ],
+  "prior_cores": [
+    "psp2core-1791883756-0x00000521c5-eboot.bin.psp2dmp",
+    "psp2core-1791999337-0x00043f38d3-eboot.bin.psp2dmp",
+    "psp2core-1792001391-0x000c372671-eboot.bin.psp2dmp",
+    "psp2core-1792002100-0x00043d35f7-eboot.bin.psp2dmp",
+    "psp2core-1792002978-0x000450308d-eboot.bin.psp2dmp"
+  ],
+  "launch": "Launched.",
+  "press": "Input pressed.",
+  "release": "Input released.",
+  "startup_normalized_ini_sha256": "6799f9b9ec49a4a2a37926ecf40affeedd951386034aafc0d9803585a5d4bf47",
+  "startup_normalization_only_comments_or_spacing": true,
+  "complete": true,
+  "final_self_and_ini_readback_verified": true,
+  "normal_runtime_progression_verified": true,
+  "left_running": true,
+  "new_cores": []
+}

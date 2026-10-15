@@ -16,11 +16,20 @@ public:
     template <typename T>
     void Replay(T&);
 
-    DrawableBall() { }
+    DrawableBall() : DrawableBall(nullptr) { }
     DrawableBall(RenderSnapshot* renderSnapshot)
         : mRenderSnapshot(renderSnapshot)
         , mVisible(true)
+        , mLastTouchIndex(-1)
+        , mOwnerIndex(-1)
+        , mPrevOwnerIndex(-1)
+        , mPassTargetIndex(-1)
+        , mVelocity{}
+        , mPosition{}
     {
+        // The first blend preserves this orientation for the blur passes.
+        nlQuatIdentity(mOrientation);
+        nlQuatIdentity(mPrevOrientation);
     }
 
     void EvaluateFrom(DrawableCharacter& character);

@@ -1,0 +1,22 @@
+usage: vita_vitagl_validation.py [-h] --out OUT [--label LABEL]
+                                 [--frames FRAMES] [--skip SKIP]
+                                 [--snapshot SNAPSHOT] [--diagnostics {0,1}]
+                                 [--timing {0,1}]
+                                 {install,run}
+
+Deliver and validate the standalone Strikers renderer with exact identity.
+Only targeted Companion commands, atomic SELF delivery, completed captures,
+configuration readback and presented-buffer screenshots are used.
+
+positional arguments:
+  {install,run}
+
+options:
+  -h, --help           show this help message and exit
+  --out OUT
+  --label LABEL
+  --frames FRAMES
+  --skip SKIP
+  --snapshot SNAPSHOT
+  --diagnostics {0,1}
+  --timing {0,1}

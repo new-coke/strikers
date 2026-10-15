@@ -1,0 +1,150 @@
+{
+  "date": "2026-10-15",
+  "base_commit": "a175e0a15ce0215d94075c9142162fa5be9d3f82",
+  "uncommitted_source": true,
+  "backend": "VitaGL",
+  "build_directory": "/Users/robin994/Documents/Code/strikersVita/smstrikers-port/build-vita-gxm-latest",
+  "artifacts_sha256": {
+    "strikers": "6d11619bf5200098b8f38b65f385810deb0d00dc4c3ea132f0157fbef935c700",
+    "strikers.map": "0a41b316de999f636882bc159e9393bcdee7cf8a673394557ba59610b7863d4c",
+    "strikers.velf": "2e114b9658635e796dc0c9ece695d9d78acb7c4418b8e7eb9a634643d8d34b14",
+    "strikers_vita.self": "eb4f47bdedc146836aa8726262b941e6303d0ccc5db015ba5a36ae90f0e6ea79",
+    "strikers_vita.vpk": "cfdc1730577693597c5cd14e2f8703b8c605acf29b9e27a0b01e9579b2db5131",
+    "libstrikers_vitagl.a": "e107159de830f005120ce2bdc40d0f0be567d087946d13f0d700bbdefd12e544"
+  },
+  "sources_sha256": {
+    "src/platform/deferred_renderer.cpp": "2162cbcd107189c752a0912a7a8a4175fdea51af4121cd81f28a8b3520eaaca4",
+    "src/platform/vitagl_renderer.cpp": "b4ae1911e92d6970c6ea57cf47158c265a6805487af4716aa9b75f3efaf63496",
+    "src/platform/audio_mix.cpp": "4f55e066bb2df4aac4c8f6b4caff809256064ba93b2b1e719b43a4b53186f2f0",
+    "src/platform/audio_out_native.cpp": "b276ef70e0ab733c4e9f05f48de3af8ef334b46d2f989fcf04ae0c0916e6d19d",
+    "src/platform/native_runtime.cpp": "833f73127ca214688d085b86aeecab7764779d054cb998fe55651bf2f174d003",
+    "src/platform/native_jobs.cpp": "5eda682d46657354ff6bc70adf2c74c19e0c45afc95613d1aab6ac7dc6a6a200",
+    "include/Game/Drawable/DrawableBall.h": "6457bb92db8b3a484f5e7912d4aec87e2a8a44a8f683b09693d920b8f9a499b8",
+    "src/Game/Drawable/DrawableBall.cpp": "7d288393ec9ee01a11007ba4c74a826a74d74ef6da5af3de8f834569210611b3",
+    "src/Game/Ball.cpp": "64ca3d09f877c54b245bed9d1181fa4329dd937dd8ef4532cdab2716f53e7ef6",
+    "extern/re4-renderer/gx_command_buffer.h": "e639b754e40c1400b54ed955d66b6d3d560647568d050bf502d988a81c3f12d5",
+    "include/port/scene_shaders.hpp": "42f5568ce8c9a97775ba88f5f06d35be6d30d4c466daa5e3ce675acf29a72d08",
+    "include/port/renderer.hpp": "9d7784b74d742fbf8f40f82df070929b9eed443f870b3e4b95fcf0a4f1591ac5",
+    "include/port/native_match_direct.hpp": "40a9645c3793628a086979daa03a143f0fb62bcd7c389f0416df390a1f0c3591",
+    "src/platform/native_match_runtime.cpp": "0ad634b475cc1e842d312cfce2545e2564c3c96e2ebaafd1c853fd765f2d37c6",
+    "src/Game/Drawable/DrawableModel.cpp": "251905d7320579e01486a94d8f8aa157578f623f63012287a6a4372cb1577bd6",
+    "src/Game/NisPlayer.cpp": "3575caa09b41ac01861ea6cb93f1b2ceb2d5f2517124413fe1cb505be67ccd83",
+    "src/Game/ReplayManager.cpp": "ff4ad2c97dca389a5785f243c80dbc5c04381632f4441ecb68ef1d4867c8907a",
+    "src/Game/Render/Nis.cpp": "98327dfb29115e6c5cee0dbc7590c108b681d5a65f2c4155d6e910b36c70d999",
+    "include/port/nis_render_state.hpp": "aef9ebc6541d435b7ff0880d2f7ec92a4e398f0dc7634d65e10977aa24c2d44f",
+    "include/Game/RenderSnapshot.h": "6e83c55f8e2f81403ae6f36f775ca4ae6076baabdb032e0116d1901fa2dcb643",
+    "src/Game/RenderSnapshot.cpp": "f48497976a944e6a3824af0617b9f0dcde66e851e8d7ab60b67567a27607fd09",
+    "include/port/scene_texture_sampling.hpp": "c834a996a9227f7a5ad937a5b37bce6adeeeb1754fe556042be3161e43b861d1",
+    "include/port/native_model_sources.hpp": "018947083d5279310fad52ce04a5c0af9c0470148d532e2b13af492ce83581a5",
+    "tests/vitagl_renderer_driver_test.cpp": "3f092d5d6b6bdc54ab6f1e450398bcc5561c19c5e080222952e9f406d17574c6",
+    "tests/native_model_sources_test.cpp": "4c5713d2b0ab6f05c91154417b37bfdba5622b31a6f354865e97cab58a2ff22c",
+    "tools/vita_vitagl_validation.py": "0902cb6d9f453d54faf34e8228336c44302d56f22bc20694e5a8fbc01faf95f7",
+    "src/Game/Effects/ParticleSystem.cpp": "a819d55ae179464e78db2f1dc4d01d0766c7e9a8f4c9432bfacf619c1ded088f",
+    "CMakeLists.txt": "d281da283304ea0f31aac6fd02f20b5b4378f8336f17ed20d648277cca4244f5"
+  },
+  "cmake": {
+    "STRIKERS_AURORA": "OFF",
+    "STRIKERS_VITA_VITAGL": "ON",
+    "STRIKERS_VITA_GX_THREAD": "OFF",
+    "STRIKERS_VITA_NATIVE_GXM_RENDERER": "OFF",
+    "STRIKERS_VITA_PROFILER": "OFF",
+    "STRIKERS_VITA_PROFILE_AUTOSTART": "OFF",
+    "STRIKERS_VITA_FAST_PROFILER_BUILD": "OFF"
+  },
+  "vitagl_flags": [
+    "READBACKS_SPEEDHACK=1",
+    "HAVE_SHADER_CACHE=1",
+    "NO_DEBUG=1",
+    "DRAW_SPEEDHACK=1",
+    "STORE_DEPTH_STENCIL=1"
+  ],
+  "provider_units": 30,
+  "aurora_sdl_gx_graphics_symbols": 0,
+  "application_glfinish_glflush_calls": 0,
+  "binary_glfinish_glflush_calls": 0,
+  "vpk_self_identical": true,
+  "local_previous_verified": true,
+  "local_previous_self_sha256": "2478aa7c38e353e82cf375a1ef92cf9437516a5d6c764dfb0515414cd7b66de5",
+  "normal_ini_sha256": "3c013d70b7eb2f8a33c805c3343bbe4534782bf7dd93a81e7aea3f9fe05926e2",
+  "changes": [
+    "light-ramp clamp on both axes, independent of material wrap bits",
+    "invalidate resident geometry when rigid PN selectors change",
+    "three NIS animated balls with bounded presentation snapshots",
+    "replace per-packet range/bone temporary vectors with bounded arrays",
+    "remove 32 KiB default initialization from every invalidation snapshot",
+    "opt-in particle trace records original template/spec infront and depth states",
+    "VitaGL STORE_DEPTH_STENCIL=1 to preserve depth across intermediate framebuffer scenes"
+  ],
+  "host_validation": {
+    "ramp_clamp_gl_driver": "ASan/UBSan passed",
+    "stitch_generation_registry": "ASan/UBSan passed",
+    "arm_invalidation_memset": "32768-byte memset removed from consume_writes prologue; live-prefix copies retained"
+  },
+  "installation": "particle-depth/install-identity.json",
+  "hardware_visual": {
+    "captures": [
+      "particle-depth-candidate frame180",
+      "particle-depth-frame240",
+      "particle-depth-frame1170"
+    ],
+    "particle_source_rows_through_frame180_identical": 248,
+    "particle_image_changed_pct": 0.45285692401960786,
+    "particle_image_change_bounds": [
+      238,
+      272,
+      575,
+      395
+    ],
+    "model_image_changed_pct": 0.21005667892156862,
+    "models_human_accepted_on_previous2478": true,
+    "particles_human_acceptance": "Scintille ora corrette",
+    "new_crashes": 0
+  },
+  "hardware_fps": {
+    "self_sha256": "eb4f47bdedc146836aa8726262b941e6303d0ccc5db015ba5a36ae90f0e6ea79",
+    "diagnostics": 0,
+    "timing": 0,
+    "fixed_dt": "16.666666667",
+    "seed": "0x53545249",
+    "window": "300 live frames 600..899 per run",
+    "clocks_mhz": [
+      444,
+      222,
+      222,
+      166
+    ],
+    "fps_mean": 28.551571489797432,
+    "fps_min": 28.45729044478176,
+    "fps_max": 28.668574082462285,
+    "baseline_self_sha256": "2478aa7c38e353e82cf375a1ef92cf9437516a5d6c764dfb0515414cd7b66de5",
+    "baseline_fps_mean": 25.11046465974109,
+    "fps_gain_pct": 13.703875562180933,
+    "mean_frame_time_reduction_pct": 12.052719478959983,
+    "combined_900_samples": {
+      "samples": 900,
+      "elapsed_fps": 28.551302169375525,
+      "mean_ms": 35.02467222222222,
+      "median_ms": 34.7075,
+      "p95_ms": 40.576,
+      "p99_ms": 59.723,
+      "deadline_30_pct": 23.22222222222222,
+      "deadline_60_pct": 0.0
+    },
+    "all_runs_restored": true,
+    "all_runs_closed": "Killed.",
+    "new_crashes": 0,
+    "evidence": "particle-depth/quiet-summary.json"
+  },
+  "normal_ini_restored_after_first_capture": true,
+  "capture_helper_updated_after_build": true,
+  "final_delivery": {
+    "evidence": "particle-depth/final-device-readback.json",
+    "self_sha256": "eb4f47bdedc146836aa8726262b941e6303d0ccc5db015ba5a36ae90f0e6ea79",
+    "normal_ini_sha256": "3c013d70b7eb2f8a33c805c3343bbe4534782bf7dd93a81e7aea3f9fe05926e2",
+    "self_and_ini_byte_readback_verified": true,
+    "runtime_progression_verified": true,
+    "last_verified_global_frame": 1560,
+    "new_crashes": 0,
+    "left_running_with_normal_config": true
+  }
+}

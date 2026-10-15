@@ -1,0 +1,59 @@
+control2478
+<port::directmatch::(anonymous namespace)::consume_writes()>:
+81217ee4:	e92d 4ff0 	stmdb	sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
+81217ee8:	f240 0700 	movw	r7, #0
+81217eec:	f5ad 4d00 	sub.w	sp, sp, #32768	@ 0x8000
+81217ef0:	f2c0 0700 	movt	r7, #0
+81217ef4:	b081      	sub	sp, #4
+81217ef6:	f44f 4200 	mov.w	r2, #32768	@ 0x8000
+81217efa:	2100      	movs	r1, #0
+81217efc:	4668      	mov	r0, sp
+81217efe:	f09c fb47 	bl	812b4590 <memset>
+81217f02:	b147      	cbz	r7, 81217f16 <port::directmatch::(anonymous namespace)::consume_writes()+0x32>
+81217f04:	f24e 00d8 	movw	r0, #57560	@ 0xe0d8
+81217f08:	f2c8 103a 	movt	r0, #33082	@ 0x813a
+81217f0c:	f088 fe80 	bl	812a0c10 <pthread_mutex_lock>
+81217f10:	2800      	cmp	r0, #0
+81217f12:	f040 8108 	bne.w	81218126 <port::directmatch::(anonymous namespace)::consume_writes()+0x242>
+81217f16:	f246 09d4 	movw	r9, #24788	@ 0x60d4
+81217f1a:	f246 08d0 	movw	r8, #24784	@ 0x60d0
+81217f1e:	f2c8 193a 	movt	r9, #33082	@ 0x813a
+81217f22:	f2c8 183a 	movt	r8, #33082	@ 0x813a
+81217f26:	f8d9 6000 	ldr.w	r6, [r9]
+81217f2a:	f898 5000 	ldrb.w	r5, [r8]
+81217f2e:	2e00      	cmp	r6, #0
+81217f30:	f000 80d0 	beq.w	812180d4 <port::directmatch::(anonymous namespace)::consume_writes()+0x1f0>
+81217f34:	2e01      	cmp	r6, #1
+81217f36:	f000 80e6 	beq.w	81218106 <port::directmatch::(anonymous namespace)::consume_writes()+0x222>
+81217f3a:	f246 01d8 	movw	r1, #24792	@ 0x60d8
+81217f3e:	00f2      	lsls	r2, r6, #3
+
+candidate0d0e
+<port::directmatch::(anonymous namespace)::consume_writes()>:
+   0:	e92d 4ff0 	stmdb	sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
+   4:	f240 0500 	movw	r5, #0
+   8:	f2c0 0500 	movt	r5, #0
+   c:	f5ad 4d00 	sub.w	sp, sp, #32768	@ 0x8000
+  10:	b083      	sub	sp, #12
+  12:	b145      	cbz	r5, 26 <port::directmatch::(anonymous namespace)::consume_writes()+0x26>
+  14:	f240 0000 	movw	r0, #0
+  18:	f2c0 0000 	movt	r0, #0
+  1c:	f7ff fffe 	bl	0 <pthread_mutex_lock>
+  20:	2800      	cmp	r0, #0
+  22:	f040 80f8 	bne.w	216 <port::directmatch::(anonymous namespace)::consume_writes()+0x216>
+  26:	f240 0300 	movw	r3, #0
+  2a:	f240 0800 	movw	r8, #0
+  2e:	f2c0 0300 	movt	r3, #0
+  32:	f2c0 0800 	movt	r8, #0
+  36:	681c      	ldr	r4, [r3, #0]
+  38:	f898 9000 	ldrb.w	r9, [r8]
+  3c:	2c00      	cmp	r4, #0
+  3e:	f000 80bf 	beq.w	1c0 <port::directmatch::(anonymous namespace)::consume_writes()+0x1c0>
+  42:	2c01      	cmp	r4, #1
+  44:	f000 80d6 	beq.w	1f4 <port::directmatch::(anonymous namespace)::consume_writes()+0x1f4>
+  48:	f240 0100 	movw	r1, #0
+  4c:	00e2      	lsls	r2, r4, #3
+  4e:	f2c0 0100 	movt	r1, #0
+  52:	9301      	str	r3, [sp, #4]
+  54:	a802      	add	r0, sp, #8
+  56:	f7ff fffe 	bl	0 <memcpy>

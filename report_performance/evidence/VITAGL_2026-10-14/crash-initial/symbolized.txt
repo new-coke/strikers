@@ -1,0 +1,63 @@
+=== THREADS ===
+    SMSVITA01
+        ID: 0x40010003
+        Stop reason: 0x0 (No reason)
+        Status: 0x8 (Waiting)
+        PC: 0x813059c8 (strikers@1 + 0x2b69c8)
+    SceCommonDialogWorker
+        ID: 0x400100c3
+        Stop reason: 0x0 (No reason)
+        Status: 0x8 (Waiting)
+        PC: 0xe00150b4 (SceLibKernel@1 + 0x6304)
+    vitaGL Garbage Collector
+        ID: 0x40010141
+        Stop reason: 0x0 (No reason)
+        Status: 0x8 (Waiting)
+        PC: 0xe00150b4 (SceLibKernel@1 + 0x6304)
+    SceGxmDisplayQueue
+        ID: 0x4001014f
+        Stop reason: 0x0 (No reason)
+        Status: 0x8 (Waiting)
+        PC: 0xe00154c4 (SceLibKernel@1 + 0x6714)
+    vitaGL Splashscreen
+        ID: 0x40010161
+        Stop reason: 0x30004 (Data abort exception)
+        Status: 0x1 (Running)
+        PC: 0xe00aa1d8 (SceGxm@1 + 0x1e638)
+
+=== THREAD "vitaGL Splashscreen" <0x40010161> CRASHED (Data abort exception) ===
+
+DISASSEMBLY AROUND PC: 0xe00aa1d8 (ARM):
+[90m[0m
+[90m8101e628 <_ZN6Goalie12ActionMoveWBEf+0x4bc>:[0m
+[90m8101e628:	022f      	lsls	r7, r5, #8[0m
+[90m8101e62a:	3b28      	subs	r3, #40	@ 0x28[0m
+[90m8101e62c:	b29b      	uxth	r3, r3[0m
+[90m8101e62e:	4293      	cmp	r3, r2[0m
+[90m8101e630:	f240 8097 	bls.w	8101e762 <_ZN6Goalie12ActionMoveWBEf+0x5f6>[0m
+[90m8101e634:	edd4 7a19 	vldr	s15, [r4, #100]	@ 0x64[0m
+[91m!!! 		f64f 4017 	movw	r0, #64535	@ 0xfc17 !!![0m
+[90m8101e63c:	e6fc      	b.n	8101e438 <_ZN6Goalie12ActionMoveWBEf+0x2cc>[0m
+[90m8101e63e:	f8b4 2042 	ldrh.w	r2, [r4, #66]	@ 0x42[0m
+[90m8101e642:	f8b4 3040 	ldrh.w	r3, [r4, #64]	@ 0x40[0m
+[90m8101e646:	1a9b      	subs	r3, r3, r2[0m
+[90m[0m
+REGISTERS:
+    R0: 0x818efa1c
+    R1: 0xffffffff
+    R2: 0xbf800000
+    R3: 0x4
+    R4: 0x0
+    R5: 0x4
+    R6: 0xfffffffd
+    R7: 0x818effa8
+    R8: 0x817cc394
+    R9: 0x817cc390
+    R10: 0x816eb7d8
+    R11: 0x818efa18
+    R12: 0xf
+    SP: 0x818ef8a8
+    PC: 0xe00aa1d8 (SceGxm@1 + 0x1e638)
+    LR: 0x1
+
+STACK CONTENTS AROUND SP:

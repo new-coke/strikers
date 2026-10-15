@@ -1,0 +1,4 @@
+# native_match_v1 explicit_no_gx_fallback=1 game_simulation=1 native_material=unlit_color_only
+# error=none mesh_manifest=640 native_pipeline=1
+frame,callbacks,native_draws_queued,native_draws_accepted,native_draws_rejected,unsupported_view,unsupported_material,unsupported_raster,unsupported_geometry,missing_asset,upload_errors,queue_errors,present_errors,gx_suppressed_bytes,gx_suppressed_callbacks
+2880,1046314,0,0,0,0,1003335,0,0,0,0,0,0,1613532,4362,0

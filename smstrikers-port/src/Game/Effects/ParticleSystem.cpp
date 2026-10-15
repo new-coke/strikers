@@ -11,6 +11,12 @@
 #include "NL/nlMemory.h"
 #include "PowerPC_EABI_Support/Runtime/MWCPlusLib.h"
 #include "types.h"
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "port/config.h"
+#include "port/framerate.h"
+#include <cstdio>
+#include <cstdlib>
+#endif
 
 struct TextureFrame
 {
@@ -752,6 +758,36 @@ void ParticleSystem::RenderAllParticles(eGLView view)
 
     glSetRasterState(GLS_AlphaTest, 1);
     glSetCurrentRasterState(glHandleizeRasterState());
+
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    static const bool traceParticles = [] {
+        const char* value = std::getenv("STRIKERS_VITA_PARTICLE_TRACE");
+        return value && value[0] == '1';
+    }();
+    if (traceParticles && PortDiagnosticsEnabled() && glGetCurrentFrame() % 60 == 0)
+    {
+        static bool firstTrace = true;
+        FILE* file = std::fopen("ux0:data/strikersVita/native_particle_trace.log",
+                                firstTrace ? "w" : "a");
+        firstTrace = false;
+        if (file)
+        {
+            const auto* state = gl_GetCurrentStateBundle();
+            std::fprintf(file,
+                "frame=%u view=%u template=%08x texture=%08lx particles=%u "
+                "template_front=%u spec_front=%u allow_front=%u depth_test=%lu depth_write=%lu "
+                "depth_func=%lu blend=%lu\n",
+                unsigned(glGetCurrentFrame()), unsigned(view), m_pTemplate->m_uHashID,
+                (unsigned long)m_pTemplate->m_hTexture, unsigned(m_Particles.m_numNodes),
+                unsigned(m_pTemplate->m_bInFront), unsigned(m_pSpec && m_pSpec->m_bInFront),
+                unsigned(m_AllowInFront), glGetRasterState(state->raster, GLS_DepthTest),
+                glGetRasterState(state->raster, GLS_DepthWrite),
+                glGetRasterState(state->raster, GLS_DepthFunc),
+                glGetRasterState(state->raster, GLS_AlphaBlend));
+            std::fclose(file);
+        }
+    }
+#endif
 
     static u32 WhiteTexture = glGetTexture("global/white");
 

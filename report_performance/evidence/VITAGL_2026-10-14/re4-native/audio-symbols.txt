@@ -1,0 +1,5 @@
+81204148 00001ed8 T PortAudioMixRender
+81206338 0000054c t (anonymous namespace)::audio_thread(void*)
+8138cd40 00000004 b PortAudioMixRender::s_tick
+8138cd44 00000004 b PortAudioMixRender::s_warned
+8138cd48 00000004 b PortAudioMixRender::s_started

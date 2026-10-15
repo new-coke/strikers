@@ -1,0 +1,51 @@
+{
+  "self_sha256": "dba6beed9973752b78b9840f023af8afad7071737853f157441c04ce5ac3f5d1",
+  "ini_sha256": "50603cf5af32fa7a8e13e5c806ef1c17ad58d5b2e4fe061c2bf2b6ff7f4dd70b",
+  "normal_ini_sha256": "3c013d70b7eb2f8a33c805c3343bbe4534782bf7dd93a81e7aea3f9fe05926e2",
+  "config": {
+    "diagnostics": "1",
+    "fps_overlay": "0",
+    "benchmark": "0",
+    "task_profile": "0",
+    "asset_io_profile": "0",
+    "vita_view_draw_capture": "0",
+    "vita_test_match": "1",
+    "vita_frameskip": "0",
+    "fixed_dt": "16.666666667",
+    "seed": "0x53545249",
+    "frame_capture": "ux0:data/strikersVita/vitagl_nis_three_balls.csv",
+    "frame_capture_frames": "60",
+    "frame_capture_skip": "0",
+    "frame_capture_match_only": "1",
+    "frame_capture_play_only": "1",
+    "vita_snapshot_play_frame": "0",
+    "vita_snapshot_match_frame": "480",
+    "log": "ux0:data/strikersVita/vitagl_nis_three_balls.log",
+    "vitagl_timing": "1"
+  },
+  "start": 1792018072.631561,
+  "statuses": [],
+  "prior_cores": [
+    "psp2core-1791883756-0x00000521c5-eboot.bin.psp2dmp",
+    "psp2core-1791999337-0x00043f38d3-eboot.bin.psp2dmp",
+    "psp2core-1792001391-0x000c372671-eboot.bin.psp2dmp",
+    "psp2core-1792002100-0x00043d35f7-eboot.bin.psp2dmp",
+    "psp2core-1792002978-0x000450308d-eboot.bin.psp2dmp"
+  ],
+  "launch": "Launched.",
+  "aborted_for_unobserved_startup": true,
+  "ui_state_requested": true,
+  "complete": false,
+  "controller_terminated": 1792018613.6614861,
+  "late_hardware_feedback": "User confirmed game running after controller had been terminated; startup log and three ball pose IDs then fetched",
+  "late_manual_close": {
+    "kill": "Killed.",
+    "time": 1792046480.642459
+  },
+  "late_pose_ids_verified": [
+    0,
+    1,
+    2
+  ],
+  "capture_complete": false
+}

@@ -1,0 +1,24 @@
+{
+  "frame": 180,
+  "control": "0d0ebe23",
+  "candidate": "eb4f47bd",
+  "changed_pixel_pct": 0.45285692401960786,
+  "mean_rgb_difference": 0.06642795138888889,
+  "particle_source_records_identical": false,
+  "particle_source_rows": [
+    263,
+    271
+  ],
+  "changed_region": [
+    238,
+    272,
+    575,
+    395
+  ],
+  "interpretation": "The only changed pixels are around electric-fence effects and their scene occluders; field and sky are unchanged. Original particle source state is compared separately.",
+  "particle_source_records_through_snapshot_identical": true,
+  "particle_source_rows_through_snapshot": [
+    248,
+    248
+  ]
+}

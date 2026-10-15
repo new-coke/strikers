@@ -1,4 +1,7 @@
 #include "NL/glx/glxTarget.h"
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "port/native_match_direct.hpp"
+#endif
 #include "port/aspect.h"
 #include "NL/glx/glxTexture.h"
 #include "dolphin/gx.h"
@@ -127,7 +130,13 @@ void glxPostInitTargets()
  */
 void glx_ShadowGrab()
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    if(!glx_SharedLock)port::directmatch::capture_texture(GrabTextureName,0,0,PortLogicalFrameWidth(),448);
+#else
+
     nlBreak();
+
+#endif
 }
 
 /**
@@ -135,7 +144,13 @@ void glx_ShadowGrab()
  */
 void glx_ColourGrab()
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    if(!glx_SharedLock)port::directmatch::capture_texture(GrabTextureName,0,0,PortLogicalFrameWidth(),448);
+#else
+
     nlBreak();
+
+#endif
 }
 
 /**
@@ -143,7 +158,13 @@ void glx_ColourGrab()
  */
 void glx_OffsetGrab()
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    if(!glx_SharedLock)port::directmatch::capture_texture(GrabTextureName,0,0,PortLogicalFrameWidth(),448);
+#else
+
     nlBreak();
+
+#endif
 }
 
 /**
@@ -151,6 +172,10 @@ void glx_OffsetGrab()
  */
 void glx_ClearZBuffer()
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    port::directmatch::clear_depth();
+#else
+
     if ((u8)glx_SharedLock == 0)
     {
         bool colorUpdate = gxSetColourUpdate(false);
@@ -172,6 +197,8 @@ void glx_ClearZBuffer()
         gxSetAlphaUpdate(alphaUpdate);
         gxRestoreZMode();
     }
+
+#endif
 }
 
 /**
@@ -179,6 +206,12 @@ void glx_ClearZBuffer()
  */
 void glx_ShadowTextureGrab()
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    if(glx_SharedLock)return;
+    port::directmatch::capture_shadow_atlas();
+    const u32 c=*glGetClearColour();port::directmatch::clear_scene({float(c>>24)/255,float((c>>16)&255)/255,float((c>>8)&255)/255,float(c&255)/255});
+#else
+
     char constantname[32] = "target/pshadow_updated00";
     char texturename[32] = "target/pshadow00";
     bool colorUpdate = gxSetColourUpdate(true);
@@ -237,6 +270,8 @@ void glx_ShadowTextureGrab()
     gxSetColourUpdate(colorUpdate);
     gxSetAlphaUpdate(alphaUpdate);
     gxRestoreZMode();
+
+#endif
 }
 
 /**
@@ -244,6 +279,10 @@ void glx_ShadowTextureGrab()
  */
 void glx_DOFGrab()
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    if(!glx_SharedLock)port::directmatch::capture_texture(DOFTextureName,0,0,PortLogicalFrameWidth(),448);
+#else
+
     if ((u8)glx_SharedLock == 0)
     {
         bool colorUpdate = gxSetColourUpdate(true);
@@ -259,6 +298,8 @@ void glx_DOFGrab()
         gxSetAlphaUpdate(alphaUpdate);
         gxRestoreZMode();
     }
+
+#endif
 }
 
 /**
@@ -266,6 +307,11 @@ void glx_DOFGrab()
  */
 void glx_DOFUpdate(float startDist)
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    nlMatrix4 p;glViewGetProjectionMatrix(GLV_DepthOfField,p);float z=p.e[10]*(-startDist)+p.e[11];if(p.e[14]==-1&&startDist!=0)z/=startDist;
+    const float depth=-z*16777215.f;nlVector4 value={depth,depth,depth,depth};glConstantSet("dof/depth",value);
+#else
+
     Mtx view_matrix;
     f32 projection[7];
     f32 viewport[6];
@@ -284,6 +330,8 @@ void glx_DOFUpdate(float startDist)
     f32 depth = 16777215.0f * -sz;
     nlVector4 v4 = { depth, depth, depth, depth };
     glConstantSet("dof/depth", v4);
+
+#endif
 }
 
 /**
@@ -299,6 +347,10 @@ void glx_UpdateWarble()
  */
 void glPlatGrabFrameBufferToTexture(unsigned long texture, unsigned int destWidth, unsigned int destHeight, unsigned int srcLeft, unsigned int srcTop, unsigned int srcWidth, unsigned int srcHeight)
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    if(!glx_SharedLock)port::directmatch::capture_texture(texture,srcLeft,srcTop,srcWidth,srcHeight);
+#else
+
     static GXTexFmt gx_format[] = {
         GX_TF_RGB565,
         GX_TF_RGB5A3,
@@ -337,4 +389,6 @@ void glPlatGrabFrameBufferToTexture(unsigned long texture, unsigned int destWidt
     gxSetColourUpdate(colorUpdate);
     gxSetAlphaUpdate(alphaUpdate);
     gxRestoreZMode();
+
+#endif
 }
