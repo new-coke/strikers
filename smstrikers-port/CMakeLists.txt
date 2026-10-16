@@ -912,6 +912,21 @@ if(STRIKERS_VITA)
     # Request the extended user-memory mode in param.sfo. vita-mksfoex uses
     # -d for DWORD entries; ATTRIBUTE2=12 selects the larger app memory budget.
     set(VITA_MKSFOEX_FLAGS "${VITA_MKSFOEX_FLAGS} -d ATTRIBUTE2=12")
+    # Packaging the images alone does not assign their LiveArea roles. Keep
+    # the background and launch artwork attached to the supported a1 layout.
+    set(_strikers_livearea_template
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets/vita/sce_sys/livearea/contents/template.xml")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+        "${_strikers_livearea_template}")
+    file(READ "${_strikers_livearea_template}" _strikers_livearea_xml)
+    if(NOT _strikers_livearea_xml MATCHES "<livearea[ \t\r\n]+style=\"a1\"" OR
+       NOT _strikers_livearea_xml MATCHES
+           "<livearea-background>[ \t\r\n]*<image>bg\\.png</image>[ \t\r\n]*</livearea-background>" OR
+       NOT _strikers_livearea_xml MATCHES
+           "<gate>[ \t\r\n]*<startup-image>startup\\.png</startup-image>[ \t\r\n]*</gate>")
+        message(FATAL_ERROR
+            "LiveArea must use the a1 layout, bg.png background and startup.png launch gate")
+    endif()
     vita_create_self(strikers_vita.self strikers UNSAFE)
     vita_create_vpk(strikers_vita.vpk SMSVITA01 strikers_vita.self
         VERSION 01.00 NAME "Super Mario Strikers Vita"
