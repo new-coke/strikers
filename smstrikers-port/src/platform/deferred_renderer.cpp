@@ -115,9 +115,8 @@ struct DeferredRenderer::Impl
             storage[i] = block;
             buffers[i].reset_storage(block, SlotBytes);
         }
-        std::fprintf(
-            stderr,
-            "[vitagl-backend] Command ring: 8 x 2 MiB, immutable commands, publish every 16 draws\n");
+        std::fprintf(stderr, "[vitagl-backend] Command ring: 8 x 2 MiB, immutable commands, "
+                             "publish every 16 draws\n");
         return true;
     }
     void publish()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Validate and summarize lossless, opt-in view/draw diagnostics (NOT GPU time).
 
-The JSONL format is documented in report_performance/.../IMPLEMENTATION.md.
+The JSONL format is documented in docs/report_performance/.../IMPLEMENTATION.md.
 It intentionally cannot turn a partial trace or a diagnostic finish wait into
 an FPS or per-fragment cost claim.
 """

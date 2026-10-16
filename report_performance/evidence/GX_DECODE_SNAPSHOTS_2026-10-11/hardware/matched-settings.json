@@ -1,8 +1,0 @@
-{
-  "launch_config_equal": true,
-  "launch_ini_sha256": "f62c92c416f6226ed7ad2f79eb58cec1b5065e9f8136349b7ab0db7765bece1d",
-  "control_SELF": "44052765ae221aef45a890a8ec49c254dc2cc756d53eadb887ac5d81942c7a9d",
-  "candidate_SELF": "1200ffa8d3a29f988c4636dfb1724d9fcbe09e89e1346ae294ef5bcc2ff571a1",
-  "capture_path_reused": "ux0:data/strikersVita/perf-test.csv",
-  "control_capture_archived_and_removed": true
-}

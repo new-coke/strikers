@@ -1,5 +1,0 @@
-# strikers-frame-capture-v1 diagnostics=0 fps_overlay=0
-# play_only=1 counter=live_play
-# actual_cpu_mhz=444 actual_gpu_mhz=222 actual_bus_mhz=222 actual_xbar_mhz=166
-sample,match,match_frame,frame_us,tasks_us,present_us,sleep_us
-0,1,120,5002332,89331,4913001,0

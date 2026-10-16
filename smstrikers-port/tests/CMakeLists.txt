@@ -46,6 +46,20 @@ if(NOT STRIKERS_VITA)
         "${CMAKE_BINARY_DIR}/_deps/xxhash-src"
         "${CMAKE_CURRENT_SOURCE_DIR}/../build-vita-gxm-latest/_deps/xxhash-src")
     if(STRIKERS_NATIVE_XXHASH_INCLUDE_DIR)
+        if(UNIX AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+            add_executable(native_match_runtime_driver_test native_match_runtime_driver_test.cpp
+                ../src/platform/native_match_runtime.cpp ../src/platform/native_match_draw.cpp
+                ../src/platform/native_match_geometry.cpp ../src/platform/native_match_material.cpp
+                ../src/platform/native_match_resources.cpp ../src/platform/native_match_diagnostics.cpp
+                ../src/platform/native_texture_record.cpp)
+            target_compile_features(native_match_runtime_driver_test PRIVATE cxx_std_20)
+            target_compile_definitions(native_match_runtime_driver_test PRIVATE
+                STRIKERS_VITA_NATIVE_RUNTIME=1 STRIKERS_NATIVE_TEXTURE_TEST=1)
+            target_compile_options(native_match_runtime_driver_test PRIVATE -UNDEBUG -Wno-register)
+            target_include_directories(native_match_runtime_driver_test PRIVATE "${STRIKERS_NATIVE_XXHASH_INCLUDE_DIR}")
+            target_link_libraries(native_match_runtime_driver_test PRIVATE port_flags)
+            add_test(NAME native_match_runtime_driver COMMAND native_match_runtime_driver_test)
+        endif()
         add_executable(strikers_compile_native_graphics ../tools/compile_native_graphics.cpp
             ../src/platform/native_graphics.cpp ../src/platform/native_texture_record.cpp)
         target_compile_features(strikers_compile_native_graphics PRIVATE cxx_std_20)
@@ -230,6 +244,9 @@ if(UNIX)
     add_executable(frame_capture_test frame_capture_test.c ../src/platform/benchmark.c)
     target_include_directories(frame_capture_test PRIVATE ../include)
     add_test(NAME frame_capture COMMAND frame_capture_test)
+    add_executable(frame_capture_io_test frame_capture_io_test.c)
+    target_include_directories(frame_capture_io_test PRIVATE ../include)
+    add_test(NAME frame_capture_io COMMAND frame_capture_io_test)
     find_package(Threads REQUIRED)
     add_executable(skin_matrix_packets_test
         skin_matrix_packets_test.cpp

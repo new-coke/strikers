@@ -1,9 +1,0 @@
-{
-  "ppm_sha256": "d0bdce7c8f9be5420adabeee912cd65fb50c65427763087c24e9ee88375b86ea",
-  "ppm_bytes": 1566735,
-  "self_sha256": "a5d09afdcda739167bfaac5768eb046fd59b9aa055bfe9f35ddc939d967efba6",
-  "startup_ini_sha256": "a140c55d97b396865dbf004ae971ba2a4405abd1961f68d139e49230165f73c7",
-  "restored_normal_ini_sha256": "aac80bdf22392a11167a11dd9f713ffcff4088d3e9c898f9e6e50f5314620759",
-  "archive_sha256": "699670609b952510615d869b344c18bda6b7b1f0cce8868e0248b9204cec220d",
-  "mode": "manual-match counter frame 120; image shows live gameplay; not an FPS measurement or independent crowd-animation proof"
-}

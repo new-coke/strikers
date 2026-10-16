@@ -1,6 +1,0 @@
-{
-  "scope": "Actual pre-cleanup/current glx_DrawPacket index dispatch blocks, experimental native hooks excluded, actual current DL builder; ASan/UBSan; host-only, not Vita visual/FPS proof",
-  "control_sha256": "3dc79a814565a50afa45b3c4408be8c940a44584140e09644b6bb96faa39cb22",
-  "candidate_sha256": "cf15ca3136988d35393fb1318b0888208711b43093e54ab228f6dc5831acef48",
-  "result": "PASS: 5040 actual old/new draw blocks; identical GX opcode/attribute/Begin/End/DL byte sequences; raw/compiled/decoded DL routes and raster skip\n"
-}

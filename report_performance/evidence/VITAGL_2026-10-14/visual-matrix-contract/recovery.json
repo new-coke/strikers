@@ -1,8 +1,0 @@
-{
-  "time": 1792003125.8058271,
-  "manual_recovery": "user confirmed fourth error closed and Companion active",
-  "failed_sha256": "a41c950066ff96d65e3f208ba0c90f2d61f2b17851057461a8711fdbb46a7389",
-  "restored_self_sha256": "ccfe94c1521d8e5667a74d8471d0304bcbb4b992e5ff8c7338d20149f2505517",
-  "restored_ini_sha256": "a1faee289d5d18dd1dd53d8c87903042d4bf37823b232c5263fed3aa176c4166",
-  "restored": true
-}

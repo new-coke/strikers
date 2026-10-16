@@ -22,7 +22,7 @@ void glplatResourceRelease(unsigned long long marker);
 unsigned long long glplatResourceMark();
 void* glplatResourceAlloc(unsigned long size, eGLMemory memType);
 bool glxInitMemory();
-#if defined(STRIKERS_VITA)
+#if defined(STRIKERS_VITA) || defined(STRIKERS_VITA_NATIVE_RUNTIME)
 bool glxVitaReserveResourceArena();
 bool glxVitaResourceArenaOwns(const void* p);
 #endif

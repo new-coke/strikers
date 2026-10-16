@@ -35,6 +35,9 @@ extracted/
 *.log.*
 /ab-artifacts/
 
+# Local project documentation, reports and validation evidence.
+/docs/
+
 # Local Codex checkouts and build scratch are not project sources.
 /.codex/
 

@@ -1,9 +1,0 @@
-{
-  "ppm_sha256": "a89aa923739e9ed20505d93fb3214999d7ee266b6d22077c6b61753278052859",
-  "ppm_bytes": 1566735,
-  "self_sha256": "66c2caa0a7a1005ad656d6e97a93697f5a7461e294bf3d676c697414111736ed",
-  "startup_ini_sha256": "ebb0a73084a0ee2d220fcbbac6d176688ad3756f9475964b8c586376263c738c",
-  "restored_normal_ini_sha256": "aac80bdf22392a11167a11dd9f713ffcff4088d3e9c898f9e6e50f5314620759",
-  "archive_sha256": "699670609b952510615d869b344c18bda6b7b1f0cce8868e0248b9204cec220d",
-  "mode": "one manual live-play frame 120; not an FPS measurement"
-}

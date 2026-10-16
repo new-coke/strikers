@@ -118,12 +118,16 @@ struct Renderer::Impl
     unsigned main = 0, target = 0, white = 0, nextModel = 1;
     size_t geometryBytes = 0;
     GLuint boundProgram = 0;
+    GLuint attributeBuffer = 0;
+    bool attributesEnabled = false;
     uint32_t fixedSignature = UINT32_MAX;
     bool viewportValid = false, scissorValid = false;
     std::array<int, 4> lastViewport{}, lastScissor{};
     std::array<GLuint, 6> boundTextures{};
     void invalidate_fixed()
     {
+        attributeBuffer = 0;
+        attributesEnabled = false;
         fixedSignature = UINT32_MAX;
         viewportValid = scissorValid = false;
     }
@@ -279,17 +283,24 @@ struct Renderer::Impl
             u.valid = true;
         }
     }
-    void attributes()
+    void attributes(GLuint buffer)
     {
+        // VitaGL captures the VBO name, not its current storage address.
+        // Reuploads to the dynamic VBO keep the same attribute contract.
+        if (attributeBuffer == buffer && attributesEnabled)
+            return;
         constexpr unsigned offsets[]{ 0, 16, 32, 20, 44, 56, 68, 80, 92, 104 };
         constexpr unsigned sizes[]{ 4, 4, 3, 3, 3, 3, 3, 3, 3, 1 };
         for (unsigned a = 0; a < 10; ++a)
         {
-            glEnableVertexAttribArray(a);
+            if (!attributesEnabled)
+                glEnableVertexAttribArray(a);
             glVertexAttribPointer(a, sizes[a], a == 1 ? GL_UNSIGNED_BYTE : GL_FLOAT,
                                   a == 1 ? GL_TRUE : GL_FALSE, sizeof(ModelVertex),
                                   reinterpret_cast<const void*>(uintptr_t(offsets[a])));
         }
+        attributeBuffer = buffer;
+        attributesEnabled = true;
     }
     void raster(const Raster& r)
     {
@@ -408,21 +419,22 @@ bool Renderer::initialize_scene_program() noexcept
         return true;
     if (d.error)
         return false;
-    port::startup::show("PREPARING SHADERS",0,41);
+    port::startup::show("PREPARING SHADERS", 0, 41);
     d.vertexShader = d.compile(GL_CG_VERTEX_SHADER_EXT, kSceneVertexShader);
     if (!d.vertexShader)
         return false;
     if (!d.make_program(128, 63, true, true))
         return false;
-    unsigned prepared=1;
-    port::startup::show("PREPARING SHADERS",prepared,41);
+    unsigned prepared = 1;
+    port::startup::show("PREPARING SHADERS", prepared, 41);
     constexpr unsigned masks[]{ 0,  1,  3,  5,  7,  9,  13, 17, 19, 21,
                                 25, 33, 35, 37, 39, 41, 43, 49, 53, 57 };
     for (auto mask : masks)
-        for (unsigned alpha = 0; alpha < 2; ++alpha) {
+        for (unsigned alpha = 0; alpha < 2; ++alpha)
+        {
             if (!d.make_program(mask * 2 + alpha, mask, alpha, false))
                 return false;
-            port::startup::show("PREPARING SHADERS",++prepared,41);
+            port::startup::show("PREPARING SHADERS", ++prepared, 41);
         }
     port::startup::show("STARTING GAME");
     d.sceneInitialized = true;
@@ -450,28 +462,31 @@ uint32_t Renderer::create_texture(const TextureUpload& image) noexcept
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, t.id);
         d.boundTextures[0] = t.id;
-        size_t linearOffset=0;
+        size_t linearOffset = 0;
         for (unsigned level = 0; level < image.mipCount; ++level)
         {
             TextureLevel decoded;
-            const unsigned width=std::max(1u,image.width>>level),height=std::max(1u,image.height>>level);
-            const bool linear=image.storage==nativegxm::TextureStorage::Rgba8 && !image.swizzled;
-            const unsigned stride=(width+7u)&~7u;
-            const uint8_t* pixels=nullptr;
-            if(linear && stride==width)
-                pixels=image.pixels.data()+linearOffset;
+            const unsigned width = std::max(1u, image.width >> level),
+                           height = std::max(1u, image.height >> level);
+            const bool linear =
+                image.storage == nativegxm::TextureStorage::Rgba8 && !image.swizzled;
+            const unsigned stride = (width + 7u) & ~7u;
+            const uint8_t* pixels = nullptr;
+            if (linear && stride == width)
+                pixels = image.pixels.data() + linearOffset;
             else if (texture_level_rgba(image, level, decoded))
-                pixels=decoded.rgba.data();
+                pixels = decoded.rgba.data();
             else
             {
                 d.fail("texture_decode");
                 return 0;
             }
-            for (size_t i = 3; i < size_t(width)*height*4; i += 4)
+            for (size_t i = 3; i < size_t(width) * height * 4; i += 4)
                 t.minAlpha = std::min(t.minAlpha, pixels[i]);
-            glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, width, height, 0, GL_RGBA,
-                         GL_UNSIGNED_BYTE, pixels);
-            if(linear)linearOffset+=size_t(stride)*height*4;
+            glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                         pixels);
+            if (linear)
+                linearOffset += size_t(stride) * height * 4;
         }
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
                         t.levels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
@@ -613,6 +628,8 @@ void Renderer::release_model(uint32_t id) noexcept
     if (it == d.models.end())
         return;
     d.geometryBytes -= it->second.bytes;
+    if (d.attributeBuffer == it->second.vbo)
+        d.attributeBuffer = 0;
     glDeleteBuffers(1, &it->second.vbo);
     glDeleteBuffers(1, &it->second.ebo);
     d.models.erase(it);
@@ -631,6 +648,7 @@ bool Renderer::draw_scene(uint32_t model, std::span<const ModelVertex> vertices,
         return true;
     const auto start = d.now();
     unsigned count = 0;
+    GLuint vertexBuffer = d.dynamicVbo;
     uint8_t alpha = 255;
     if (model)
     {
@@ -639,6 +657,7 @@ bool Renderer::draw_scene(uint32_t model, std::span<const ModelVertex> vertices,
             return d.fail("draw_model");
         count = i->second.count;
         alpha = i->second.minAlpha;
+        vertexBuffer = i->second.vbo;
         glBindBuffer(GL_ARRAY_BUFFER, i->second.vbo);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, i->second.ebo);
     }
@@ -655,14 +674,14 @@ bool Renderer::draw_scene(uint32_t model, std::span<const ModelVertex> vertices,
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size_bytes(), indices.data(), GL_STREAM_DRAW);
         d.current.dynamicVertexBytes += vertices.size_bytes();
     }
-    d.attributes();
+    d.attributes(vertexBuffer);
     const unsigned mask = unsigned(m.controls[0]);
     // GLUD_ConstantColour replaces both TEV colour and alpha for diffuse-only
     // draws. BallBlurCB uses that alpha for its five translucent rotations.
     // Explicit translucent/no-rasterized-alpha data has priority; the lit
     // 0x21 combiner replaces RGB only and retains its rasterized alpha.
-    const float rasterAlpha = m.effects[1] >= 0 ? m.effects[1] :
-        (m.effects[0] > .5f && mask == 1 ? m.tint[3] : -1.f);
+    const float rasterAlpha =
+        m.effects[1] >= 0 ? m.effects[1] : (m.effects[0] > .5f && mask == 1 ? m.tint[3] : -1.f);
     bool test = m.controls[1] >= 0;
     float minimum = float(alpha) / 255;
     if (rasterAlpha >= 0)
@@ -908,14 +927,17 @@ bool Renderer::copy_textures(std::span<const TextureCopy> copies) noexcept
             // Engine textures use V=0 for their first/top source row. Store
             // that row at GL texture V=0, with unused A8 rows above it.
             const bool regional = c.destinationRect[2] && c.destinationRect[3];
-            const auto height = regional ? c.destinationRect[3] : c.destinationHeight ? c.destinationHeight : t->second.height;
+            const auto height = regional              ? c.destinationRect[3]
+                                : c.destinationHeight ? c.destinationHeight
+                                                      : t->second.height;
             const auto width = regional ? c.destinationRect[2] : t->second.width;
             const auto x = regional ? c.destinationRect[0] : 0u;
             const auto y = regional ? c.destinationRect[1] : 0u;
-            if (x > t->second.width || width > t->second.width - x ||
-                y > t->second.height || height > t->second.height - y)
+            if (x > t->second.width || width > t->second.width - x || y > t->second.height ||
+                height > t->second.height - y)
                 return d.fail("copy_extent");
-            m.viewport = { float(x), float(t->second.height - y - height), float(width), float(height) };
+            m.viewport = { float(x), float(t->second.height - y - height), float(width),
+                           float(height) };
             m.scissor = { 0, 0, float(t->second.width), float(t->second.height) };
             Raster raster;
             raster.depthTest = raster.depthWrite = false;
@@ -951,6 +973,8 @@ bool Renderer::begin_frame() noexcept
     if (!d.initialized || d.active || !d.on_owner())
         return d.fail("frame_begin");
     d.current = {};
+    d.attributeBuffer = 0;
+    d.attributesEnabled = false;
     d.active = true;
     return select_target(0, true, true);
 }
@@ -978,7 +1002,8 @@ bool Renderer::end_frame(bool present) noexcept
     if (!d.check("present_blit"))
         return false;
     vglSwapBuffers(GL_FALSE);
-    if(!d.startupRetired)d.startupRetired=port::startup::retire_if_replaced();
+    if (!d.startupRetired)
+        d.startupRetired = port::startup::retire_if_replaced();
     d.current.queueUs += d.now() - start;
     d.completed = d.current;
     d.active = false;

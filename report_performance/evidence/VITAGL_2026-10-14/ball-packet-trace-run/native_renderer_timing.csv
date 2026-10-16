@@ -1,2 +1,0 @@
-frames,fence_us,upload_us,draw_calls_us,queue_us,draws,dynamic_bytes,frontend_wait_us,command_bytes,slot_waits
-1977,0,3485873,20587924,4593260,690664,824866632,9671402,1722516176,0

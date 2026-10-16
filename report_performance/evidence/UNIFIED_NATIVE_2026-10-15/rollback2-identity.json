@@ -1,9 +1,0 @@
-{
-  "manual_recovery_confirmed": true,
-  "restored_self_sha256": "41ff29d27c894920782dd0b31b3d5a99d5670800fc18eca72262a47893de08c0",
-  "restored_ini_sha256": "e824045f1d37b132539dfc51f5b2a0622d6f86a38c1a345af81bdd166a15977d",
-  "native_pack_preserved": "ux0:/data/strikersVita.before-native-20261015/sms-native-unified.psarc",
-  "time_unix": 1792089482.320364,
-  "kill_after_recovery": "Error: cannot kill the app. Is the TITLEID correct?",
-  "launch": "Launched."
-}

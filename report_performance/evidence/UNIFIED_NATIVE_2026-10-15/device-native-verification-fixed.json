@@ -1,8 +1,0 @@
-{
-  "complete": true,
-  "verified_chunks": 1709,
-  "chunks": 1709,
-  "error": 0,
-  "method": "native DMAC5 SHA256 per chunk",
-  "expected_archive_sha256": "699670609b952510615d869b344c18bda6b7b1f0cce8868e0248b9204cec220d"
-}

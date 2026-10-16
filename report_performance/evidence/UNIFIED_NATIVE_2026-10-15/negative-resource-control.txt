@@ -1,2 +1,0 @@
-Original embedded texture remains: files/art/fe/InGameUI.Dmn entry=0
-Assertion failed: (false), function main, file native_graphics_test.cpp, line 92.

@@ -914,7 +914,12 @@ if(STRIKERS_VITA)
     set(VITA_MKSFOEX_FLAGS "${VITA_MKSFOEX_FLAGS} -d ATTRIBUTE2=12")
     vita_create_self(strikers_vita.self strikers UNSAFE)
     vita_create_vpk(strikers_vita.vpk SMSVITA01 strikers_vita.self
-        VERSION 01.00 NAME "Super Mario Strikers Vita")
+        VERSION 01.00 NAME "Super Mario Strikers Vita"
+        FILE assets/vita/sce_sys/icon0.png sce_sys/icon0.png
+             assets/vita/sce_sys/pic0.png sce_sys/pic0.png
+             assets/vita/sce_sys/livearea/contents/template.xml sce_sys/livearea/contents/template.xml
+             assets/vita/sce_sys/livearea/contents/bg.png sce_sys/livearea/contents/bg.png
+             assets/vita/sce_sys/livearea/contents/startup.png sce_sys/livearea/contents/startup.png)
 elseif(NX)
     # Horizon has no dynamic loader, so the Vulkan driver is linked statically.
     target_link_libraries(strikers PRIVATE

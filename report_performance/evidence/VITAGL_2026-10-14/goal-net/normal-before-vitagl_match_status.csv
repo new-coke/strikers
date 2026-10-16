@@ -1,3 +1,0 @@
-# vitagl_match_v8 backend=VitaGL deferred=command_ring aurora=0 gx_fifo=0 texture_decoder=owned skinning=gpu views=34
-frame,draws,textured,hud,characters,invalid,native_records,native_decoded,resident,dynamic,gpu_error,operation,failure
-6120,1839792,1839792,74549,744561,392,269,188,719,315708,0,none,packet_shape

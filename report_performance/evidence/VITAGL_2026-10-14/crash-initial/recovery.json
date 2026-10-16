@@ -1,9 +1,0 @@
-{
-  "time": 1791999712.6544588,
-  "manual_recovery": "user confirmed crash dialog closed and Companion active",
-  "kill": "Error: cannot kill the app. Is the TITLEID correct?",
-  "control_sha256": "ccfe94c1521d8e5667a74d8471d0304bcbb4b992e5ff8c7338d20149f2505517",
-  "normal_ini_sha256": "a1faee289d5d18dd1dd53d8c87903042d4bf37823b232c5263fed3aa176c4166",
-  "failed_sha256": "76a43dd5aa6a16858648adc2a4de3bdda1bb6c99ebb988b795944f84a91ff985",
-  "restored": true
-}

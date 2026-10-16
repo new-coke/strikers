@@ -1,4 +1,0 @@
-{
-  "percentiles": "nearest rank, ceil(n*p)-1",
-  "runs": []
-}

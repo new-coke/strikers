@@ -1,8 +1,0 @@
-{
-  "self_sha256": "8a763a0077073686ef4290b265283dec49acf28b17b28feefaa6040719b13c55",
-  "vpk_sha256": "4faabe9dd15415b5fa633d275ff5a90d9cf4fbbdcd3af6e41fe37bce7f262f92",
-  "time": 1792068469.971943,
-  "replaced_sha256": "40b1d4359756e92161b172cb566b1da06494cb788ed50848d87c7162c83875e2",
-  "kill": "Error: cannot kill the app. Is the TITLEID correct?",
-  "verified": true
-}

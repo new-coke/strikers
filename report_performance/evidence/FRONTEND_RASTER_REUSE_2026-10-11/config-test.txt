@@ -1,1 +1,0 @@
-vita default config: first-run generation, managed refresh, and user override preservation

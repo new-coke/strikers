@@ -1,1 +1,0 @@
-Native PSARC consumer: models=149 bundles=164 textures=1738 resources=38 embedded=770; no retail model/texture payloads

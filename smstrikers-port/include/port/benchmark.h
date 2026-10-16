@@ -16,6 +16,19 @@ extern "C" {
 
 void PortBenchInit(void);
 
+typedef enum PortBenchCaptureState {
+    PORT_CAPTURE_IDLE, PORT_CAPTURE_COLLECTING, PORT_CAPTURE_COMPLETE, PORT_CAPTURE_ERROR
+} PortBenchCaptureState;
+typedef struct PortBenchCaptureStatus {
+    PortBenchCaptureState state;
+    size_t samples, requested, warmupRemaining;
+    int errorCode; /* errno; zero unless allocation or output failed */
+} PortBenchCaptureStatus;
+/* Read-only RAM status; neither function is called automatically per frame. */
+void PortBenchGetCaptureStatus(PortBenchCaptureStatus* out);
+/* Retry a fully collected capture after output failure, using the same path. */
+int PortBenchRetryCapture(void);
+
 void PortBenchFrameBegin(void);
 void PortBenchAfterTasks(void);
 void PortBenchFrameEnd(void);

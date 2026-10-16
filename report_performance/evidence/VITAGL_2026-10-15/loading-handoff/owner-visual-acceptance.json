@@ -1,7 +1,0 @@
-{
-  "time_utc": "2026-10-15T12:55:27.163571+00:00",
-  "self_sha256": "971aadfbc977fb751f228595966f6df4b2a054d881ec38ac8a09c0fc45d55592",
-  "question": "Nel riavvio appena effettuato sulla Vita, la schermata LOADING resta visibile fino all’intro oppure compare ancora un intervallo completamente nero prima della partita?",
-  "answer": "LOADING resta visibile, nessun intervallo nero",
-  "accepted_scope": "retained loading display through first complete intro frame; no empty display interval"
-}

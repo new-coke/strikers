@@ -1,8 +1,0 @@
-{
-  "outcome": "not installed",
-  "mutation_performed": false,
-  "host": "192.168.1.79",
-  "port": 1337,
-  "error": "FTP connect TimeoutError",
-  "user_response": "PS Vita battery depleted; user will notify when online"
-}

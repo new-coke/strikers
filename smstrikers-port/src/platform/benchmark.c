@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #if defined(PORT_VITA)
 #include <psp2/power.h>
 #endif
@@ -20,33 +21,56 @@ typedef struct FrameCapture { unsigned int frameUs, tasksUs, presentUs, sleepUs;
 static FrameCapture* s_capture;
 static size_t s_captureCount, s_captureGoal;
 static char s_capturePath[1024];
-static int s_captureDone;
+static PortBenchCaptureState s_captureState;
+static int s_captureError;
 static int s_captureMatchOnly;
 static size_t s_captureSkip;
 static int s_capturePlayOnly, s_playActive;
 static unsigned long s_playFrameCounter;
 
-static int capture_active(void) { return s_captureGoal && !s_captureDone; }
+static int capture_active(void) { return s_captureState == PORT_CAPTURE_COLLECTING; }
 static void finish_capture(void)
 {
-    s_captureDone = 1;
+    // Stop sampling before output, including on failure. Keep all samples for
+    // an explicit retry; never retry I/O from the game's frame loop.
+    s_captureState = PORT_CAPTURE_ERROR;
+    errno = 0;
     FILE* f = fopen(s_capturePath, "wb");
-    if (f == NULL) {free(s_capture);s_capture=NULL;return;}
-    fprintf(f, "# strikers-frame-capture-v1 diagnostics=%d fps_overlay=%d\n", PortDiagnosticsEnabled(), PortFpsOverlayEnabled());
-    fprintf(f, "# play_only=%d counter=%s\n", s_capturePlayOnly,
-            s_capturePlayOnly ? "live_play" : "renderer_scene");
+    if (f == NULL) {s_captureError=errno ? errno : EIO;return;}
+    int failed = 0;
+#define CAPTURE_WRITE(...) do { if (!failed && fprintf(f, __VA_ARGS__) < 0) failed=errno ? errno : EIO; } while (0)
+    CAPTURE_WRITE("# strikers-frame-capture-v1 diagnostics=%d fps_overlay=%d\n", PortDiagnosticsEnabled(), PortFpsOverlayEnabled());
+    CAPTURE_WRITE("# play_only=%d counter=%s\n", s_capturePlayOnly,
+                  s_capturePlayOnly ? "live_play" : "renderer_scene");
 #if defined(PORT_VITA)
-    fprintf(f,"# actual_cpu_mhz=%d actual_gpu_mhz=%d actual_bus_mhz=%d actual_xbar_mhz=%d\n",
+    CAPTURE_WRITE("# actual_cpu_mhz=%d actual_gpu_mhz=%d actual_bus_mhz=%d actual_xbar_mhz=%d\n",
         scePowerGetArmClockFrequency(),scePowerGetGpuClockFrequency(),scePowerGetBusClockFrequency(),scePowerGetGpuXbarClockFrequency());
 #endif
-    fprintf(f, "sample,match,match_frame,frame_us,tasks_us,present_us,sleep_us\n");
-    for (size_t i=0;i<s_captureCount;++i) {
+    CAPTURE_WRITE("sample,match,match_frame,frame_us,tasks_us,present_us,sleep_us\n");
+    for (size_t i=0;i<s_captureCount && !failed;++i) {
         const FrameCapture* r=&s_capture[i];
         // Vita's small newlib printf does not implement the z length modifier.
-        fprintf(f,"%lu,%d,%lu,%u,%u,%u,%u\n",(unsigned long)i,r->match,r->matchFrame,r->frameUs,r->tasksUs,r->presentUs,r->sleepUs);
+        CAPTURE_WRITE("%lu,%d,%lu,%u,%u,%u,%u\n",(unsigned long)i,r->match,r->matchFrame,r->frameUs,r->tasksUs,r->presentUs,r->sleepUs);
     }
-    fclose(f);
+#undef CAPTURE_WRITE
+    if (ferror(f) && !failed) failed=errno ? errno : EIO;
+    if (fclose(f) != 0 && !failed) failed=errno ? errno : EIO;
+    s_captureError=failed;
+    if (failed) return;
+    s_captureState=PORT_CAPTURE_COMPLETE;
     free(s_capture);s_capture=NULL;
+}
+
+void PortBenchGetCaptureStatus(PortBenchCaptureStatus* out)
+{
+    if (out) *out=(PortBenchCaptureStatus){s_captureState,s_captureCount,s_captureGoal,s_captureSkip,s_captureError};
+}
+int PortBenchRetryCapture(void)
+{
+    if (s_captureState != PORT_CAPTURE_ERROR || !s_capture || s_captureCount != s_captureGoal)
+        return 0;
+    finish_capture();
+    return s_captureState == PORT_CAPTURE_COMPLETE;
 }
 
 static unsigned long long s_t0;   // start of the current frame
@@ -247,8 +271,10 @@ void PortBenchInit(void)
         char* end=NULL;
         const unsigned long n=strtoul(count,&end,10);
         if(end && !*end && n && n<=CAPTURE_LIMIT) {
+            s_captureGoal=n;
             s_capture=calloc(n,sizeof(*s_capture));
-            if(s_capture){strcpy(s_capturePath,path);s_captureGoal=n;}
+            if(s_capture){strcpy(s_capturePath,path);s_captureState=PORT_CAPTURE_COLLECTING;}
+            else {s_captureState=PORT_CAPTURE_ERROR;s_captureError=ENOMEM;}
         }
     }
     const char* only=getenv("STRIKERS_FRAME_CAPTURE_MATCH_ONLY");

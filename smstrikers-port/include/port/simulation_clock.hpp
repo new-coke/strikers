@@ -9,7 +9,8 @@ class SimulationFrameClock
 {
     uint64_t previous_ = 0;
     bool initialized_ = false;
-public:
+
+  public:
     void reset() noexcept { initialized_ = false; }
     float sample(uint64_t now) noexcept
     {
@@ -22,4 +23,4 @@ public:
     }
 };
 inline bool simulation_step_budget(unsigned completed) noexcept { return completed < 16; }
-} // namespace port
+}   // namespace port

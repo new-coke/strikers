@@ -18,6 +18,8 @@ namespace
 GLuint next = 1, array = 0, elements = 0, program = 0, drawFb = 0, readFb = 0, texture = 0;
 unsigned swaps = 0, blits = 0, scissors = 0, uniformWrites = 0;
 unsigned framebufferBinds = 0, clears = 0;
+unsigned attributeEnables = 0, attributePointers = 0;
+std::array<GLuint, 10> attributeBuffers{};
 GLenum blendSource = 0, blendDestination = 0, frontFace = 0, cullFace = 0;
 GLenum error = GL_NO_ERROR, readMode = GL_BACK;
 SceUID thread = 1;
@@ -267,10 +269,12 @@ void glUniform4fv(GLint location, GLsizei count, const GLfloat* values)
     if (location == -8)
         lightingByProgram[program].assign(values, values + count * 4);
 }
-void glEnableVertexAttribArray(GLuint) {}
-void glVertexAttribPointer(GLuint, GLint, GLenum, GLboolean, GLsizei, const void*)
+void glEnableVertexAttribArray(GLuint) { ++attributeEnables; }
+void glVertexAttribPointer(GLuint slot, GLint, GLenum, GLboolean, GLsizei, const void*)
 {
     assert(buffers.count(array));
+    attributeBuffers.at(slot) = array;
+    ++attributePointers;
 }
 void glDepthFunc(GLenum) {}
 void glFrontFace(GLenum face) { frontFace = face; }
@@ -293,6 +297,8 @@ void glDrawElements(GLenum primitive, GLsizei count, GLenum type, const void* of
            count % 3 == 0 && type == GL_UNSIGNED_SHORT && !offset);
     auto& v = buffers.at(array);
     auto& i = buffers.at(elements);
+    for (auto buffer : attributeBuffers)
+        assert(buffer == array); // Detect stale VBO captures across all production draws.
     assert(size_t(count) * 2 <= i.size());
     for (int n = 0; n < count; ++n)
     {
@@ -359,7 +365,9 @@ int main()
         assert(!enabled.count(GL_SCISSOR_TEST));
         assert(!colorMask[3]);
         auto writes = uniformWrites;
+        const auto enables = attributeEnables, pointers = attributePointers;
         assert(r.draw_scene(model, {}, {}, identity, raster, m) && uniformWrites == writes);
+        assert(attributeEnables == enables && attributePointers == pointers);
         // All four specular lights and the original gloss weight reach the
         // actual driver; changing the final light must invalidate its cache.
         m.specular[3] = light.direction;
