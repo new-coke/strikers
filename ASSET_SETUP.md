@@ -187,9 +187,21 @@ python3 smstrikers-port/tools/validate_vita_package.py \
 Per aggiornare la LiveArea installare il VPK completo. La sola copia di
 `eboot.bin`, usata durante lo sviluppo, non aggiorna gli asset della bolla.
 Chiudere l'app e la relativa pagina LiveArea prima di reinstallare.
+Attendere che VitaShell completi l'installazione, poi riaprire la pagina.
 Se la shell continua a mostrare la grafica precedente, riavviare la console
 dopo la reinstallazione e ricontrollare i file installati sotto
-`ux0:app/SMSVITA01/sce_sys/`. Evitare di disinstallare l'app come primo
+`ux0:app/SMSVITA01/sce_sys/`.
+
+La shell mantiene anche una copia degli asset in **`ur0:appmeta/SMSVITA01/`**.
+Nel caso verificato sul dispositivo, quella directory conteneva soltanto
+`icon0.png`: il template presente sotto `ux0:app/` non era sufficiente a
+far apparire la LiveArea corretta. Dopo l'installazione completa e il
+ricaricamento della pagina, anche la cache conteneva `pic0.png` e
+`livearea/contents/{template.xml,bg.png,startup.png}`. Sfondo e pulsante
+di Strikers sono stati confermati con una cattura del dispositivo.
+La cache viene rigenerata dalla shell; il percorso e' utile per verificare
+l'aggiornamento, mentre i sorgenti da distribuire restano quelli nel VPK.
+Evitare di disinstallare l'app come primo
 tentativo, per non rimuovere dati che si vogliono conservare.
 
 ## Problemi frequenti
