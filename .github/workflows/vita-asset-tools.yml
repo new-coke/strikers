@@ -1,0 +1,37 @@
+name: Vita asset tools
+
+on:
+  push:
+    paths:
+      - '.github/workflows/vita-asset-tools.yml'
+      - 'smstrikers-port/tools/**'
+      - 'smstrikers-port/include/port/**'
+      - 'smstrikers-port/src/platform/native_graphics.cpp'
+      - 'smstrikers-port/src/platform/native_texture_record.cpp'
+      - 'smstrikers-port/assets/vita/sce_sys/**'
+  pull_request:
+    paths:
+      - '.github/workflows/vita-asset-tools.yml'
+      - 'smstrikers-port/tools/**'
+      - 'smstrikers-port/include/port/**'
+      - 'smstrikers-port/src/platform/native_graphics.cpp'
+      - 'smstrikers-port/src/platform/native_texture_record.cpp'
+      - 'smstrikers-port/assets/vita/sce_sys/**'
+
+permissions:
+  contents: read
+
+jobs:
+  host-tools:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build converters without VitaSDK or game data
+        run: |
+          cmake -S smstrikers-port/tools/asset_pipeline -B smstrikers-port/build-asset-tools -DCMAKE_BUILD_TYPE=Release
+          cmake --build smstrikers-port/build-asset-tools --parallel 2
+      - name: Validate packaging and synthetic archive checks
+        run: |
+          python3 smstrikers-port/tools/validate_vita_package.py
+          python3 smstrikers-port/tools/test_validate_vita_package.py
+          python3 smstrikers-port/tools/test_prepare_strikers_vita.py

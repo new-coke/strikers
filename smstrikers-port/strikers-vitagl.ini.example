@@ -24,3 +24,8 @@ benchmark = 0
 cpu_mhz = 500
 gpu_mhz = 222
 vitagl_timing = 0
+# Independent shader experiments, disabled until matched hardware validation.
+# Remove projective divides only when every used UV channel has exact Q=1.
+vitagl_affine_uv = 0
+# Move affine fog distance to vertices; keep clamp/curves per fragment.
+vitagl_vertex_fog = 0

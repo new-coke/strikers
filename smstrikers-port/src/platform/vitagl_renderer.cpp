@@ -1,6 +1,6 @@
 #if defined(PORT_VITA) && defined(STRIKERS_VITA_VITAGL)
 #include "port/renderer.hpp"
-#include "port/scene_shaders.hpp"
+#include "port/scene_shader_variants.hpp"
 #include "port/vitagl_texture.hpp"
 #include "port/native_boot_screen.hpp"
 #include <vitaGL.h>
@@ -27,12 +27,7 @@ constexpr const char* uniforms[]{ "u_mvp",        "u_mv",       "u_bones",      
                                   "u_effects",    "u_tint",     "u_shadow",        "u_shadowadd",
                                   "u_fog",        "u_fogcolor", "u_material" };
 constexpr unsigned counts[]{ 4, 4, 30, 1, 1, 1, 1, 8, 8, 4, 4, 1, 1, 1, 1, 1, 1, 1, 1 };
-void replace(std::string& s, const char* a, const std::string& b)
-{
-    auto p = s.find(a);
-    if (p != std::string::npos)
-        s.replace(p, std::strlen(a), b);
-}
+constexpr unsigned affineProgramBit = 256;
 bool valid_geometry(std::span<const ModelVertex> v, std::span<const uint16_t> i)
 {
     if (v.empty() || v.size() > 65536 || i.empty() || i.size() % 3 || i.size() > 196608)
@@ -54,6 +49,7 @@ struct Program
     GLuint id = 0;
     unsigned mask = 63;
     bool generic = false;
+    bool vertexFog = false;
     std::array<Uniform, std::size(counts)> uniforms{};
 };
 struct Texture
@@ -69,6 +65,7 @@ struct Model
     size_t bytes = 0;
     unsigned count = 0;
     uint8_t minAlpha = 255;
+    unsigned projectiveUvChannels = 0;
 };
 // An upload is owned here until publication in the renderer cache succeeds.
 struct TextureLease
@@ -106,6 +103,7 @@ struct Renderer::Impl
 {
     bool initialized = false, sceneInitialized = false, active = false, presented = false,
          timed = false, startupRetired = false;
+    bool affineUv = false, vertexFog = false;
     SceUID owner = -1;
     unsigned cullTest = 0;
     int error = 0;
@@ -114,7 +112,7 @@ struct Renderer::Impl
     std::unordered_map<unsigned, Texture> textures;
     std::unordered_map<unsigned, Model> models;
     std::unordered_map<unsigned, Program> programs;
-    GLuint vertexShader = 0, dynamicVbo = 0, dynamicEbo = 0;
+    GLuint vertexShader = 0, referenceVertexShader = 0, dynamicVbo = 0, dynamicEbo = 0;
     unsigned main = 0, target = 0, white = 0, nextModel = 1;
     size_t geometryBytes = 0;
     GLuint boundProgram = 0;
@@ -180,31 +178,19 @@ struct Renderer::Impl
         }
         return id;
     }
-    bool make_program(unsigned key, unsigned mask, bool alpha, bool generic)
+    bool make_program(unsigned key, unsigned mask, bool alpha, bool generic, bool affine = false)
     {
-        std::string source = kSceneFragmentShader;
-        if (!generic)
-        {
-            replace(source, "float mask=u_controls.x;",
-                    "float mask=" + std::to_string(mask) + ".0;");
-            replace(source,
-                    " if(u_controls.w==2.0){float "
-                    "y=d.r,u=detail.r-0.5,v=sh.r-0.5;c=float4(y+1.402*v,y-0.344136*u-0.714136*v,y+"
-                    "1.772*u,1.0);}",
-                    "");
-            replace(source, " if(u_controls.w==3.0)c=float4(c.r,c.r,c.r,c.r);", "");
-            replace(source, " if(u_controls.w==4.0)c=float4(d.a,d.a,d.a,d.a);", "");
-        }
-        if (!alpha)
-            replace(source, " if(u_controls.y>=0.0&&c.a<=u_controls.y)discard;", "");
+        const bool fog = vertexFog && !generic;
+        const auto source = scene_fragment_shader(mask, alpha, generic, affine, fog);
         GLuint fs = compile(GL_CG_FRAGMENT_SHADER_EXT, source);
         if (!fs)
             return false;
         Program p;
         p.mask = mask;
         p.generic = generic;
+        p.vertexFog = fog;
         p.id = glCreateProgram();
-        glAttachShader(p.id, vertexShader);
+        glAttachShader(p.id, generic && referenceVertexShader ? referenceVertexShader : vertexShader);
         glAttachShader(p.id, fs);
         for (unsigned a = 0; a < 10; ++a)
             glBindAttribLocation(p.id, a, attribs[a]);
@@ -358,6 +344,12 @@ bool Renderer::initialize(bool timed) noexcept
     d.owner = sceKernelGetThreadId();
     port::startup::show("PREPARING GRAPHICS");
     d.timed = timed;
+    const auto enabled = [](const char* key) {
+        const auto* value = std::getenv(key);
+        return value && std::strcmp(value, "1") == 0;
+    };
+    d.affineUv = enabled("STRIKERS_VITAGL_AFFINE_UV");
+    d.vertexFog = enabled("STRIKERS_VITAGL_VERTEX_FOG");
     const char* cull = std::getenv("STRIKERS_VITAGL_CULL_TEST");
     d.cullTest = cull ? unsigned(std::clamp(std::atoi(cull), 0, 2)) : 0;
     if (d.cullTest)
@@ -419,14 +411,21 @@ bool Renderer::initialize_scene_program() noexcept
         return true;
     if (d.error)
         return false;
-    port::startup::show("PREPARING SHADERS", 0, 41);
-    d.vertexShader = d.compile(GL_CG_VERTEX_SHADER_EXT, kSceneVertexShader);
+    const unsigned total = d.affineUv ? 81 : 41;
+    port::startup::show("PREPARING SHADERS", 0, total);
+    d.vertexShader = d.compile(GL_CG_VERTEX_SHADER_EXT, scene_vertex_shader(d.vertexFog));
     if (!d.vertexShader)
         return false;
+    if (d.vertexFog)
+    {
+        d.referenceVertexShader = d.compile(GL_CG_VERTEX_SHADER_EXT, scene_vertex_shader(false));
+        if (!d.referenceVertexShader)
+            return false;
+    }
     if (!d.make_program(128, 63, true, true))
         return false;
     unsigned prepared = 1;
-    port::startup::show("PREPARING SHADERS", prepared, 41);
+    port::startup::show("PREPARING SHADERS", prepared, total);
     constexpr unsigned masks[]{ 0,  1,  3,  5,  7,  9,  13, 17, 19, 21,
                                 25, 33, 35, 37, 39, 41, 43, 49, 53, 57 };
     for (auto mask : masks)
@@ -434,14 +433,20 @@ bool Renderer::initialize_scene_program() noexcept
         {
             if (!d.make_program(mask * 2 + alpha, mask, alpha, false))
                 return false;
-            port::startup::show("PREPARING SHADERS", ++prepared, 41);
+            port::startup::show("PREPARING SHADERS", ++prepared, total);
+            if (d.affineUv)
+            {
+                if (!d.make_program((mask * 2 + alpha) | affineProgramBit, mask, alpha, false, true))
+                    return false;
+                port::startup::show("PREPARING SHADERS", ++prepared, total);
+            }
         }
     port::startup::show("STARTING GAME");
     d.sceneInitialized = true;
     glUseProgram(0);
     d.boundProgram = 0;
-    std::fprintf(stderr, "[vitagl] scene programs=%u; Aurora=0 GX=0\n",
-                 unsigned(d.programs.size()));
+    std::fprintf(stderr, "[vitagl] scene programs=%u affine_uv=%u vertex_fog=%u; Aurora=0 GX=0\n",
+                 unsigned(d.programs.size()), unsigned(d.affineUv), unsigned(d.vertexFog));
     return true;
 }
 uint32_t Renderer::create_texture(const TextureUpload& image) noexcept
@@ -594,7 +599,11 @@ uint32_t Renderer::create_model(std::span<const ModelVertex> vertices,
         m.bytes = size;
         m.count = indices.size();
         for (const auto& v : vertices)
+        {
             m.minAlpha = std::min(m.minAlpha, v.color[3]);
+            if (d.affineUv)
+                m.projectiveUvChannels |= scene_projective_uv_channels(v);
+        }
         glGenBuffers(1, &m.vbo);
         glGenBuffers(1, &m.ebo);
         glBindBuffer(GL_ARRAY_BUFFER, m.vbo);
@@ -650,6 +659,7 @@ bool Renderer::draw_scene(uint32_t model, std::span<const ModelVertex> vertices,
     unsigned count = 0;
     GLuint vertexBuffer = d.dynamicVbo;
     uint8_t alpha = 255;
+    unsigned projectiveUvChannels = 0;
     if (model)
     {
         auto i = d.models.find(model);
@@ -657,6 +667,7 @@ bool Renderer::draw_scene(uint32_t model, std::span<const ModelVertex> vertices,
             return d.fail("draw_model");
         count = i->second.count;
         alpha = i->second.minAlpha;
+        projectiveUvChannels = i->second.projectiveUvChannels;
         vertexBuffer = i->second.vbo;
         glBindBuffer(GL_ARRAY_BUFFER, i->second.vbo);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, i->second.ebo);
@@ -667,7 +678,11 @@ bool Renderer::draw_scene(uint32_t model, std::span<const ModelVertex> vertices,
             return d.fail("draw_geometry");
         count = indices.size();
         for (auto& v : vertices)
+        {
             alpha = std::min(alpha, v.color[3]);
+            if (d.affineUv)
+                projectiveUvChannels |= scene_projective_uv_channels(v);
+        }
         glBindBuffer(GL_ARRAY_BUFFER, d.dynamicVbo);
         glBufferData(GL_ARRAY_BUFFER, vertices.size_bytes(), vertices.data(), GL_STREAM_DRAW);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, d.dynamicEbo);
@@ -698,8 +713,13 @@ bool Renderer::draw_scene(uint32_t model, std::span<const ModelVertex> vertices,
         minimum *= texalpha(0);
     if (minimum > m.controls[1])
         test = false;
-    auto it = d.programs.find(mask * 2 + unsigned(test));
-    if (m.controls[3] >= 2 || it == d.programs.end())
+    unsigned key = mask * 2 + unsigned(test);
+    const bool affine = d.affineUv && scene_affine_uv_eligible(projectiveUvChannels, mask, m.environment);
+    if (affine)
+        key |= affineProgramBit;
+    auto it = d.programs.find(key);
+    if (m.controls[3] >= 2 || it == d.programs.end() ||
+        (d.vertexFog && !scene_vertex_fog_eligible(m.fog)))
         it = d.programs.find(128);
     if (it == d.programs.end())
         return d.fail("draw_program");
@@ -802,6 +822,15 @@ bool Renderer::draw_scene(uint32_t model, std::span<const ModelVertex> vertices,
     }
     glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_SHORT, nullptr);
     ++d.current.draws;
+    if (d.timed)
+    {
+        if (key & affineProgramBit && !p.generic)
+            ++d.current.affineUvDraws;
+        else
+            ++d.current.projectiveUvDraws;
+        if (p.vertexFog && m.fog[2] > .5f)
+            ++d.current.vertexFogDraws;
+    }
     d.current.drawUs += d.now() - start;
     return d.check("draw");
 }
@@ -1050,6 +1079,8 @@ void Renderer::shutdown() noexcept
     d.programs.clear();
     if (d.vertexShader)
         glDeleteShader(d.vertexShader);
+    if (d.referenceVertexShader)
+        glDeleteShader(d.referenceVertexShader);
     glDeleteBuffers(1, &d.dynamicVbo);
     glDeleteBuffers(1, &d.dynamicEbo);
     d.initialized = d.active = d.presented = false;

@@ -17,6 +17,11 @@ add_test(NAME prompts_resolve COMMAND prompts_resolve_test)
 # Host-only validation of the direct-native GXM upload contract. Invalid
 # geometry or missing material coverage must be rejected, not GX-fallbacked.
 if(NOT STRIKERS_VITA)
+    add_executable(scene_shader_variants_test scene_shader_variants_test.cpp)
+    target_compile_features(scene_shader_variants_test PRIVATE cxx_std_20)
+    target_include_directories(scene_shader_variants_test PRIVATE ../include)
+    target_compile_options(scene_shader_variants_test PRIVATE -UNDEBUG)
+    add_test(NAME scene_shader_variants COMMAND scene_shader_variants_test)
     if(UNIX)
         add_executable(native_render_limiter_test native_render_limiter_test.c ../src/platform/vi.c)
         target_compile_definitions(native_render_limiter_test PRIVATE TARGET_PC=1)
@@ -199,6 +204,10 @@ endif()
 # The two tool tests, pure Python, so they are one `ctest` away.
 add_test(NAME tool_genstubs
          COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_genstubs.py")
+add_test(NAME tool_vita_package
+         COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_validate_vita_package.py")
+add_test(NAME tool_prepare_strikers_vita
+         COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_prepare_strikers_vita.py")
 add_test(NAME tool_extract_disc
          COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_extract_disc.py")
 add_test(NAME tool_vita_cpu_trace

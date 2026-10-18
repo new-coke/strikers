@@ -3,3 +3,6 @@
 # Their original formatting is not application source style.
 smstrikers-port/extern/vitaGL/** -whitespace
 report_performance/evidence/** -whitespace
+
+# The shell LiveArea parser expects CRLF even on Unix host builds.
+smstrikers-port/assets/vita/sce_sys/livearea/contents/template.xml text eol=crlf

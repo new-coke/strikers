@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 from .native import chunks, encoded_size, u16, u32
 
+PACK_MARKER = b'SNPACK01' + struct.pack('<II', 1, 1)
 
 def words_le(data, width=4):
     if len(data)%width: raise ValueError('misaligned numeric payload')
@@ -237,7 +238,7 @@ def prepare_graphics(roots,compiler,workspace):
         # The same bounded parser is used by the Vita loaders.
         for root in roots:subprocess.run([str(compiler),'--validate',str(root)],capture_output=True,text=True,check=True)
     for root in roots:
-        if root.name=='sys':(root/'strikers-native.bin').write_bytes(b'SNPACK01'+struct.pack('<II',1,1))
+        if root.name=='sys':(root/'strikers-native.bin').write_bytes(PACK_MARKER)
     return {'abi':'strikers-native-graphics-v1','model_files':len(models),'texture_bundles':len(bundles),
             'bundle_textures':sum(len(e) for _,e,_ in bundles),'resource_bundles':len(resources),
             'embedded_textures':sum(n for _,_,_,n,_ in resources),'unique_textures':len(requests),

@@ -67,6 +67,7 @@ class Renderer
         uint64_t fenceUs = 0, uploadUs = 0, drawUs = 0, queueUs = 0, dynamicVertexBytes = 0;
         uint64_t frontendWaitUs = 0, commandBytes = 0;
         uint32_t draws = 0, globalFinishes = 0, slotWaits = 0;
+        uint32_t affineUvDraws = 0, projectiveUvDraws = 0, vertexFogDraws = 0;
     };
     Renderer() noexcept;
     ~Renderer();

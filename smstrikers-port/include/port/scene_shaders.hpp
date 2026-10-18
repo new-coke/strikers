@@ -7,6 +7,9 @@ void main(float4 a_position:POSITION,float4 a_color:COLOR0,float3 a_normal:NORMA
  float3 a_uv3:TEXCOORD3,float3 a_uv4:TEXCOORD4,float3 a_uv5:TEXCOORD5,float a_bone:TEXCOORD6,
  uniform float4 u_mvp[4],uniform float4 u_mv[4],uniform float4 u_bones[30],
  uniform float4 u_environment,uniform float4 u_ambient,uniform float4 u_diffuse,uniform float4 u_lighting,
+#if STRIKERS_VERTEX_FOG
+ uniform float4 u_fog,
+#endif
  uniform float4 u_lightpos[8],uniform float4 u_lightcolor[8],uniform float4 u_specular[4],uniform float4 u_specularcolor[4],
  out float4 position:POSITION,out float4 color:COLOR0,out float4 spec:COLOR1,
  out float3 uv0:TEXCOORD0,out float3 uv1:TEXCOORD1,out float3 uv2:TEXCOORD2,
@@ -43,9 +46,20 @@ void main(float4 a_position:POSITION,float4 a_color:COLOR0,float3 a_normal:NORMA
  if(u_environment.x>0.5){uv4=float3(N.x*0.5+0.5,0.5-N.y*0.5,1.0);spec=float4(color.a,color.a,color.a,color.a);}
  if(u_environment.y>0.5)uv0=float3(N.x*0.5+0.5+u_environment.w*N.z,0.5-N.y*0.5+u_environment.w*N.z,1.0);
  if(u_lighting.z>0.5){uv0.y+=u_lighting.w;}
+#if STRIKERS_VERTEX_FOG
+ // Only the affine part commutes with perspective-correct interpolation.
+ // Keep saturation and nonlinear curves in the fragment stage.
+ eyeZ=(-eye.z-u_fog.x)/max(u_fog.y-u_fog.x,0.001);
+#else
  eyeZ=-eye.z;
+#endif
 })";
 inline constexpr const char* kSceneFragmentShader = R"(
+#if STRIKERS_AFFINE_UV
+#define SCENE_UV(uv) ((uv).xy)
+#else
+#define SCENE_UV(uv) ((uv).xy/max(abs((uv).z),0.000001))
+#endif
 float4 main(float4 color:COLOR0,float4 spec:COLOR1,float3 uv0:TEXCOORD0,float3 uv1:TEXCOORD1,
  float3 uv2:TEXCOORD2,float3 uv3:TEXCOORD3,float3 uv4:TEXCOORD4,float3 uv5:TEXCOORD5,float eyeZ:TEXCOORD6,
  uniform sampler2D u_tex0:TEXUNIT0,uniform sampler2D u_tex1:TEXUNIT1,uniform sampler2D u_tex2:TEXUNIT2,
@@ -53,14 +67,14 @@ float4 main(float4 color:COLOR0,float4 spec:COLOR1,float3 uv0:TEXCOORD0,float3 u
  uniform float4 u_controls,uniform float4 u_effects,uniform float4 u_tint,uniform float4 u_shadow,uniform float4 u_shadowadd,
  uniform float4 u_fog,uniform float4 u_fogcolor,uniform float4 u_material):COLOR {
  float mask=u_controls.x;float4 base=color;if(u_effects.x>0.5)base.rgb=u_tint.rgb;
- float2 diffuseUv=uv0.xy/max(abs(uv0.z),0.000001);
+ float2 diffuseUv=SCENE_UV(uv0);
  if(u_material.z>0.5){float partition=u_material.z-1.0;diffuseUv=diffuseUv*float2(0.25,0.3333333333)+float2(fmod(partition,4.0)*0.25,floor(partition/4.0)*0.3333333333);}
  float4 d=tex2D(u_tex0,diffuseUv);
- float4 detail=tex2D(u_tex1,uv1.xy/max(abs(uv1.z),0.000001));
- float4 sh=tex2D(u_tex2,uv2.xy/max(abs(uv2.z),0.000001));
- float4 self=tex2D(u_tex3,uv3.xy/max(abs(uv3.z),0.000001));
- float4 gloss=tex2D(u_tex4,uv4.xy/max(abs(uv4.z),0.000001));
- float4 bump=tex2D(u_tex5,uv5.xy/max(abs(uv5.z),0.000001));
+ float4 detail=tex2D(u_tex1,SCENE_UV(uv1));
+ float4 sh=tex2D(u_tex2,SCENE_UV(uv2));
+ float4 self=tex2D(u_tex3,SCENE_UV(uv3));
+ float4 gloss=tex2D(u_tex4,SCENE_UV(uv4));
+ float4 bump=tex2D(u_tex5,SCENE_UV(uv5));
  if(fmod(floor(mask/32.0),2.0)>0.5)base.rgb=float3(1.0,1.0,1.0);
  float4 c=base;
  if(fmod(mask,2.0)>0.5)c*=d;
@@ -83,7 +97,12 @@ float4 main(float4 color:COLOR0,float4 spec:COLOR1,float3 uv0:TEXCOORD0,float3 u
  if(u_controls.w==4.0)c=float4(d.a,d.a,d.a,d.a);
  if(u_controls.y>=0.0&&c.a<=u_controls.y)discard;
  if(fmod(floor(mask/32.0),2.0)<0.5)c.rgb*=u_controls.z;
- if(u_fog.z>0.5){float f=saturate((eyeZ-u_fog.x)/max(u_fog.y-u_fog.x,0.001));
+ if(u_fog.z>0.5){
+#if STRIKERS_VERTEX_FOG
+  float f=saturate(eyeZ);
+#else
+  float f=saturate((eyeZ-u_fog.x)/max(u_fog.y-u_fog.x,0.001));
+#endif
   if(u_fog.w==1.0)f=1.0-exp2(-8.0*f);if(u_fog.w==2.0)f=1.0-exp2(-8.0*f*f);
   if(u_fog.w==3.0)f=exp2(-8.0*(1.0-f));if(u_fog.w==4.0)f=exp2(-8.0*(1.0-f)*(1.0-f));c.rgb=lerp(c.rgb,u_fogcolor.rgb,f);}
  return saturate(c);

@@ -1,0 +1,145 @@
+{
+  "date": "2026-10-18",
+  "warmup_live_frames": 600,
+  "samples_per_run": 300,
+  "fixed_dt": 0,
+  "frameskip": 0,
+  "diagnostics": false,
+  "timing": false,
+  "effective_clocks_mhz": {
+    "cpu": 444,
+    "gpu": 222,
+    "bus": 222,
+    "crossbar": 166
+  },
+  "comparison_unit": "Three independent runs per profile; pooled frame tails are descriptive, not independent run replications",
+  "limits": "Realtime trajectories may diverge despite the fixed seed. Run variability is material. No default promotion.",
+  "groups": {
+    "control": {
+      "samples": 900,
+      "runs": [
+        {
+          "label": "shader-control-1",
+          "fps": 20.527313849080727,
+          "mean_ms": 48.71558,
+          "p95_ms": 59.486,
+          "p99_ms": 65.986,
+          "self_sha256": "4cb243ebfdb96aa67bdea7ac88ae669d613c3025b1a1e8ceeb46eaa7add04026",
+          "ini_sha256": "ab7b5d34252b8dd753d6818d4c15f6b8c86b2cdd66d5a2c190ca0cd3179488b2"
+        },
+        {
+          "label": "shader-control-2",
+          "fps": 17.89339722309983,
+          "mean_ms": 55.886536666666665,
+          "p95_ms": 83.14,
+          "p99_ms": 94.859,
+          "self_sha256": "4cb243ebfdb96aa67bdea7ac88ae669d613c3025b1a1e8ceeb46eaa7add04026",
+          "ini_sha256": "9bf382258e87c50a9b0f3b3f7472274148d18672ddb43555906fe89f1c39b1bf"
+        },
+        {
+          "label": "shader-control-3",
+          "fps": 21.979023513012827,
+          "mean_ms": 45.497926666666665,
+          "p95_ms": 52.516,
+          "p99_ms": 54.158,
+          "self_sha256": "4cb243ebfdb96aa67bdea7ac88ae669d613c3025b1a1e8ceeb46eaa7add04026",
+          "ini_sha256": "a25374cae930240d535802da1071d9ac93ac1d2bd9669ca4b5943c9672816823"
+        }
+      ],
+      "mean_ms": 50.03334777777778,
+      "pooled_fps": 19.986669779553473,
+      "median_ms": 47.548,
+      "p95_ms": 69.504,
+      "p99_ms": 87.599,
+      "deadline_60_frames": 0,
+      "fps_run_min": 17.89339722309983,
+      "fps_run_max": 21.979023513012827,
+      "mean_time_change_pct_vs_control": 0.0,
+      "remaining_mean_reduction_pct_for_60": 66.68888370074421
+    },
+    "affine": {
+      "samples": 900,
+      "runs": [
+        {
+          "label": "shader-affine-1",
+          "fps": 18.82602419219413,
+          "mean_ms": 53.11796,
+          "p95_ms": 73.341,
+          "p99_ms": 85.371,
+          "self_sha256": "4cb243ebfdb96aa67bdea7ac88ae669d613c3025b1a1e8ceeb46eaa7add04026",
+          "ini_sha256": "74792138380ba55cc434a62614cc244ddbdfb5220dfab6f0011c8ae6e32975cf"
+        },
+        {
+          "label": "shader-affine-2",
+          "fps": 21.218778335910237,
+          "mean_ms": 47.12806666666667,
+          "p95_ms": 54.847,
+          "p99_ms": 63.903,
+          "self_sha256": "4cb243ebfdb96aa67bdea7ac88ae669d613c3025b1a1e8ceeb46eaa7add04026",
+          "ini_sha256": "81758c693a6b5ae1ee4972c70e7ac8e772aa544e1b0bd6cf250eb3cedad32a74"
+        },
+        {
+          "label": "shader-affine-3",
+          "fps": 21.681464024958544,
+          "mean_ms": 46.122346666666665,
+          "p95_ms": 54.478,
+          "p99_ms": 58.646,
+          "self_sha256": "4cb243ebfdb96aa67bdea7ac88ae669d613c3025b1a1e8ceeb46eaa7add04026",
+          "ini_sha256": "ca6a3954e617ede593905e996c5fd661b1afa20c06cb07a4c3bb9599d47fcc16"
+        }
+      ],
+      "mean_ms": 48.789457777777784,
+      "pooled_fps": 20.49623106193797,
+      "median_ms": 47.0755,
+      "p95_ms": 63.823,
+      "p99_ms": 78.552,
+      "deadline_60_frames": 0,
+      "fps_run_min": 18.82602419219413,
+      "fps_run_max": 21.681464024958544,
+      "mean_time_change_pct_vs_control": -2.486121867208868,
+      "remaining_mean_reduction_pct_for_60": 65.83961489677004
+    },
+    "fog": {
+      "samples": 900,
+      "runs": [
+        {
+          "label": "shader-fog-1",
+          "fps": 21.889920260857803,
+          "mean_ms": 45.683126666666666,
+          "p95_ms": 53.715,
+          "p99_ms": 58.814,
+          "self_sha256": "4cb243ebfdb96aa67bdea7ac88ae669d613c3025b1a1e8ceeb46eaa7add04026",
+          "ini_sha256": "4d7448406095f4363349f1d0aa79609070074b884a5c306cf28120605d257503"
+        },
+        {
+          "label": "shader-fog-2",
+          "fps": 20.887571393719025,
+          "mean_ms": 47.87536,
+          "p95_ms": 58.312,
+          "p99_ms": 66.195,
+          "self_sha256": "4cb243ebfdb96aa67bdea7ac88ae669d613c3025b1a1e8ceeb46eaa7add04026",
+          "ini_sha256": "6147389b90bd2845d189b4ae3567e89b99c5f62820968b0d10e1585d6b0ab928"
+        },
+        {
+          "label": "shader-fog-3",
+          "fps": 20.104852165336137,
+          "mean_ms": 49.73923666666666,
+          "p95_ms": 61.729,
+          "p99_ms": 72.011,
+          "self_sha256": "4cb243ebfdb96aa67bdea7ac88ae669d613c3025b1a1e8ceeb46eaa7add04026",
+          "ini_sha256": "8544d8d98274ce55169539715313255e4859ed14c344f5dbef2f4e7c3e7c6aff"
+        }
+      ],
+      "mean_ms": 47.76590777777778,
+      "pooled_fps": 20.935433796261524,
+      "median_ms": 46.602,
+      "p95_ms": 58.279,
+      "p99_ms": 66.609,
+      "deadline_60_frames": 0,
+      "fps_run_min": 20.104852165336137,
+      "fps_run_max": 21.889920260857803,
+      "mean_time_change_pct_vs_control": -4.531857452495069,
+      "remaining_mean_reduction_pct_for_60": 65.10761033956413
+    }
+  }
+}

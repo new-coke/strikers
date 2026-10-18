@@ -67,10 +67,12 @@ void MatchRuntime::report()
             std::fprintf(
                 f,
                 "frames,fence_us,upload_us,draw_calls_us,queue_us,draws,dynamic_bytes,frontend_"
-                "wait_us,command_bytes,slot_waits\n%llu,%llu,%llu,%llu,%llu,%u,%llu,%llu,%llu,%u\n",
+                "wait_us,command_bytes,slot_waits,affine_uv_draws,projective_uv_draws,vertex_fog_draws\n"
+                "%llu,%llu,%llu,%llu,%llu,%u,%llu,%llu,%llu,%u,%u,%u,%u\n",
                 timingFrames, timings.fenceUs, timings.uploadUs, timings.drawUs, timings.queueUs,
                 timings.draws, timings.dynamicVertexBytes, timings.frontendWaitUs,
-                timings.commandBytes, timings.slotWaits);
+                timings.commandBytes, timings.slotWaits, timings.affineUvDraws,
+                timings.projectiveUvDraws, timings.vertexFogDraws);
             std::fclose(f);
         }
     }

@@ -27,6 +27,9 @@ bool failCompile = false, failTarget = false, failInit = false;
 std::map<GLuint, std::vector<uint8_t>> buffers;
 std::map<GLuint, std::map<GLenum, GLint>> textureParameters;
 std::set<GLuint> textures, framebuffers, renderbuffers, programs, shaders;
+std::map<GLuint, GLenum> shaderStages;
+std::map<GLuint, std::string> shaderSources;
+std::map<GLuint, std::map<GLenum, std::string>> programSources;
 const char* names[]{ "u_mvp",           "u_mv",       "u_bones",    "u_environment", "u_ambient",
                      "u_diffuse",       "u_lighting", "u_lightpos", "u_lightcolor",  "u_specular",
                      "u_specularcolor", "u_controls", "u_effects",  "u_tint",        "u_shadow",
@@ -200,16 +203,18 @@ void glDepthMask(GLboolean) {}
 void glClearColor(GLfloat, GLfloat, GLfloat, GLfloat) {}
 void glClearDepthf(GLfloat) {}
 void glClear(GLbitfield) { ++clears; }
-GLuint glCreateShader(GLenum)
+GLuint glCreateShader(GLenum stage)
 {
     GLuint id;
     generate(1, &id, shaders);
+    shaderStages[id] = stage;
     return id;
 }
-void glDeleteShader(GLuint id) { erase(1, &id, shaders); }
-void glShaderSource(GLuint id, GLsizei, const GLchar* const*, const GLint*)
+void glDeleteShader(GLuint id) { erase(1, &id, shaders); shaderStages.erase(id); shaderSources.erase(id); }
+void glShaderSource(GLuint id, GLsizei count, const GLchar* const* source, const GLint*)
 {
-    assert(shaders.count(id));
+    assert(shaders.count(id) && count == 1);
+    shaderSources[id] = *source;
 }
 void glCompileShader(GLuint) {}
 void glGetShaderiv(GLuint, GLenum key, GLint* v)
@@ -223,8 +228,11 @@ GLuint glCreateProgram()
     generate(1, &id, programs);
     return id;
 }
-void glDeleteProgram(GLuint id) { erase(1, &id, programs); }
-void glAttachShader(GLuint p, GLuint s) { assert(programs.count(p) && shaders.count(s)); }
+void glDeleteProgram(GLuint id) { erase(1, &id, programs); programSources.erase(id); }
+void glAttachShader(GLuint p, GLuint s) {
+    assert(programs.count(p) && shaders.count(s));
+    programSources[p][shaderStages.at(s)] = shaderSources.at(s);
+}
 void glBindAttribLocation(GLuint, GLuint, const GLchar*) {}
 void glLinkProgram(GLuint) {}
 void glGetProgramiv(GLuint, GLenum p, GLint* v) { *v = p == GL_ACTIVE_UNIFORMS ? std::size(names) : 1; }
@@ -337,6 +345,8 @@ void glReadPixels(GLint, GLint, GLsizei w, GLsizei h, GLenum, GLenum, GLvoid* ds
 int main()
 {
     using namespace port::render;
+    unsetenv("STRIKERS_VITAGL_AFFINE_UV");
+    unsetenv("STRIKERS_VITAGL_VERTEX_FOG");
     // Non-unit world light directions must produce the same incoming unit
     // direction as GX; zero/invalid lights must not introduce shader NaNs.
     const float lightColor[]{ .2f, .4f, 1.f, 1.f };
@@ -525,6 +535,84 @@ int main()
         r.shutdown();
         empty();
     }
+    // Exercise program selection in the production driver, including immutable
+    // resident metadata, dynamic Q changes, current environment overrides and
+    // the reference copy/movie and ill-conditioned-fog programs.
+    for (bool affine : {false, true})
+        for (bool fog : {false, true})
+        {
+            setenv("STRIKERS_VITAGL_AFFINE_UV", affine ? "1" : "0", 1);
+            setenv("STRIKERS_VITAGL_VERTEX_FOG", fog ? "1" : "0", 1);
+            Renderer r;
+            assert(r.initialize(true) && r.initialize_scene_program());
+            assert(programs.size() == (affine ? 81 : 41));
+            assert(shaders.size() == (fog ? 2 : 1));
+            std::array<ModelVertex, 3> v;
+            std::array<uint16_t, 3> i{0, 1, 2};
+            auto model = r.create_model(v, i);
+            assert(model && r.begin_frame());
+            SceneMaterial m;
+            m.controls[0] = 1;
+            m.fog = {100, 1000, 1, 2};
+            Raster raster;
+            const auto check_shader = [&](bool expectedAffine, bool expectedFog, bool generic = false) {
+                const auto& src = programSources.at(program);
+                const auto& fs = src.at(GL_CG_FRAGMENT_SHADER_EXT);
+                assert((fs.find("STRIKERS_AFFINE_UV 1") != std::string::npos) == expectedAffine);
+                assert((fs.find("STRIKERS_VERTEX_FOG 1") != std::string::npos) == expectedFog);
+                assert((src.at(GL_CG_VERTEX_SHADER_EXT).find("STRIKERS_VERTEX_FOG 1") != std::string::npos) == expectedFog);
+                assert((fs.find("float mask=u_controls.x;") != std::string::npos) == generic);
+            };
+            assert(r.draw_scene(model, {}, {}, identity, raster, m));
+            check_shader(affine, fog);
+            // The cached model is independent of subsequent caller mutation.
+            v[1].uv[2] = 2;
+            assert(r.draw_scene(model, {}, {}, identity, raster, m));
+            check_shader(affine, fog);
+            assert(r.draw_scene(0, v, i, identity, raster, m));
+            check_shader(false, fog);
+            const auto projective = r.create_model(v, i);
+            assert(projective && r.draw_scene(projective, {}, {}, identity, raster, m));
+            check_shader(false, fog);
+            // Mobile texgen replaces this projective source with Q=1.
+            m.environment[1] = 1;
+            assert(r.draw_scene(projective, {}, {}, identity, raster, m));
+            check_shader(affine, fog);
+            m.environment[1] = 0;
+            assert(r.draw_scene(projective, {}, {}, identity, raster, m));
+            check_shader(false, fog);
+            // Generic conversion families always retain the reference stages.
+            for (float family : {2.f, 3.f, 4.f})
+            {
+                m.controls[3] = family;
+                assert(r.draw_scene(model, {}, {}, identity, raster, m));
+                check_shader(false, false, true);
+            }
+            m.controls[3] = 0;
+            m.fog = {10000, 10000.01f, 1, 0};
+            assert(r.draw_scene(model, {}, {}, identity, raster, m));
+            check_shader(fog ? false : affine, false, fog);
+            m.fog = {100, 1000, 1, 2};
+            // Dynamic uploads must recover affine eligibility on a later draw.
+            v[1].uv[2] = 1;
+            assert(r.draw_scene(0, v, i, identity, raster, m));
+            check_shader(affine, fog);
+            // Recreating resident geometry must not retain the old Q metadata.
+            r.release_model(projective);
+            auto replaced = r.create_model(v, i);
+            assert(replaced && r.draw_scene(replaced, {}, {}, identity, raster, m));
+            check_shader(affine, fog);
+            assert(r.end_frame());
+            const auto t = r.completed_timing();
+            assert(t.draws == 12);
+            assert(t.affineUvDraws + t.projectiveUvDraws == t.draws);
+            assert((t.affineUvDraws > 0) == affine);
+            assert((t.vertexFogDraws > 0) == fog);
+            r.shutdown();
+            empty();
+        }
+    unsetenv("STRIKERS_VITAGL_AFFINE_UV");
+    unsetenv("STRIKERS_VITAGL_VERTEX_FOG");
     // Malformed geometry is rejected before any buffer upload.
     {
         Renderer r;

@@ -79,6 +79,9 @@ bool MatchRuntime::end_frame() noexcept
         timings.frontendWaitUs += t.frontendWaitUs;
         timings.commandBytes += t.commandBytes;
         timings.slotWaits += t.slotWaits;
+        timings.affineUvDraws += t.affineUvDraws;
+        timings.projectiveUvDraws += t.projectiveUvDraws;
+        timings.vertexFogDraws += t.vertexFogDraws;
     }
     if (!result || ((PortDiagnosticsEnabled() || timingFrames) && glGetCurrentFrame() % 60 == 0))
         report();

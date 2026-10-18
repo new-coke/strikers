@@ -927,6 +927,13 @@ if(STRIKERS_VITA)
         message(FATAL_ERROR
             "LiveArea must use the a1 layout, bg.png background and startup.png launch gate")
     endif()
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    execute_process(COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/validate_vita_package.py"
+        RESULT_VARIABLE _strikers_assets_result)
+    if(NOT _strikers_assets_result EQUAL 0)
+        message(FATAL_ERROR "Invalid Vita LiveArea assets; see validate_vita_package.py diagnostics")
+    endif()
     vita_create_self(strikers_vita.self strikers UNSAFE)
     vita_create_vpk(strikers_vita.vpk SMSVITA01 strikers_vita.self
         VERSION 01.00 NAME "Super Mario Strikers Vita"
@@ -935,6 +942,12 @@ if(STRIKERS_VITA)
              assets/vita/sce_sys/livearea/contents/template.xml sce_sys/livearea/contents/template.xml
              assets/vita/sce_sys/livearea/contents/bg.png sce_sys/livearea/contents/bg.png
              assets/vita/sce_sys/livearea/contents/startup.png sce_sys/livearea/contents/startup.png)
+    add_custom_command(TARGET strikers_vita.vpk-vpk POST_BUILD
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/validate_vita_package.py"
+            --vpk "${CMAKE_CURRENT_BINARY_DIR}/strikers_vita.vpk"
+            --self "${CMAKE_CURRENT_BINARY_DIR}/strikers_vita.self"
+        COMMENT "Checking VPK executable and all LiveArea asset paths/bytes"
+        VERBATIM)
 elseif(NX)
     # Horizon has no dynamic loader, so the Vulkan driver is linked statically.
     target_link_libraries(strikers PRIVATE

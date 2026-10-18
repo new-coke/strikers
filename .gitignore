@@ -4,6 +4,9 @@ smstrikers-port/build*/
 
 smstrikers-port/data/
 *.iso
+*.gcm
+*.psarc
+*.psarc.json
 smstrikers-port/extern/ffmpeg-windows-x86_64/
 smstrikers-port/extern/ffmpeg-static/
 smstrikers-port/extern/ffmpeg-switch/
