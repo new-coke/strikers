@@ -1,38 +1,40 @@
-# Strikers Vita: candidata locale per i tester
+# Strikers Vita: local release candidate for testers
 
-Consegnare privatamente `strikers_vita.vpk`, `strikers.ini`, questo documento
-e `release-candidate.json` dalla directory `smstrikers-port/build-vita-gxm-latest`.
-Il VPK resta locale: non allegarlo a release, commit o altri upload su GitHub.
-ISO e PSARC non fanno parte della consegna; ogni tester prepara il proprio
-archivio seguendo [ASSET_SETUP.md](https://github.com/robin994/strikersVita/blob/main/ASSET_SETUP.md) nella repository.
+Distribute `strikers_vita.vpk`, `strikers.ini`, this document and
+`release-candidate.json` privately from `smstrikers-port/build-vita-gxm-latest`.
+**Keep the VPK local. Do not upload it to GitHub, attach it to a release, or
+include it in a commit.** The ISO and PSARC are not part of the delivery.
+Testers must prepare their own archive following the repository's
+[asset setup guide](https://github.com/robin994/strikersVita/blob/main/ASSET_SETUP.md).
 
-Installare il VPK completo con VitaShell e copiare l'INI fornito in
-`ux0:data/strikersVita/strikers.ini`, conservando prima le impostazioni personali.
-Il PSARC della nuova pipeline deve essere in `ux0:data/strikersVita/sms.psarc`.
-Prima di aggiornare salvare sul PC anche `cardA/` e `cardB/` dalla stessa directory.
+Install the complete VPK with VitaShell and copy the supplied INI to
+`ux0:data/strikersVita/strikers.ini`, backing up any personal settings first.
+The new pipeline requires `ux0:data/strikersVita/sms.psarc`.
+Before updating, also back up `cardA/` and `cardB/` from that directory.
 
-Il profilo usa il flusso normale del gioco, glifi PlayStation attivi, 444 MHz
-CPU / 222 MHz GPU, completamento dei frame sincrono e nessun render skipping.
-Diagnostiche, overlay FPS, profiler, capture, watchdog e probe sono disabilitati.
-Per tornare ai glifi GameCube impostare `vita_playstation_glyphs = 0` e riavviare.
+This tester profile uses the normal game flow, PlayStation button glyphs,
+444 MHz CPU / 222 MHz GPU, synchronous frame completion and no render skipping.
+Diagnostics, FPS overlay, profiler, captures, watchdog and probes are disabled.
+To restore GameCube glyphs, set `vita_playstation_glyphs = 0` and restart.
 
-Provare avvio e caricamento del salvataggio, menu e comandi, una partita,
-ingresso in campo, gol/replay, premiazioni e filmati, inclusi salto e ritorno
-al menu. Segnalare scena e passaggi per riprodurre il problema, qualità di
-video/audio e sincronizzazione, modello Vita e firmware. Allegare il manifest;
-in caso di crash conservare anche il coredump. Non attivare profiling durante
-una prova di fluidità del profilo normale.
+Test startup and save loading, menus and controls, one full match, stadium
+entrance, goals/replays, trophy presentations and movies. Include movie
+skipping and returning to the menu. For issues, report the scene and exact
+reproduction steps, video/audio quality and synchronization, Vita model and
+firmware. Include the manifest, and preserve the core dump if the game crashes.
+Do not enable profiling during normal-performance tests.
 
-Questa è una candidata funzionale. **30 FPS stabili e 60 FPS non sono certificati.**
-Le prove precedenti sulla base C9 hanno mostrato un ingresso sotto i 30 FPS
-e un filmato completato con durata corretta ma con fotogrammi mancanti.
-Questi risultati non misurano la candidata generata dal nuovo commit.
+This is a functional test candidate. **Stable 30 FPS and 60 FPS are not yet
+certified.** Previous tests on the C9 baseline showed a stadium entrance
+below 30 FPS and a movie that reached its correct duration but skipped some
+source frames. Those results do **not** measure the new release candidate.
 
-Per ricrearla da sorgenti puliti, con VitaSDK predisposto:
+To rebuild from a clean checkout with VitaSDK configured:
 
 ```sh
 smstrikers-port/build-vita-vitagl.sh --release-candidate
 ```
 
-Il comando riutilizza l'unica directory di build Vita, azzera la cache CMake
-degli esperimenti e produce il manifest con commit, configurazione e SHA-256.
+The script reuses the shared Vita build directory, resets experimental
+CMake options and writes a manifest containing the source commit, build
+settings and SHA-256 hashes.
