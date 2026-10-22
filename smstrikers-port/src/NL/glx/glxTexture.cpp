@@ -9,6 +9,7 @@
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
 #include "port/native_match_runtime.hpp"
 #include "port/native_graphics.hpp"
+#include "port/static_texture_handle_cache.hpp"
 #include <algorithm>
 #endif
 #include "dolphin/os.h"
@@ -41,6 +42,20 @@ static nlAVLTree<unsigned long, PlatTexture*, DefaultKeyCompare<unsigned long> >
 static nlListContainer<PlatTexture*> gridTextures;
 static unsigned long nGridMemory;
 static PlatTexture texobj;
+
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+static port::StaticTextureHandleCache materialTextureCache;
+
+void glx_EnableMaterialTextureCache(bool enabled)
+{
+    materialTextureCache.set_enabled(enabled);
+}
+
+void glx_InvalidateTextureHandles()
+{
+    materialTextureCache.invalidate();
+}
+#endif
 
 static PlatTexture* glx_MakeGridTexture(int width, int height);
 
@@ -118,6 +133,9 @@ int glx_GetTexMarkerLevel()
  */
 void glx_AdvanceTexMarkerLevel()
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    glx_InvalidateTextureHandles();
+#endif
     currentMarkerLevel += 1;
 }
 
@@ -148,6 +166,7 @@ inline void TexDestructor::CallDestructor(const unsigned long& index, PlatTextur
 void glx_BackupTexMarkerLevel(int level)
 {
     #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    glx_InvalidateTextureHandles();
     port::directmatch::on_texture_release(level);
     #endif
     while (currentMarkerLevel != level)
@@ -164,6 +183,9 @@ void glx_BackupTexMarkerLevel(int level)
  */
 void glxInitTex()
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    glx_InvalidateTextureHandles();
+#endif
     currentMarkerLevel = -1;
     for (int level = 0; level < 16; level++)
     {
@@ -283,7 +305,11 @@ static PlatTexture* glx_GetGridTexture(int width, int height)
 /**
  * Offset/Address/Size: 0xF94 | 0x801B8250 | size: 0x194
  */
-PlatTexture* glx_GetTex(uintptr_t handle, bool bMissingFatal, bool bAllowGrids)
+static PlatTexture* glx_ResolveTex(uintptr_t handle, bool bMissingFatal, bool bAllowGrids
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+                                 , port::StaticTextureHandleCache* handleCache
+#endif
+)
 {
     PlatTexture** tex;
     GLTextureAnim* pAnim;
@@ -302,6 +328,14 @@ PlatTexture* glx_GetTex(uintptr_t handle, bool bMissingFatal, bool bAllowGrids)
             return (PlatTexture*)handle;
         }
     }
+
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    // Pointer ownership/type precedence is checked above on every request.
+    if (handleCache && !bAllowGrids)
+        if (auto* cached = handleCache->find(handle))
+            if (cached->m_Magic == 0x50544558 && cached->m_NativeDataSize != 0)
+                return cached;
+#endif
 
     pAnim = glInventory.GetTextureAnim(handle);
     if (pAnim != NULL)
@@ -322,6 +356,14 @@ PlatTexture* glx_GetTex(uintptr_t handle, bool bMissingFatal, bool bAllowGrids)
                     return pTex;
                 }
             }
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+            // Animations must consult their current frame on every request.
+            // Only file-backed handle mappings are retained; texture contents,
+            // GPU IDs and sampling state are still resolved by their owners.
+            if (handleCache && !bAllowGrids && pAnim == NULL && *tex != NULL
+                && (*tex)->m_Magic == 0x50544558 && (*tex)->m_NativeDataSize != 0)
+                handleCache->remember(handle, *tex);
+#endif
             return *tex;
         }
     }
@@ -332,6 +374,24 @@ PlatTexture* glx_GetTex(uintptr_t handle, bool bMissingFatal, bool bAllowGrids)
     }
     return NULL;
 }
+
+PlatTexture* glx_GetTex(uintptr_t handle, bool bMissingFatal, bool bAllowGrids)
+{
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    return glx_ResolveTex(handle, bMissingFatal, bAllowGrids, nullptr);
+#else
+    return glx_ResolveTex(handle, bMissingFatal, bAllowGrids);
+#endif
+}
+
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+PlatTexture* glx_GetMaterialTex(uintptr_t handle)
+{
+    if (!materialTextureCache.enabled())
+        return glx_GetTex(handle, false, false);
+    return glx_ResolveTex(handle, false, false, &materialTextureCache);
+}
+#endif
 #pragma dont_inline off
 
 /**
@@ -347,6 +407,9 @@ bool glx_AddTex(uintptr_t handle, PlatTexture* pTex)
     }
     textureTree = textures[currentMarkerLevel];
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    glx_InvalidateTextureHandles();
+#endif
     textureTree->Add(handle, pTex);
     return true;
 }
@@ -1025,6 +1088,9 @@ void glplatTextureAdd(uintptr_t handle, const void* textureData, unsigned long s
     {
         textureTree = textures[currentMarkerLevel];
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+        glx_InvalidateTextureHandles();
+#endif
         textureTree->Add(handleCopy, pTex);
     }
 }
@@ -1037,6 +1103,7 @@ void glplatTextureAdd(uintptr_t handle, const void* textureData, unsigned long s
 void glplatTextureReplace(uintptr_t handle, const void* textureData, unsigned long size)
 {
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    glx_InvalidateTextureHandles();
     if(!glxApplyNativeTexture(glx_GetTex(handle,false,false),textureData,size))
         OSReport("[native-texture] invalid native replacement: %08lx\n",(unsigned long)handle);
 #else

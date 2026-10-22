@@ -621,7 +621,8 @@ void glClear(GLbitfield mask) {
 		SET_GL_ERROR(GL_INVALID_VALUE);
 	}
 #endif
-	scene_reset();
+	if (!scene_reset())
+		return;
 
 	// Invalidating viewport and culling
 	invalidate_viewport();

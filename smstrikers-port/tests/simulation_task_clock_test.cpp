@@ -2,15 +2,21 @@
 #include "NL/nlTask.h"
 #include "port/framerate.h"
 #include "port/simulation_clock.hpp"
+#include "port/task_profile.hpp"
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
 #include <cstdio>
 #include <vector>
+#include <filesystem>
+#include <unistd.h>
 
 namespace {
 uint64_t now = 1000000000;
 bool deterministic = false;
+bool diagnostics = false;
+unsigned clockCalls = 0;
+PortBenchCaptureStatus captureStatus{};
 uint32_t virtualTicks = 0;
 struct Task : nlTask {
     float supplied = 0;
@@ -36,8 +42,9 @@ struct Task : nlTask {
 };
 }
 extern "C" {
-unsigned long long port_monotonic_ns() { return now; }
-int PortDiagnosticsEnabled() { return 0; }
+unsigned long long port_monotonic_ns() { ++clockCalls; return now; }
+int PortDiagnosticsEnabled() { return diagnostics; }
+void PortBenchGetCaptureStatus(PortBenchCaptureStatus* out) { *out = captureStatus; }
 int PortFixedTimestep() { return deterministic; }
 int PortTaskClockFrame(unsigned int*) { return PORT_TASK_CLOCK_HOST; }
 int PortTaskClockCurrent(unsigned int*) { return 0; }
@@ -113,5 +120,68 @@ int main() {
     nlTaskManager::RunAllTasks();
     assert(std::fabs(physics.deltas.back() - .5f) < .00001);
     assert(physics.deltas == render.deltas && render.deltas == audio.deltas);
+    // The real scheduler adds no capture clocks while OFF or warming up. Use
+    // deterministic simulation here to distinguish profiler clocks from the
+    // scheduler's existing realtime simulation clock.
+    deterministic = true;
+    auto clocksBefore = clockCalls;
+    nlTaskManager::RunAllTasks();
+    assert(clockCalls == clocksBefore);
+    const auto directory = std::filesystem::temp_directory_path() /
+        ("strikers-task-scheduler-" + std::to_string(getpid()));
+    std::filesystem::create_directory(directory);
+    const auto capturePath = (directory / "run.csv").string();
+    setenv("STRIKERS_FRAME_CAPTURE", capturePath.c_str(), 1);
+    setenv("STRIKERS_VITAGL_PACKET_PROFILE", "1", 1);
+    captureStatus = { PORT_CAPTURE_COLLECTING, 0, 2, 1, 0, 0 };
+    assert(port::configure_task_profile());
+    auto& profile = port::task_profile();
+    profile.begin_frame(captureStatus);
+    nlTaskManager::RunAllTasks();
+    profile.end_tasks();
+    captureStatus.warmupRemaining = 0;
+    profile.end_frame(captureStatus, 100);
+    assert(clockCalls == clocksBefore && profile.samples().empty());
+    physics.cost = 2000000; render.cost = 43000000; audio.cost = 5000000;
+    physics.transitionCost = 1000000; render.transitionCost = 2000000; audio.transitionCost = 3000000;
+    manager.m_PendingState ^= 0x100;
+    profile.begin_frame(captureStatus);
+    nlTaskManager::RunAllTasks();
+    profile.end_tasks();
+    captureStatus.samples = 1;
+    captureStatus.lastFrame = 600;
+    profile.end_frame(captureStatus, 101);
+    assert(clockCalls - clocksBefore == 14); // manager + three Run/Transition pairs
+    assert(profile.task_count() == 3 && profile.samples().size() == 1);
+    const auto& taskFrame = profile.samples()[0];
+    assert(taskFrame.managerNs == 56000000 && taskFrame.engineFrame == 101);
+    for (unsigned i = 0; i < profile.task_count(); ++i)
+    {
+        const auto* task = static_cast<const Task*>(profile.tasks()[i].key);
+        assert(taskFrame.tasks[i].runNs == task->cost && taskFrame.tasks[i].runCalls == 1);
+        assert(taskFrame.tasks[i].transitionNs == task->transitionCost && taskFrame.tasks[i].transitionCalls == 1);
+    }
+    // Enabling the old task profiler must reuse the same Run interval, adding
+    // no second pair of clocks or changes to its existing reporting window.
+    setenv("STRIKERS_TASK_PROFILE", "1", 1);
+    setenv("STRIKERS_TASK_PROFILE_FRAMES", "600", 1);
+    diagnostics = true;
+    clocksBefore = clockCalls;
+    profile.begin_frame(captureStatus);
+    nlTaskManager::RunAllTasks();
+    profile.end_tasks();
+    captureStatus.state = PORT_CAPTURE_COMPLETE;
+    captureStatus.samples = 2;
+    captureStatus.lastFrame = 601;
+    profile.end_frame(captureStatus, 102);
+    assert(clockCalls - clocksBefore == 8 && profile.complete() && !profile.error_code());
+    assert(profile.samples()[1].managerNs == 50000000 && profile.samples()[1].liveFrame == 601);
+    diagnostics = false;
+    clocksBefore = clockCalls;
+    profile.begin_frame(captureStatus);
+    nlTaskManager::RunAllTasks();
+    profile.end_tasks();
+    assert(clockCalls == clocksBefore);
+    std::filesystem::remove_all(directory);
     std::puts("Task scheduler: 20/10 render FPS, 50 Hz physics, shared elapsed time, dilation, suspend, warm loading and deterministic-clock transitions passed");
 }

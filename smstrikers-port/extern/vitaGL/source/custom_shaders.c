@@ -296,7 +296,7 @@ shark_opt compiler_opts = SHARK_OPT_FAST;
 GLuint cur_program = 0; // Current in use custom program (0 = No custom program)
 
 // Uniform struct
-typedef struct {
+typedef struct uniform {
 	const SceGxmProgramParameter *ptr;
 	float *data;
 	uint32_t size;
@@ -305,7 +305,14 @@ typedef struct {
 #endif
 	GLboolean is_fragment;
 	GLboolean is_vertex;
+	struct uniform *packed_alias;
+	GLboolean packed_dirty;
 } uniform;
+
+typedef struct {
+	uint8_t *data, *reference;
+	uint32_t bytes;
+} packed_uniforms;
 
 // Program status enum
 typedef enum {
@@ -333,6 +340,16 @@ typedef enum {
 
 // Program struct holding vertex/fragment shader info
 typedef struct {
+	SceGxmVertexAttribute attributes[VERTEX_ATTRIBS_NUM];
+	SceGxmVertexStream streams[VERTEX_ATTRIBS_NUM];
+	SceGxmShaderPatcherId base;
+	const SceGxmProgram *base_program;
+	SceGxmVertexProgram *program;
+	GLuint attribute_count, stream_count;
+	GLboolean valid;
+} vertex_program_cache;
+
+typedef struct {
 	shader *vshader;
 	shader *fshader;
 	uint8_t status;
@@ -344,6 +361,7 @@ typedef struct {
 	SceGxmVertexStream stream[VERTEX_ATTRIBS_NUM];
 	uint8_t attr_map[VERTEX_ATTRIBS_NUM];
 	SceGxmVertexProgram *vprog;
+	vertex_program_cache *vertex_cache;
 	SceGxmFragmentProgram *fprog;
 	blend_config blend_info;
 	GLuint attr_num;
@@ -358,6 +376,7 @@ typedef struct {
 	uniform *frag_uniforms;
 	uint32_t vert_uniforms_num;
 	uint32_t frag_uniforms_num;
+	packed_uniforms packed[2];
 	ubo *vert_ubos;
 	ubo *frag_ubos;
 	GLuint attr_highest_idx;
@@ -370,6 +389,570 @@ typedef struct {
 // Internal shaders and array
 static shader shaders[MAX_CUSTOM_SHADERS];
 static program progs[MAX_CUSTOM_PROGRAMS];
+
+static GLboolean vertex_program_cache_enabled = GL_FALSE;
+static GLboolean vertex_program_cache_profile = GL_FALSE;
+static vglVertexProgramCacheStats vertex_program_cache_stats;
+
+GLboolean vglConfigureVertexProgramCache(GLboolean enabled, GLboolean profile) {
+	for (uint32_t i = 0; i < MAX_CUSTOM_PROGRAMS; i++) {
+		if (progs[i].status != PROG_INVALID) {
+			vgl_error = GL_INVALID_OPERATION;
+			return GL_FALSE;
+		}
+	}
+	vertex_program_cache_enabled = enabled != GL_FALSE;
+	vertex_program_cache_profile = profile != GL_FALSE;
+	vgl_memset(&vertex_program_cache_stats, 0, sizeof(vertex_program_cache_stats));
+	vertex_program_cache_stats.enabled = vertex_program_cache_enabled;
+	vertex_program_cache_stats.profiling = vertex_program_cache_profile;
+	return GL_TRUE;
+}
+
+void vglGetVertexProgramCacheStats(vglVertexProgramCacheStats *stats) {
+	if (stats)
+		*stats = vertex_program_cache_stats;
+}
+
+static void release_vertex_program_cache(program *p) {
+	if (!p->vertex_cache)
+		return;
+	if (vertex_program_cache_profile)
+		vertex_program_cache_stats.cache_bytes -= sizeof(vertex_program_cache);
+	vgl_free(p->vertex_cache);
+	p->vertex_cache = NULL;
+}
+
+static GLboolean vertex_program_cache_eligible(const program *p) {
+#ifdef ENABLE_LEGACY_PIPELINE
+	if (p->attr_mode != VGL_ATTRIB_REGULAR)
+		return GL_FALSE;
+#endif
+	return p->attr_num <= VERTEX_ATTRIBS_NUM;
+}
+
+static void initialize_vertex_program_cache(program *p) {
+	if (!vertex_program_cache_enabled || !vertex_program_cache_eligible(p))
+		return;
+	release_vertex_program_cache(p);
+	// This optional cache is CPU-only. Failed allocation leaves the original
+	// patcher path available, without retrying an allocation on each draw.
+	p->vertex_cache = vgl_memalign(MEM_ALIGNMENT, sizeof(vertex_program_cache), VGL_MEM_EXTERNAL);
+	if (!p->vertex_cache) {
+		if (vertex_program_cache_profile)
+			vertex_program_cache_stats.counters[VGL_VERTEX_PROGRAM_METADATA_ALLOC_FAILURES]++;
+		return;
+	}
+	vgl_memset(p->vertex_cache, 0, sizeof(vertex_program_cache));
+	if (vertex_program_cache_profile) {
+		vertex_program_cache_stats.cache_bytes += sizeof(vertex_program_cache);
+		if (vertex_program_cache_stats.cache_peak_bytes < vertex_program_cache_stats.cache_bytes)
+			vertex_program_cache_stats.cache_peak_bytes = vertex_program_cache_stats.cache_bytes;
+	}
+}
+
+static void invalidate_vertex_program_caches(const shader *s) {
+	// Registration and release are cold paths. Invalidate before a base ID can
+	// change or be reused; no cached pointer is ever released here.
+	if (!vertex_program_cache_enabled)
+		return;
+	for (uint32_t i = 0; i < MAX_CUSTOM_PROGRAMS; i++)
+		if (progs[i].vshader == s && progs[i].vertex_cache)
+			progs[i].vertex_cache->valid = GL_FALSE;
+}
+
+static inline GLboolean prepare_uncached_vertex_program(program *p, const SceGxmVertexAttribute *attributes,
+	GLuint attribute_count, const SceGxmVertexStream *streams, GLuint stream_count) {
+	SceGxmVertexProgram *candidate = NULL;
+	int result = sceGxmShaderPatcherCreateVertexProgram(gxm_shader_patcher, p->vshader->id,
+		attributes, attribute_count, streams, stream_count, &candidate);
+#ifdef LOG_ERRORS
+	if (result)
+		vgl_log("Vertex shader patching failed (%s) on shader 0x%X with %d attributes and %d streams.\n",
+			get_gxm_error_literal(result), p->vshader->id, attribute_count, stream_count);
+#endif
+	if (result || !candidate) {
+		// A failed patch must not publish an SDK output or reuse the old layout.
+		vgl_error = GL_INVALID_OPERATION;
+		return GL_FALSE;
+	}
+	p->vprog = candidate;
+	return GL_TRUE;
+}
+
+static GLboolean prepare_vertex_program(program *p, const SceGxmVertexAttribute *attributes,
+	GLuint attribute_count, const SceGxmVertexStream *streams, GLuint stream_count, unsigned route) {
+	uint64_t *counters = vertex_program_cache_stats.counters;
+	if (vertex_program_cache_profile)
+		counters[route]++;
+	// The ordinary OFF path uses the same checked create without profiling.
+	if (!vertex_program_cache_enabled) {
+		GLboolean prepared = prepare_uncached_vertex_program(p, attributes, attribute_count, streams, stream_count);
+		if (vertex_program_cache_profile) {
+			counters[VGL_VERTEX_PROGRAM_UNCACHED_REQUESTS]++;
+			counters[VGL_VERTEX_PROGRAM_CREATE_CALLS]++;
+			counters[prepared ? VGL_VERTEX_PROGRAM_CREATE_SUCCESSES : VGL_VERTEX_PROGRAM_ERRORS]++;
+		}
+		return prepared;
+	}
+	vertex_program_cache *cache = p->vertex_cache;
+	if (!vertex_program_cache_eligible(p) || attribute_count > VERTEX_ATTRIBS_NUM || stream_count > VERTEX_ATTRIBS_NUM)
+		cache = NULL;
+	if (cache && cache->valid && cache->base == p->vshader->id && cache->base_program == p->vshader->prog &&
+		cache->program == p->vprog && cache->attribute_count == attribute_count && cache->stream_count == stream_count &&
+		(!attribute_count || !memcmp(cache->attributes, attributes, attribute_count * sizeof(*attributes))) &&
+		(!stream_count || !memcmp(cache->streams, streams, stream_count * sizeof(*streams)))) {
+		if (vertex_program_cache_profile)
+			counters[VGL_VERTEX_PROGRAM_CACHE_HITS]++;
+		return GL_TRUE;
+	}
+	if (vertex_program_cache_profile) {
+		counters[cache ? VGL_VERTEX_PROGRAM_CACHE_MISSES : VGL_VERTEX_PROGRAM_UNCACHED_REQUESTS]++;
+		if (!cache && vertex_program_cache_eligible(p))
+			counters[VGL_VERTEX_PROGRAM_METADATA_FALLBACKS]++;
+		counters[VGL_VERTEX_PROGRAM_CREATE_CALLS]++;
+	}
+	SceGxmVertexProgram *candidate = NULL;
+	int result = sceGxmShaderPatcherCreateVertexProgram(gxm_shader_patcher, p->vshader->id,
+		attributes, attribute_count, streams, stream_count, &candidate);
+	if (result || !candidate) {
+		if (vertex_program_cache_profile)
+			counters[VGL_VERTEX_PROGRAM_ERRORS]++;
+		// A failed call may have touched its output. Never publish that pointer
+		// or draw with the previous layout, even with SKIP_ERROR_HANDLING.
+		vgl_error = GL_INVALID_OPERATION;
+		return GL_FALSE;
+	}
+	if (vertex_program_cache_profile)
+		counters[VGL_VERTEX_PROGRAM_CREATE_SUCCESSES]++;
+	p->vprog = candidate;
+	if (cache) {
+		cache->base = p->vshader->id;
+		cache->base_program = p->vshader->prog;
+		cache->program = candidate;
+		cache->attribute_count = attribute_count;
+		cache->stream_count = stream_count;
+		if (attribute_count)
+			vgl_fast_memcpy(cache->attributes, attributes, attribute_count * sizeof(*attributes));
+		if (stream_count)
+			vgl_fast_memcpy(cache->streams, streams, stream_count * sizeof(*streams));
+		cache->valid = GL_TRUE;
+	}
+	return GL_TRUE;
+}
+
+static void restore_vertex_program_attributes(program *p, SceGxmVertexAttribute *attributes, SceGxmVertexStream *streams) {
+	if (p->has_unaligned_attrs)
+		return;
+	for (GLuint i = 0; i < p->attr_num; i++) {
+		const uint8_t attr_idx = p->attr_map[i];
+		attributes[i].regIndex = i;
+		if (!(cur_vao->vertex_attrib_state & (1 << attr_idx))) {
+			streams[i].stride = orig_stride[i];
+			attributes[i].componentCount = orig_size[i];
+			attributes[i].format = orig_fmt[i];
+		}
+	}
+}
+
+static GLboolean uniform_cache_enabled = GL_FALSE;
+
+static GLboolean interleaved_streams_enabled = GL_FALSE;
+static GLboolean interleaved_streams_profile = GL_FALSE;
+static vglVertexStreamStats interleaved_streams_stats;
+
+GLboolean vglConfigureInterleavedStreams(GLboolean enabled, GLboolean profile) {
+	for (uint32_t i = 0; i < MAX_CUSTOM_PROGRAMS; i++) {
+		if (progs[i].status != PROG_INVALID) {
+			vgl_error = GL_INVALID_OPERATION;
+			return GL_FALSE;
+		}
+	}
+	interleaved_streams_enabled = enabled != GL_FALSE;
+	interleaved_streams_profile = profile != GL_FALSE;
+	vgl_memset(&interleaved_streams_stats, 0, sizeof(interleaved_streams_stats));
+	interleaved_streams_stats.enabled = interleaved_streams_enabled;
+	interleaved_streams_stats.profiling = interleaved_streams_profile;
+	return GL_TRUE;
+}
+
+void vglGetVertexStreamStats(vglVertexStreamStats *stats) {
+	if (stats)
+		*stats = interleaved_streams_stats;
+}
+
+#ifdef DRAW_SPEEDHACK
+typedef struct {
+	SceGxmVertexAttribute attributes[VERTEX_ATTRIBS_NUM];
+	SceGxmVertexStream stream;
+	void *pointer;
+} interleaved_vertex_stream;
+
+static GLboolean plan_interleaved_stream(const program *p, const SceGxmVertexAttribute *attributes,
+	const SceGxmVertexStream *streams, void *const *ptrs, uint32_t base_idx,
+	SceGxmIndexSource index_type, interleaved_vertex_stream *out) {
+	if (base_idx || (index_type != SCE_GXM_INDEX_SOURCE_INDEX_16BIT &&
+		index_type != SCE_GXM_INDEX_SOURCE_INDEX_32BIT) || p->attr_num < 2 ||
+		p->attr_num > VERTEX_ATTRIBS_NUM || !vertex_program_cache_eligible(p))
+		return GL_FALSE;
+	const uint8_t first = p->attr_map[0];
+	if (first >= VERTEX_ATTRIBS_NUM)
+		return GL_FALSE;
+	const uintptr_t buffer = cur_vao->vertex_attrib_vbo[first];
+	const unsigned stride = streams[0].stride;
+	if (!buffer || !stride || !((vbo *)buffer)->ptr)
+		return GL_FALSE;
+	for (GLuint i = 0; i < p->attr_num; ++i) {
+		const uint8_t attr_idx = p->attr_map[i];
+		if (attr_idx >= VERTEX_ATTRIBS_NUM || !(cur_vao->vertex_attrib_state & (1u << attr_idx)) ||
+			cur_vao->vertex_attrib_vbo[attr_idx] != buffer || streams[i].stride != stride ||
+			streams[i].indexSource != index_type || !attributes[i].componentCount ||
+			attributes[i].componentCount > 4)
+			return GL_FALSE;
+		unsigned component_bytes;
+		switch (attributes[i].format) {
+		case SCE_GXM_ATTRIBUTE_FORMAT_U8: case SCE_GXM_ATTRIBUTE_FORMAT_S8:
+		case SCE_GXM_ATTRIBUTE_FORMAT_U8N: case SCE_GXM_ATTRIBUTE_FORMAT_S8N:
+			component_bytes = 1; break;
+		case SCE_GXM_ATTRIBUTE_FORMAT_U16: case SCE_GXM_ATTRIBUTE_FORMAT_S16:
+		case SCE_GXM_ATTRIBUTE_FORMAT_U16N: case SCE_GXM_ATTRIBUTE_FORMAT_S16N:
+		case SCE_GXM_ATTRIBUTE_FORMAT_F16:
+			component_bytes = 2; break;
+		case SCE_GXM_ATTRIBUTE_FORMAT_F32:
+			component_bytes = 4; break;
+		default:
+			return GL_FALSE;
+		}
+		const uintptr_t offset = cur_vao->vertex_attrib_offsets[attr_idx];
+		const unsigned bytes = component_bytes * attributes[i].componentCount;
+		// The SDK offset and stride are uint16_t. Stay wholly within one record;
+		// client arrays, constants, split VBOs and instancing retain the old route.
+		if (offset > UINT16_MAX || offset > stride || bytes > stride - offset ||
+			ptrs[i] != (uint8_t *)((vbo *)buffer)->ptr + offset)
+			return GL_FALSE;
+	}
+	if (out) {
+		for (GLuint i = 0; i < p->attr_num; ++i) {
+			out->attributes[i] = attributes[i];
+			out->attributes[i].streamIndex = 0;
+			out->attributes[i].offset = cur_vao->vertex_attrib_offsets[p->attr_map[i]];
+		}
+		out->stream = streams[0];
+		out->pointer = ((vbo *)buffer)->ptr;
+	}
+	return GL_TRUE;
+}
+
+static GLboolean prepare_interleaved_vertex_program(program *p, const interleaved_vertex_stream *layout) {
+	if (vertex_program_cache_enabled)
+		return prepare_vertex_program(p, layout->attributes, p->attr_num, &layout->stream, 1,
+			VGL_VERTEX_PROGRAM_ELEMENTS_REQUESTS);
+	// The new layout must never use a previous program after a patcher error.
+	// Keep this transaction local; the uncached fallback's old contract is intact.
+	uint64_t *counters = vertex_program_cache_stats.counters;
+	if (vertex_program_cache_profile) {
+		counters[VGL_VERTEX_PROGRAM_ELEMENTS_REQUESTS]++;
+		counters[VGL_VERTEX_PROGRAM_UNCACHED_REQUESTS]++;
+		counters[VGL_VERTEX_PROGRAM_CREATE_CALLS]++;
+	}
+	SceGxmVertexProgram *candidate = NULL;
+	const int result = sceGxmShaderPatcherCreateVertexProgram(gxm_shader_patcher, p->vshader->id,
+		layout->attributes, p->attr_num, &layout->stream, 1, &candidate);
+	if (result || !candidate) {
+		if (vertex_program_cache_profile)
+			counters[VGL_VERTEX_PROGRAM_ERRORS]++;
+		vgl_error = GL_INVALID_OPERATION;
+		return GL_FALSE;
+	}
+	if (vertex_program_cache_profile)
+		counters[VGL_VERTEX_PROGRAM_CREATE_SUCCESSES]++;
+	p->vprog = candidate;
+	return GL_TRUE;
+}
+#endif
+
+static GLboolean uniform_cache_profile = GL_FALSE;
+static GLboolean uniform_cache_verify = GL_FALSE;
+static vglUniformCacheStats uniform_cache_stats;
+
+// Match the existing byte-sized default-uniform pool, without binding CPU
+// cache storage to GXM or changing the lifetime of any GPU reservation.
+#define UNIFORM_CACHE_MAX_STAGE_BYTES (2u * 1024u * 1024u)
+#define UNIFORM_CACHE_GUARD_BYTES 16u
+#define UNIFORM_CACHE_GUARD_VALUE 0xA7
+
+static GLboolean uniform_cache_error(GLenum error) {
+	if (uniform_cache_profile)
+		uniform_cache_stats.errors++;
+	vgl_error = error;
+	return GL_FALSE;
+}
+
+GLboolean vglConfigureUniformCache(GLboolean enabled, GLboolean profile, GLboolean verify) {
+	for (uint32_t i = 0; i < MAX_CUSTOM_PROGRAMS; i++) {
+		if (progs[i].status != PROG_INVALID)
+			return uniform_cache_error(GL_INVALID_OPERATION);
+	}
+	// Verification deliberately cannot be included in an attributed benchmark.
+	if (verify && (!enabled || profile))
+		return uniform_cache_error(GL_INVALID_OPERATION);
+#if defined(HAVE_FFP_SHADER_SUPPORT) || defined(HAVE_GLSL_TEXTURE_SIZE)
+	if (verify)
+		return uniform_cache_error(GL_INVALID_OPERATION);
+	enabled = profile = GL_FALSE;
+#endif
+	uniform_cache_enabled = enabled != GL_FALSE;
+	uniform_cache_profile = profile != GL_FALSE;
+	uniform_cache_verify = verify != GL_FALSE;
+	vgl_memset(&uniform_cache_stats, 0, sizeof(uniform_cache_stats));
+	uniform_cache_stats.enabled = uniform_cache_enabled;
+	uniform_cache_stats.profiling = uniform_cache_profile;
+	uniform_cache_stats.verifying = uniform_cache_verify;
+	return GL_TRUE;
+}
+
+void vglGetUniformCacheStats(vglUniformCacheStats *stats) {
+	if (stats)
+		*stats = uniform_cache_stats;
+}
+
+static inline __attribute__((always_inline)) void mark_uniform_packed_dirty(uniform *u) {
+	if (!uniform_cache_enabled || u->size == 0 || u->size == 0xFFFFFFFF)
+		return;
+	u->packed_dirty = GL_TRUE;
+	if (u->packed_alias)
+		u->packed_alias->packed_dirty = GL_TRUE;
+}
+
+static uint8_t *allocate_packed_uniforms(uint32_t bytes) {
+	if (!bytes || bytes > UNIFORM_CACHE_MAX_STAGE_BYTES)
+		return NULL;
+	const uint32_t allocation_size = bytes + 2u * UNIFORM_CACHE_GUARD_BYTES;
+	uint8_t *allocation = (uint8_t *)vgl_memalign(MEM_ALIGNMENT, allocation_size, VGL_MEM_EXTERNAL);
+	if (!allocation)
+		return NULL;
+	vgl_memset(allocation, UNIFORM_CACHE_GUARD_VALUE, allocation_size);
+	uint8_t *data = allocation + UNIFORM_CACHE_GUARD_BYTES;
+	vgl_memset(data, 0, bytes);
+	uniform_cache_stats.cache_bytes += allocation_size;
+	if (uniform_cache_stats.cache_peak_bytes < uniform_cache_stats.cache_bytes)
+		uniform_cache_stats.cache_peak_bytes = uniform_cache_stats.cache_bytes;
+	return data;
+}
+
+static void release_packed_uniforms(program *p) {
+	for (unsigned stage = 0; stage < 2; stage++) {
+		packed_uniforms *cache = &p->packed[stage];
+		if (cache->data) {
+			vgl_free(cache->data - UNIFORM_CACHE_GUARD_BYTES);
+			uniform_cache_stats.cache_bytes -= cache->bytes + 2u * UNIFORM_CACHE_GUARD_BYTES;
+		}
+		if (cache->reference) {
+			vgl_free(cache->reference - UNIFORM_CACHE_GUARD_BYTES);
+			uniform_cache_stats.cache_bytes -= cache->bytes + 2u * UNIFORM_CACHE_GUARD_BYTES;
+		}
+		vgl_memset(cache, 0, sizeof(*cache));
+	}
+}
+
+// Program-owned values and UBO nodes; compiled shaders and their reflection
+// pointers remain attached. Shared VS values are owned by the FS allocation.
+static void release_program_uniforms(program *p) {
+	release_packed_uniforms(p);
+	for (uint32_t i = 0; i < p->vert_uniforms_num; i++) {
+		uniform *u = &p->vert_uniforms[i];
+		if (u->size != 0xFFFFFFFF && u->size != 0 && !(u->is_fragment && u->is_vertex))
+			vgl_free(u->data);
+	}
+	vgl_free(p->vert_uniforms);
+	for (uint32_t i = 0; i < p->frag_uniforms_num; i++) {
+		uniform *u = &p->frag_uniforms[i];
+#ifdef HAVE_GLSL_TEXTURE_SIZE
+		if (u->size != 0xFFFFFFFF && u->size != 0 && !u->sampler)
+#else
+		if (u->size != 0xFFFFFFFF && u->size != 0)
+#endif
+			vgl_free(u->data);
+	}
+	vgl_free(p->frag_uniforms);
+	while (p->vert_ubos) {
+		ubo *old = p->vert_ubos;
+		p->vert_ubos = (ubo *)p->vert_ubos->chain;
+		vgl_free(old);
+	}
+	while (p->frag_ubos) {
+		ubo *old = p->frag_ubos;
+		p->frag_ubos = (ubo *)p->frag_ubos->chain;
+		vgl_free(old);
+	}
+	p->vert_uniforms = p->frag_uniforms = NULL;
+	p->vert_uniforms_num = p->frag_uniforms_num = 0;
+	p->max_vert_texunit_idx = p->max_frag_texunit_idx = 0;
+	vgl_memset(p->vert_texunits, 0, sizeof(p->vert_texunits));
+	vgl_memset(p->frag_texunits, 0, sizeof(p->frag_texunits));
+	p->attr_num = 0;
+}
+
+static GLboolean initialize_packed_uniforms(program *p) {
+	for (unsigned stage = 0; stage < 2; stage++) {
+		uniform *values = stage ? p->frag_uniforms : p->vert_uniforms;
+		const uint32_t count = stage ? p->frag_uniforms_num : p->vert_uniforms_num;
+		GLboolean has_values = GL_FALSE;
+		for (uint32_t i = 0; i < count; i++) {
+			values[i].packed_alias = NULL;
+			values[i].packed_dirty = GL_TRUE;
+			has_values |= values[i].size > 0 && values[i].size < 0xFFFFFFFF;
+		}
+		if (!uniform_cache_enabled || !has_values)
+			continue;
+		packed_uniforms *cache = &p->packed[stage];
+		// All compile/binary paths store the SDK's byte count in unif_buf_size.
+		cache->bytes = stage ? p->fshader->unif_buf_size : p->vshader->unif_buf_size;
+		cache->data = allocate_packed_uniforms(cache->bytes);
+		if (uniform_cache_verify) {
+			cache->reference = allocate_packed_uniforms(cache->bytes);
+			if (!cache->data || !cache->reference) {
+				release_packed_uniforms(p);
+				return uniform_cache_error(GL_OUT_OF_MEMORY);
+			}
+		}
+	}
+	if (uniform_cache_enabled) {
+		// Link by the CPU data allocation already shared by the original linker;
+		// the compiled stage parameters and their packing layouts stay distinct.
+		for (uint32_t v = 0; v < p->vert_uniforms_num; v++) {
+			uniform *vertex = &p->vert_uniforms[v];
+			if (!vertex->size || vertex->size == 0xFFFFFFFF)
+				continue;
+			for (uint32_t f = 0; f < p->frag_uniforms_num; f++) {
+				uniform *fragment = &p->frag_uniforms[f];
+				if (vertex->data == fragment->data && vertex->size == fragment->size) {
+					vertex->packed_alias = fragment;
+					fragment->packed_alias = vertex;
+					break;
+				}
+			}
+		}
+	}
+	return GL_TRUE;
+}
+
+static GLboolean packed_uniform_guards(const uint8_t *data, uint32_t bytes) {
+	for (uint32_t i = 0; i < UNIFORM_CACHE_GUARD_BYTES; i++) {
+		if (data[(int)i - (int)UNIFORM_CACHE_GUARD_BYTES] != UNIFORM_CACHE_GUARD_VALUE ||
+			data[bytes + i] != UNIFORM_CACHE_GUARD_VALUE)
+			return GL_FALSE;
+	}
+	return GL_TRUE;
+}
+
+static GLboolean verify_packed_uniforms(packed_uniforms *cache, uniform *values, uint32_t count) {
+	if (!packed_uniform_guards(cache->data, cache->bytes) ||
+		!packed_uniform_guards(cache->reference, cache->bytes))
+		return uniform_cache_error(GL_INVALID_OPERATION);
+	vgl_memset(cache->reference, 0, cache->bytes);
+	for (uint32_t i = 0; i < count; i++) {
+		uniform *u = &values[i];
+		if (u->size > 0 && u->size < 0xFFFFFFFF &&
+			sceGxmSetUniformDataF(cache->reference, u->ptr, 0, u->size, u->data) < 0)
+			return uniform_cache_error(GL_INVALID_OPERATION);
+	}
+	if (!packed_uniform_guards(cache->reference, cache->bytes) ||
+		memcmp(cache->reference, cache->data, cache->bytes))
+		return uniform_cache_error(GL_INVALID_OPERATION);
+	uniform_cache_stats.verify_checks++;
+	return GL_TRUE;
+}
+
+static void *reserve_packed_uniform_buffer(uint32_t bytes, unsigned stage) {
+	void *buffer = vglReserveUniformCircularPoolBuffer(bytes);
+	if (buffer && uniform_cache_profile) {
+		uniform_cache_stats.stage[stage][VGL_UNIFORM_RESERVATIONS]++;
+		uniform_cache_stats.stage[stage][VGL_UNIFORM_RESERVED_BYTES] += bytes;
+	}
+	return buffer;
+}
+
+static GLboolean upload_packed_uniform_stage(program *p, unsigned stage) {
+	uniform *values = stage ? p->frag_uniforms : p->vert_uniforms;
+	const uint32_t count = stage ? p->frag_uniforms_num : p->vert_uniforms_num;
+	GLboolean *dirty = stage ? &dirty_frag_unifs : &dirty_vert_unifs;
+	if (!values || !*dirty)
+		return GL_TRUE;
+	packed_uniforms *cache = &p->packed[stage];
+	const uint32_t bytes = stage ? p->fshader->unif_buf_size : p->vshader->unif_buf_size;
+	if (bytes > UNIFORM_CACHE_MAX_STAGE_BYTES || (cache->data && cache->bytes != bytes))
+		return uniform_cache_error(GL_INVALID_OPERATION);
+	uint64_t *counters = uniform_cache_stats.stage[stage];
+	void *buffer = NULL;
+	if (!cache->data) {
+		buffer = reserve_packed_uniform_buffer(bytes, stage);
+		if (!buffer)
+			return uniform_cache_error(GL_OUT_OF_MEMORY);
+		if (uniform_cache_profile && uniform_cache_enabled && cache->bytes)
+			uniform_cache_stats.fallback_uploads++;
+	}
+	for (uint32_t i = 0; i < count; i++) {
+		uniform *u = &values[i];
+		if (!u->size || u->size == 0xFFFFFFFF)
+			continue;
+		if (!bytes)
+			return uniform_cache_error(GL_INVALID_OPERATION);
+		if (cache->data && !u->packed_dirty) {
+			if (uniform_cache_profile) {
+				counters[VGL_UNIFORM_REUSED_VALUES]++;
+				counters[VGL_UNIFORM_REUSED_BYTES] += (uint64_t)u->size * sizeof(float);
+			}
+			continue;
+		}
+		if (uniform_cache_profile) {
+			counters[VGL_UNIFORM_PACK_CALLS]++;
+			counters[VGL_UNIFORM_PACK_BYTES] += (uint64_t)u->size * sizeof(float);
+		}
+		if (sceGxmSetUniformDataF(cache->data ? cache->data : buffer, u->ptr, 0, u->size, u->data) < 0)
+			return uniform_cache_error(GL_INVALID_OPERATION);
+	}
+	if (cache->data) {
+		if (uniform_cache_verify && !verify_packed_uniforms(cache, values, count))
+			return GL_FALSE;
+		buffer = reserve_packed_uniform_buffer(bytes, stage);
+		if (!buffer)
+			return uniform_cache_error(GL_OUT_OF_MEMORY);
+		vgl_fast_memcpy(buffer, cache->data, bytes);
+		if (uniform_cache_profile) {
+			counters[VGL_UNIFORM_CACHE_COPIES]++;
+			counters[VGL_UNIFORM_CACHE_COPY_BYTES] += bytes;
+		}
+	}
+	const int result = stage ? sceGxmSetFragmentDefaultUniformBuffer(gxm_context, buffer)
+		: sceGxmSetVertexDefaultUniformBuffer(gxm_context, buffer);
+	if (result < 0)
+		return uniform_cache_error(GL_INVALID_OPERATION);
+	if (stage)
+		vgl_def_frag_buf = buffer;
+	else
+		vgl_def_vert_buf = buffer;
+	for (uint32_t i = 0; i < count; i++)
+		values[i].packed_dirty = GL_FALSE;
+	*dirty = GL_FALSE;
+	return GL_TRUE;
+}
+
+static GLboolean upload_packed_uniforms(program *p) {
+	if (!upload_packed_uniform_stage(p, 0) || !upload_packed_uniform_stage(p, 1))
+		return GL_FALSE;
+	// UBOs retain their original binding and GPU-retirement path.
+	for (ubo *u = p->vert_ubos; u; u = (ubo *)u->chain) {
+		ubo *b = u->alias ? (ubo *)u->alias : u;
+		sceGxmSetVertexUniformBuffer(gxm_context, b->idx, (uint8_t *)ubo_buf[b->bind]->ptr + ubo_offset[b->bind]);
+		ubo_buf[b->bind]->last_frame = vgl_framecount;
+	}
+	for (ubo *u = p->frag_ubos; u; u = (ubo *)u->chain) {
+		sceGxmSetFragmentUniformBuffer(gxm_context, u->idx, (uint8_t *)ubo_buf[u->bind]->ptr + ubo_offset[u->bind]);
+		ubo_buf[u->bind]->last_frame = vgl_framecount;
+	}
+	return GL_TRUE;
+}
 
 #ifdef HAVE_SHARK_LOG
 static char *shark_log = NULL;
@@ -391,6 +974,7 @@ void release_shader(shader *s) {
 	// Deallocating shader and unregistering it from sceGxmShaderPatcher
 	if (s->valid) {
 		if (s->prog) {
+			invalidate_vertex_program_caches(s);
 			sceGxmShaderPatcherForceUnregisterProgram(gxm_shader_patcher, s->id);
 			vgl_free((void *)s->prog);
 			while (s->mat) {
@@ -595,6 +1179,7 @@ void unserialize_shader(void *in, size_t sz, shader *s, GLboolean load_bindings)
 	s->size = sz - ((uintptr_t)buf - (uintptr_t)in);
 	s->prog = (SceGxmProgram *)vglMalloc(s->size);
 	vgl_fast_memcpy((SceGxmProgram *)s->prog, buf, s->size);
+	invalidate_vertex_program_caches(s);
 	sceGxmShaderPatcherRegisterProgram(gxm_shader_patcher, s->prog, &s->id);
 	s->unif_buf_size = sceGxmProgramGetDefaultUniformBufferSize(s->prog);
 	if (matrix_uniforms_num) {
@@ -623,6 +1208,7 @@ static inline __attribute__((always_inline)) void compile_shader(shader *s, GLbo
 		s->source = NULL;
 		SceGxmProgram *res = (SceGxmProgram *)vglMalloc(s->size);
 		vgl_fast_memcpy((void *)res, (void *)s->prog, s->size);
+		invalidate_vertex_program_caches(s);
 		int r = sceGxmShaderPatcherRegisterProgram(gxm_shader_patcher, res, &s->id);
 #ifdef LOG_ERRORS
 		if (r)
@@ -677,6 +1263,7 @@ void reset_custom_shaders(void) {
 
 	// Init custom programs
 	for (int i = 0; i < MAX_CUSTOM_PROGRAMS; i++) {
+		release_vertex_program_cache(&progs[i]);
 		progs[i].status = PROG_INVALID;
 	}
 }
@@ -864,11 +1451,26 @@ void _glMultiDrawArrays_CustomShadersIMPL(SceGxmPrimitiveType gxm_p, uint16_t *i
 #endif
 
 	// Uploading new vertex program
-	patch_vertex_program(gxm_shader_patcher, p->vshader->id, attributes, p->attr_num, streams, p->attr_num, &p->vprog);
+	if (vertex_program_cache_enabled || vertex_program_cache_profile) {
+		if (!prepare_vertex_program(p, attributes, p->attr_num, streams, p->attr_num, VGL_VERTEX_PROGRAM_MULTI_REQUESTS)) {
+			restore_vertex_program_attributes(p, attributes, streams);
+			return;
+		}
+	} else {
+		if (!prepare_uncached_vertex_program(p, attributes, p->attr_num, streams, p->attr_num)) {
+			restore_vertex_program_attributes(p, attributes, streams);
+			return;
+		}
+	}
 	sceGxmSetVertexProgram(gxm_context, p->vprog);
 
 	// Uploading both fragment and vertex uniforms data
-	upload_uniforms();
+	if (uniform_cache_enabled || uniform_cache_profile) {
+		if (!upload_packed_uniforms(p))
+			return;
+	} else {
+		upload_uniforms();
+	}
 	
 	for (int j = 0; j < drawcount; j++) {
 		// Uploading vertex streams
@@ -1105,11 +1707,26 @@ GLboolean _glDrawArrays_CustomShadersIMPL(GLint first, GLsizei count, GLboolean 
 #endif
 
 	// Uploading new vertex program
-	patch_vertex_program(gxm_shader_patcher, p->vshader->id, attributes, p->attr_num, streams, p->attr_num, &p->vprog);
+	if (vertex_program_cache_enabled || vertex_program_cache_profile) {
+		if (!prepare_vertex_program(p, attributes, p->attr_num, streams, p->attr_num, VGL_VERTEX_PROGRAM_ARRAYS_REQUESTS)) {
+			restore_vertex_program_attributes(p, attributes, streams);
+			return GL_FALSE;
+		}
+	} else {
+		if (!prepare_uncached_vertex_program(p, attributes, p->attr_num, streams, p->attr_num)) {
+			restore_vertex_program_attributes(p, attributes, streams);
+			return GL_FALSE;
+		}
+	}
 	sceGxmSetVertexProgram(gxm_context, p->vprog);
 
 	// Uploading both fragment and vertex uniforms data
-	upload_uniforms();
+	GLboolean uniforms_uploaded = GL_TRUE;
+	if (uniform_cache_enabled || uniform_cache_profile)
+		uniforms_uploaded = upload_packed_uniforms(p);
+	else {
+		upload_uniforms();
+	}
 
 	// Uploading vertex streams
 	for (int i = 0; i < p->attr_num; i++) {
@@ -1141,7 +1758,7 @@ GLboolean _glDrawArrays_CustomShadersIMPL(GLint first, GLsizei count, GLboolean 
 	shaders_draw_profiler_cnt += sceKernelGetProcessTimeLow() - draw_start;
 	shaders_draw_cnt++;
 #endif
-	return GL_TRUE;
+	return uniforms_uploaded;
 }
 
 GLboolean _glDrawElements_CustomShadersIMPL(uint16_t *idx_buf, GLsizei count, uint32_t top_idx, uint32_t base_idx, SceGxmIndexSource index_type) {
@@ -1380,12 +1997,69 @@ GLboolean _glDrawElements_CustomShadersIMPL(uint16_t *idx_buf, GLsizei count, ui
 	}
 #endif
 
+	// Normalize only the strict interleaved VBO case. The original attributes,
+	// pointer gathering and lifetime marks above remain live for the fallback.
+	GLboolean interleaved_eligible = GL_FALSE, interleaved_selected = GL_FALSE;
+#ifdef DRAW_SPEEDHACK
+	interleaved_vertex_stream interleaved_layout;
+	if (interleaved_streams_enabled || interleaved_streams_profile)
+		interleaved_eligible = plan_interleaved_stream(p, attributes, streams, ptrs, base_idx,
+			index_type, interleaved_streams_enabled ? &interleaved_layout : NULL);
+	interleaved_selected = interleaved_streams_enabled && interleaved_eligible;
+#endif
+	if (interleaved_streams_profile) {
+		uint64_t *counters = interleaved_streams_stats.counters;
+		counters[VGL_VERTEX_STREAM_ELEMENTS_REQUESTS]++;
+		counters[VGL_VERTEX_STREAM_ELIGIBLE_REQUESTS] += interleaved_eligible;
+		counters[interleaved_selected ? VGL_VERTEX_STREAM_COLLAPSED_REQUESTS : VGL_VERTEX_STREAM_FALLBACK_REQUESTS]++;
+		counters[VGL_VERTEX_STREAM_SOURCE_STREAMS] += p->attr_num;
+	}
+#ifdef DRAW_SPEEDHACK
+	if (interleaved_selected) {
+		if (!prepare_interleaved_vertex_program(p, &interleaved_layout)) {
+			restore_vertex_program_attributes(p, attributes, streams);
+			return GL_FALSE;
+		}
+		sceGxmSetVertexProgram(gxm_context, p->vprog);
+		GLboolean uniforms_uploaded = GL_TRUE;
+		if (uniform_cache_enabled || uniform_cache_profile)
+			uniforms_uploaded = upload_packed_uniforms(p);
+		else {
+			upload_uniforms();
+		}
+		sceGxmSetVertexStream(gxm_context, 0, interleaved_layout.pointer);
+		if (interleaved_streams_profile)
+			interleaved_streams_stats.counters[VGL_VERTEX_STREAM_BINDING_CALLS]++;
+		restore_vertex_program_attributes(p, attributes, streams);
+#ifdef HAVE_PROFILING
+		shaders_draw_profiler_cnt += sceKernelGetProcessTimeLow() - draw_start;
+		shaders_draw_cnt++;
+#endif
+		return uniforms_uploaded;
+	}
+#endif
+
 	// Uploading new vertex program
-	patch_vertex_program(gxm_shader_patcher, p->vshader->id, attributes, p->attr_num, streams, p->attr_num, &p->vprog);
+	if (vertex_program_cache_enabled || vertex_program_cache_profile) {
+		if (!prepare_vertex_program(p, attributes, p->attr_num, streams, p->attr_num, VGL_VERTEX_PROGRAM_ELEMENTS_REQUESTS)) {
+			restore_vertex_program_attributes(p, attributes, streams);
+			return GL_FALSE;
+		}
+	} else {
+		if (!prepare_uncached_vertex_program(p, attributes, p->attr_num, streams, p->attr_num)) {
+			restore_vertex_program_attributes(p, attributes, streams);
+			return GL_FALSE;
+		}
+	}
 	sceGxmSetVertexProgram(gxm_context, p->vprog);
 
 	// Uploading both fragment and vertex uniforms data
-	upload_uniforms();
+	GLboolean uniforms_uploaded = GL_TRUE;
+	if (uniform_cache_enabled || uniform_cache_profile)
+		uniforms_uploaded = upload_packed_uniforms(p);
+	else {
+		upload_uniforms();
+	}
 
 	// Uploading vertex streams
 	for (int i = 0; i < p->attr_num; i++) {
@@ -1417,7 +2091,9 @@ GLboolean _glDrawElements_CustomShadersIMPL(uint16_t *idx_buf, GLsizei count, ui
 	shaders_draw_profiler_cnt += sceKernelGetProcessTimeLow() - draw_start;
 	shaders_draw_cnt++;
 #endif
-	return GL_TRUE;
+	if (interleaved_streams_profile)
+		interleaved_streams_stats.counters[VGL_VERTEX_STREAM_BINDING_CALLS] += p->attr_num;
+	return uniforms_uploaded;
 }
 
 #ifdef ENABLE_LEGACY_PIPELINE
@@ -1861,10 +2537,12 @@ GLuint glCreateProgram(void) {
 #endif
 			progs[i].vshader = NULL;
 			progs[i].fshader = NULL;
+			progs[i].vertex_cache = NULL;
 			progs[i].vert_uniforms = NULL;
 			progs[i].frag_uniforms = NULL;
 			progs[i].vert_uniforms_num = 0;
 			progs[i].frag_uniforms_num = 0;
+			vgl_memset(progs[i].packed, 0, sizeof(progs[i].packed));
 			progs[i].vert_ubos = NULL;
 			progs[i].frag_ubos = NULL;
 			progs[i].attr_highest_idx = 0;
@@ -1953,32 +2631,8 @@ void glDeleteProgram(GLuint prog) {
 	// Releasing both vertex and fragment programs from sceGxmShaderPatcher
 	if (p->status) {
 		sceGxmFinish(gxm_context);
-		for (int i = 0; i < p->vert_uniforms_num; i++) {
-			uniform *u = &p->vert_uniforms[i];
-			if (u->size != 0xFFFFFFFF && u->size != 0 && !(u->is_fragment && u->is_vertex))
-				vgl_free(u->data);
-		}
-		vgl_free(p->vert_uniforms);
-		for (int i = 0; i < p->frag_uniforms_num; i++) {
-			uniform *u = &p->frag_uniforms[i];
-#ifdef HAVE_GLSL_TEXTURE_SIZE
-			if (u->size != 0xFFFFFFFF && u->size != 0 && !u->sampler)
-#else
-			if (u->size != 0xFFFFFFFF && u->size != 0)
-#endif
-				vgl_free(u->data);
-		}
-		vgl_free(p->frag_uniforms);
-		while (p->vert_ubos) {
-			ubo *old = p->vert_ubos;
-			p->vert_ubos = (ubo *)p->vert_ubos->chain;
-			vgl_free(old);
-		}
-		while (p->frag_ubos) {
-			ubo *old = p->frag_ubos;
-			p->frag_ubos = (ubo *)p->frag_ubos->chain;
-			vgl_free(old);
-		}
+		release_vertex_program_cache(p);
+		release_program_uniforms(p);
 		if (p->glsl_attr_map) {
 			vgl_free(p->glsl_attr_map);
 		}
@@ -2073,6 +2727,15 @@ void glGetProgramiv(GLuint progr, GLenum pname, GLint *params) {
 void glLinkProgram(GLuint progr) {
 	// Grabbing passed program
 	program *p = &progs[progr - 1];
+	if (p->vertex_cache)
+		p->vertex_cache->valid = GL_FALSE;
+	// Verification can fail after reflection allocations. Preserve the bounded
+	// attribute bindings so an UNLINKED program can retry with the same shaders.
+	SceGxmVertexAttribute original_attr[VERTEX_ATTRIBS_NUM];
+	GLuint original_attr_highest_idx = p->attr_highest_idx;
+	GLboolean glsl_bindings_applied = GL_FALSE;
+	if (uniform_cache_verify)
+		vgl_fast_memcpy(original_attr, p->attr, sizeof(original_attr));
 #ifndef SKIP_ERROR_HANDLING
 	if (glsl_sema_mode == VGL_MODE_POSTPONED) {
 		if (!(p->fshader->prog || (p->fshader->is_glsl && p->fshader->source)) || !(p->vshader->prog || (p->vshader->is_glsl && p->vshader->source))) {
@@ -2145,13 +2808,16 @@ void glLinkProgram(GLuint progr) {
 			for (int i = 0; i < p->num_glsl_attr; i++) {
 				glBindAttribLocation(progr, p->glsl_attr_map[i].idx, p->glsl_attr_map[i].name);
 			}
-			vgl_free(p->glsl_attr_map);
-			p->glsl_attr_map = NULL;
+			glsl_bindings_applied = GL_TRUE;
 		}
 		glsl_sema_mode = VGL_MODE_POSTPONED;
 	}
 
 	if (p->status == PROG_LINKED) {
+		if (glsl_bindings_applied) {
+			vgl_free(p->glsl_attr_map);
+			p->glsl_attr_map = NULL;
+		}
 		vgl_log("%s:%d: %s: A program has been re-linked. vitaGL doesn't support re-linking, glitches may happen.\n", __FILE__, __LINE__, __func__);
 		return;
 	}
@@ -2301,6 +2967,17 @@ void glLinkProgram(GLuint progr) {
 		}
 		ptr += 4;
 	}
+	if (!initialize_packed_uniforms(p)) {
+		release_program_uniforms(p);
+		vgl_fast_memcpy(p->attr, original_attr, sizeof(original_attr));
+		p->attr_highest_idx = original_attr_highest_idx;
+		p->status = PROG_UNLINKED;
+		return;
+	}
+	if (glsl_bindings_applied) {
+		vgl_free(p->glsl_attr_map);
+		p->glsl_attr_map = NULL;
+	}
 
 #ifdef ENABLE_LEGACY_PIPELINE
 	// Creating fragment and vertex program via sceGxmShaderPatcher if using vgl* draw pipeline
@@ -2337,6 +3014,7 @@ void glLinkProgram(GLuint progr) {
 			}
 		}
 	}
+	initialize_vertex_program_cache(p);
 }
 
 void glUseProgram(GLuint prog) {
@@ -2459,6 +3137,7 @@ inline void glUniform1i(GLint location, GLint v0) {
 	else // Regular Uniform
 		u->data[offs] = (float)v0;
 
+	mark_uniform_packed_dirty(u);
 	if (u->is_vertex)
 		dirty_vert_unifs = GL_TRUE;
 	if (u->is_fragment)
@@ -2492,6 +3171,7 @@ inline void glUniform1iv(GLint location, GLsizei count, const GLint *value) {
 		}
 	}
 
+	mark_uniform_packed_dirty(u);
 	if (u->is_vertex)
 		dirty_vert_unifs = GL_TRUE;
 	if (u->is_fragment)
@@ -2514,6 +3194,7 @@ inline void glUniform1f(GLint location, GLfloat v0) {
 	// Setting passed value to desired uniform
 	u->data[offs] = v0;
 
+	mark_uniform_packed_dirty(u);
 	if (u->is_vertex)
 		dirty_vert_unifs = GL_TRUE;
 	if (u->is_fragment)
@@ -2541,6 +3222,7 @@ inline void glUniform1fv(GLint location, GLsizei count, const GLfloat *value) {
 #endif
 	vgl_fast_memcpy(&u->data[offs], value, count * sizeof(float));
 
+	mark_uniform_packed_dirty(u);
 	if (u->is_vertex)
 		dirty_vert_unifs = GL_TRUE;
 	if (u->is_fragment)
@@ -2564,6 +3246,7 @@ inline void glUniform2i(GLint location, GLint v0, GLint v1) {
 	u->data[offs * 2] = (float)v0;
 	u->data[offs * 2 + 1] = (float)v1;
 
+	mark_uniform_packed_dirty(u);
 	if (u->is_vertex)
 		dirty_vert_unifs = GL_TRUE;
 	if (u->is_fragment)
@@ -2593,6 +3276,7 @@ inline void glUniform2iv(GLint location, GLsizei count, const GLint *value) {
 		u->data[offs * 2 + i] = (float)value[i];
 	}
 
+	mark_uniform_packed_dirty(u);
 	if (u->is_vertex)
 		dirty_vert_unifs = GL_TRUE;
 	if (u->is_fragment)
@@ -2616,6 +3300,7 @@ inline void glUniform2f(GLint location, GLfloat v0, GLfloat v1) {
 	u->data[offs * 2] = v0;
 	u->data[offs * 2 + 1] = v1;
 
+	mark_uniform_packed_dirty(u);
 	if (u->is_vertex)
 		dirty_vert_unifs = GL_TRUE;
 	if (u->is_fragment)
@@ -2643,6 +3328,7 @@ inline void glUniform2fv(GLint location, GLsizei count, const GLfloat *value) {
 #endif
 	vgl_fast_memcpy(&u->data[offs * 2], value, count * 2 * sizeof(float));
 
+	mark_uniform_packed_dirty(u);
 	if (u->is_vertex)
 		dirty_vert_unifs = GL_TRUE;
 	if (u->is_fragment)
@@ -2667,6 +3353,7 @@ inline void glUniform3i(GLint location, GLint v0, GLint v1, GLint v2) {
 	u->data[offs * 3 + 1] = (float)v1;
 	u->data[offs * 3 + 2] = (float)v2;
 
+	mark_uniform_packed_dirty(u);
 	if (u->is_vertex)
 		dirty_vert_unifs = GL_TRUE;
 	if (u->is_fragment)
@@ -2696,6 +3383,7 @@ inline void glUniform3iv(GLint location, GLsizei count, const GLint *value) {
 		u->data[offs * 3 + i] = (float)value[i];
 	}
 
+	mark_uniform_packed_dirty(u);
 	if (u->is_vertex)
 		dirty_vert_unifs = GL_TRUE;
 	if (u->is_fragment)
@@ -2720,6 +3408,7 @@ inline void glUniform3f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2) {
 	u->data[offs * 3 + 1] = v1;
 	u->data[offs * 3 + 2] = v2;
 
+	mark_uniform_packed_dirty(u);
 	if (u->is_vertex)
 		dirty_vert_unifs = GL_TRUE;
 	if (u->is_fragment)
@@ -2747,6 +3436,7 @@ inline void glUniform3fv(GLint location, GLsizei count, const GLfloat *value) {
 #endif
 	vgl_fast_memcpy(&u->data[offs * 3], value, count * 3 * sizeof(float));
 
+	mark_uniform_packed_dirty(u);
 	if (u->is_vertex)
 		dirty_vert_unifs = GL_TRUE;
 	if (u->is_fragment)
@@ -2772,6 +3462,7 @@ inline void glUniform4i(GLint location, GLint v0, GLint v1, GLint v2, GLint v3) 
 	u->data[offs * 4 + 2] = (float)v2;
 	u->data[offs * 4 + 3] = (float)v3;
 
+	mark_uniform_packed_dirty(u);
 	if (u->is_vertex)
 		dirty_vert_unifs = GL_TRUE;
 	if (u->is_fragment)
@@ -2801,6 +3492,7 @@ inline void glUniform4iv(GLint location, GLsizei count, const GLint *value) {
 		u->data[offs * 4 + i] = (float)value[i];
 	}
 
+	mark_uniform_packed_dirty(u);
 	if (u->is_vertex)
 		dirty_vert_unifs = GL_TRUE;
 	if (u->is_fragment)
@@ -2826,6 +3518,7 @@ inline void glUniform4f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfl
 	u->data[offs * 4 + 2] = v2;
 	u->data[offs * 4 + 3] = v3;
 
+	mark_uniform_packed_dirty(u);
 	if (u->is_vertex)
 		dirty_vert_unifs = GL_TRUE;
 	if (u->is_fragment)
@@ -2853,6 +3546,7 @@ inline void glUniform4fv(GLint location, GLsizei count, const GLfloat *value) {
 #endif
 	vgl_fast_memcpy(&u->data[offs * 4], value, count * 4 * sizeof(float));
 
+	mark_uniform_packed_dirty(u);
 	if (u->is_vertex)
 		dirty_vert_unifs = GL_TRUE;
 	if (u->is_fragment)
@@ -2885,6 +3579,7 @@ inline void glUniformMatrix2fv(GLint location, GLsizei count, GLboolean transpos
 	} else
 		vgl_fast_memcpy(&u->data[offs * 4], value, count * 4 * sizeof(float));
 
+	mark_uniform_packed_dirty(u);
 	if (u->is_vertex)
 		dirty_vert_unifs = GL_TRUE;
 	if (u->is_fragment)
@@ -2917,6 +3612,7 @@ inline void glUniformMatrix3fv(GLint location, GLsizei count, GLboolean transpos
 	} else
 		vgl_fast_memcpy(&u->data[offs * 9], value, count * 9 * sizeof(float));
 
+	mark_uniform_packed_dirty(u);
 	if (u->is_vertex)
 		dirty_vert_unifs = GL_TRUE;
 	if (u->is_fragment)
@@ -2950,6 +3646,7 @@ inline void glUniformMatrix4fv(GLint location, GLsizei count, GLboolean transpos
 	} else
 		vgl_fast_memcpy(&u->data[offs * 16], value, count * 16 * sizeof(float));
 
+	mark_uniform_packed_dirty(u);
 	if (u->is_vertex)
 		dirty_vert_unifs = GL_TRUE;
 	if (u->is_fragment)
@@ -3595,6 +4292,7 @@ void vglShaderGxpBinary(GLsizei count, const GLuint *handles, const void *binary
 	s->size = length;
 	s->prog = (SceGxmProgram *)vglMalloc(s->size);
 	vgl_fast_memcpy((SceGxmProgram *)s->prog, binary, s->size);
+	invalidate_vertex_program_caches(s);
 	sceGxmShaderPatcherRegisterProgram(gxm_shader_patcher, s->prog, &s->id);
 	s->unif_buf_size = sceGxmProgramGetDefaultUniformBufferSize(s->prog);
 }

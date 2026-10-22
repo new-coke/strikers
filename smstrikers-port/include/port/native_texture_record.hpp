@@ -55,12 +55,18 @@ struct TextureUpload
     TextureStorage storage = TextureStorage::None;
     bool swizzled = false;
     std::vector<uint8_t> pixels{};
+    // Runtime movie planes sample R only; keep one byte/pixel through upload.
+    // This flag is never part of the serialized native texture ABI.
+    bool opaqueLuminance = false;
 };
 inline size_t texture_upload_bytes(const TextureUpload& image) noexcept
 {
     if (!image.width || !image.height || image.width > 4096 || image.height > 4096 ||
         !image.mipCount || image.mipCount > 13 || uint32_t(image.storage) < 1 ||
         uint32_t(image.storage) > 5)
+        return 0;
+    if (image.opaqueLuminance && (image.storage != TextureStorage::Intensity8 ||
+        image.swizzled || image.mipCount != 1 || image.stride != image.width))
         return 0;
     const bool bc1 = image.storage == TextureStorage::Bc1;
     if (image.stride != (image.swizzled || bc1 ? image.width : (image.width + 7u) & ~7u) ||

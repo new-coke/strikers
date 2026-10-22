@@ -162,7 +162,7 @@ void MilestoneTrophyScene::SceneCreated()
 
     BasicString<unsigned short, Detail::TempStringAllocator> formatted = Format(unformatted, stat.c_str());
 
-    memcpy(mTotalBuffer, formatted.c_str(), 0x100);
+    nlStrNCpy(mTotalBuffer, formatted.c_str(), sizeof(mTotalBuffer) / sizeof(mTotalBuffer[0]));
 
     TLTextInstance* pTotal = FEFinder<TLTextInstance, 3>::Find<TLSlide>(
         presentation->m_currentSlide,
@@ -228,7 +228,7 @@ void MilestoneTrophyScene::SceneCreated()
 
         formatted = Format(unformatted, accumulatedWideString);
 
-        memcpy(mStatBuffer, formatted.c_str(), 0x100);
+        nlStrNCpy(mStatBuffer, formatted.c_str(), sizeof(mStatBuffer) / sizeof(mStatBuffer[0]));
 
         pText = FEFinder<TLTextInstance, 3>::Find<TLSlide>(
             presentation->m_currentSlide,
@@ -252,7 +252,7 @@ void MilestoneTrophyScene::SceneCreated()
 
         formatted = Format(unformatted, accumulatedWideString, neededWideString);
 
-        memcpy(mStatBuffer, formatted.c_str(), 0x100);
+        nlStrNCpy(mStatBuffer, formatted.c_str(), sizeof(mStatBuffer) / sizeof(mStatBuffer[0]));
 
         pText = FEFinder<TLTextInstance, 3>::Find<TLSlide>(
             presentation->m_currentSlide,
@@ -276,7 +276,7 @@ void MilestoneTrophyScene::SceneCreated()
         formatted = Format(description, bronzeWideString, silverWideString, goldWideString);
     }
 
-    memcpy(mDescriptionBuffer, formatted.c_str(), 0x100);
+    nlStrNCpy(mDescriptionBuffer, formatted.c_str(), sizeof(mDescriptionBuffer) / sizeof(mDescriptionBuffer[0]));
 
     pText = FEFinder<TLTextInstance, 3>::Find<TLSlide>(
         presentation->m_currentSlide,

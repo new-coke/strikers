@@ -14,6 +14,9 @@
 #include "NL/gl/glUserData.h"
 #include "NL/glx/glxDisplayList.h"
 #include "dolphin/os/OSCache.h"
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "port/native_match_runtime.hpp"
+#endif
 
 static unsigned long UnlitProgram = glGetProgram("3d unlit");
 static unsigned long LitProgram = glGetProgram("3d pointlit");
@@ -261,6 +264,9 @@ void DrawableNetMesh::Render() const
         pColour->c[2] = dark;
         pColour->c[3] = dark;
         glUserAttach(pUserDataHandle, pPacket, false);
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+        port::directmatch::note_net_packet(pPacket, unsigned(miNetIndex));
+#endif
         glViewAttachModel(GLV_UnsortedPerspective, pModel);
     }
     else

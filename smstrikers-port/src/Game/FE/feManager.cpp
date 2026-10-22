@@ -1,4 +1,5 @@
 #include "Game/FE/feManager.h"
+#include <stdlib.h>
 
 #include "Game/Camera/CameraMan.h"
 #include "Game/Camera/animcam.h"
@@ -274,6 +275,10 @@ void FrontEnd::EnterMenuState(FrontEnd::MenuEnterType menuType)
     {
         m_lastTaskState = taskManager->m_CurrState;
     }
+    const bool traceScenes = getenv("STRIKERS_LOG_SCENES") != NULL;
+    if (traceScenes)
+        OSReport("[fe-modal] action=enter_menu stage=rumble_enter type=%d state=%u pending=%u\n",
+                 (int)menuType, taskManager->m_CurrState, taskManager->m_PendingState);
     for (i = 0; i < 4; i++)
     {
         globalPad = g_pFEInput->GetGlobalPad((eFEINPUT_PAD)i);
@@ -282,6 +287,8 @@ void FrontEnd::EnterMenuState(FrontEnd::MenuEnterType menuType)
             StopRumbleAction(globalPad);
         }
     }
+    if (traceScenes)
+        OSReport("[fe-modal] action=enter_menu stage=rumble_exit type=%d\n", (int)menuType);
     nlTaskManager::SetNextState(1);
     if (nlSingleton<OverlayManager>::Instance()->IsOnStack(SCENE_SUPER_LOADING))
     {

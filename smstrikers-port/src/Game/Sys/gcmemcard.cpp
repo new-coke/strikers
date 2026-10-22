@@ -215,11 +215,18 @@ long MemCard::OpenFile(const char* FileName, MemCard::MC_FILE*& pFile, unsigned 
         {
             m_OpenFiles.DeleteEntry(pFound);
         }
+        pFile = NULL;
     }
     else
     {
         CARDStat stat;
-        CARDGetStatus(m_Slot, pFile->FileInfo.fileNo, &stat);
+        result = CARDGetStatus(m_Slot, pFile->FileInfo.fileNo, &stat);
+        if (result != CARD_RESULT_READY)
+        {
+            CloseFile(pFile);
+            pFile = NULL;
+            return result;
+        }
 
         pFile->IconCfg.BannerFormat = CARDGetBannerFormat(&stat);
         pFile->IconCfg.IconFormat = CARDGetIconFormat(&stat, 0);
@@ -254,6 +261,13 @@ long MemCard::OpenFile(const char* FileName, MemCard::MC_FILE*& pFile, unsigned 
 
         unsigned long sectorMask = m_CardInfo.SectorSize - 1;
         pFile->TotalHeaderSize = (pFile->IconCfg.HeaderSize + sectorMask) & ~sectorMask;
+
+        if (stat.length < pFile->TotalHeaderSize)
+        {
+            CloseFile(pFile);
+            pFile = NULL;
+            return -1000; // The save file is truncated, not the whole card.
+        }
 
         if (pFileLength != NULL)
         {
@@ -468,7 +482,9 @@ long MemCard::WriteFileIconData(MemCard::MC_FILE* pFile, void* pData, const MemC
     ICON_DATA_INFO DataInfo;
     unsigned long Icon;
 
-    CARDGetStatus(m_Slot, pFile->FileInfo.fileNo, &stat);
+    const s32 statusResult = CARDGetStatus(m_Slot, pFile->FileInfo.fileNo, &stat);
+    if (statusResult != CARD_RESULT_READY)
+        return statusResult;
 
     unsigned char bannerFormat = pFile->IconCfg.BannerFormat;
 
@@ -731,7 +747,7 @@ void MemCard::SetStatusDone(long Result)
     if (Result == 0)
     {
         m_State = IS_MOUNTED;
-        long Result = InternalWriteFile(m_pFileCB, m_pDataCB, m_pFileCB->TotalHeaderSize, 0, m_CB[8], false);
+        Result = InternalWriteFile(m_pFileCB, m_pDataCB, m_pFileCB->TotalHeaderSize, 0, m_CB[8], false);
         if (Result != 0)
         {
             m_State = IS_MOUNTED;

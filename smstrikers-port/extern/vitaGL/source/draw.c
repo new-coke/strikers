@@ -221,9 +221,7 @@ void glDrawArrays(GLenum mode, GLint first, GLsizei count) {
 		_glDrawArrays_FixedFunctionIMPL(first, count);
 	}
 
-#ifndef SKIP_ERROR_HANDLING
 	if (is_draw_legal)
-#endif
 	{
 		uint16_t *ptr;
 		switch (mode) {
@@ -329,9 +327,7 @@ void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei prim
 	scene_reset();
 	GLboolean is_draw_legal = _glDrawArrays_CustomShadersIMPL(first, count, GL_TRUE);
 
-#ifndef SKIP_ERROR_HANDLING
 	if (is_draw_legal)
-#endif
 	{
 		uint16_t *ptr;
 		switch (mode) {
@@ -383,7 +379,8 @@ void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *gl_in
 
 	SceGxmPrimitiveType gxm_p;
 	gl_primitive_to_gxm(mode, gxm_p, count);
-	scene_reset();
+	if (!scene_reset())
+		return;
 	GLboolean is_draw_legal = GL_TRUE;
 
 	vbo *gpu_buf = (vbo *)cur_vao->index_array_unit;
@@ -407,9 +404,7 @@ void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *gl_in
 		_glDrawElements_FixedFunctionIMPL(src, count, 0, 0, type != GL_UNSIGNED_INT ? SCE_GXM_INDEX_SOURCE_INDEX_16BIT : SCE_GXM_INDEX_SOURCE_INDEX_32BIT);
 	}
 
-#ifndef SKIP_ERROR_HANDLING
 	if (is_draw_legal)
-#endif
 	{
 		if (type == GL_UNSIGNED_SHORT) {
 			setup_elements_indices(uint16_t);
@@ -451,9 +446,7 @@ void glDrawElementsBaseVertex(GLenum mode, GLsizei count, GLenum type, const GLv
 		_glDrawElements_FixedFunctionIMPL(src, count, 0, baseVertex, type == GL_UNSIGNED_SHORT ? SCE_GXM_INDEX_SOURCE_INDEX_16BIT : SCE_GXM_INDEX_SOURCE_INDEX_32BIT);
 	}
 
-#ifndef SKIP_ERROR_HANDLING
 	if (is_draw_legal)
-#endif
 	{
 #ifdef HAVE_VITA3K_SUPPORT
 		if (type == GL_UNSIGNED_INT) {
@@ -508,9 +501,7 @@ void glDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count, G
 		_glDrawElements_FixedFunctionIMPL(src, count, end + 1, 0, type == GL_UNSIGNED_SHORT ? SCE_GXM_INDEX_SOURCE_INDEX_16BIT : SCE_GXM_INDEX_SOURCE_INDEX_32BIT);
 	}
 
-#ifndef SKIP_ERROR_HANDLING
 	if (is_draw_legal)
-#endif
 	{
 		if (type == GL_UNSIGNED_INT) {
 			setup_elements_indices(uint32_t);
@@ -551,9 +542,7 @@ void glDrawRangeElementsBaseVertex(GLenum mode, GLuint start, GLuint end, GLsize
 		_glDrawElements_FixedFunctionIMPL(src, count, end + baseVertex + 1, baseVertex, type == GL_UNSIGNED_SHORT ? SCE_GXM_INDEX_SOURCE_INDEX_16BIT : SCE_GXM_INDEX_SOURCE_INDEX_32BIT);
 	}
 
-#ifndef SKIP_ERROR_HANDLING
 	if (is_draw_legal)
-#endif
 	{
 #ifdef HAVE_VITA3K_SUPPORT
 		if (type == GL_UNSIGNED_INT) {
@@ -601,9 +590,7 @@ void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, const void
 	uint16_t *src = gpu_buf ? (uint16_t *)((uint8_t *)gpu_buf->ptr + (uint32_t)gl_indices) : (uint16_t *)gl_indices;
 	GLboolean is_draw_legal = _glDrawElements_CustomShadersIMPL(src, count, 0, 0, type == GL_UNSIGNED_SHORT ? SCE_GXM_INDEX_SOURCE_INSTANCE_16BIT : SCE_GXM_INDEX_SOURCE_INSTANCE_32BIT);
 
-#ifndef SKIP_ERROR_HANDLING
 	if (is_draw_legal)
-#endif
 	{
 		if (type == GL_UNSIGNED_INT) {
 			setup_elements_indices(uint32_t);

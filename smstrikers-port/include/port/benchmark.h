@@ -23,8 +23,9 @@ typedef struct PortBenchCaptureStatus {
     PortBenchCaptureState state;
     size_t samples, requested, warmupRemaining;
     int errorCode; /* errno; zero unless allocation or output failed */
+    unsigned long lastFrame; /* logical frame of the last selected sample; valid when samples > 0 */
 } PortBenchCaptureStatus;
-/* Read-only RAM status; neither function is called automatically per frame. */
+/* Read-only RAM status; querying does not collect clocks, sort or perform I/O. */
 void PortBenchGetCaptureStatus(PortBenchCaptureStatus* out);
 /* Retry a fully collected capture after output failure, using the same path. */
 int PortBenchRetryCapture(void);
@@ -35,6 +36,9 @@ void PortBenchFrameEnd(void);
 // Game state, separate from renderer loading/scene boundaries. Only live play
 // and overtime qualify; intros, replays and post-goal scenes do not.
 void PortBenchSetPlayActive(int active);
+// Optional finite cutscene capture: snapshot before tasks, without I/O/clocks.
+// Presentation is copied (max 63 bytes); no engine pointer survives the call.
+void PortBenchSetScene(unsigned current, unsigned previous, const char* presentation);
 
 void PortBenchAddSleep(unsigned long long ns);
 

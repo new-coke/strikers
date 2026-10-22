@@ -264,8 +264,15 @@ u8 OSGetLanguage(void)
     // Unset is 0: UK English is the console's default.
     return language < 0 ? 0 : (u8)language;
 }
+#if defined(PORT_VITA)
+// Compatibility state for this process; the game's AudioSettings own persistence.
+static u32 s_vita_sound_mode = 1;
+u32 OSGetSoundMode(void) { return s_vita_sound_mode; }
+void OSSetSoundMode(u32 mode) { s_vita_sound_mode = mode & 1u; }
+#else
 u32 OSGetSoundMode(void) { return 1; }             // stereo
 void OSSetSoundMode(u32 mode) { (void)mode; }
+#endif
 u32 OSGetProgressiveMode(void) { return 0; }
 void OSSetProgressiveMode(u32 on) { (void)on; }
 u32 OSGetEuRgb60Mode(void) { return 0; }

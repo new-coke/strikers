@@ -41,6 +41,11 @@ static inline void UpdateButtonStateTime(PadStatus* pPadStatus, int padIdx, floa
 }
 } // namespace
 
+const PadStatus* GetCurrentPadStatus() noexcept
+{
+    return padStatus;
+}
+
 /**
  * Offset/Address/Size: 0x0 | 0x801C2FB0 | size: 0x5C
  */

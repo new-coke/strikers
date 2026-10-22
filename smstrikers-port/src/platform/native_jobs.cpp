@@ -1,5 +1,6 @@
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
 #include "port/native_jobs.hpp"
+#include "port/native_watchdog.hpp"
 #include <psp2/kernel/threadmgr.h>
 #include <psp2/kernel/cpu.h>
 #include <cstdio>
@@ -35,25 +36,34 @@ void* worker_main(void*)
 {
     // pthread_create registers the VitaSDK TLS record required by cond_wait and libc.
     const SceUID id = sceKernelGetThreadId();
+    watchdog::enter_thread(watchdog::Role::Jobs, id);
     const int affinity = sceKernelChangeThreadCpuAffinityMask(id, SCE_KERNEL_CPU_MASK_USER_0);
     if (affinity < 0)
         std::fprintf(stderr, "[jobs] affinity error=%08x\n", unsigned(affinity));
     sceKernelChangeThreadPriority(id, 0x10000100);
+    watchdog::stage(watchdog::Role::Jobs, watchdog::Stage::JobsPublish);
     pthread_mutex_lock(&mutex);
     for (;;)
     {
         while (!pending && !stopping)
+        {
+            watchdog::stage(watchdog::Role::Jobs, watchdog::Stage::JobsWait);
             pthread_cond_wait(&ready, &mutex);
+        }
         if (stopping)
             break;
         pending = false;
         pthread_mutex_unlock(&mutex);
+        watchdog::stage(watchdog::Role::Jobs, watchdog::Stage::JobsRun);
         run(1);
+        watchdog::advance(watchdog::Role::Jobs);
+        watchdog::stage(watchdog::Role::Jobs, watchdog::Stage::JobsPublish);
         pthread_mutex_lock(&mutex);
         completed = true;
         pthread_cond_signal(&done);
     }
     pthread_mutex_unlock(&mutex);
+    watchdog::leave_thread(watchdog::Role::Jobs);
     return nullptr;
 }
 }   // namespace
@@ -112,7 +122,15 @@ bool parallel_for(size_t n, size_t step, Task task, void* opaque) noexcept
     pthread_cond_signal(&ready);
     pthread_mutex_unlock(&mutex);
     run(0);
+    watchdog::Scope watchdogJoin(watchdog::Role::Frontend, watchdog::Stage::JobsJoin);
     pthread_mutex_lock(&mutex);
+    if (pending)
+    {
+        // The worker has not claimed this job under the mutex. The caller
+        // drained every range, so cancel the unused wake before returning.
+        pending = false;
+        completed = true;
+    }
     while (!completed)
         pthread_cond_wait(&done, &mutex);
     pthread_mutex_unlock(&mutex);

@@ -22,6 +22,16 @@
  */
 
 #include "shared.h"
+#include "../../../include/port/frame_timeline.h"
+
+static PortVglPresentProfile *portPresentProfile = NULL;
+static PortVglTimelineClock portPresentClock = NULL;
+
+void vglSetPresentProfile(PortVglPresentProfile *profile, PortVglTimelineClock clock) {
+	// Called only by the GL owner around one normal frame swap.
+	portPresentProfile = profile && clock ? profile : NULL;
+	portPresentClock = portPresentProfile ? clock : NULL;
+}
 
 #define MAX_SCENES_PER_FRAME 8 // Maximum amount of scenes per frame allowed by sceGxm per render target
 
@@ -357,7 +367,7 @@ void init_gxm(void) {
 #ifndef HAVE_SINGLE_THREADED_GC
 	// Initializing garbage collector
 	gc_mutex[0] = sceKernelCreateSema("vitaGL GC Sema Push", 0, 0, FRAME_PURGE_FREQ, NULL);
-	gc_mutex[1] = sceKernelCreateSema("vitaGL GC Sema Pull", 0, FRAME_PURGE_FREQ, FRAME_PURGE_FREQ, NULL);
+	gc_mutex[1] = sceKernelCreateSema("vitaGL GC Sema Pull", 0, 0, FRAME_PURGE_FREQ, NULL);
 #ifdef HAVE_PTRHEAD
 	pthread_create(&gc_thread, NULL, garbage_collector, NULL);
 	pthread_setaffinity_np(gc_thread, 4, &gc_thread_affinity);
@@ -493,7 +503,7 @@ void init_display_color_surfaces(GLboolean is_swap) {
 	}
 }
 
-void init_depth_stencil_buffer(uint32_t w, uint32_t h, SceGxmDepthStencilSurface *surface, GLboolean has_stencil) {
+GLboolean init_depth_stencil_buffer(uint32_t w, uint32_t h, SceGxmDepthStencilSurface *surface, GLboolean has_stencil) {
 	// Calculating sizes for depth and stencil surfaces
 	unsigned int depth_stencil_width = VGL_ALIGN(w, SCE_GXM_TILE_SIZEX);
 #ifndef DEPTH_STENCIL_HACK
@@ -506,6 +516,9 @@ void init_depth_stencil_buffer(uint32_t w, uint32_t h, SceGxmDepthStencilSurface
 
 	// Allocating depth surface
 	void *depth_buffer = gpu_alloc_mapped_aligned(SCE_GXM_DEPTHSTENCIL_SURFACE_ALIGNMENT, 4 * depth_stencil_samples, VGL_MEM_VRAM);
+	if (!depth_buffer) {
+		SET_GL_ERROR_WITH_RET(GL_OUT_OF_MEMORY, GL_FALSE)
+	}
 
 #ifdef STORE_DEPTH_STENCIL
 	// Initializing mask update bit to 1
@@ -516,6 +529,10 @@ void init_depth_stencil_buffer(uint32_t w, uint32_t h, SceGxmDepthStencilSurface
 	// Allocating stencil surface
 #ifndef DEPTH_STENCIL_HACK
 	void *stencil_buffer = has_stencil ? gpu_alloc_mapped_aligned(SCE_GXM_DEPTHSTENCIL_SURFACE_ALIGNMENT, depth_stencil_samples, VGL_MEM_VRAM) : NULL;
+	if (has_stencil && !stencil_buffer) {
+		vgl_free(depth_buffer);
+		SET_GL_ERROR_WITH_RET(GL_OUT_OF_MEMORY, GL_FALSE)
+	}
 #endif
 
 	// Initializing depth and stencil surfaces
@@ -534,6 +551,7 @@ void init_depth_stencil_buffer(uint32_t w, uint32_t h, SceGxmDepthStencilSurface
 	sceGxmDepthStencilSurfaceSetForceLoadMode(surface, SCE_GXM_DEPTH_STENCIL_FORCE_LOAD_ENABLED);
 	sceGxmDepthStencilSurfaceSetForceStoreMode(surface, SCE_GXM_DEPTH_STENCIL_FORCE_STORE_ENABLED);
 #endif
+	return GL_TRUE;
 }
 
 void init_display_depth_stencil_surfaces(void) {
@@ -585,7 +603,12 @@ static inline __attribute__((always_inline)) void scene_end(void) {
 		sceDisplayWaitVblankStartMulti(vsync_interval);
 }
 
-void scene_reset(void) {
+GLboolean gxm_scene_is_active(void) {
+	return needs_end_scene;
+}
+
+GLboolean scene_reset(void) {
+	GLenum scene_error = GL_OUT_OF_MEMORY;
 	if (in_use_framebuffer != active_write_fb || needs_scene_reset || dirty_framebuffer || dirty_query) {
 		dirty_framebuffer = GL_FALSE;
 		dirty_query = GL_FALSE;
@@ -599,6 +622,8 @@ void scene_reset(void) {
 		} else {
 			if (legacy_pool_size) {
 				legacy_pool = (float *)gpu_alloc_mapped_temp(legacy_pool_size);
+				if (!legacy_pool)
+					goto scene_failure;
 				legacy_pool_ptr = legacy_pool;
 #ifndef SKIP_ERROR_HANDLING
 				legacy_pool_end = (float *)((uint8_t *)legacy_pool + legacy_pool_size);
@@ -622,6 +647,12 @@ void scene_reset(void) {
 		// Starting drawing scene
 		is_rendering_display = !active_write_fb;
 		if (is_rendering_display) { // Default framebuffer is used
+			if (!gxm_render_target)
+				goto scene_failure;
+#ifndef DEPTH_STENCIL_HACK
+			if (!gxm_depth_stencil_surface.depthData)
+				goto scene_failure;
+#endif
 			if (system_app_mode) {
 				sceSharedFbBegin(shared_fb, &shared_fb_info);
 				shared_fb_info.vsync = vsync_interval;
@@ -637,10 +668,19 @@ void scene_reset(void) {
 				vgl_log("%s:%d Scene reset failed due to sceGxmBeginScene erroring (%s) on display.\n", __FILE__, __LINE__, get_gxm_error_literal(r));
 			}
 #endif
+			if (r) {
+				scene_error = GL_INVALID_OPERATION;
+				goto scene_failure;
+			}
 		} else {
+			if (!active_write_fb->tex || !active_write_fb->tex->data) {
+				scene_error = GL_INVALID_OPERATION;
+				goto scene_failure;
+			}
 			// If a depthstencil surface is not bound to the in use framebuffer, we get one for it to ensure scissor testing compatibility
 			if (!active_write_fb->depthbuffer_ptr) {
-				init_depth_stencil_buffer(active_write_fb->width, active_write_fb->height, &active_write_fb->depthbuffer, GL_FALSE);
+				if (!init_depth_stencil_buffer(active_write_fb->width, active_write_fb->height, &active_write_fb->depthbuffer, GL_FALSE))
+					goto scene_failure;
 				active_write_fb->depthbuffer_ptr = &active_write_fb->depthbuffer;
 				active_write_fb->is_depth_hidden = GL_TRUE;
 			}
@@ -656,6 +696,8 @@ void scene_reset(void) {
 					vgl_log("%s:%d Failed to create a rendertarget of size %dx%d for framebuffer 0x%08X (%s).\n", __FILE__, __LINE__, active_write_fb->width, active_write_fb->height, active_write_fb, get_gxm_error_literal(r));
 				}
 #endif
+				if (r)
+					goto scene_failure;
 #endif
 			}
 #ifdef RECYCLE_RENDERTARGETS
@@ -667,13 +709,21 @@ void scene_reset(void) {
 				}
 			}
 #endif
+			if (!active_write_fb->target)
+				goto scene_failure;
 #ifdef HAVE_TEX_CACHE
 			// FIXME: This may be useful even without texture cache enabled maybe?
 			if (sceGxmColorSurfaceGetData(&active_write_fb->colorbuffer) != active_write_fb->tex->data)
 				sceGxmColorSurfaceSetData(&active_write_fb->colorbuffer, active_write_fb->tex->data);
 #endif
+#ifndef TEXTURES_SPEEDHACK
+			// A colour attachment is in use even when no draw samples it.
+			active_write_fb->tex->last_frame = vgl_framecount;
+#endif
 #ifdef HAVE_SHARED_RENDERTARGETS
 			render_target *fbo_rt = (render_target *)active_write_fb->target;
+			if (!fbo_rt->rt)
+				goto scene_failure;
 #ifdef RECYCLE_RENDERTARGETS
 			fbo_rt->last_frame = vgl_framecount;
 #endif
@@ -688,6 +738,10 @@ void scene_reset(void) {
 			if (r)
 				vgl_log("%s:%d Scene reset failed due to sceGxmBeginScene erroring (%s) on framebuffer 0x%08X.\n", __FILE__, __LINE__, get_gxm_error_literal(r), active_write_fb);
 #endif
+			if (r) {
+				scene_error = GL_INVALID_OPERATION;
+				goto scene_failure;
+			}
 		}
 
 		// Setting back current viewport if enabled cause sceGxm will reset it at sceGxmEndScene call
@@ -711,6 +765,15 @@ void scene_reset(void) {
 	if (dirty_scissor_state) {
 		update_scissor_test();
 	}
+	return GL_TRUE;
+
+scene_failure:
+	// No scene was opened. A later command must retry setup before issuing draws.
+	needs_end_scene = GL_FALSE;
+	needs_scene_reset = GL_TRUE;
+	dirty_vert_unifs = dirty_frag_unifs = GL_TRUE;
+	vgl_error = scene_error;
+	return GL_FALSE;
 }
 
 /*
@@ -924,7 +987,14 @@ void vglSwapBuffers(GLboolean has_commondialog) {
 #ifdef HAVE_PROFILING
 		tick = sceKernelGetProcessTimeLow();
 #endif
-		sceGxmDisplayQueueAddEntry(gxm_sync_objects[gxm_back_buffer_index], gxm_sync_objects[gxm_front_buffer_index], &queue_cb_data);
+		const uint64_t portQueueStart = portPresentProfile ? portPresentClock() : 0;
+		const int portQueueResult = sceGxmDisplayQueueAddEntry(gxm_sync_objects[gxm_back_buffer_index], gxm_sync_objects[gxm_front_buffer_index], &queue_cb_data);
+		if (portPresentProfile) {
+			portPresentProfile->addEntryNs += portPresentClock() - portQueueStart;
+			++portPresentProfile->addEntryCalls;
+			portPresentProfile->lastAddEntryResult = portQueueResult;
+			if (portQueueResult < 0) ++portPresentProfile->addEntryErrors;
+		}
 #ifdef HAVE_PROFILING
 		gpu_stall_cnt += sceKernelGetProcessTimeLow() - tick;
 #endif
@@ -956,13 +1026,22 @@ void vglSwapBuffers(GLboolean has_commondialog) {
 		NEW_DISPLAY_WIDTH = 0;
 	}
 
-	// Starting garbage collector job
+	// Complete the collection before the producer can append to the next list.
+	const uint64_t portGcStart = portPresentProfile ? portPresentClock() : 0;
+	int portGcResult = 0;
 #ifdef HAVE_SINGLE_THREADED_GC
 	garbage_collector(0, NULL);
 #else
-	sceKernelWaitSema(gc_mutex[1], 1, NULL);
-	sceKernelSignalSema(gc_mutex[0], 1);
+	if ((portGcResult = sceKernelSignalSema(gc_mutex[0], 1)) < 0 ||
+		(portGcResult = sceKernelWaitSema(gc_mutex[1], 1, NULL)) < 0)
+		vgl_error = GL_INVALID_OPERATION;
 #endif
+	if (portPresentProfile) {
+		portPresentProfile->gcNs += portPresentClock() - portGcStart;
+		++portPresentProfile->gcCalls;
+		portPresentProfile->lastGcResult = portGcResult;
+		if (portGcResult < 0) ++portPresentProfile->gcErrors;
+	}
 }
 
 void glFinish(void) {

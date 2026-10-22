@@ -51,8 +51,11 @@ def prepare(profile: str, iso: Path | None, roots: list[Path], output: Path,
             native_only: bool = False, source_archive: Path | None = None,
             native_textures: str = 'compact', native_audio: str = 'off', audio_compiler: Path | None = None,
             native_video: bool = False, ffmpeg: str = 'ffmpeg', video_crf: int = 18,
+            video_format: str = 'mp4', ffprobe: str = 'ffprobe',
             video_threads: int = 4, shader_cache: Path | None = None,
             native_gpu_static: bool = False, native_graphics_compiler: Path | None = None, native_media_archive: Path | None = None) -> dict:
+    if video_format not in ('mp4', 'wavc'):
+        raise ValueError('unsupported video format')
     has_native = bool(native_compiler or native_graphics_compiler or native_media_archive or native_audio != 'off' or native_video or shader_cache)
     if native_media_archive and (native_audio!='off' or native_video or shader_cache):
         raise ValueError('select either prepared native media or media compilation')
@@ -145,7 +148,7 @@ def prepare(profile: str, iso: Path | None, roots: list[Path], output: Path,
             parsed_media=parse_psarc(media_source);copied=[]
             with media_source.open('rb') as handle:
                 for i,name in enumerate(parsed_media.paths,1):
-                    if not (name.startswith('native/v1/audio/') or name=='native/v1/audio-index.bin' or name.startswith('native/v1/video/')):continue
+                    if not (name.startswith('native/v1/audio/') or name=='native/v1/audio-index.bin' or name.startswith('native/v1/video/') or name.startswith('native/v2/video/')):continue
                     target=workspace/name;target.parent.mkdir(parents=True,exist_ok=True)
                     with target.open('wb') as f:
                         for block in iter_entry(handle,parsed_media,i):f.write(block)
@@ -156,8 +159,12 @@ def prepare(profile: str, iso: Path | None, roots: list[Path], output: Path,
             from asset_pipeline.media import prepare_audio
             media_report['audio']=prepare_audio(original_roots,audio_compiler,workspace,mode=native_audio)
         if native_video:
-            from asset_pipeline.video import prepare_video
-            media_report['video']=prepare_video(original_roots,workspace,ffmpeg=ffmpeg,crf=video_crf,threads=video_threads)
+            if video_format == 'mp4':
+                from asset_pipeline.mp4_video import prepare_mp4
+                media_report['video'] = prepare_mp4(original_roots, workspace, ffmpeg=ffmpeg, ffprobe=ffprobe, crf=video_crf, threads=video_threads)
+            else:
+                from asset_pipeline.video import prepare_video
+                media_report['video'] = prepare_video(original_roots, workspace, ffmpeg=ffmpeg, crf=video_crf, threads=video_threads)
         if shader_cache:
             from asset_pipeline.media import prepare_shader_cache
             media_report['shaders']=prepare_shader_cache(shader_cache,workspace)
@@ -169,6 +176,21 @@ def prepare(profile: str, iso: Path | None, roots: list[Path], output: Path,
                     relative=native_movie.relative_to(video_root);target=files_root/relative
                     if not target.is_file():raise ValueError('native movie has no original logical path')
                     os.replace(native_movie,target);replaced_video.append(relative.as_posix())
+            # MP4 is streamed from native/v2/video. Remove only successfully
+            # converted THP originals in a complete native graphics pack.
+            mp4_root = workspace / 'native/v2/video'
+            replaced_mp4 = []
+            if mp4_root.exists():
+                for movie in sorted(mp4_root.rglob('*.mp4')):
+                    if not movie.with_suffix('.mp4.meta').is_file():
+                        raise ValueError('MP4 descriptor missing')
+                    relative = movie.relative_to(mp4_root).with_suffix('.thp')
+                    target = files_root / relative
+                    if not target.is_file():
+                        raise ValueError('MP4 has no original movie path')
+                    target.unlink()
+                    replaced_mp4.append(relative.as_posix())
+            media_report['mp4_movie_paths'] = replaced_mp4
             media_report['native_movie_paths']=replaced_video
             removed=[]
             # These are GameCube executables/debug outputs, never Vita runtime data.
@@ -226,7 +248,9 @@ def main() -> int:
                    help='include AVNR v2 source-verified static geometry packed for common exact GXM layouts')
     p.add_argument('--native-audio',choices=('off','bank','all'),default='off',help='bank covers SFX; all also prepares DSP/IDSP music and streams')
     p.add_argument('--audio-compiler',type=Path,help='host strikers_compile_native_audio executable')
-    p.add_argument('--native-video',action='store_true',help='prepare independent Baseline H.264 movies; native graphics builds replace original movie payloads')
+    p.add_argument('--native-video',action='store_true',help='convert THP movies for the native runtime')
+    p.add_argument('--video-format', choices=('mp4','wavc'), default='mp4', help='MP4/SceAvPlayer (default), or legacy all-intra WAVC')
+    p.add_argument('--ffprobe', default='ffprobe')
     p.add_argument('--ffmpeg',default='ffmpeg')
     p.add_argument('--video-crf',type=int,default=18)
     p.add_argument('--video-threads',type=int,default=4)
@@ -238,6 +262,7 @@ def main() -> int:
                          native_compiler=a.native_compiler, native_only=a.native_only,source_archive=a.source_archive,
                          native_textures=a.native_textures,native_audio=a.native_audio,audio_compiler=a.audio_compiler,
                          native_video=a.native_video,ffmpeg=a.ffmpeg,video_crf=a.video_crf,
+                         video_format=a.video_format,ffprobe=a.ffprobe,
                          video_threads=a.video_threads,shader_cache=a.shader_cache,
                          native_gpu_static=a.native_gxm_static,native_graphics_compiler=a.native_graphics_compiler,native_media_archive=a.native_media_archive)
     except (OSError, ValueError, RuntimeError, subprocess.CalledProcessError) as exc:

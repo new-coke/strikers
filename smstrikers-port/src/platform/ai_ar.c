@@ -5,6 +5,7 @@
 
 #include "dolphin/ai.h"
 #include "dolphin/types.h"
+#include "musyx/port_audio_watchdog.h"
 
 #if defined(STRIKERS_VITA_AUDIO_THREAD)
 #include <pthread.h>
@@ -142,9 +143,11 @@ void* AIPortDMADest(void) { return (void*)s_ai_dma_addr; }
 // with a newly-installed movie callback (or vice versa).
 void* AIPortAdvanceDMA(void)
 {
+    const unsigned int previous = PortAudioWatchdogMark(PORT_AUDIO_WD_AI_CALLBACK | PORT_AUDIO_WD_WAIT);
 #if defined(STRIKERS_VITA_AUDIO_THREAD)
     AIPortLockCallbacks();
 #endif
+    PortAudioWatchdogMark(PORT_AUDIO_WD_AI_CALLBACK);
     void* played = (void*)s_ai_dma_addr;
     if (s_ai_cb != NULL)
     {
@@ -153,6 +156,7 @@ void* AIPortAdvanceDMA(void)
 #if defined(STRIKERS_VITA_AUDIO_THREAD)
     AIPortUnlockCallbacks();
 #endif
+    PortAudioWatchdogMark(previous);
     return played;
 }
 

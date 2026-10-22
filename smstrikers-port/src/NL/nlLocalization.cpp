@@ -1,5 +1,8 @@
 #include "NL/nlLocalization.h"
 #include "port/endian.h"
+#if defined(STRIKERS_VITA) && defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "port/native_prompt_text.hpp"
+#endif
 #include "NL/nlMemory.h"
 #include "NL/nlFile.h"
 #include "NL/nlPrint.h"
@@ -122,7 +125,15 @@ unsigned char nlLocalization::Load(nlLanguage Language, bool ingameloc)
         }
     }
 
-    u8* hostFile = (u8*)nlMalloc(FileSize, 32, false);
+    size_t hostBytes = FileSize;
+#if defined(STRIKERS_VITA) && defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    auto promptPlan = port::prompttext::plan(Language, rawLookup, stringCount, rawStrings, stringWords);
+    if (promptPlan.extraWords <= (SIZE_MAX - hostBytes) / sizeof(u16))
+        hostBytes += size_t(promptPlan.extraWords) * sizeof(u16);
+    else
+        promptPlan = {}; // Keep the original strings if the final allocation would overflow.
+#endif
+    u8* hostFile = (u8*)nlMalloc(hostBytes, 32, false);
     if (hostFile == NULL)
     {
         nlFree(rawFile);
@@ -148,6 +159,9 @@ unsigned char nlLocalization::Load(nlLanguage Language, bool ingameloc)
     for (unsigned long w = 0; w < stringWords; ++w)
         hostStrings[w] = port_be16(rawStrings + w * sizeof(u16));
 
+#if defined(STRIKERS_VITA) && defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    port::prompttext::apply(promptPlan, hostLookup, hostStrings, stringWords);
+#endif
     nlFree(rawFile);
     m_pFile = hostHeader;
     m_LookupTable = hostLookup;

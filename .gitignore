@@ -7,6 +7,9 @@ smstrikers-port/data/
 *.gcm
 *.psarc
 *.psarc.json
+*.vpk
+# Frozen diagnostic samples contain extracted game video and stay local.
+smstrikers-port/src/platform/native_avc_continuity_inputs.inc
 smstrikers-port/extern/ffmpeg-windows-x86_64/
 smstrikers-port/extern/ffmpeg-static/
 smstrikers-port/extern/ffmpeg-switch/
@@ -37,7 +40,7 @@ extracted/
 *.log
 *.log.*
 /ab-artifacts/
-
+PERFORMANCE.md
 # Local project documentation, reports and validation evidence.
 /docs/
 

@@ -41,6 +41,35 @@ struct ModelVertices
     std::vector<ModelVertex> vertices{};
     std::vector<uint16_t> indices{};
 };
+struct ModelVertexScratch
+{
+    struct Entry
+    {
+        uint32_t key = UINT32_MAX;
+        uint16_t vertex = 0;
+    };
+    std::vector<Entry> lookup;
+    std::vector<uint16_t> remap;
+};
+
+// Retain at most 528 KiB of producer scratch. Oversized packets still decode
+// normally; release their capacity after the renderer owns its snapshot.
+inline void recycle_model_vertex_scratch(ModelVertices& model, ModelVertexScratch& scratch) noexcept
+{
+    constexpr size_t retainedVertices = 4096;
+    model.vertices.clear();
+    model.indices.clear();
+    scratch.lookup.clear();
+    scratch.remap.clear();
+    if (model.vertices.capacity() > retainedVertices)
+        std::vector<ModelVertex>().swap(model.vertices);
+    if (model.indices.capacity() > retainedVertices * 3)
+        std::vector<uint16_t>().swap(model.indices);
+    if (scratch.lookup.capacity() > retainedVertices * 2)
+        std::vector<ModelVertexScratch::Entry>().swap(scratch.lookup);
+    if (scratch.remap.capacity() > retainedVertices)
+        std::vector<uint16_t>().swap(scratch.remap);
+}
 
 inline bool model_array_at(const ModelArray& a, uint32_t index, uint32_t need,
                            const uint8_t*& p) noexcept
@@ -111,14 +140,30 @@ inline bool prepare_model_vertices(const ModelStreams& streams,
                                    std::span<const uint16_t> originalIndices, uint32_t count,
                                    uint8_t primitive, std::span<const uint8_t> selectors,
                                    std::span<const BoneTransform> bones, ModelVertices& out,
-                                   bool compact = false, bool applyBoneMatrix = true)
+                                   bool compact = false, bool applyBoneMatrix = true,
+                                   ModelVertexScratch* reusableScratch = nullptr)
 {
-    out = {};
-    if (count < 3 || count > 64000 || primitive > 3 ||
+    out.vertices.clear();
+    out.indices.clear();
+    struct ClearOnFailure
+    {
+        ModelVertices& model;
+        bool complete = false;
+        ~ClearOnFailure()
+        {
+            if (!complete)
+            {
+                model.vertices.clear();
+                model.indices.clear();
+            }
+        }
+    } result{ out };
+    if (primitive > 5 || count < (primitive >= 4 ? 2u : 3u) || count > 64000 ||
         (!originalIndices.empty() && originalIndices.size() != count) ||
         (!selectors.empty() && selectors.size() != count))
         return false;
-    if ((primitive == 0 && count % 3) || (primitive == 3 && count % 4))
+    if ((primitive == 0 && count % 3) || (primitive == 3 && count % 4) ||
+        (primitive == 4 && count % 2))
         return false;
     if (streams.position.stride != 6 && streams.position.stride != 12 &&
         streams.position.stride != 16)
@@ -133,18 +178,22 @@ inline bool prepare_model_vertices(const ModelStreams& streams,
                 return false;
         palette[bone.selector] = &bone;
     }
-    ModelVertices candidate;
+    auto& candidate = out;
     candidate.vertices.reserve(count);
+    const size_t outputIndices = primitive == 0 || primitive == 4 ? count
+                                 : primitive == 3 ? size_t(count) / 2u * 3u
+                                 : primitive == 5 ? size_t(count - 1u) * 2u
+                                                  : size_t(count - 2u) * 3u;
+    candidate.indices.reserve(outputIndices);
     // Deduplicate only inside this immutable draw snapshot. Two references
     // share a vertex exactly when BOTH the original stream index and PN slot
     // agree. Pose/color/UV changes in another draw or frame never reuse data.
-    struct Entry
-    {
-        uint32_t key = UINT32_MAX;
-        uint16_t vertex = 0;
-    };
-    std::vector<Entry> lookup;
-    std::vector<uint16_t> remap;
+    ModelVertexScratch localScratch;
+    auto& scratch = reusableScratch ? *reusableScratch : localScratch;
+    auto& lookup = scratch.lookup;
+    auto& remap = scratch.remap;
+    lookup.clear();
+    remap.clear();
     if (compact && !originalIndices.empty())
     {
         size_t size = 8;
@@ -152,15 +201,11 @@ inline bool prepare_model_vertices(const ModelStreams& streams,
             size *= 2u;
         lookup.resize(size);
         remap.resize(count);
-        const size_t triangles = primitive == 0   ? count / 3u
-                                 : primitive == 3 ? count / 2u
-                                                  : count - 2u;
-        candidate.indices.reserve(triangles * 3u);
     }
     for (uint32_t i = 0; i < count; ++i)
     {
         const uint32_t index = originalIndices.empty() ? i : originalIndices[i];
-        Entry* entry = nullptr;
+        ModelVertexScratch::Entry* entry = nullptr;
         if (!lookup.empty())
         {
             const uint32_t key = index | (uint32_t(selectors.empty() ? 0 : selectors[i]) << 16);
@@ -296,7 +341,16 @@ inline bool prepare_model_vertices(const ModelStreams& streams,
             triangle(i, i + 1, i + 2);
             triangle(i, i + 2, i + 3);
         }
-    out = std::move(candidate);
+    if (primitive == 4)
+        for (uint32_t i = 0; i < count; ++i)
+            candidate.indices.push_back(remap.empty() ? uint16_t(i) : remap[i]);
+    if (primitive == 5)
+        for (uint32_t i = 1; i < count; ++i)
+        {
+            candidate.indices.push_back(remap.empty() ? uint16_t(i - 1) : remap[i - 1]);
+            candidate.indices.push_back(remap.empty() ? uint16_t(i) : remap[i]);
+        }
+    result.complete = true;
     return true;
 }
 }   // namespace port::nativegxm

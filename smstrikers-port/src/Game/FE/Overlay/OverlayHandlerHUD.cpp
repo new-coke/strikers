@@ -366,7 +366,7 @@ void HUDOverlay::Update(float fDeltaT)
             formatted = Format(unformatted, minutesWideString, secondsWideString);
         }
 
-        memcpy(mClockBuffer, formatted.c_str(), sizeof(mClockBuffer));
+        nlStrNCpy(mClockBuffer, formatted.c_str(), sizeof(mClockBuffer) / sizeof(mClockBuffer[0]));
         m_pTextInstanceClock[0]->SetString(mClockBuffer);
         m_pTextInstanceClock[1]->SetString(mClockBuffer);
     }

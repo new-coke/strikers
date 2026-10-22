@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-18",
+  "method": "Local read-only PSARC logical payload comparison using asset_pipeline.psarc.parse_psarc and iter_entry; SHA-256 of every payload in manifest order.",
+  "left": {
+    "path": ".tmp/asset-setup-validation/sms.psarc",
+    "bytes": 1786972393,
+    "archive_sha256": "e978b9978e4ced523c127ce2eedba5e19a4a5741cfd4523bb0be10571de6b09b"
+  },
+  "right": {
+    "path": "ab-artifacts/unified-native-20261015/sms.psarc",
+    "bytes": 1791284489,
+    "archive_sha256": "699670609b952510615d869b344c18bda6b7b1f0cce8868e0248b9204cec220d"
+  },
+  "same_path_lists": true,
+  "checked_payloads": 24386,
+  "logical_payload_bytes": 1862468339,
+  "mismatch_count": 0,
+  "payload_ledger_sha256": "e051da1b4ca186c83fdef5f7a34347c9108f81acc8a88bfa386c7a36461f9418",
+  "ledger_encoding": "For each payload in manifest order append UTF-8 path, NUL, decimal logical size, NUL, and binary SHA-256 digest; hash the concatenated bytes.",
+  "elapsed_seconds": 16.653,
+  "physical_size_difference_bytes": 4312096,
+  "retained_obsolete_zeroed_payload_sizes": [
+    820832,
+    3491264
+  ],
+  "qualification": "This proves equal live payloads in the two identified local archives. The coordinating agent is independently verifying the remote archive SHA-256; remote SIZE alone is not an identity check.",
+  "local_writes": "This evidence file only; source archives were read without extraction to disk or rebuilding."
+}

@@ -4,6 +4,7 @@
 #include "port/asset_archive.h"
 #include "port/config.h"
 #include "port/host.h"
+#include "port/native_watchdog.hpp"
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
 #include <psp2/kernel/threadmgr.h>
 #include <psp2/kernel/cpu.h>
@@ -200,18 +201,27 @@ void* run(void*)
 {
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
     const auto id = sceKernelGetThreadId();
+    port::watchdog::enter_thread(port::watchdog::Role::AudioLoader, id);
     sceKernelChangeThreadCpuAffinityMask(id, SCE_KERNEL_CPU_MASK_USER_0);
     sceKernelChangeThreadPriority(id, 0x10000120);   // Below the audio output thread.
 #endif
+    port::watchdog::stage(port::watchdog::Role::AudioLoader, port::watchdog::Stage::LoaderLock);
     CacheLock lock;
     if (!lock.owns)
+    {
+        port::watchdog::leave_thread(port::watchdog::Role::AudioLoader);
         return nullptr;
+    }
     for (;;)
     {
         while (!queued && !stopping)
+        {
+            port::watchdog::stage(port::watchdog::Role::AudioLoader, port::watchdog::Stage::LoaderWait);
             pthread_cond_wait(&ready, &mutex);
+        }
         if (stopping)
             break;
+        port::watchdog::stage(port::watchdog::Role::AudioLoader, port::watchdog::Stage::LoaderPublish);
         inFlight = requests[0];
         std::move(requests.begin() + 1, requests.begin() + queued, requests.begin());
         --queued;
@@ -223,11 +233,13 @@ void* run(void*)
             bind_record(request.base, cached->record);
             records.splice(records.begin(), records, cached);
             loading = false;
+            port::watchdog::advance(port::watchdog::Role::AudioLoader);
             continue;
         }
         // Archive I/O, decompression and record validation run outside the
         // cache lock. The mixer never waits for this worker.
         lock.unlock();
+        port::watchdog::stage(port::watchdog::Role::AudioLoader, port::watchdog::Stage::LoaderRead);
         const auto begin = port_monotonic_ns();
         std::shared_ptr<Record> record;
         try
@@ -237,6 +249,8 @@ void* run(void*)
         catch (...)
         {}
         const uint64_t elapsed = (port_monotonic_ns() - begin) / 1000;
+        port::watchdog::advance(port::watchdog::Role::AudioLoader);
+        port::watchdog::stage(port::watchdog::Role::AudioLoader, port::watchdog::Stage::LoaderPublish);
         lock.lock();
         loading = false;
         if (stopping)
@@ -254,6 +268,7 @@ void* run(void*)
         {
             const auto snapshot = stats;
             lock.unlock();
+            port::watchdog::stage(port::watchdog::Role::AudioLoader, port::watchdog::Stage::LoaderLog);
             std::fprintf(stderr,
                          "[native-audio] async_loads=%llu hits=%llu misses=%llu rejected=%llu "
                          "cache_bytes=%llu max_load_us=%llu\n",
@@ -261,9 +276,11 @@ void* run(void*)
                          (unsigned long long)snapshot.misses, (unsigned long long)snapshot.rejected,
                          (unsigned long long)snapshot.cacheBytes,
                          (unsigned long long)snapshot.maxLoadUs);
+            port::watchdog::stage(port::watchdog::Role::AudioLoader, port::watchdog::Stage::LoaderLock);
             lock.lock();
         }
     }
+    port::watchdog::leave_thread(port::watchdog::Role::AudioLoader);
     return nullptr;
 }
 void clear()

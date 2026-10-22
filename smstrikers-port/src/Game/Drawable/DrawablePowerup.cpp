@@ -5,6 +5,7 @@
 #include "NL/gl/glDraw3.h"
 #include "NL/gl/glState.h"
 #include "NL/nlString.h"
+#include <array>
 
 namespace
 {
@@ -32,6 +33,22 @@ char* GetName(int idx)
     }
 
     return powerupLookup;
+}
+
+// Only the names are constant; every caller still resolves the live object.
+const std::array<u32, 150> powerupNameHashes = [] {
+    std::array<u32, 150> hashes{};
+    for (unsigned i = 0; i < hashes.size(); ++i)
+        hashes[i] = nlStringLowerHash(GetName(static_cast<int>(i)));
+    return hashes;
+}();
+
+u32 GetNameHash(int idx)
+{
+    const unsigned index = static_cast<unsigned>(idx);
+    if (index < powerupNameHashes.size())
+        return powerupNameHashes[index];
+    return nlStringLowerHash(GetName(idx));
 }
 } // namespace
 
@@ -126,7 +143,7 @@ static void DrawShadow(float radius, float x, float y, float z)
  */
 PowerupBase* DrawablePowerup::GetPowerup(int idx) const
 {
-    return FindPowerUp(nlStringLowerHash(GetName(idx)));
+    return FindPowerUp(GetNameHash(idx));
 }
 
 /**
@@ -134,7 +151,7 @@ PowerupBase* DrawablePowerup::GetPowerup(int idx) const
  */
 void DrawablePowerup::Grab(int idx)
 {
-    PowerupBase* powerup = FindPowerUp(nlStringLowerHash(GetName(idx)));
+    PowerupBase* powerup = FindPowerUp(GetNameHash(idx));
     if (powerup != NULL)
     {
         mType = powerup->m_eType;
@@ -156,7 +173,7 @@ void DrawablePowerup::Grab(int idx)
 void DrawablePowerup::Render(int idx) const
 {
     World* world = WorldManager::s_World;
-    DrawableObject* obj = world->FindDrawableObject(nlStringLowerHash(GetName(idx)));
+    DrawableObject* obj = world->FindDrawableObject(GetNameHash(idx));
 
     if (obj == NULL)
     {

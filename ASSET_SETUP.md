@@ -1,7 +1,7 @@
 # Preparare il PSARC e avviare Strikers Vita
 
 Questa guida riguarda il runtime **VitaGL attuale**, con grafica nativa,
-audio PCM e video H.264. Lo script consigliato e'
+audio PCM e filmati **MP4 H.264/AAC riprodotti da SceAvPlayer**. Lo script consigliato e'
 [`prepare_strikers_vita.py`](smstrikers-port/tools/prepare_strikers_vita.py).
 Prepara e verifica l'archivio completo; non basta rinominare una ISO o creare
 un PSARC contenente soltanto i file GameCube originali.
@@ -13,7 +13,8 @@ un PSARC contenente soltanto i file GameCube originali.
   (Europa), `G4QJ01` (Giappone). Il riconoscimento dell'ID non garantisce che
   ogni revisione o lingua sia stata validata in partita su Vita.
 - Python **3.10 o successivo**, CMake **3.24 o successivo**, un compilatore
-  **C++20** e FFmpeg con encoder **libx264**. Consigliato FFmpeg 6 o successivo.
+  **C++20**, FFmpeg con encoder **libx264** e **AAC**, e `ffprobe`.
+  Consigliato FFmpeg 6 o successivo.
 - macOS o Linux; su Windows usare **WSL2** con gli strumenti Linux.
 - Connessione Internet alla prima compilazione per scaricare
   gli header xxHash, fissati alla versione 0.8.3 con controllo SHA-256.
@@ -61,7 +62,8 @@ nel filesystem Linux puo' ridurre il costo delle molte operazioni sui file.
 Lo script compila i due convertitori host in
 `smstrikers-port/build-asset-tools`, estrae il disco in una directory
 temporanea, prepara modelli e texture per il renderer, converte tutto
-l'audio previsto dalla pipeline in PCM e i filmati in H.264 Baseline,
+l'audio previsto dalla pipeline in PCM e i filmati in MP4 H.264 Baseline
+con audio AAC-LC stereo a 48 kHz,
 poi crea e verifica il PSARC. Le directory temporanee vengono rimosse
 alla conclusione; la ISO sorgente resta intatta.
 
@@ -91,6 +93,25 @@ python3 smstrikers-port/tools/prepare_strikers_vita.py \
 predefinito 18. Lasciare questi valori per la prima preparazione.
 ISO, PSARC e conversioni generate sono esclusi da Git.
 
+La conversione video mantiene risoluzione, numero di fotogrammi e frequenza
+del THP originale (29,97 Hz per i 17 filmati del disco europeo verificato).
+L'audio viene prima decodificato con l'aritmetica DSP del port, verificando
+numero di campioni e limiti dei record; poi viene ricampionato e codificato
+in AAC. Questa conversione e' lossy. Ogni MP4 viene verificato con `ffprobe`
+e decodificato completamente sul PC prima di pubblicare il PSARC.
+
+I filmati risiedono in `native/v2/video/`, con un descrittore binario
+`STMP4001` accanto a ciascun `.mp4`. Il gioco continua a richiedere i nomi
+originali `.thp`; il player li risolve nel PSARC tramite callback di lettura
+posizionale. Non occorre estrarre i filmati sulla Vita. Il pacchetto completo
+rimuove i THP sostituiti soltanto dopo una conversione riuscita.
+
+Il default e' `--video-format mp4`. Per produrre il formato storico compatibile
+con una vecchia build del port, usare `--video-format wavc`; quel percorso
+mantiene H.264 all-intra dentro THP e usa il vecchio decoder.
+`--ffprobe /percorso/ffprobe` permette di selezionare un eseguibile specifico.
+La verifica sul PC non prova ancora fluidita', colore o sincronizzazione sulla console.
+
 ## 2. Verificare un archivio gia' preparato
 
 ```sh
@@ -99,8 +120,11 @@ python3 smstrikers-port/tools/prepare_strikers_vita.py \
 ```
 
 Questo comando richiede il JSON accanto al PSARC, confronta il suo SHA-256,
-controlla il marker di grafica nativa atteso dal runtime e legge/verifica
-il contenitore completo. Non necessita dei convertitori o di FFmpeg.
+controlla il marker di grafica nativa, la presenza dell'indice audio completo
+e dei filmati. Per MP4 controlla anche che ogni descrittore corrisponda al
+resoconto di conversione e che non siano rimasti THP nel pacchetto.
+Legge/verifica il contenitore completo e stampa formato video, numero di
+filmati e player da configurare. Non necessita dei convertitori o di FFmpeg.
 La verifica del file non sostituisce una prova di avvio e di partita.
 
 La pipeline a basso livello resta disponibile in
@@ -119,7 +143,14 @@ estratto e decrittato sulla console, normalmente in
 [vitaGL](https://github.com/Rinnegatamante/vitaGL#prerequisites) e il progetto
 [ShaRKF00D](https://github.com/OsirizX/ShaRKF00D) per l'estrazione.
 
-1. Installa il **VPK completo** di Strikers Vita con VitaShell.
+Usare il **VPK della stessa versione della pipeline**: un vecchio eseguibile
+che riproduce soltanto WAVC/THP non puo' usare un archivio MP4 privo dei THP.
+Chi compila il progetto trova il pacchetto in
+`smstrikers-port/build-vita-gxm-latest/strikers_vita.vpk`, dopo il comando
+di build indicato nel [README](README.md#build-vita-per-sviluppatori).
+
+1. Trasferisci il **VPK completo** di Strikers Vita sulla console via USB o
+   FTP di VitaShell, aprilo in VitaShell e conferma l'installazione.
    Il titolo dell'app e' `Super Mario Strikers Vita`, Title ID `SMSVITA01`.
 2. Crea la directory `ux0:data/strikersVita/` con VitaShell o tramite FTP/USB.
 3. Copia **`sms.psarc`** in quella directory, senza estrarlo.
@@ -144,6 +175,9 @@ Impostazioni essenziali della configurazione normale:
 asset_archive = ux0:data/strikersVita/sms.psarc
 vita_native_audio = 1
 vita_native_video = 1
+vita_video_player = avplayer
+vita_video_archive =
+vita_playstation_glyphs = 1
 vita_test_match = 0
 vita_frameskip = 0
 diagnostics = 0
@@ -155,6 +189,36 @@ vitagl_vertex_fog = 0
 La partita di test si abilita solo tramite INI quando serve una misura;
 non e' necessaria per l'avvio normale. Gli esperimenti shader rimangono
 disabilitati nella configurazione distribuita.
+
+### Glifi PlayStation o GameCube
+
+`vita_playstation_glyphs = 1` e' il default: i pulsanti A/B/X/Y nei font
+compatibili e nelle legende supportate diventano rispettivamente
+**× / ○ / □ / △**, coerenti con i comandi della Vita. L e R mantengono le
+lettere originali. I badge del controller supportati usano la disposizione
+PlayStation. Le icone sono incluse nell'eseguibile; non serve un pacchetto
+di texture aggiuntivo e non occorre rigenerare il PSARC per cambiare opzione.
+
+Per usare la grafica GameCube originale:
+
+```ini
+vita_playstation_glyphs = 0
+```
+
+Chiudi e riavvia il gioco dopo aver cambiato il valore. Metti una sola
+occorrenza dell'opzione tra le impostazioni personali, fuori dall'eventuale
+blocco `STRIKERS VALIDATED DEFAULTS`: le impostazioni personali hanno priorita'.
+L'opzione non rimappa i comandi, non modifica i testi che nominano i pulsanti
+e non interviene sulle icone incorporate nei filmati.
+
+### Aggiornare un'installazione esistente
+
+Chiudi il gioco e copia sul PC l'INI personale e le directory dei salvataggi
+`cardA/` e `cardB/` dentro `ux0:data/strikersVita/`. Installa il nuovo VPK
+completo e sostituisci `sms.psarc` con l'archivio verificato della nuova
+pipeline. Mantieni i salvataggi e riporta le impostazioni personali nell'INI
+di esempio aggiornato, evitando chiavi duplicate. Non e' necessario
+disinstallare l'app per aggiornarla.
 
 ## 4. LiveArea: icona, sfondo e pulsante di avvio
 
@@ -211,8 +275,11 @@ tentativo, per non rimuovere dati che si vogliono conservare.
 | ISO rifiutata immediatamente | Verificare formato completo e ID; non passare RVZ/NKit o un disco di un altro gioco. |
 | Compilatore, CMake o FFmpeg non trovato | Installare le dipendenze nel medesimo ambiente del terminale; su Windows usare WSL2. |
 | FFmpeg senza `libx264` | Usare una build di FFmpeg che includa quell'encoder. |
+| FFmpeg senza `aac` o `ffprobe` assente | Installare una distribuzione completa di FFmpeg prima della preparazione MP4. |
 | Output gia' esistente | Scegliere un nuovo percorso oppure usare `--replace` intenzionalmente. |
 | SHA-256 diverso dal JSON | Non usare quel trasferimento/output; rigenerare o ricopiare da una coppia verificata. |
 | Archivio senza marker nativo | Rigenerare con `prepare_strikers_vita.py`; un PSARC generico o di una vecchia pipeline e' insufficiente. |
 | Mancato avvio o errore di caricamento | Controllare percorso INI, PSARC completo, modulo shader e `ux0:data/strikersVita/vitagl.log`. |
+| Filmati assenti con un PSARC nuovo | Usare il VPK con supporto MP4, `vita_video_player = avplayer`, `vita_native_video = 1` e `vita_video_archive` vuoto per l'archivio completo. |
+| Glifi ancora originali | Controllare `vita_playstation_glyphs = 1`, rimuovere eventuali override a `0` e riavviare; le icone nei filmati restano originali. |
 | Bolla o LiveArea ancora precedenti | Verificare e reinstallare il VPK completo; il template e' sotto `sce_sys/livearea/contents/`. |

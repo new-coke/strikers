@@ -39,11 +39,33 @@ int main()
     assert(store.find(0x1000, 0x3000, 6, 3, 4, true)->selectors[0] == 27);
     assert(p->generation != stitchedGeneration);   // changed PN slots invalidate cached geometry
     const auto changedGeneration = p->generation;
-    stitches[1] = 9;
+    stitches[1] = 32;
     assert(!store.attach_stitch(0x1000, 0x3000, stitches));
     assert(store.find(0x1000, 0x3000, 6, 3, 4, true)->selectors[1] == 6);
     assert(p->generation == changedGeneration);   // rejected maps do not invalidate valid data
     assert(store.size() == 1 && store.occupied_bytes() == 18);
+
+    // Validate the whole byte domain against the original StitchModel mapping,
+    // including the shipped 10..13-bone meshes and native upper bound 32.
+    for (unsigned index = 0; index <= 255; ++index)
+    {
+        stitches.fill(static_cast<uint8_t>(index));
+        const auto priorSelectors = p->selectors;
+        const auto priorGeneration = p->generation;
+        const auto priorBoneMask = p->skinBoneMask;
+        assert(store.attach_stitch(0x1000, 0x3000, stitches) == (index < 32));
+        if (index < 32)
+        {
+            assert(p->selectors == std::vector<uint8_t>(6, static_cast<uint8_t>((index + 1) * 3)));
+            assert(p->skinBoneMask == (uint32_t{1} << index));
+        }
+        else
+        {
+            assert(p->selectors == priorSelectors);
+            assert(p->generation == priorGeneration);
+            assert(p->skinBoneMask == priorBoneMask);
+        }
+    }
 
     const std::array<uint16_t, 3> triangle{ 2, 1, 0 };
     assert(store.capture(0x5000, 0x6000, 1, 0, 2, triangle, false));
@@ -58,6 +80,13 @@ int main()
     assert(!store.capture(1, 2, 0, 4, 1, triangle, false));
     assert(!store.capture(1, 2, 0, 0, 0, triangle, false));
     assert(!store.capture(1, 2, 0, 0, 1, std::span(triangle).subspan(0, 2), false));
+    assert(!store.capture(1, 2, 0, 6, 1, triangle, false));
+    const std::array<uint16_t, 2> line{ 1, 0 };
+    assert(store.capture(1, 2, 0, 4, 1, line, false));
+    assert(store.find(1, 2, 2, 4, 1, false)->indices == std::vector<uint16_t>({ 1, 0 }));
+    assert(store.capture(1, 2, 0, 5, 1, triangle, false));
+    assert(store.find(1, 2, 3, 5, 1, false));
+    store.clear();
 
     for (uintptr_t i = 1; i <= ModelSourceRegistry::MaxEntries; ++i)
         assert(store.capture(i, i + 0x100000, 1, 0, 1, triangle, false));

@@ -26,7 +26,10 @@ void* operator new[](std::size_t size, const std::nothrow_t&) noexcept { return 
 
 // --- C++17 over-aligned forms ------------------------------------------------ Dawn and Abseil
 // both use over-aligned types.
-#if !defined(_WIN32)
+#if defined(PORT_VITA)
+// The project malloc.h is an MSL shim; match the VitaSDK C declaration here.
+extern "C" void* memalign(std::size_t alignment, std::size_t size);
+#elif !defined(_WIN32)
 #define PORT_HOST_ALIGNED_NEW 1
 #include <cstdlib>
 #endif
@@ -36,7 +39,13 @@ namespace {
 // Returns null on failure, like the nothrow forms want; the throwing forms raise above.
 void* port_aligned_alloc(std::size_t size, std::size_t align) noexcept
 {
-#if defined(PORT_HOST_ALIGNED_NEW)
+#if defined(PORT_VITA)
+    if (align < sizeof(void*))
+        align = sizeof(void*);
+    if ((align & (align - 1)) != 0)
+        return nullptr;
+    return ::memalign(align, size ? size : 1);
+#elif defined(PORT_HOST_ALIGNED_NEW)
     if (align < sizeof(void*))
         align = sizeof(void*);
     void* p = nullptr;

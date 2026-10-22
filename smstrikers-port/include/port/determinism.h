@@ -22,6 +22,9 @@ int PortFixedTimestep(void);
 // PortFixedTimestep().
 unsigned int PortVirtualTicker(void);
 
+// Same clock before 32-bit tick truncation; retains the existing retrace-counter lifetime.
+unsigned long long PortVirtualTickerWide(void);
+
 // Returns 0 when STRIKERS_SEED is unset, leaving `out` untouched.
 int PortFixedSeed(unsigned int* out);
 

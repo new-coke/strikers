@@ -1,18 +1,30 @@
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
 #include "NL/glx/glxSwap.h"
+#include "NL/gl/glPlat.h"
 #include "port/native_match_runtime.hpp"
+#include "port/loading_indicator.hpp"
 u8 glx_ScreenShot=0,glx_MovieOutput=0,glx_ResetCaptureFrame=0,glx_bLoadingIndicator=0,bInRetrace=0;
 s32 glx_nBlitXor=0;
+namespace
+{
+port::loading::State loadingState;
+void ApplyLoading(const port::loading::Request& request)
+{
+    if (request.submit && !port::directmatch::set_loading(request))
+        loadingState.reject();
+    glx_bLoadingIndicator = loadingState.enabled();
+}
+}
 void glxSwapPost(bool){}
 void glxSwapPre(bool){}
 void glxInitSwap(void*,void*){}
 void glxSwapWaitDrawDone(){}
-void glxLoadRestoreState(){}
-void glxLoadSaveState(){}
-void glxSwapLoading(bool begin,bool){glx_bLoadingIndicator=begin;}
+void glxLoadRestoreState(){ApplyLoading(loadingState.restore(glx_GetTargetFPS()));}
+void glxLoadSaveState(){ApplyLoading(loadingState.save(glx_GetTargetFPS()));}
+void glxSwapLoading(bool begin,bool other){ApplyLoading(loadingState.change(begin,other,glx_GetTargetFPS()));}
 void* glxGetBackBuffer(){return nullptr;}
 void* glxGetDisplayedBuffer(){return nullptr;}
-void glxSwapSetBlack(bool){}
+void glxSwapSetBlack(bool black){port::directmatch::set_black(black);}
 #else
 #include "NL/glx/glxSwap.h"
 #include "NL/nlDebug.h"

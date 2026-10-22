@@ -1125,10 +1125,11 @@ void init_gxm(void); // Inits sceGxm
 void init_gxm_context(SceGxmContext **ctx, uint8_t ctx_slot); // Inits sceGxm context
 void create_display_render_target(void); // Creates render target for the display
 void init_display_color_surfaces(GLboolean is_swap); // Creates color surfaces for the display
-void init_depth_stencil_buffer(uint32_t w, uint32_t h, SceGxmDepthStencilSurface *surface, GLboolean has_stencil); // Creates depth and stencil surfaces
+GLboolean init_depth_stencil_buffer(uint32_t w, uint32_t h, SceGxmDepthStencilSurface *surface, GLboolean has_stencil); // Creates depth and stencil surfaces
 void init_display_depth_stencil_surfaces(void); // Creates depth and stencil surfaces for the display
 void start_shader_patcher(void); // Creates a shader patcher instance
-void scene_reset(void); // Resets drawing scene if required
+GLboolean scene_reset(void); // Resets drawing scene if required
+GLboolean gxm_scene_is_active(void); // An open scene can still reference retired storage
 GLboolean start_shader_compiler(void); // Starts a shader compiler instance
 
 /* framebuffers.c */

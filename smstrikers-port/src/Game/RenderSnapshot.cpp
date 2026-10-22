@@ -84,6 +84,41 @@ bool BlendSnapshotObjects(void* opaque, size_t begin, size_t end, uint32_t) noex
     return true;
 }
 
+// Keep the existing character/object ranges, but publish them together. Each
+// destination is disjoint; the single parallel_for still joins before any
+// snapshot consumer or the serial NPC/net tail can run.
+struct SnapshotBlendBatchJob
+{
+    CharacterBlendJob characters;
+    SnapshotObjectBlendJob objects;
+    size_t characterGrain;
+    size_t characterBatches;
+};
+
+bool BlendSnapshotBatches(void* opaque, size_t begin, size_t end, uint32_t lane) noexcept
+{
+    SnapshotBlendBatchJob& job = *static_cast<SnapshotBlendBatchJob*>(opaque);
+    bool success = true;
+    for (size_t item = begin; item < end; ++item)
+    {
+        if (item < job.characterBatches)
+        {
+            const size_t first = item * job.characterGrain;
+            const size_t last = first + job.characterGrain;
+            if (!BlendCharacters(&job.characters, first, last < 10 ? last : 10, lane))
+                success = false;
+        }
+        else
+        {
+            const size_t first = (item - job.characterBatches) * 48;
+            const size_t last = first + 48;
+            if (!BlendSnapshotObjects(&job.objects, first, last < 170 ? last : 170, lane))
+                success = false;
+        }
+    }
+    return success;
+}
+
 struct CharacterGrabJob
 {
     RenderSnapshot* dst;
@@ -492,14 +527,14 @@ void RenderSnapshot::Blend(const float* blendFactors, const RenderSnapshot& lhs,
             }
         }
 
-        CharacterBlendJob characterJob = { this, &lhs, &rhs, blendFactors, serialCharacterMask };
-        (void)port::jobs::parallel_for(10, port::jobs::game_execution_lanes()>=4 ? 2 : 3, BlendCharacters, &characterJob);
-
-        // Powerups and explosion fragments are pure value interpolation with
-        // disjoint destinations. Batch them into one job so the barrier cost is
-        // amortized over 170 objects.
-        SnapshotObjectBlendJob objectJob = { this, &lhs, &rhs, blendFactors };
-        (void)port::jobs::parallel_for(170, 48, BlendSnapshotObjects, &objectJob);
+        const size_t characterGrain = port::jobs::game_execution_lanes() >= 4 ? 2 : 3;
+        const size_t characterBatches = (10 + characterGrain - 1) / characterGrain;
+        SnapshotBlendBatchJob blendJob = {
+            { this, &lhs, &rhs, blendFactors, serialCharacterMask },
+            { this, &lhs, &rhs, blendFactors },
+            characterGrain, characterBatches
+        };
+        (void)port::jobs::parallel_for(characterBatches + 4, 1, BlendSnapshotBatches, &blendJob);
     }
     else
     {

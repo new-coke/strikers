@@ -71,15 +71,23 @@ void GCAudioStreaming::AudioStream::_HdrReadCB(nlFile* pFile, void* pData, unsig
     // PORT: big-endian on disc. Three u32s, two u16s, three u32s.
     {
         sDSPADPCM* h = (sDSPADPCM*)((uintptr_t)pData - Length);
-        u16* w;
-        unsigned i;
-        port_be32_array(&h->num_samples, 3);
+        h->num_samples = port_be32(&h->num_samples);
+        h->num_adpcm_nibbles = port_be32(&h->num_adpcm_nibbles);
+        h->sample_rate = port_be32(&h->sample_rate);
         h->loop_flag = port_be16(&h->loop_flag);
         h->format = port_be16(&h->format);
-        port_be32_array(&h->sa, 3);
-        w = (u16*)&h->coef[0];
-        for (i = 0; i < (0x60 - 0x1C) / 2; i++)
-            w[i] = port_be16(&w[i]);
+        h->sa = port_be32(&h->sa);
+        h->ea = port_be32(&h->ea);
+        h->ca = port_be32(&h->ca);
+        port_be16_array(h->coef, sizeof(h->coef) / sizeof(h->coef[0]));
+        h->gain = port_be16(&h->gain);
+        h->ps = port_be16(&h->ps);
+        h->yn1 = port_be16(&h->yn1);
+        h->yn2 = port_be16(&h->yn2);
+        h->lps = port_be16(&h->lps);
+        h->lyn1 = port_be16(&h->lyn1);
+        h->lyn2 = port_be16(&h->lyn2);
+        port_be16_array(h->pad, sizeof(h->pad) / sizeof(h->pad[0]));
     }
 
     READ_CB_INFO* pCBInfo = (READ_CB_INFO*)User;

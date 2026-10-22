@@ -1,9 +1,44 @@
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
 #include "NL/glx/glxSend.h"
+#include "port/native_dof.hpp"
 #include "port/native_match_runtime.hpp"
+
+namespace
+{
+// GXInit's orthographic projection; GX registers survive empty frames and DOF off.
+float dofProjectionScale = -2.0f;
+float dofProjectionOffset = 0.0f;
+bool dofProjectionPerspective = false;
+eGLView dofProjectionView = GLV_Num;
+}
+
+void port::native_dof::reset_projection() noexcept
+{
+    dofProjectionScale = -2.0f;
+    dofProjectionOffset = 0.0f;
+    dofProjectionPerspective = false;
+    dofProjectionView = GLV_Num;
+}
+
+port::native_dof::Projection port::native_dof::projection() noexcept
+{
+    return { dofProjectionScale, dofProjectionOffset, dofProjectionPerspective };
+}
+
 bool g_bAllowLighting=true,g_bAllowSpecular=true;
-void glx_SendFrame_cb(eGLView v,unsigned long f,const glModelPacket* p){port::directmatch::on_packet(v,f,p);}
-void glx_SendReset(){}
+void glx_SendFrame_cb(eGLView v,unsigned long f,const glModelPacket* p)
+{
+    if ((f & 1) && v != dofProjectionView)
+    {
+        dofProjectionView = v;
+        const nlMatrix4& projection = glViewGetState(v)->projm;
+        dofProjectionScale = projection.e[10];
+        dofProjectionOffset = projection.e[11];
+        dofProjectionPerspective = projection.e[14] == -1.0f;
+    }
+    port::directmatch::on_packet(v,f,p);
+}
+void glx_SendReset(){dofProjectionView = GLV_Num;}
 void glx_SendEnd(){}
 void glx_PrepareSkinPackets(eGLView,GLRenderList*){}
 void glx_FinishSkinPackets(){}

@@ -1,4 +1,7 @@
 #include "Game/SH/SHSaveLoad.h"
+#if defined(STRIKERS_SAVE_D13_FAULT) && STRIKERS_SAVE_D13_FAULT == 1
+#include "port/save_d13_fault.hpp"
+#endif
 
 #include "dolphin/card.h"
 #include "Game/Audio/AudioLoader.h"
@@ -18,12 +21,12 @@
 #include "Game/Sys/gcmemcard.h"
 #include "Game/TrophyTextures.h"
 #include "NL/nlConfig.h"
+#include "NL/nlLocalization.h"
 #include "types.h"
 #if defined(PORT_USE_AURORA)
 #include "port/shaders.h"   // PORT: the shader stage
 #include "Game/FE/feFontResource.h"
 #include "NL/nlAlgorithm.h"
-#include "NL/nlLocalization.h"
 #include <stdio.h>
 #endif
 
@@ -46,6 +49,9 @@ static bool gSaveLoadEnabled = true;
 bool SaveLoadScene::mIsFirstTimeAboutIPL = true;
 static long gResult = -1;
 static SaveLoadScene::eSaveLoad gSceneTypeStack[4];
+static bool gMemoryErrorPrompt;
+static bool gMemoryErrorInputReady;
+static unsigned short gMemoryErrorText[512];
 
 static void CheckResults();
 
@@ -139,6 +145,10 @@ void SaveLoadCallback(long result)
              (int)result);
     gResult = result;
     gCallbackMade = true;
+#if defined(STRIKERS_SAVE_D13_FAULT) && STRIKERS_SAVE_D13_FAULT == 1
+    if (gSceneTypeStackDepth > 0 && GetSceneType() == SaveLoadScene::ST_SAVE)
+        port::save_d13::note_save_callback(result);
+#endif
 }
 
 /**
@@ -146,6 +156,11 @@ void SaveLoadCallback(long result)
  */
 void ContinueWithoutSavingCB()
 {
+#if defined(STRIKERS_SAVE_D13_FAULT) && STRIKERS_SAVE_D13_FAULT == 1
+    if (gMemoryErrorPrompt) port::save_d13::note_action(false);
+#endif
+    gMemoryErrorPrompt = false;
+    gMemoryErrorInputReady = false;
     gSceneTypeStackDepth = 1;
     SaveLoadScene* instance = SaveLoadScene::mInstance;
     gIgnoreMinWait = true;
@@ -162,6 +177,8 @@ void ContinueWithoutSavingCB()
  */
 void ContinueWithoutLoadingCB()
 {
+    gMemoryErrorPrompt = false;
+    gMemoryErrorInputReady = false;
     gSceneTypeStackDepth = 1;
     SaveLoadScene* instance = SaveLoadScene::mInstance;
     gIgnoreMinWait = true;
@@ -187,6 +204,11 @@ void ContinueLoadingCB()
  */
 void RetryCB()
 {
+#if defined(STRIKERS_SAVE_D13_FAULT) && STRIKERS_SAVE_D13_FAULT == 1
+    if (gMemoryErrorPrompt) port::save_d13::note_action(true);
+#endif
+    gMemoryErrorPrompt = false;
+    gMemoryErrorInputReady = false;
     gSceneTypeStackDepth = 0;
 
     switch (SaveLoadScene::mInstance->mSaveLoadMode)
@@ -297,12 +319,102 @@ void CreateFileAndSaveCB()
     instance->SetupForAboutAutoSave();
 }
 
+static void ContinueAfterMemoryError()
+{
+    const SaveLoadScene::eSaveLoad type = GetSceneType();
+    if (type == SaveLoadScene::ST_LOAD || type == SaveLoadScene::ST_ASK_LOAD)
+        ContinueWithoutLoadingCB();
+    else
+        ContinueWithoutSavingCB();
+}
+
+static void ShowMemoryError()
+{
+    // Reuse the loaded save screen: opening a popup would allocate in the same
+    // arena that just failed. The existing text instance borrows this static buffer.
+    struct Text
+    {
+        const char16_t* message;
+        const char16_t* retry;
+        const char16_t* withoutSaving;
+        const char16_t* withoutLoading;
+    };
+    static const Text text[] = {
+        { u"Not enough working memory.{p}", u"Confirm: Retry{p}", u"Back: Continue without saving", u"Back: Continue without loading" },
+        { u"Mémoire vive insuffisante.{p}", u"Valider : Réessayer{p}", u"Retour : Continuer sans sauvegarder", u"Retour : Continuer sans charger" },
+        { u"Nicht genug Arbeitsspeicher.{p}", u"Bestätigen: Erneut versuchen{p}", u"Zurück: Ohne Speichern fortfahren", u"Zurück: Ohne Laden fortfahren" },
+        { u"Memoria RAM insuficiente.{p}", u"Confirmar: Reintentar{p}", u"Atrás: Continuar sin guardar", u"Atrás: Continuar sin cargar" },
+        { u"Memoria RAM insufficiente.{p}", u"Conferma: Riprova{p}", u"Indietro: Continua senza salvare", u"Indietro: Continua senza caricare" },
+        { u"メモリーが足りません。{p}", u"決定：もう一度試す{p}", u"戻る：セーブしないで続ける", u"戻る：ロードしないで続ける" },
+    };
+    SaveLoadScene* scene = SaveLoadScene::mInstance;
+    if (gMemoryErrorPrompt)
+        return;
+    OSReport("[card] insufficient working memory; awaiting retry or continue\n");
+    if (scene->m_displayText == NULL || scene->m_pFEPresentation == NULL)
+    {
+        OSReport("[card] RAM-error text unavailable; continuing without operation\n");
+        ContinueAfterMemoryError();
+        return;
+    }
+    TLSlide* slide = FEFinder<TLSlide, 0>::Find<FEPresentation>(
+        scene->m_pFEPresentation, InlineHasher(nlStringLowerHash("Slide1")));
+    if (slide == NULL)
+    {
+        OSReport("[card] RAM-error slide unavailable; continuing without operation\n");
+        ContinueAfterMemoryError();
+        return;
+    }
+    int language = g_pLocalization != NULL ? (int)g_pLocalization->m_CurrentLanguage : 0;
+    if (language < 0 || language >= (int)(sizeof(text) / sizeof(text[0])))
+        language = 0; // UK English and diagnostic/unknown language values.
+    const SaveLoadScene::eSaveLoad type = GetSceneType();
+    const bool loading = type == SaveLoadScene::ST_LOAD || type == SaveLoadScene::ST_ASK_LOAD;
+    const char16_t* lines[] = { text[language].message, text[language].retry,
+        loading ? text[language].withoutLoading : text[language].withoutSaving };
+    unsigned int length = 0;
+    for (unsigned int i = 0; i < sizeof(lines) / sizeof(lines[0]); ++i)
+    {
+        for (const char16_t* c = lines[i]; *c != 0
+            && length + 1 < sizeof(gMemoryErrorText) / sizeof(gMemoryErrorText[0]); ++c)
+            gMemoryErrorText[length++] = (unsigned short)*c;
+    }
+    gMemoryErrorText[length] = 0;
+    scene->m_pFEPresentation->SetActiveSlide(slide);
+    scene->m_displayText->SetString(gMemoryErrorText);
+    scene->ShowText(true);
+    gMemoryErrorInputReady = false;
+    gMemoryErrorPrompt = true;
+}
+
+static void UpdateMemoryError()
+{
+    // Do not reuse the press that initiated the save, or repeat a held button.
+    if (!gMemoryErrorInputReady)
+    {
+        if (!g_pFEInput->IsPressed(FE_ALL_PADS, 0x100, false, NULL)
+            && !g_pFEInput->IsPressed(FE_ALL_PADS, 0x200, false, NULL))
+            gMemoryErrorInputReady = true;
+        return;
+    }
+    if (g_pFEInput->JustPressed(FE_ALL_PADS, 0x100, false, NULL))
+        RetryCB();
+    else if (g_pFEInput->JustPressed(FE_ALL_PADS, 0x200, false, NULL))
+        ContinueAfterMemoryError();
+}
+
 /**
  * Offset/Address/Size: 0x15E4 | 0x800B1B6C | size: 0xE3C
  */
 static void CheckResults()
 {
     SaveLoadScene::eSaveLoad sceneType = GetSceneType();
+
+    if (gResult == SaveLoad::RESULT_OUT_OF_MEMORY)
+    {
+        ShowMemoryError();
+        return;
+    }
 
     if (sceneType == SaveLoadScene::ST_FORMAT || sceneType == SaveLoadScene::ST_DELETE)
     {
@@ -656,6 +768,8 @@ SaveLoadScene::SaveLoadScene(SaveLoadScene::eSaveLoadMode saveLoadMode)
 
     g_pFEInput->PushExclusiveInputLock(this, savingorloading);
 
+    gMemoryErrorPrompt = false;
+    gMemoryErrorInputReady = false;
     mInstance = this;
 }
 
@@ -664,6 +778,8 @@ SaveLoadScene::SaveLoadScene(SaveLoadScene::eSaveLoadMode saveLoadMode)
  */
 SaveLoadScene::~SaveLoadScene()
 {
+    gMemoryErrorPrompt = false;
+    gMemoryErrorInputReady = false;
     g_pFEInput->PopExclusiveInputLock(this);
     mInstance = NULL;
 
@@ -704,6 +820,8 @@ void SaveLoadScene::SceneCreated()
 
 void SaveLoadScene::UpdateText()
 {
+    if (gMemoryErrorPrompt)
+        return;
     TLTextInstance* text = m_displayText;
     if (text != NULL)
     {
@@ -860,6 +978,11 @@ void SaveLoadScene::Update(float fDeltaT)
     }
 
     BaseSceneHandler::Update(fDeltaT);
+    if (gMemoryErrorPrompt)
+    {
+        UpdateMemoryError();
+        return;
+    }
     gSceneTime += fDeltaT;
 
     if (mIsAutoSaving)
@@ -969,6 +1092,10 @@ void SaveLoadScene::Update(float fDeltaT)
             }
         }
     }
+
+    // A result handled above may have opened the RAM prompt on this same frame.
+    if (gMemoryErrorPrompt)
+        return;
 
 #if defined(PORT_USE_AURORA)
     // PORT: wait for the shader compile before leaving the boot screen.
@@ -1266,3 +1393,18 @@ void SaveLoadScene::UpdateCardRemovedFlag()
         }
     }
 }
+
+#if defined(STRIKERS_SAVE_D13_FAULT) && STRIKERS_SAVE_D13_FAULT == 1
+void port::save_d13::sample_frontend() noexcept
+{
+    SaveLoadScene* scene = SaveLoadScene::mInstance;
+    const bool present = scene != NULL;
+    const bool validType = present && gSceneTypeStackDepth > 0 && gSceneTypeStackDepth <= 4;
+    observe_ui(present, gMemoryErrorPrompt, gMemoryErrorInputReady,
+        present && g_pFEInput != NULL && g_pFEInput->HasInputLock(scene),
+        present && scene->m_displayText != NULL && scene->m_displayText->m_bVisible,
+        SaveLoad::CardBusy(), gSaveLoadStarted, gSaveLoadFinished,
+        gContinueWithoutOperation, SaveLoadScene::mLastSaveLoadSuccess,
+        validType ? (int)GetSceneType() : -1, present ? (int)scene->mNextScene : -1, gResult);
+}
+#endif

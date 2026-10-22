@@ -11,3 +11,5 @@ Do not replace it silently with a global prebuilt SDK archive. Both source and b
 Local compatibility patch: the internal `_glDrawElements_CustomShadersIMPL` and `reload_ffp_shaders` declarations uses `SceGxmIndexSource`, matching their definitions, rather than the obsolete GLboolean parameter. This permits the application/provider to share the explicit 32-bit-enum ABI.
 
 Circular-pool allocations now align to 16 bytes and stay bounded. An odd-sized U16 index upload previously left the following framebuffer-blit float data unaligned, causing an ARM data abort. The provider alignment test covers that sequence, overflow and pool exhaustion.
+
+Renderbuffer deletion now clears its surface pointer after retiring depth/stencil storage, and generation initializes that pointer for the new lifetime. Reusing a deleted slot previously queued the old allocations for garbage collection twice. The renderbuffer lifetime test executes the provider entry points with checked allocations, including resize, slot reuse, repeated deletion and attachment detachment.

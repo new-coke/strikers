@@ -469,7 +469,12 @@ void ShaderSkinMesh::Pose(cPoseAccumulator* pPoseAccumulator)
 
             nlMultMatrices(result, *foundMatrix, skinMat);
 
-            foundMatrix = poseMatrices.Add(nodeID, result);
+            // A warm pose updates an existing value; insertion is needed only
+            // for a bone first encountered by this mesh.
+            if (!poseMatrices.FindGet(nodeID, &foundMatrix))
+            {
+                foundMatrix = poseMatrices.Add(nodeID, result);
+            }
             if (foundMatrix != nullptr)
             {
                 *foundMatrix = result;

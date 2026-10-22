@@ -22,6 +22,42 @@ if(NOT STRIKERS_VITA)
     target_include_directories(scene_shader_variants_test PRIVATE ../include)
     target_compile_options(scene_shader_variants_test PRIVATE -UNDEBUG)
     add_test(NAME scene_shader_variants COMMAND scene_shader_variants_test)
+    add_executable(snapshot_request_test snapshot_request_test.cpp)
+    target_compile_features(snapshot_request_test PRIVATE cxx_std_20)
+    target_include_directories(snapshot_request_test PRIVATE ../include)
+    target_compile_options(snapshot_request_test PRIVATE -UNDEBUG)
+    add_test(NAME snapshot_request COMMAND snapshot_request_test)
+    add_executable(frameskip_scheduler_test frameskip_scheduler_test.cpp)
+    target_compile_features(frameskip_scheduler_test PRIVATE cxx_std_20)
+    target_include_directories(frameskip_scheduler_test PRIVATE ../include)
+    target_compile_options(frameskip_scheduler_test PRIVATE -UNDEBUG)
+    add_test(NAME frameskip_scheduler COMMAND frameskip_scheduler_test)
+    add_executable(loading_indicator_test loading_indicator_test.cpp)
+    target_compile_features(loading_indicator_test PRIVATE cxx_std_20)
+    target_include_directories(loading_indicator_test PRIVATE ../include)
+    target_compile_options(loading_indicator_test PRIVATE -UNDEBUG)
+    add_test(NAME loading_indicator COMMAND loading_indicator_test)
+    if(UNIX)
+        add_executable(packet_profile_test packet_profile_test.cpp ../src/platform/packet_profile.cpp)
+        target_compile_features(packet_profile_test PRIVATE cxx_std_20)
+        target_compile_definitions(packet_profile_test PRIVATE STRIKERS_PACKET_PROFILE_TEST=1)
+        target_include_directories(packet_profile_test PRIVATE ../include)
+        target_compile_options(packet_profile_test PRIVATE -UNDEBUG)
+        add_test(NAME packet_profile COMMAND packet_profile_test)
+        add_test(NAME tool_packet_profile COMMAND ${CMAKE_COMMAND} -E env
+            "STRIKERS_PACKET_PROFILE_PROBE=$<TARGET_FILE:packet_profile_test>"
+            python3 "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_analyze_packet_profile.py")
+        add_executable(task_profile_test task_profile_test.cpp ../src/platform/task_profile.cpp)
+        target_compile_features(task_profile_test PRIVATE cxx_std_20)
+        target_compile_definitions(task_profile_test PRIVATE STRIKERS_TASK_PROFILE_TEST=1)
+        target_include_directories(task_profile_test PRIVATE ../include)
+        target_compile_options(task_profile_test PRIVATE -UNDEBUG)
+        add_test(NAME task_profile COMMAND task_profile_test)
+        add_test(NAME tool_task_profile COMMAND ${CMAKE_COMMAND} -E env
+            "STRIKERS_TASK_PROFILE_PROBE=$<TARGET_FILE:task_profile_test>"
+            "STRIKERS_PACKET_PROFILE_PROBE=$<TARGET_FILE:packet_profile_test>"
+            python3 "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_analyze_task_profile.py")
+    endif()
     if(UNIX)
         add_executable(native_render_limiter_test native_render_limiter_test.c ../src/platform/vi.c)
         target_compile_definitions(native_render_limiter_test PRIVATE TARGET_PC=1)
@@ -31,7 +67,30 @@ if(NOT STRIKERS_VITA)
         add_test(NAME native_render_limiter COMMAND native_render_limiter_test)
     endif()
     if(UNIX AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        add_executable(simulation_task_clock_test simulation_task_clock_test.cpp ../src/NL/nlTask.cpp)
+        add_executable(gl_texture_state_test gl_texture_state_test.cpp)
+        target_compile_features(gl_texture_state_test PRIVATE cxx_std_20)
+        target_compile_options(gl_texture_state_test PRIVATE -UNDEBUG -Wno-register
+            -fsanitize=undefined -fno-sanitize-recover=undefined)
+        target_link_options(gl_texture_state_test PRIVATE -fsanitize=undefined)
+        target_link_libraries(gl_texture_state_test PRIVATE port_flags)
+        add_test(NAME gl_texture_state COMMAND gl_texture_state_test)
+        add_test(NAME scene_materials COMMAND python3
+            "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_scene_materials.py"
+            --compiler "${CMAKE_CXX_COMPILER}")
+        add_test(NAME scene_movie_sampling COMMAND python3
+            "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_scene_movie_sampling.py"
+            --compiler "${CMAKE_CXX_COMPILER}")
+        add_test(NAME scene_skinning COMMAND python3
+            "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_scene_skinning.py"
+            --compiler "${CMAKE_CXX_COMPILER}")
+        add_test(NAME loading_indicator_shaders COMMAND python3
+            "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_loading_indicator_shaders.py"
+            --compiler "${CMAKE_CXX_COMPILER}")
+        add_test(NAME game_phase_hooks COMMAND python3
+            "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_game_phase_hooks.py"
+            --compiler "${CMAKE_CXX_COMPILER}")
+        add_executable(simulation_task_clock_test simulation_task_clock_test.cpp
+            ../src/NL/nlTask.cpp ../src/platform/task_profile.cpp)
         target_compile_features(simulation_task_clock_test PRIVATE cxx_std_20)
         target_compile_definitions(simulation_task_clock_test PRIVATE TARGET_PC=1 STRIKERS_VITA_NATIVE_RUNTIME=1)
         target_include_directories(simulation_task_clock_test PRIVATE ../include)
@@ -47,6 +106,20 @@ if(NOT STRIKERS_VITA)
     target_include_directories(vitagl_circular_pool_test PRIVATE ../extern/vitaGL/source)
     target_compile_options(vitagl_circular_pool_test PRIVATE -UNDEBUG)
     add_test(NAME vitagl_circular_pool COMMAND vitagl_circular_pool_test)
+    if(UNIX AND CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        add_test(NAME vitagl_renderbuffer_lifetime COMMAND python3
+            "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_vitagl_renderbuffer_lifetime.py"
+            --compiler "${CMAKE_CXX_COMPILER}")
+        add_test(NAME vitagl_gpu_lifetime COMMAND python3
+            "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_vitagl_gpu_lifetime.py"
+            --compiler "${CMAKE_CXX_COMPILER}")
+        add_test(NAME vitagl_allocation_failure COMMAND python3
+            "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_vitagl_allocation_failure.py"
+            --compiler "${CMAKE_CXX_COMPILER}")
+        add_test(NAME vitagl_uniform_cache COMMAND python3
+            "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_vitagl_uniform_cache.py"
+            --compiler "${CMAKE_CXX_COMPILER}")
+    endif()
     find_path(STRIKERS_NATIVE_XXHASH_INCLUDE_DIR xxhash.h HINTS
         "${CMAKE_BINARY_DIR}/_deps/xxhash-src"
         "${CMAKE_CURRENT_SOURCE_DIR}/../build-vita-gxm-latest/_deps/xxhash-src")
@@ -56,7 +129,8 @@ if(NOT STRIKERS_VITA)
                 ../src/platform/native_match_runtime.cpp ../src/platform/native_match_draw.cpp
                 ../src/platform/native_match_geometry.cpp ../src/platform/native_match_material.cpp
                 ../src/platform/native_match_resources.cpp ../src/platform/native_match_diagnostics.cpp
-                ../src/platform/native_texture_record.cpp)
+                ../src/platform/native_texture_record.cpp ../src/platform/packet_profile.cpp
+                ../src/NL/glx/glxSwap.cpp)
             target_compile_features(native_match_runtime_driver_test PRIVATE cxx_std_20)
             target_compile_definitions(native_match_runtime_driver_test PRIVATE
                 STRIKERS_VITA_NATIVE_RUNTIME=1 STRIKERS_NATIVE_TEXTURE_TEST=1)
@@ -129,6 +203,19 @@ if(NOT STRIKERS_VITA)
               "/usr/local/vitasdk/arm-vita-eabi/include")
     if(UNIX AND STRIKERS_VITA_SDK_INCLUDE_DIR AND
        CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+            add_executable(card_vita_driver_test card_vita_driver_test.cpp)
+            target_compile_features(card_vita_driver_test PRIVATE cxx_std_20)
+            target_compile_definitions(card_vita_driver_test PRIVATE TARGET_PC=1 PORT_VITA=1 STRIKERS_CARD_TEST=1)
+            target_include_directories(card_vita_driver_test PRIVATE ../include)
+            target_compile_options(card_vita_driver_test PRIVATE -UNDEBUG -fdeclspec -Wno-register
+                -Wno-ignored-attributes -idirafter "${STRIKERS_VITA_SDK_INCLUDE_DIR}")
+            add_test(NAME card_vita_driver COMMAND card_vita_driver_test)
+            add_test(NAME save_load_vita COMMAND python3
+                "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_save_load_vita.py"
+                --compiler "${CMAKE_CXX_COMPILER}"
+                --sdk-include "${STRIKERS_VITA_SDK_INCLUDE_DIR}")
+        endif()
         add_executable(native_audio_driver_test native_audio_driver_test.cpp ../src/platform/native_audio.cpp)
         target_compile_features(native_audio_driver_test PRIVATE cxx_std_20)
         target_compile_definitions(native_audio_driver_test PRIVATE PORT_VITA=1)
@@ -137,6 +224,38 @@ if(NOT STRIKERS_VITA)
         find_package(Threads REQUIRED)
         target_link_libraries(native_audio_driver_test PRIVATE Threads::Threads)
         add_test(NAME native_audio_driver COMMAND native_audio_driver_test)
+        add_executable(native_watchdog_driver_test native_watchdog_driver_test.cpp)
+        target_compile_features(native_watchdog_driver_test PRIVATE cxx_std_20)
+        target_compile_definitions(native_watchdog_driver_test PRIVATE STRIKERS_WATCHDOG_TEST=1)
+        target_include_directories(native_watchdog_driver_test PRIVATE ../include)
+        target_compile_options(native_watchdog_driver_test PRIVATE -UNDEBUG
+            -idirafter "${STRIKERS_VITA_SDK_INCLUDE_DIR}")
+        target_link_libraries(native_watchdog_driver_test PRIVATE Threads::Threads)
+        add_test(NAME native_watchdog_driver COMMAND python3
+            "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_native_watchdog.py"
+            --driver "$<TARGET_FILE:native_watchdog_driver_test>")
+        if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+            add_executable(vita_prompts_option_test vita_prompts_option_test.cpp)
+            target_compile_features(vita_prompts_option_test PRIVATE cxx_std_20)
+            target_include_directories(vita_prompts_option_test PRIVATE ../include)
+            target_compile_definitions(vita_prompts_option_test PRIVATE TARGET_PC=1 STRIKERS_VITA=1 STRIKERS_VITA_NATIVE_RUNTIME=1)
+            target_compile_options(vita_prompts_option_test PRIVATE -UNDEBUG -fshort-wchar -fdeclspec
+                -Wno-register -Wno-macro-redefined -Wno-ignored-attributes
+                -include "${CMAKE_CURRENT_SOURCE_DIR}/../include/port/prelude.h")
+            add_test(NAME vita_prompts_option COMMAND vita_prompts_option_test)
+            add_executable(mp4_movie_driver_test mp4_movie_driver_test.cpp)
+            target_compile_features(mp4_movie_driver_test PRIVATE cxx_std_20)
+            target_include_directories(mp4_movie_driver_test PRIVATE ../include)
+            target_compile_options(mp4_movie_driver_test PRIVATE -UNDEBUG -idirafter "${STRIKERS_VITA_SDK_INCLUDE_DIR}")
+            target_link_libraries(mp4_movie_driver_test PRIVATE Threads::Threads)
+            add_test(NAME mp4_movie_driver COMMAND mp4_movie_driver_test)
+            add_executable(native_video_driver_test native_video_driver_test.cpp)
+            target_compile_features(native_video_driver_test PRIVATE cxx_std_20)
+            target_compile_options(native_video_driver_test PRIVATE -UNDEBUG -Wno-register
+                -idirafter "${STRIKERS_VITA_SDK_INCLUDE_DIR}")
+            target_link_libraries(native_video_driver_test PRIVATE port_flags Threads::Threads)
+            add_test(NAME native_video_driver COMMAND native_video_driver_test)
+        endif()
         add_executable(native_boot_screen_test native_boot_screen_test.cpp ../src/platform/native_boot_screen.cpp)
         target_compile_features(native_boot_screen_test PRIVATE cxx_std_20)
         target_compile_definitions(native_boot_screen_test PRIVATE STRIKERS_BOOT_SCREEN_TEST=1)
@@ -153,14 +272,15 @@ if(NOT STRIKERS_VITA)
         target_compile_features(deferred_renderer_driver_test PRIVATE cxx_std_20)
         target_compile_definitions(deferred_renderer_driver_test PRIVATE STRIKERS_VITA_VITAGL=1)
         target_include_directories(deferred_renderer_driver_test PRIVATE ../include)
-        target_compile_options(deferred_renderer_driver_test PRIVATE -UNDEBUG -idirafter "${STRIKERS_VITA_SDK_INCLUDE_DIR}")
+        target_compile_options(deferred_renderer_driver_test PRIVATE -UNDEBUG -idirafter "${STRIKERS_VITA_SDK_INCLUDE_DIR}"
+            -include "${CMAKE_CURRENT_SOURCE_DIR}/deferred_clock_mock.hpp")
         find_package(Threads REQUIRED)
         target_link_libraries(deferred_renderer_driver_test PRIVATE Threads::Threads)
         add_test(NAME deferred_renderer_driver COMMAND deferred_renderer_driver_test)
         add_executable(audio_out_native_driver_test audio_out_native_driver_test.cpp ../src/platform/audio_out_native.cpp)
         target_compile_features(audio_out_native_driver_test PRIVATE cxx_std_20)
-        target_compile_definitions(audio_out_native_driver_test PRIVATE STRIKERS_VITA_NATIVE_RUNTIME=1)
-        target_include_directories(audio_out_native_driver_test PRIVATE ../include)
+        target_compile_definitions(audio_out_native_driver_test PRIVATE STRIKERS_VITA_NATIVE_RUNTIME=1 STRIKERS_WATCHDOG_TEST=1)
+        target_include_directories(audio_out_native_driver_test PRIVATE ../include ../extern/musyx/include)
         target_compile_options(audio_out_native_driver_test PRIVATE -UNDEBUG -idirafter "${STRIKERS_VITA_SDK_INCLUDE_DIR}")
         target_link_libraries(audio_out_native_driver_test PRIVATE Threads::Threads)
         add_test(NAME audio_out_native_driver COMMAND audio_out_native_driver_test)
@@ -175,7 +295,7 @@ if(NOT STRIKERS_VITA)
         if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../extern/vitaGL/source/vitaGL.h")
             add_executable(vitagl_renderer_driver_test vitagl_renderer_driver_test.cpp ../src/platform/vitagl_renderer.cpp)
             target_compile_features(vitagl_renderer_driver_test PRIVATE cxx_std_20)
-            target_compile_definitions(vitagl_renderer_driver_test PRIVATE PORT_VITA=1 STRIKERS_VITA_VITAGL=1)
+            target_compile_definitions(vitagl_renderer_driver_test PRIVATE PORT_VITA=1 STRIKERS_VITA_VITAGL=1 STRIKERS_BOOT_SCREEN_TEST=1)
             target_include_directories(vitagl_renderer_driver_test PRIVATE ../include ../extern/vitaGL/source)
             target_compile_options(vitagl_renderer_driver_test PRIVATE -UNDEBUG -idirafter "${STRIKERS_VITA_SDK_INCLUDE_DIR}")
             add_test(NAME vitagl_renderer_driver COMMAND vitagl_renderer_driver_test)
@@ -243,14 +363,28 @@ if(UNIX)
     add_executable(vitagl_default_config_test vitagl_default_config_test.c ../src/platform/config.c)
     target_include_directories(vitagl_default_config_test PRIVATE ../include)
     target_compile_options(vitagl_default_config_test PRIVATE -UNDEBUG)
-    target_compile_definitions(vitagl_default_config_test PRIVATE PORT_VITA=1 STRIKERS_VITA_VITAGL=1)
+    target_compile_definitions(vitagl_default_config_test PRIVATE PORT_VITA=1 STRIKERS_VITA_VITAGL=1 STRIKERS_VITA_CONFIG_TEST=1)
     add_test(NAME vitagl_default_config COMMAND vitagl_default_config_test)
+    add_executable(vita_config_io_test vita_config_io_test.c ../src/platform/config.c)
+    target_include_directories(vita_config_io_test PRIVATE ../include)
+    target_compile_options(vita_config_io_test PRIVATE -UNDEBUG)
+    target_compile_definitions(vita_config_io_test PRIVATE PORT_VITA=1 STRIKERS_VITA_CONFIG_TEST=1)
+    add_test(NAME vita_config_io COMMAND vita_config_io_test)
 
     add_executable(benchmark_fps_test benchmark_fps_test.c ../src/platform/benchmark.c)
     target_include_directories(benchmark_fps_test PRIVATE ../include)
     target_link_libraries(benchmark_fps_test PRIVATE m)
     add_test(NAME benchmark_fps COMMAND benchmark_fps_test)
     add_executable(frame_capture_test frame_capture_test.c ../src/platform/benchmark.c)
+    add_executable(cutscene_capture_test cutscene_capture_test.c ../src/platform/benchmark.c)
+    target_include_directories(cutscene_capture_test PRIVATE ../include)
+    add_test(NAME cutscene_capture COMMAND python3
+        "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_cutscenes.py"
+        --driver "$<TARGET_FILE:cutscene_capture_test>")
+    add_test(NAME tool_vita_workflow_device COMMAND python3
+        "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_vita_workflow_device.py")
+    add_test(NAME tool_mp4_video COMMAND python3
+        "${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_mp4_video.py")
     target_include_directories(frame_capture_test PRIVATE ../include)
     add_test(NAME frame_capture COMMAND frame_capture_test)
     add_executable(frame_capture_io_test frame_capture_io_test.c)

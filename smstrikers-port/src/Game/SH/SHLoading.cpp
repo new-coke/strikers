@@ -349,7 +349,7 @@ void SuperLoadingScene::DisplayCupInfo()
             formatted = Format(unformatted[i], statWideString);
         }
 
-        memcpy(mStatsBuffers[i], formatted.c_str(), sizeof(mStatsBuffers[i]));
+        nlStrNCpy(mStatsBuffers[i], formatted.c_str(), sizeof(mStatsBuffers[i]) / sizeof(mStatsBuffers[i][0]));
         statsText[i]->SetString(mStatsBuffers[i]);
     }
 }

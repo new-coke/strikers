@@ -2,6 +2,7 @@
 
 // Capture the engine's original host-order indices before dlMakeDisplayList
 // replaces them with a GX display list. The live draw path never parses GX.
+#include "port/scene_skinning.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -11,6 +12,7 @@
 
 namespace port::directmatch
 {
+static_assert(render::kSceneSkinBoneCount <= 32);
 
 struct ModelSource
 {
@@ -19,6 +21,7 @@ struct ModelSource
     uint32_t marker = 0, count = 0;
     uint8_t primitive = 0, streams = 0;
     bool hasPn = false;
+    uint32_t skinBoneMask = 0;
     uint64_t generation = 0;
     std::vector<uint16_t> indices{};
     std::vector<uint8_t> selectors{};
@@ -33,8 +36,9 @@ class ModelSourceRegistry
     bool capture(uintptr_t list, uintptr_t data, uint32_t marker, uint8_t primitive,
                  uint8_t streams, std::span<const uint16_t> indices, bool hasPn)
     {
-        if (!list || !data || !streams || primitive > 3 || indices.size() < 3 ||
-            indices.size() > 64000)
+        if (!list || !data || !streams || primitive > 5 ||
+            indices.size() < (primitive >= 4 ? 2u : 3u) || indices.size() > 64000 ||
+            (primitive == 4 && indices.size() % 2))
             return false;
         const size_t bytes = indices.size() * (sizeof(uint16_t) + size_t(hasPn));
         const auto old = sources_.find(list);
@@ -67,12 +71,15 @@ class ModelSourceRegistry
             return false;
         std::vector<uint8_t> selectors;
         selectors.reserve(stitch.size());
+        uint32_t skinBoneMask = 0;
         for (const uint8_t index : stitch)
         {
-            // Strikers uses nine rigid PN slots 3,6,...,27. Others need a
-            // separately validated skinning contract, not a truncated byte.
-            if (index > 8)
+            // Original StitchModel emits (bone-map index + 1) * 3. Slot zero
+            // belongs to the model transform; retail meshes use up to 13 bones.
+            // Keep the native 32-bone palette contract shared with the shader.
+            if (index >= render::kSceneSkinBoneCount)
                 return false;
+            skinBoneMask |= uint32_t{1} << index;
             selectors.push_back(static_cast<uint8_t>((index + 1u) * 3u));
         }
         if (it->second.selectors != selectors)
@@ -82,6 +89,7 @@ class ModelSourceRegistry
             // map must not reuse a VBO compiled with the previous selectors.
             it->second.generation = ++generation_;
         }
+        it->second.skinBoneMask = skinBoneMask;
         return true;
     }
 

@@ -261,6 +261,7 @@ void glGenRenderbuffers(GLsizei n, GLuint *ids) {
 		if (!renderbuffers[i].active) {
 			ids[j++] = (GLuint)&renderbuffers[i];
 			renderbuffers[i].active = GL_TRUE;
+			renderbuffers[i].depthbuffer_ptr = NULL;
 		}
 		if (j >= n)
 			break;
@@ -327,6 +328,8 @@ void glDeleteRenderbuffers(GLsizei n, const GLuint *ids) {
 				}
 			}
 #endif
+			// A reused slot must not retire these surfaces a second time.
+			rb->depthbuffer_ptr = NULL;
 		}
 	}
 }
@@ -447,35 +450,58 @@ void glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, 
 		SET_GL_ERROR(GL_INVALID_VALUE)
 	}
 #endif
-#ifndef DEPTH_STENCIL_HACK
-	if (active_rb->depthbuffer_ptr) {
-		mark_as_dirty(active_rb->depthbuffer_ptr->depthData);
-		if (active_rb->depthbuffer_ptr->stencilData) {
-			mark_as_dirty(active_rb->depthbuffer_ptr->stencilData);
-		}
-	}
-#endif
+	SceGxmDepthStencilSurface replacement;
 	switch (internalformat) {
 	case GL_DEPTH24_STENCIL8:
 	case GL_DEPTH32F_STENCIL8:
-		init_depth_stencil_buffer(width, height, &active_rb->depthbuffer, GL_TRUE);
+		if (!init_depth_stencil_buffer(width, height, &replacement, GL_TRUE))
+			return;
 		break;
 	case GL_DEPTH_COMPONENT:
 	case GL_DEPTH_COMPONENT16:
 	case GL_DEPTH_COMPONENT24:
 	case GL_DEPTH_COMPONENT32:
 	case GL_DEPTH_COMPONENT32F:
-		init_depth_stencil_buffer(width, height, &active_rb->depthbuffer, GL_FALSE);
+		if (!init_depth_stencil_buffer(width, height, &replacement, GL_FALSE))
+			return;
 		break;
 	default:
 		SET_GL_ERROR_WITH_VALUE(GL_INVALID_ENUM, internalformat)
 	}
 
+	// Keep the attached surface intact if the replacement allocation fails.
+#ifndef DEPTH_STENCIL_HACK
+	if (active_rb->depthbuffer_ptr) {
+		mark_as_dirty(active_rb->depthbuffer_ptr->depthData);
+		if (active_rb->depthbuffer_ptr->stencilData)
+			mark_as_dirty(active_rb->depthbuffer_ptr->stencilData);
+	}
+#endif
+	active_rb->depthbuffer = replacement;
 	active_rb->depthbuffer_ptr = &active_rb->depthbuffer;
 }
 
 void glNamedRenderbufferStorage(GLuint target, GLenum internalformat, GLsizei width, GLsizei height) {
 	renderbuffer *rb = (renderbuffer *)target;
+	SceGxmDepthStencilSurface replacement;
+	switch (internalformat) {
+	case GL_DEPTH24_STENCIL8:
+	case GL_DEPTH32F_STENCIL8:
+		if (!init_depth_stencil_buffer(width, height, &replacement, GL_TRUE))
+			return;
+		break;
+	case GL_DEPTH_COMPONENT:
+	case GL_DEPTH_COMPONENT16:
+	case GL_DEPTH_COMPONENT24:
+	case GL_DEPTH_COMPONENT32:
+	case GL_DEPTH_COMPONENT32F:
+		if (!init_depth_stencil_buffer(width, height, &replacement, GL_FALSE))
+			return;
+		break;
+	default:
+		SET_GL_ERROR_WITH_VALUE(GL_INVALID_ENUM, internalformat)
+	}
+
 #ifndef DEPTH_STENCIL_HACK
 	if (rb->depthbuffer_ptr) {
 		mark_as_dirty(rb->depthbuffer_ptr->depthData);
@@ -483,22 +509,7 @@ void glNamedRenderbufferStorage(GLuint target, GLenum internalformat, GLsizei wi
 			mark_as_dirty(rb->depthbuffer_ptr->stencilData);
 	}
 #endif
-	switch (internalformat) {
-	case GL_DEPTH24_STENCIL8:
-	case GL_DEPTH32F_STENCIL8:
-		init_depth_stencil_buffer(width, height, &rb->depthbuffer, GL_TRUE);
-		break;
-	case GL_DEPTH_COMPONENT:
-	case GL_DEPTH_COMPONENT16:
-	case GL_DEPTH_COMPONENT24:
-	case GL_DEPTH_COMPONENT32:
-	case GL_DEPTH_COMPONENT32F:
-		init_depth_stencil_buffer(width, height, &rb->depthbuffer, GL_FALSE);
-		break;
-	default:
-		SET_GL_ERROR_WITH_VALUE(GL_INVALID_ENUM, internalformat)
-	}
-
+	rb->depthbuffer = replacement;
 	rb->depthbuffer_ptr = &rb->depthbuffer;
 }
 
@@ -939,10 +950,6 @@ void vglReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum forma
 }
 
 void glBlitNamedFramebuffer(GLuint readFramebuffer, GLuint drawFramebuffer, GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter) {
-	// Invalidate current write framebuffer binding
-	framebuffer *real_write_fb = active_write_fb;
-	active_write_fb = (framebuffer *)drawFramebuffer;
-	
 	switch (mask) {
 	case GL_COLOR_BUFFER_BIT:
 		break;
@@ -950,7 +957,17 @@ void glBlitNamedFramebuffer(GLuint readFramebuffer, GLuint drawFramebuffer, GLin
 		SET_GL_ERROR_WITH_VALUE(GL_INVALID_OPERATION, mask)
 	}
 
-	scene_reset();
+	// Allocate before changing GPU state so an exhausted pool leaves bindings intact.
+	float *vertex_data = (float *)gpu_alloc_mapped_temp(16 * sizeof(float));
+	if (!vertex_data) {
+		SET_GL_ERROR(GL_OUT_OF_MEMORY)
+	}
+	framebuffer *real_write_fb = active_write_fb;
+	active_write_fb = (framebuffer *)drawFramebuffer;
+	if (!scene_reset()) {
+		active_write_fb = real_write_fb;
+		return;
+	}
 
 	// Invalidating viewport and culling
 	invalidate_viewport();
@@ -977,6 +994,10 @@ void glBlitNamedFramebuffer(GLuint readFramebuffer, GLuint drawFramebuffer, GLin
 	// Set fragment texture to read framebuffer bound color attachment
 	framebuffer *read_fb = (framebuffer *)readFramebuffer;
 	SceGxmTexture *tex = readFramebuffer ? &read_fb->tex->gxm_tex : &gxm_color_surfaces[display_read_mode == GL_BACK ? gxm_back_buffer_index : gxm_front_buffer_index].backgroundTex;
+#ifndef TEXTURES_SPEEDHACK
+	if (readFramebuffer)
+		read_fb->tex->last_frame = vgl_framecount;
+#endif
 	if (filter == GL_LINEAR) {
 		vglSetTexMagFilter(tex, SCE_GXM_TEXTURE_FILTER_LINEAR);
 		vglSetTexMinFilter(tex, SCE_GXM_TEXTURE_FILTER_LINEAR);
@@ -1003,7 +1024,6 @@ void glBlitNamedFramebuffer(GLuint readFramebuffer, GLuint drawFramebuffer, GLin
 		0xFF, 0xFF);
 	
 	// Filling position and texcoord values
-	float *vertex_data = (float *)gpu_alloc_mapped_temp(16 * sizeof(float));
 	// Position
 	vector4f tmp;
 	vector4f_convert_to_local_space(&tmp, dstX0, dstY0, dstX1 - dstX0, dstY1 - dstY0);

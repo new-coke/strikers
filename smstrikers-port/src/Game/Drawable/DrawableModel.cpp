@@ -16,6 +16,7 @@
 #include "Game/Render/CrowdManager.h"
 #include "Game/WorldManager.h"
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "Game/GL/GLMeshWriter.h"
 #include "port/config.h"
 #include "port/native_match_runtime.hpp"
 #include "port/native_model_vertices.hpp"
@@ -710,7 +711,7 @@ void GetAABBDimensions(const glModel* model, AABBDimensions& dimensions, uintptr
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
         const glModelStream* stream = nullptr;
         for (unsigned i = 0; i < packet->numStreams; ++i)
-            if (packet->streams[i].id == 0 || packet->streams[i].id == 13)
+            if (packet->streams[i].id == GLStream_Position || packet->streams[i].id == GLStream_Position4)
                 stream = &packet->streams[i];
         std::span<const u16> indices;
         bool valid = true;

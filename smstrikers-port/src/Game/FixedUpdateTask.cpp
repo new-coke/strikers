@@ -1,4 +1,7 @@
 #include "Game/FixedUpdateTask.h"
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "port/native_control_trace.hpp"
+#endif
 
 #include "Game/Ball.h"
 #include "Game/BasicStadium.h"
@@ -18,6 +21,9 @@
 #include "port/determinism.h"
 #include "port/framerate.h"
 #include "port/host.h"
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "port/task_profile.hpp"
+#endif
 
 #include <algorithm>
 #include <cstdlib>
@@ -150,6 +156,11 @@ void FixedUpdateTask::DecrementFrameLock(float fDeltaT)
  */
 void FixedUpdateTask::Run(float dt)
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    auto& capture = port::task_profile();
+    port::TaskProfile::PhaseScope phases(capture, this, port::TaskProfile::FixedControl);
+    const float debtBefore = mAccumulatedDeltaT;
+#endif
 #if defined(PORT_VITA)
     const uint64_t simulationNow = port_monotonic_ns();
     unsigned steps = 0;
@@ -175,6 +186,9 @@ void FixedUpdateTask::Run(float dt)
         while (g_bRunSimAndRenderInLockStep || mAccumulatedDeltaT >= g_fFixedUpdateTick)
 #endif
         {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+            capture.next_phase(port::TaskProfile::FixedInput);
+#endif
             UseFixedUpdatePad();
 
             UpdatePlatPad(simulationTick = g_fFixedUpdateTick);
@@ -188,6 +202,9 @@ void FixedUpdateTask::Run(float dt)
             }
 
             CallFixedUpdateTasks();
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+            capture.next_phase(port::TaskProfile::FixedControl);
+#endif
 #if defined(PORT_VITA)
             ++steps;
 #endif
@@ -199,11 +216,18 @@ void FixedUpdateTask::Run(float dt)
         }
     }
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    capture.simulation_steps(steps, expectedDt, debtBefore, mAccumulatedDeltaT,
+                             g_fFixedUpdateTick, g_bRunSimAndRenderInLockStep);
+#endif
 #if defined(PORT_VITA)
     ReportSimulationTime(dt, expectedDt, steps, simulationNow, nlTaskManager::m_pInstance->m_CurrState == 2,
         port_monotonic_ns()-simulationNow);
 #endif
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    capture.next_phase(port::TaskProfile::FixedInput);
+#endif
     UseDefaultPad();
     UpdatePlatPad(dt);
     cPadManager::Update(dt);
@@ -250,13 +274,32 @@ void FixedUpdateTask::PostPhysicsAITask(float fDeltaT)
 
 void FixedUpdateTask::CallFixedUpdateTasks()
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    auto& capture = port::task_profile();
+    capture.next_phase(port::TaskProfile::FixedAi);
+#endif
     mSimulationTime += g_fSimulationTick;
     AIUpdateTask(g_fSimulationTick);
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    capture.next_phase(port::TaskProfile::FixedNpc);
+#endif
     BasicStadium::GetCurrentStadium()->mpNPCManager->UpdateAINPCs(g_fSimulationTick);
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    capture.next_phase(port::TaskProfile::FixedPrePhysics);
+#endif
     PrePhysicsAITask(g_fSimulationTick);
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    capture.next_phase(port::TaskProfile::FixedPhysics);
+#endif
     PhysicsUpdate(g_PhysicsWorld, g_fSimulationTick);
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    capture.next_phase(port::TaskProfile::FixedPostPhysics);
+#endif
     PostPhysicsAITask(g_fSimulationTick);
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    capture.next_phase(port::TaskProfile::FixedNet);
+#endif
     if (NetMesh::s_bAnimatedNetMeshEnabled)
     {
         bool i = true;
@@ -283,6 +326,16 @@ void FixedUpdateTask::CallFixedUpdateTasks()
         NetMesh::spNegativeXNetMesh->Update(g_fSimulationTick, pBall->m_v3Position, pBall->m_v3PrevPosition, i, pPhysicsBall);
     }
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    capture.next_phase(port::TaskProfile::FixedSideline);
+#endif
     SidelineExplodableManager::Update(g_fSimulationTick);
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    capture.next_phase(port::TaskProfile::FixedSnapshot);
+#endif
     ReplayManager::Instance()->GrabSnapshot();
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    if (port::control_trace::enabled)
+        port::control_trace::after_fixed_update(mSimulationTime);
+#endif
 }

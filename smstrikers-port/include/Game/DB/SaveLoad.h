@@ -16,6 +16,9 @@ void LoadMemoryCardIconData();
 
 namespace SaveLoad
 {
+// PORT: a failed game-memory allocation, distinct from card/device errors.
+const long RESULT_OUT_OF_MEMORY = -1002;
+
 bool CardBusy();
 long StartSave(int slot, void (*callback)(long));
 long StartLoad(int Slot, void (*pCB)(long), bool PerformLoad, bool testOnly);
@@ -97,7 +100,8 @@ struct IconDataCache
     /* 0x40 */ void* mIconHdrBuffer;
     /* 0x44 */ void* mIconBuffer;
     /* 0x48 */ void* mBannerBuffer;
-}; // total size: 0x4C
+    /* 0x4C */ u32 mIconHdrCapacity; // physical bytes owned by mIconHdrBuffer
+}; // total size: 0x50
 
 extern IconDataCache gIconDataCache;
 

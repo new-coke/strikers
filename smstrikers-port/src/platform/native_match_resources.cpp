@@ -12,7 +12,8 @@ namespace port::directmatch::detail
 {
 bool MatchRuntime::overlaps(Range a, Range b)
 {
-    return a.address <= b.address ? b.address - a.address < a.size : a.address - b.address < b.size;
+    return a.size && b.size &&
+           (a.address <= b.address ? b.address - a.address < a.size : a.address - b.address < b.size);
 }
 
 void MatchRuntime::consume_writes()
@@ -30,7 +31,19 @@ void MatchRuntime::consume_writes()
     }
     if (!n && !all)
         return;
-    for (auto it = geometry.begin(); it != geometry.end();)
+    bool scanGeometry = all, scanTextures = all;
+    for (unsigned i = 0; i < n && (!scanGeometry || !scanTextures); ++i)
+    {
+        if (!scanGeometry)
+            scanGeometry = geometryBounds.intersects(changed[i]);
+        if (!scanTextures)
+            scanTextures = mutableTextureBounds.intersects(changed[i]);
+    }
+    // Writes outside both supersets cannot touch cached CPU data. Possible
+    // overlaps still take the original exact checks, including gaps and erases.
+    if (!scanGeometry && !scanTextures)
+        return;
+    for (auto it = geometry.begin(); scanGeometry && it != geometry.end();)
     {
         bool dirty = all;
         for (unsigned i = 0; i < n && !dirty; ++i)
@@ -48,7 +61,9 @@ void MatchRuntime::consume_writes()
         else
             ++it;
     }
-    for (auto it = textures.begin(); it != textures.end();)
+    if (geometry.empty())
+        geometryBounds = {};
+    for (auto it = textures.begin(); scanTextures && it != textures.end();)
     {
         if (it->second.target || it->second.fileNative)
         {
@@ -67,15 +82,23 @@ void MatchRuntime::consume_writes()
         else
             ++it;
     }
+    if (textures.empty())
+        mutableTextureBounds = {};
 }
 
-uint32_t MatchRuntime::texture_for(const PlatTexture* p)
+uint32_t MatchRuntime::texture_for(const PlatTexture* p, int* shadowPartition)
 {
+    if (shadowPartition)
+        *shadowPartition = -1;
     if (!p || p->m_Magic != 0x50544558 || !p->m_Width || !p->m_Height || unsigned(p->m_Format) > 8)
         return 0;
     auto existing = textures.find(p);
     if (existing != textures.end())
+    {
+        if (shadowPartition)
+            *shadowPartition = existing->second.shadowPartition;
         return existing->second.id;
+    }
     if (p->m_NativeDataSize || !p->m_SwizzledData)
     {
         failure = "native_texture_not_resident";
@@ -117,14 +140,30 @@ uint32_t MatchRuntime::texture_for(const PlatTexture* p)
     if (!id)
     {
         failure = "texture_upload";
+        frameDiscarded = true;
         return 0;
     }
     Texture entry;
     entry.id = id;
-    entry.level = glx_GetTexMarkerLevel();
+    entry.level = p->m_OwnerTextureLevel;
     entry.pixels = { reinterpret_cast<uintptr_t>(p->m_SwizzledData), bytes };
     entry.palette = { reinterpret_cast<uintptr_t>(p->m_PaletteData), paletteBytes };
-    textures.emplace(p, entry);
+    try
+    {
+        const auto [it, inserted] = textures.emplace(p, entry);
+        if (inserted)
+        {
+            mutableTextureBounds.include(entry.pixels);
+            mutableTextureBounds.include(entry.palette);
+        }
+        if (shadowPartition)
+            *shadowPartition = it->second.shadowPartition;
+    }
+    catch (...)
+    {
+        gpu.release_texture(id);
+        throw;
+    }
     return id;
 }
 
@@ -204,6 +243,7 @@ void MatchRuntime::on_stitch_selectors(const glModelPacket* p, const uint8_t* s,
 
 void MatchRuntime::on_resource_release(uint32_t level) noexcept
 {
+    glx_InvalidateTextureHandles();
     sources.release_after(level);
     for (auto it = geometry.begin(); it != geometry.end();)
         if (it->second.level > level)
@@ -213,6 +253,8 @@ void MatchRuntime::on_resource_release(uint32_t level) noexcept
         }
         else
             ++it;
+    if (geometry.empty())
+        geometryBounds = {};
     for (auto it = textures.begin(); it != textures.end();)
         if (it->second.fileNative && it->second.resourceLevel > level)
         {
@@ -221,10 +263,13 @@ void MatchRuntime::on_resource_release(uint32_t level) noexcept
         }
         else
             ++it;
+    if (textures.empty())
+        mutableTextureBounds = {};
 }
 
 void MatchRuntime::on_texture_release(uint32_t level) noexcept
 {
+    glx_InvalidateTextureHandles();
     for (auto it = textures.begin(); it != textures.end();)
         if (it->second.level > level)
         {
@@ -234,11 +279,14 @@ void MatchRuntime::on_texture_release(uint32_t level) noexcept
         }
         else
             ++it;
+    if (textures.empty())
+        mutableTextureBounds = {};
 }
 
 bool MatchRuntime::admit_texture(const PlatTexture* p,
                                  const nativegxm::TextureUpload& image) noexcept
 {
+    glx_InvalidateTextureHandles();
     if (!p || !preload())
         return false;
     const uint32_t id = gpu.create_texture(image);
@@ -302,22 +350,22 @@ void MatchRuntime::capture_shadow_atlas() noexcept
             {
                 failure = "shadow_target";
                 ++invalid;
+                frameDiscarded = true;
                 return;
             }
             auto it = textures.find(p);
             if (it == textures.end() || it->second.id != shadowAtlas)
             {
-                if (it != textures.end())
-                {
-                    gpu.release_texture(it->second.id);
-                    textures.erase(it);
-                }
+                auto [entryIt, inserted] = textures.try_emplace(p);
+                const auto previous = entryIt->second.id;
                 Texture entry;
                 entry.id = shadowAtlas;
-                entry.level = glx_GetTexMarkerLevel();
+                entry.level = p->m_OwnerTextureLevel;
                 entry.target = true;
                 entry.shadowPartition = i;
-                textures.emplace(p, entry);
+                entryIt->second = entry;
+                if (previous && previous != shadowAtlas)
+                    gpu.release_texture(previous);
             }
             TextureCopy copy{ shadowAtlas,
                               { (i % 4) * 160 * sx, (i / 4) * 148 * sy, 160 * sx, 148 * sy },
@@ -332,58 +380,110 @@ void MatchRuntime::capture_shadow_atlas() noexcept
         {
             failure = "shadow_copy";
             ++invalid;
+            frameDiscarded = true;
         }
     }
     catch (...)
     {
         failure = "shadow_allocation";
         ++invalid;
+        frameDiscarded = true;
     }
 }
 
 void MatchRuntime::capture_texture(uintptr_t handle, unsigned x, unsigned y, unsigned width,
-                                   unsigned height, bool intensity) noexcept
+                                   unsigned height, bool intensity, unsigned destinationWidth,
+                                   unsigned destinationHeight, bool clearSource) noexcept
 {
     try
     {
         auto* p = glx_GetTex(handle, false, false);
-        if (!p)
+        const auto sourceWidth = PortLogicalFrameWidth();
+        if (!p || !width || !height || x > sourceWidth || width > sourceWidth - x ||
+            y > 448 || height > 448 - y ||
+            ((destinationWidth == 0) != (destinationHeight == 0)))
+        {
+            failure = "capture_source";
+            ++invalid;
+            frameDiscarded = true;
             return;
+        }
+        const auto targetWidth = destinationWidth ? destinationWidth : p->m_Width;
+        const auto targetHeight = destinationHeight ? destinationHeight : p->m_Height;
+        if (!targetWidth || !targetHeight)
+        {
+            failure = "capture_extent";
+            ++invalid;
+            frameDiscarded = true;
+            return;
+        }
+        // Active screen grabs are RGB565; the dedicated shadow-atlas path
+        // handles A8 separately. Never reinterpret another copy format as RGBA.
+        if (p->m_Format != GXTex_RGB565 && p->m_Format != GXTex_RGBA8)
+        {
+            failure = "capture_format";
+            ++invalid;
+            frameDiscarded = true;
+            return;
+        }
+        const auto targetFormat = p->m_Format == GXTex_RGB565 ? render::TargetFormat::Rgb565
+                                                             : render::TargetFormat::Rgba8;
         auto it = textures.find(p);
         uint32_t id = 0;
-        if (it != textures.end() && it->second.target)
+        if (it != textures.end() && it->second.target && it->second.id == shadowAtlas)
+        {
+            failure = "capture_shared_target";
+            ++invalid;
+            frameDiscarded = true;
+            return;
+        }
+        if (it != textures.end() && it->second.target &&
+            it->second.targetWidth == targetWidth && it->second.targetHeight == targetHeight &&
+            it->second.targetFormat == targetFormat)
             id = it->second.id;
         else
         {
-            if (it != textures.end())
-            {
-                gpu.release_texture(it->second.id);
-                textures.erase(it);
-            }
-            id = gpu.create_target(p->m_Width, p->m_Height);
+            // Allocate map storage before the GPU resource. A failed resize
+            // leaves the prior texture valid until a later capture can retry.
+            auto [entryIt, inserted] = textures.try_emplace(p);
+            const auto previous = entryIt->second.id;
+            id = gpu.create_target(targetWidth, targetHeight, targetFormat);
             if (!id)
             {
+                if (inserted)
+                    textures.erase(entryIt);
                 failure = "capture_target";
                 ++invalid;
+                frameDiscarded = true;
                 return;
             }
             Texture entry;
             entry.id = id;
-            entry.level = glx_GetTexMarkerLevel();
+            entry.level = p->m_OwnerTextureLevel;
             entry.target = true;
-            textures.emplace(p, entry);
+            entry.targetWidth = targetWidth;
+            entry.targetHeight = targetHeight;
+            entry.targetFormat = targetFormat;
+            entryIt->second = entry;
+            if (previous)
+                gpu.release_texture(previous);
         }
         const float sx = 960.f / PortLogicalFrameWidth(), sy = 544.f / 448.f;
-        if (!gpu.copy_texture(id, { x * sx, y * sy, width * sx, height * sy }, intensity))
+        TextureCopy copy{ id, { x * sx, y * sy, width * sx, height * sy }, 0, intensity };
+        copy.clearSource = clearSource;
+        copy.clearColor = copyClearColor;
+        if (!gpu.copy_textures({ &copy, 1 }))
         {
             failure = "capture_copy";
             ++invalid;
+            frameDiscarded = true;
         }
     }
     catch (...)
     {
         failure = "capture_allocation";
         ++invalid;
+        frameDiscarded = true;
     }
 }
 }   // namespace port::directmatch::detail

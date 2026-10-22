@@ -211,16 +211,12 @@ static inline unsigned long SetTextureStateRefImpl(unsigned long long* pState, e
         if (value & (1 << j))
         {
             unsigned long long mask = 1ULL << (j + pInfo->startBit);
-            unsigned long hi = ((u32*)pState)[0];
-            unsigned long lo = ((u32*)pState)[1];
-            lo = lo | (u32)mask;
-            ((u32*)pState)[1] = lo;
-            lo = hi | (u32)(mask >> 32);
-            ((u32*)pState)[0] = lo;
+            // This is a host numeric word, not serialized big-endian halves.
+            *pState |= mask;
         }
         else
         {
-            *pState &= ~(1 << (j + pInfo->startBit));
+            *pState &= ~(1ULL << (j + pInfo->startBit));
         }
     }
 
@@ -268,7 +264,7 @@ static inline unsigned long SetTextureStateImpl(
         }
         else
         {
-            textureState.m_State &= ~(1 << bit);
+            textureState.m_State &= ~(1ULL << bit);
         }
     }
 
@@ -290,22 +286,7 @@ static inline gl_StateBitfield* GetTextureStateAndInfo(
     unsigned long& out)
 {
     gl_StateBitfield* pInfo = &packed_texture[state];
-    s32 numBits = pInfo->numBits;
-    unsigned long long texture = textureState.m_State;
-    out = 0;
-    s32 cnt = (s32)out;
-    unsigned long one = 1;
-    unsigned long long cmp = (unsigned long long)out;
-
-    for (; cnt < numBits; cnt++)
-    {
-        unsigned long long mask = 1ULL << (cnt + pInfo->startBit);
-        if ((texture & mask) != cmp)
-        {
-            out |= (one << cnt);
-        }
-    }
-
+    out = (textureState.m_State >> pInfo->startBit) & ((1ULL << pInfo->numBits) - 1ULL);
     return pInfo;
 }
 
@@ -331,7 +312,7 @@ static inline unsigned long SetTextureStateInline(glTextureState& textureState, 
         }
         else
         {
-            textureState.m_State &= ~(1 << (cnt + pInfo->startBit));
+            textureState.m_State &= ~(1ULL << (cnt + pInfo->startBit));
         }
     }
 
@@ -349,24 +330,7 @@ unsigned long glSetTextureState(eGLTextureState state, unsigned long value)
 static inline unsigned long GetTextureStateImpl(unsigned long long* pTexture, eGLTextureState texturestate)
 {
     gl_StateBitfield* pInfo = &packed_texture[texturestate];
-    s32 numBits = pInfo->numBits;
-    unsigned long long texture = *pTexture;
-    s32 cnt = 0;
-    unsigned long out = 0;
-    cnt = (s32)out;
-    unsigned long one = 1;
-    unsigned long long cmp = (unsigned long long)out;
-
-    for (; cnt < numBits; cnt++)
-    {
-        unsigned long long mask = 1ULL << (cnt + pInfo->startBit);
-        if ((texture & mask) != cmp)
-        {
-            out |= (one << cnt);
-        }
-    }
-
-    return out;
+    return (*pTexture >> pInfo->startBit) & ((1ULL << pInfo->numBits) - 1ULL);
 }
 
 /**
@@ -387,15 +351,7 @@ unsigned long glGetTextureState(eGLTextureState texturestate)
 
 static inline unsigned long glExtractRasterBits(unsigned long raster, gl_StateBitfield* p, s32* pn)
 {
-    unsigned long out = 0;
-    for (s32 i = 0; i < *pn; i++)
-    {
-        if (raster & (1u << (i + p->startBit)))
-        {
-            out |= (1u << i);
-        }
-    }
-    return out;
+    return (raster >> p->startBit) & ((1UL << *pn) - 1UL);
 }
 
 /**
@@ -424,15 +380,7 @@ u32 glSetRasterState(u32& raster, eGLState state, unsigned long value)
 
 static inline unsigned long extractStateBits(unsigned long rasterState, gl_StateBitfield* p, s32 numBits)
 {
-    unsigned long out = 0;
-    for (s32 i = 0; i < numBits; i++)
-    {
-        if (rasterState & (1u << (i + p->startBit)))
-        {
-            out |= (1u << i);
-        }
-    }
-    return out;
+    return (rasterState >> p->startBit) & ((1UL << numBits) - 1UL);
 }
 
 static inline unsigned long getRasterState()
@@ -678,7 +626,7 @@ unsigned long glTextureState::SetTextureState(eGLTextureState state, unsigned lo
         if (value & (1u << cnt))
             m_State = m_State | (1ULL << (cnt + startBit));
         else
-            m_State = m_State & ~(1 << (cnt + startBit));
+            m_State = m_State & ~(1ULL << (cnt + startBit));
     }
     return out;
 }

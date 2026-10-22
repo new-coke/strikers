@@ -8,6 +8,7 @@
 #if defined(PORT_USE_AURORA) || defined(STRIKERS_VITA_NATIVE_RUNTIME)
 
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -92,6 +93,12 @@ struct VoiceMix {
 
 VoiceMix* s_mix = nullptr;
 u8 s_mixVoices = 0;
+
+// The PB is zeroed by MusyX at allocation and survives a voice's decoder restart.
+// It also gives the requested ratio the right lifetime across sndQuit/sndInit.
+u32 requestedPitch(const DSPvoice* v) {
+    return ((u32)v->pb->src.ratioHi << 16) | v->pb->src.ratioLo;
+}
 
 // One studio's accumulators, reused for each studio in turn. s32 so that many voices can sum
 // without wrapping before the single clamp at the end; the DSP had 24-bit accumulators for the same
@@ -374,6 +381,33 @@ void auxRoute(s32* dst, const s32* src, int base, bool withSurround) {
     }
 }
 
+// SET40 stores ACM with high-half saturation and ACL without saturation.
+// This is ordinary s32 add/sub within the DSP's 24-bit mixing range.
+s32 storeDpl2Accumulator(std::int64_t value) {
+    u32 bits = static_cast<u32>(value);
+    if (value > INT32_MAX)
+        bits = 0x7fff0000u | (bits & 0xffffu);
+    else if (value < INT32_MIN)
+        bits = 0x80000000u | (bits & 0xffffu);
+    s32 result;
+    std::memcpy(&result, &bits, sizeof(result));
+    return result;
+}
+
+void mixDpl2AuxB(s32* dst, const s32* previous) {
+    auxRoute(dst, nullptr, kBL, false);
+    if (previous == nullptr)
+        return;
+    for (int f = 0; f < kFramesPerTick; ++f) {
+        const s32 left = previous[f];
+        const s32 right = previous[kFramesPerTick + f];
+        s_acc[kL][f] = storeDpl2Accumulator(std::int64_t(s_acc[kL][f]) + left);
+        s_acc[kR][f] = storeDpl2Accumulator(std::int64_t(s_acc[kR][f]) - right);
+        s_acc[kBL][f] = left;
+        s_acc[kBR][f] = right;
+    }
+}
+
 void doDepopFade(s32* start, s32* delta, s32* hostSum) {
     if (*hostSum <= -160)
         *delta = (*hostSum <= -3200) ? 0x14 : (-*hostSum / 160);
@@ -484,6 +518,7 @@ extern "C" void PortAudioMixRender(s16* dest) {
                 }
             }
 
+            const int firstSubframe = v->state == 1 ? v->singleOffset : 0;
             if (v->state == 1) {
                 // Freshly activated. This is the work the command list's `if (dsp_vptr->state ==
                 // 1)` block did.
@@ -506,7 +541,8 @@ extern "C" void PortAudioMixRender(s16* dest) {
                                      "[port] mix: start voice %u smp_id=%u type=%u addr=%p "
                                      "len=%u loop=%u loopLen=%u pitch=0x%x @%lums\n",
                                      (unsigned)vi, v->smp_id, smp.compType, smp.addr,
-                                     smp.length, smp.loop, smp.loopLength, v->pitch[0],
+                                     smp.length, smp.loop, smp.loopLength,
+                                     (v->changed[firstSubframe] & 0x08) ? v->pitch[firstSubframe] : requestedPitch(v),
                                      (unsigned long)(port_monotonic_ns() / 1000000ull));
                     }
                 }
@@ -529,11 +565,20 @@ extern "C" void PortAudioMixRender(s16* dest) {
                                  "(clamped)\n",
                                  v->smp_id, smp.loop, smp.loopLength, smp.length);
             }
-            u32 pitch = v->pitch[0];
+            // Only marked slots contain a new ratio. A voice can first start
+            // after subframe zero, leaving pitch[0] untouched in its allocation.
+            u32 pitch = requestedPitch(v);
             bool done = false;
 
-            for (int sub = 0; sub < kSubFrames && !done; ++sub) {
-                if (v->changed[sub] & 0x20) {
+            for (int sub = firstSubframe; sub < kSubFrames && !done; ++sub) {
+                if (sub == firstSubframe) {
+                    // The initial PB update handles key-off and pitch directly;
+                    // a retained break at slot zero can belong to a stolen voice.
+                    if (v->changed[sub] & 0x40)
+                        adsrRelease(&v->adsr);
+                    if (v->changed[sub] & 0x08)
+                        pitch = v->pitch[sub];
+                } else if (v->changed[sub] & 0x20) {
                     // The break's fast fade; the voice goes at the next tick.
                     adsrStartRelease(&v->adsr, 10);
                     v->postBreak = 1;
@@ -568,8 +613,9 @@ extern "C" void PortAudioMixRender(s16* dest) {
                 }
 
                 const u16 srcSelect = v->srcTypeSelect;
-                if (srcSelect == 2)
-                    pitch = 0x10000;   // "no SRC": one sample in, one out
+                // No-SRC changes the sample step, not the requested ratio that
+                // must survive a later switch back to sample-rate conversion.
+                const u32 sampleStep = srcSelect == 2 ? 0x10000 : pitch;
 
                 // The low-pass history is cleared on the off-to-on edge, which is where the command
                 // list wrote `pb->lpf.yn1 = 0`.
@@ -596,7 +642,7 @@ extern "C" void PortAudioMixRender(s16* dest) {
                     if (e < 0) e = 0;
                     if (e > 0x7FFF) e = 0x7FFF;
 
-                    vm.frac += pitch;
+                    vm.frac += sampleStep;
                     while (vm.frac >= 0x10000) {
                         vm.frac -= 0x10000;
                         ++vm.pos;
@@ -628,6 +674,8 @@ extern "C" void PortAudioMixRender(s16* dest) {
 
             // What sal_update_hostplayinfo did, which is `static` in hw_dspctrl.c and so not
             // callable from here.
+            v->pb->src.ratioHi = pitch >> 16;
+            v->pb->src.ratioLo = (u16)pitch;
             v->playInfo.pitch = pitch;
             if (smp.loopLength == 0) {
                 v->playInfo.posHi = vm.pos;
@@ -681,10 +729,9 @@ extern "C" void PortAudioMixRender(s16* dest) {
             if (stp->auxBHandler != nullptr)
                 auxRoute(stp->auxB[salAuxFrame], stp->auxB[(salAuxFrame + 1) % 3], kBL, true);
         } else {
-            // A DPL2 studio's aux B is not an effect send at all: it carries the rear pair, and
-            // MIX_AUXB_LR folds it into the front through the Pro Logic II encode matrix, which
-            // lives in the DSP microcode and is not in this tree.
-            auxRoute(stp->auxB[salFrame], nullptr, kBL, false);
+            // MusyX 2.0.3 opcode 16 (dspSlave 0x0d8a) exports the current rear pair,
+            // then adds previous L and subtracts previous R before UPLOAD_LRS.
+            mixDpl2AuxB(stp->auxB[salFrame], stp->auxB[salFrame ^ 1]);
         }
 
         // UPLOAD_LRS: publish this studio's main output where its consumers read it next tick, and
@@ -792,7 +839,7 @@ extern "C" void PortAudioMixRender(s16* dest) {
                              v->smp_id, v->smp_info.addr, v->smp_info.extraData,
                              v->smp_info.length, v->smp_info.loop, v->smp_info.loopLength,
                              v->smp_info.compType, v->smp_info.offset, v->state,
-                             (unsigned)v->pitch[0], (unsigned)s_mix[v - dspVoice].pos,
+                             (unsigned)requestedPitch(v), (unsigned)s_mix[v - dspVoice].pos,
                              (unsigned)v->currentAddr, v->filter.on,
                              (unsigned)(v->volLa > v->volRa ? v->volLa : v->volRa));
                 break;

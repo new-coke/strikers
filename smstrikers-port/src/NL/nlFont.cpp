@@ -219,7 +219,7 @@ unsigned char nlFont::Load(const char* szFontName, char* pFontDescData, unsigned
 
             if (Character < 0x7F)
             {
-                pInfo = m_GlyphLookup + Character - 0x20;
+                pInfo = m_GlyphLookup + (Character - 0x20);
             }
             else
             {
@@ -352,7 +352,7 @@ unsigned char nlFont::Load(const char* szFontName, char* pFontDescData, unsigned
     for (page = 0; page < m_PageCount; page++)
     {
         // PORT: was staged into sHashFontName and then formatted from it, and a buffer passed as its own %s argument is undefined: Apple's libc yields "<name>_1", glibc yields "_1", whose hash matches no file in the font bundle.
-        nlSNPrintf(sHashFontName, 0x109, "%s_%d", szFontName, page + 1);
+        nlSNPrintf(sHashFontName, 0x109, "%s_%lu", szFontName, page + 1);
         m_TextureHandles[page] = nlStringHash(sHashFontName);
 
         if (m_TextureType == SplitFX)

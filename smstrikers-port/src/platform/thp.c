@@ -15,20 +15,20 @@
 #include <libavutil/pixfmt.h>
 #endif
 
-u32 OSGetTick(void);
+u64 OSGetTime(void);
 
-// OSGetTick units: the console's 40.5 MHz timer, which src/platform/os.c and PortVirtualTicker both
-// count in.
+// OSGetTime and the virtual ticker use the console's 40.5 MHz timer units.
+// Keep the full clock width so a movie epoch can outlive the 32-bit tick wrap.
 #define PORT_THP_TICKS_PER_SECOND 40500000.0
 
-static u32 port_thp_now(void)
+static u64 port_thp_now(void)
 {
     // Under STRIKERS_FIXED_DT the virtual clock advances one frame period per retrace, which is
     // what keeps a capture at frame N the same frame N.
-    return PortFixedTimestep() ? PortVirtualTicker() : OSGetTick();
+    return PortFixedTimestep() ? PortVirtualTickerWide() : OSGetTime();
 }
 
-static u32 s_pace_base;
+static u64 s_pace_base;
 static unsigned long long s_pace_wall_base;
 static long s_pace_shown;
 static int s_pace_started;
@@ -40,7 +40,7 @@ static void port_thp_pace_reset(void)
     s_pace_base = 0;
 }
 
-static void port_thp_pace_begin(u32 now)
+static void port_thp_pace_begin(u64 now)
 {
     if (!s_pace_started)
     {
@@ -53,7 +53,7 @@ static void port_thp_pace_begin(u32 now)
 
 int port_thp_frame_due(float frameRate)
 {
-    u32 now;
+    u64 now;
     double elapsed;
 
     if (!(frameRate > 0.0f))
@@ -65,7 +65,7 @@ int port_thp_frame_due(float frameRate)
     port_thp_pace_begin(now);
 
     // Movie frames elapsed since the movie started, on the game's clock.
-    elapsed = (double)(u32)(now - s_pace_base) / PORT_THP_TICKS_PER_SECOND
+    elapsed = (double)(now - s_pace_base) / PORT_THP_TICKS_PER_SECOND
             * (double)frameRate;
     return elapsed >= (double)s_pace_shown;
 }
@@ -75,7 +75,7 @@ int port_thp_frame_due(float frameRate)
 // both.
 void port_thp_frame_shown(void)
 {
-    u32 now = port_thp_now();
+    u64 now = port_thp_now();
 
     port_thp_pace_begin(now);
     s_pace_shown++;
@@ -85,11 +85,11 @@ void port_thp_frame_shown(void)
     if (getenv("STRIKERS_LOG_SCENES") != NULL && (s_pace_shown % 500) == 0)
     {
         // Both clocks, because the game clock is the wall clock in play and the virtual one under
-        // STRIKERS_FIXED_DT: when they differ that is why, and when they agree the pacing is right.
+        // STRIKERS_FIXED_DT. Clock agreement alone does not establish correct playback speed.
         fprintf(stderr, "[port] movie: %ld frames shown in %.1f s on the game clock, "
                         "%.1f s on the wall\n",
                 s_pace_shown,
-                (double)(u32)(now - s_pace_base) / PORT_THP_TICKS_PER_SECOND,
+                (double)(now - s_pace_base) / PORT_THP_TICKS_PER_SECOND,
                 (double)(port_monotonic_ns() - s_pace_wall_base) / 1e9);
     }
 }

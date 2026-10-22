@@ -231,6 +231,35 @@ bool decode_texture(const TextureSource& s, TextureUpload& out) noexcept
         {
             const unsigned w = std::max(1u, s.width >> level), h = std::max(1u, s.height >> level),
                            stride = image.swizzled ? w : (w + 7u) & ~7u;
+            if (s.encoding == TextureEncoding::I8 && !image.swizzled)
+            {
+                // Movie planes are tiled I8 with linear RGBA output. Traverse
+                // whole 8x4 source tiles instead of dividing each pixel's x/y.
+                // resize() above leaves destination row padding zero; source
+                // padding still occupies a complete tile at every mip level.
+                const auto* tile = s.pixels.data() + input;
+                for (unsigned tileY = 0; tileY < h; tileY += 4)
+                    for (unsigned tileX = 0; tileX < w; tileX += 8, tile += 32)
+                    {
+                        const unsigned rows = std::min(4u, h - tileY),
+                                       columns = std::min(8u, w - tileX);
+                        auto* destination = image.pixels.data() + output +
+                                            (size_t(tileY) * stride + tileX) * 4;
+                        for (unsigned row = 0; row < rows; ++row)
+                        {
+                            const auto* source = tile + row * 8;
+                            auto* pixel = destination + size_t(row) * stride * 4;
+                            for (unsigned column = 0; column < columns; ++column, pixel += 4)
+                            {
+                                const uint32_t rgba = uint32_t(source[column]) * 0x01010101u;
+                                std::memcpy(pixel, &rgba, sizeof rgba);
+                            }
+                        }
+                    }
+                input = size_t(tile - s.pixels.data());
+                output += size_t(stride) * h * 4;
+                continue;
+            }
             for (unsigned y = 0; y < h; ++y)
                 for (unsigned x = 0; x < w; ++x)
                 {

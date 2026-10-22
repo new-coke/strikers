@@ -9,8 +9,44 @@
 
 #include <cstdio>
 #include <cstring>
+#include <cerrno>
+#include <sys/stat.h>
+
+#if defined(STRIKERS_CARD_TEST)
+FILE* port_card_test_fopen(const char*, const char*);
+size_t port_card_test_fwrite(const void*, size_t, size_t, FILE*);
+int port_card_test_fflush(FILE*);
+int port_card_test_fclose(FILE*);
+int port_card_test_rename(const char*, const char*);
+int port_card_test_remove(const char*);
+#endif
 
 namespace {
+
+namespace card_io {
+#if defined(STRIKERS_CARD_TEST)
+constexpr auto open = port_card_test_fopen;
+constexpr auto write = port_card_test_fwrite;
+constexpr auto flush = port_card_test_fflush;
+constexpr auto close = port_card_test_fclose;
+constexpr auto rename = port_card_test_rename;
+constexpr auto remove = port_card_test_remove;
+#else
+constexpr auto open = std::fopen;
+constexpr auto write = std::fwrite;
+constexpr auto flush = std::fflush;
+constexpr auto close = std::fclose;
+constexpr auto rename = sceIoRename;
+constexpr auto remove = std::remove;
+#endif
+}
+
+bool finish_write(FILE* f)
+{
+    const bool flushed = card_io::flush(f) == 0;
+    const bool closed = card_io::close(f) == 0;
+    return flushed && closed;
+}
 
 constexpr int kChannels = 2;
 constexpr int kMaxFiles = CARD_MAX_FILE;
@@ -52,6 +88,14 @@ void callback(CARDCallback cb, s32 chan, s32 result)
 {
     if (cb != nullptr)
         cb(chan, result);
+}
+
+s32 complete_async(CARDCallback cb, s32 chan, s32 result)
+{
+    // CARDAsync returns the submission result. Once accepted, only the
+    // callback reports completion, even when this backend completes inline.
+    callback(cb, chan, result);
+    return CARD_RESULT_READY;
 }
 
 bool has_suffix(const char* name, const char* suffix)
@@ -158,42 +202,110 @@ void release_slot(FileSlot* slot)
         std::memset(slot, 0, sizeof *slot);
 }
 
-void load_stat(FileSlot& slot)
+bool read_stat(const char* path, CARDStat& stat)
+{
+    FILE* f = std::fopen(path, "rb");
+    if (f == nullptr)
+        return false;
+    PersistedStat persisted{};
+    const bool valid = std::fread(&persisted, 1, sizeof persisted, f) == sizeof persisted
+        && persisted.magic == kStatMagic && persisted.version == kStatVersion;
+    const bool closed = std::fclose(f) == 0;
+    if (valid && closed)
+        stat = persisted.stat;
+    return valid && closed;
+}
+
+int metadata_exists(const char* path)
+{
+    struct stat status{};
+    if (::stat(path, &status) == 0)
+        return S_ISREG(status.st_mode) ? 1 : -1;
+    return errno == ENOENT ? 0 : -1;
+}
+
+bool load_stat(FileSlot& slot)
 {
     if (slot.statValid)
-        return;
+        return true;
 
     std::memset(&slot.stat, 0, sizeof slot.stat);
     std::snprintf(slot.stat.fileName, sizeof slot.stat.fileName, "%.*s", CARD_FILENAME_MAX - 1, slot.name);
 
     char path[384];
     make_path(slot.chan, slot.name, ".stat", path, sizeof path);
-    FILE* f = std::fopen(path, "rb");
-    if (f != nullptr) {
-        PersistedStat persisted{};
-        if (std::fread(&persisted, 1, sizeof persisted, f) == sizeof persisted
-            && persisted.magic == kStatMagic && persisted.version == kStatVersion) {
-            slot.stat = persisted.stat;
-        }
-        std::fclose(f);
+    if (!read_stat(path, slot.stat)) {
+        char backup[400];
+        std::snprintf(backup, sizeof backup, "%s.bak", path);
+        if (!read_stat(backup, slot.stat)
+            && (metadata_exists(path) != 0 || metadata_exists(backup) != 0))
+            return false;
     }
     slot.statValid = true;
+    return true;
 }
 
-void save_stat(const FileSlot& slot)
+bool save_stat(const FileSlot& slot)
 {
     char path[384];
     make_path(slot.chan, slot.name, ".stat", path, sizeof path);
-    FILE* f = std::fopen(path, "wb");
+    char temp[400];
+    std::snprintf(temp, sizeof temp, "%s.tmp", path);
+    char backup[400];
+    std::snprintf(backup, sizeof backup, "%s.bak", path);
+    FILE* f = card_io::open(temp, "wb");
     if (f == nullptr)
-        return;
+        return false;
 
     PersistedStat persisted{};
     persisted.magic = kStatMagic;
     persisted.version = kStatVersion;
     persisted.stat = slot.stat;
-    (void)std::fwrite(&persisted, 1, sizeof persisted, f);
-    std::fclose(f);
+    const bool written = card_io::write(&persisted, 1, sizeof persisted, f) == sizeof persisted;
+    const bool finished = finish_write(f);
+    if (!written || !finished) {
+        card_io::remove(temp);
+        return false;
+    }
+
+    const auto replace = [&]() {
+        const int backupExists = metadata_exists(backup);
+        if (backupExists < 0)
+            return false;
+        if (backupExists) {
+            CARDStat existing{};
+            if (read_stat(path, existing)) {
+                if (card_io::remove(backup) != 0)
+                    return false;
+            } else {
+                if (!read_stat(backup, existing))
+                    return false;
+                if (card_io::remove(path) != 0 && errno != ENOENT)
+                    return false;
+                if (card_io::rename(backup, path) < 0)
+                    return false;
+            }
+        }
+
+        const int oldExists = metadata_exists(path);
+        if (oldExists < 0 || (oldExists && card_io::rename(path, backup) < 0))
+            return false;
+        // Vita newlib rename() removes its destination before renaming. The
+        // native operation never overwrites: keep the previous version in .bak.
+        if (card_io::rename(temp, path) < 0) {
+            if (oldExists && card_io::rename(backup, path) < 0) {
+                // The last valid metadata stays in .bak for the next load.
+                return false;
+            }
+            return false;
+        }
+        return true;
+    };
+    if (!replace()) {
+        card_io::remove(temp);
+        return false;
+    }
+    return true;
 }
 
 s32 open_file(s32 chan, const char* fileName, CARDFileInfo* fileInfo)
@@ -214,7 +326,10 @@ s32 open_file(s32 chan, const char* fileName, CARDFileInfo* fileInfo)
     FileSlot* slot = alloc_slot(chan, fileName, &fileNo);
     if (slot == nullptr)
         return CARD_RESULT_LIMIT;
-    load_stat(*slot);
+    if (!load_stat(*slot)) {
+        release_slot(slot);
+        return CARD_RESULT_IOERROR;
+    }
     slot->stat.length = static_cast<u32>(size);
 
     fileInfo->chan = chan;
@@ -225,28 +340,35 @@ s32 open_file(s32 chan, const char* fileName, CARDFileInfo* fileInfo)
     return CARD_RESULT_READY;
 }
 
-void remove_all_in_channel(s32 chan)
+bool remove_all_in_channel(s32 chan)
 {
     SceUID dir = sceIoDopen(s_cardDir[chan]);
-    if (dir >= 0) {
-        SceIoDirent entry{};
-        while (sceIoDread(dir, &entry) > 0) {
-            if (entry.d_name[0] != '\0' && std::strcmp(entry.d_name, ".") != 0
-                && std::strcmp(entry.d_name, "..") != 0
-                && (has_suffix(entry.d_name, ".sav") || has_suffix(entry.d_name, ".stat"))) {
-                char path[384];
-                std::snprintf(path, sizeof path, "%s/%s", s_cardDir[chan], entry.d_name);
-                sceIoRemove(path);
-            }
-            std::memset(&entry, 0, sizeof entry);
+    if (dir < 0)
+        return false;
+    bool removed = true;
+    int readResult;
+    SceIoDirent entry{};
+    while ((readResult = sceIoDread(dir, &entry)) > 0) {
+        if (entry.d_name[0] != '\0' && std::strcmp(entry.d_name, ".") != 0
+            && std::strcmp(entry.d_name, "..") != 0
+            && (has_suffix(entry.d_name, ".sav") || has_suffix(entry.d_name, ".stat")
+                || has_suffix(entry.d_name, ".stat.bak") || has_suffix(entry.d_name, ".stat.tmp"))) {
+            char path[384];
+            std::snprintf(path, sizeof path, "%s/%s", s_cardDir[chan], entry.d_name);
+            if (sceIoRemove(path) < 0)
+                removed = false;
         }
-        sceIoDclose(dir);
+        std::memset(&entry, 0, sizeof entry);
     }
+    const bool closed = sceIoDclose(dir) >= 0;
+    if (!removed || readResult < 0 || !closed)
+        return false;
 
     for (auto& slot : s_files) {
         if (slot.used && slot.chan == chan)
             release_slot(&slot);
     }
+    return true;
 }
 
 struct UsageContext {
@@ -270,6 +392,16 @@ void count_usage(void* user, const char* name)
 }
 
 } // namespace
+
+#if defined(STRIKERS_CARD_TEST)
+void port_card_test_reset()
+{
+    std::memset(s_files, 0, sizeof s_files);
+    std::memset(s_mounted, 0, sizeof s_mounted);
+    std::memset(s_xferred, 0, sizeof s_xferred);
+    s_initialized = false;
+}
+#endif
 
 extern "C" {
 
@@ -312,9 +444,9 @@ s32 CARDUnmount(s32 chan)
 
 s32 CARDCheckAsync(s32 chan, CARDCallback cb)
 {
-    const s32 result = valid_chan(chan) ? CARD_RESULT_READY : CARD_RESULT_NOCARD;
-    callback(cb, chan, result);
-    return result;
+    if (!valid_chan(chan))
+        return CARD_RESULT_NOCARD;
+    return complete_async(cb, chan, CARD_RESULT_READY);
 }
 
 s32 CARDGetSerialNo(s32 chan, u64* serialNo)
@@ -350,27 +482,27 @@ s32 CARDCreateAsync(s32 chan, const char* fileName, u32 size, CARDFileInfo* file
     ensure_dirs();
     s32 result = CARD_RESULT_READY;
     if (!valid_chan(chan) || fileName == nullptr || fileInfo == nullptr) {
-        result = CARD_RESULT_FATAL_ERROR;
+        return CARD_RESULT_FATAL_ERROR;
     } else if (std::strlen(fileName) > CARD_FILENAME_MAX) {
-        result = CARD_RESULT_NAMETOOLONG;
+        return CARD_RESULT_NAMETOOLONG;
     } else {
         char path[384];
         make_path(chan, fileName, ".sav", path, sizeof path);
         if (file_size(path) >= 0) {
-            result = CARD_RESULT_EXIST;
+            return CARD_RESULT_EXIST;
         } else {
-            FILE* f = std::fopen(path, "wb");
+            FILE* f = card_io::open(path, "wbx");
             if (f == nullptr) {
-                result = CARD_RESULT_IOERROR;
+                result = errno == EEXIST ? CARD_RESULT_EXIST : CARD_RESULT_IOERROR;
             } else {
                 if (size != 0 && (std::fseek(f, static_cast<long>(size - 1), SEEK_SET) != 0 || std::fputc(0, f) == EOF))
                     result = CARD_RESULT_IOERROR;
-                std::fclose(f);
+                if (!finish_write(f))
+                    result = CARD_RESULT_IOERROR;
                 if (result == CARD_RESULT_READY) {
                     s32 fileNo = -1;
                     FileSlot* slot = alloc_slot(chan, fileName, &fileNo);
                     if (slot == nullptr) {
-                        sceIoRemove(path);
                         result = CARD_RESULT_LIMIT;
                     } else {
                         std::memset(&slot->stat, 0, sizeof slot->stat);
@@ -379,20 +511,25 @@ s32 CARDCreateAsync(s32 chan, const char* fileName, u32 size, CARDFileInfo* file
                         std::memcpy(slot->stat.company, s_maker, sizeof s_maker);
                         slot->stat.length = size;
                         slot->statValid = true;
-                        save_stat(*slot);
-                        fileInfo->chan = chan;
-                        fileInfo->fileNo = fileNo;
-                        fileInfo->offset = 0;
-                        fileInfo->length = static_cast<s32>(size);
-                        fileInfo->iBlock = 0;
-                        s_xferred[chan] += static_cast<s32>(size);
+                        if (!save_stat(*slot)) {
+                            release_slot(slot);
+                            result = CARD_RESULT_IOERROR;
+                        } else {
+                            fileInfo->chan = chan;
+                            fileInfo->fileNo = fileNo;
+                            fileInfo->offset = 0;
+                            fileInfo->length = static_cast<s32>(size);
+                            fileInfo->iBlock = 0;
+                            s_xferred[chan] += static_cast<s32>(size);
+                        }
                     }
                 }
+                if (result != CARD_RESULT_READY)
+                    sceIoRemove(path);
             }
         }
     }
-    callback(cb, chan, result);
-    return result;
+    return complete_async(cb, chan, result);
 }
 
 s32 CARDOpen(s32 chan, const char* fileName, CARDFileInfo* fileInfo)
@@ -412,57 +549,61 @@ s32 CARDReadAsync(CARDFileInfo* fileInfo, void* buf, s32 length, s32 offset, CAR
 {
     s32 result = CARD_RESULT_READY;
     if (fileInfo == nullptr || buf == nullptr || length < 0 || offset < 0 || !valid_chan(fileInfo->chan)) {
-        result = CARD_RESULT_FATAL_ERROR;
+        return CARD_RESULT_FATAL_ERROR;
     } else if (FileSlot* slot = slot_from_no(fileInfo->fileNo); slot != nullptr && slot->chan == fileInfo->chan) {
         char path[384];
         make_path(slot->chan, slot->name, ".sav", path, sizeof path);
-        FILE* f = std::fopen(path, "rb");
+        FILE* f = card_io::open(path, "rb");
         if (f == nullptr || std::fseek(f, offset, SEEK_SET) != 0
-            || std::fread(buf, 1, static_cast<size_t>(length), f) != static_cast<size_t>(length)) {
+            || std::fread(buf, 1, static_cast<size_t>(length), f) != static_cast<size_t>(length)
+            || std::ferror(f)) {
             result = CARD_RESULT_IOERROR;
         }
-        if (f != nullptr)
-            std::fclose(f);
+        if (f != nullptr && card_io::close(f) != 0)
+            result = CARD_RESULT_IOERROR;
         if (result == CARD_RESULT_READY) {
             s_xferred[fileInfo->chan] += length;
         }
     } else {
-        result = CARD_RESULT_NOFILE;
+        return CARD_RESULT_NOFILE;
     }
-    callback(cb, fileInfo != nullptr ? fileInfo->chan : 0, result);
-    return result;
+    return complete_async(cb, fileInfo->chan, result);
 }
 
 s32 CARDWriteAsync(CARDFileInfo* fileInfo, void* buf, s32 length, s32 offset, CARDCallback cb)
 {
     s32 result = CARD_RESULT_READY;
     if (fileInfo == nullptr || buf == nullptr || length < 0 || offset < 0 || !valid_chan(fileInfo->chan)) {
-        result = CARD_RESULT_FATAL_ERROR;
+        return CARD_RESULT_FATAL_ERROR;
     } else if (FileSlot* slot = slot_from_no(fileInfo->fileNo); slot != nullptr && slot->chan == fileInfo->chan) {
         char path[384];
         make_path(slot->chan, slot->name, ".sav", path, sizeof path);
-        FILE* f = std::fopen(path, "r+b");
+        FILE* f = card_io::open(path, "r+b");
         if (f == nullptr || std::fseek(f, offset, SEEK_SET) != 0
-            || std::fwrite(buf, 1, static_cast<size_t>(length), f) != static_cast<size_t>(length)) {
+            || card_io::write(buf, 1, static_cast<size_t>(length), f) != static_cast<size_t>(length)) {
             result = CARD_RESULT_IOERROR;
         }
-        if (f != nullptr) {
-            std::fflush(f);
-            std::fclose(f);
-        }
+        if (f != nullptr && !finish_write(f))
+            result = CARD_RESULT_IOERROR;
         if (result == CARD_RESULT_READY) {
             const long size = file_size(path);
-            if (size >= 0) {
-                slot->stat.length = static_cast<u32>(size);
-                save_stat(*slot);
+            FileSlot updated = *slot;
+            if (size < 0) {
+                result = CARD_RESULT_IOERROR;
+            } else {
+                updated.stat.length = static_cast<u32>(size);
+                if (!save_stat(updated))
+                    result = CARD_RESULT_IOERROR;
+                else
+                    *slot = updated;
             }
-            s_xferred[fileInfo->chan] += length;
+            if (result == CARD_RESULT_READY)
+                s_xferred[fileInfo->chan] += length;
         }
     } else {
-        result = CARD_RESULT_NOFILE;
+        return CARD_RESULT_NOFILE;
     }
-    callback(cb, fileInfo != nullptr ? fileInfo->chan : 0, result);
-    return result;
+    return complete_async(cb, fileInfo->chan, result);
 }
 
 s32 CARDGetStatus(s32 chan, s32 fileNo, CARDStat* stat)
@@ -472,7 +613,8 @@ s32 CARDGetStatus(s32 chan, s32 fileNo, CARDStat* stat)
     FileSlot* slot = slot_from_no(fileNo);
     if (slot == nullptr || slot->chan != chan)
         return CARD_RESULT_NOFILE;
-    load_stat(*slot);
+    if (!load_stat(*slot))
+        return CARD_RESULT_IOERROR;
     char path[384];
     make_path(chan, slot->name, ".sav", path, sizeof path);
     const long size = file_size(path);
@@ -490,17 +632,24 @@ s32 CARDSetStatus(s32 chan, s32 fileNo, CARDStat* stat)
     FileSlot* slot = slot_from_no(fileNo);
     if (slot == nullptr || slot->chan != chan)
         return CARD_RESULT_NOFILE;
-    slot->stat = *stat;
-    slot->statValid = true;
-    save_stat(*slot);
+    FileSlot updated = *slot;
+    updated.stat = *stat;
+    updated.statValid = true;
+    if (!save_stat(updated))
+        return CARD_RESULT_IOERROR;
+    *slot = updated;
     return CARD_RESULT_READY;
 }
 
 s32 CARDSetStatusAsync(s32 chan, s32 fileNo, CARDStat* stat, CARDCallback cb)
 {
+    if (!valid_chan(chan) || stat == nullptr)
+        return CARD_RESULT_FATAL_ERROR;
+    const FileSlot* slot = slot_from_no(fileNo);
+    if (slot == nullptr || slot->chan != chan)
+        return CARD_RESULT_NOFILE;
     const s32 result = CARDSetStatus(chan, fileNo, stat);
-    callback(cb, chan, result);
-    return result;
+    return complete_async(cb, chan, result);
 }
 
 s32 CARDDeleteAsync(s32 chan, const char* fileName, CARDCallback cb)
@@ -508,36 +657,44 @@ s32 CARDDeleteAsync(s32 chan, const char* fileName, CARDCallback cb)
     ensure_dirs();
     s32 result = CARD_RESULT_READY;
     if (!valid_chan(chan) || fileName == nullptr) {
-        result = CARD_RESULT_FATAL_ERROR;
+        return CARD_RESULT_FATAL_ERROR;
     } else {
         char dataPath[384];
         char statPath[384];
         make_path(chan, fileName, ".sav", dataPath, sizeof dataPath);
         make_path(chan, fileName, ".stat", statPath, sizeof statPath);
         if (file_size(dataPath) < 0) {
-            result = CARD_RESULT_NOFILE;
+            return CARD_RESULT_NOFILE;
         } else if (sceIoRemove(dataPath) < 0) {
             result = CARD_RESULT_IOERROR;
         } else {
-            sceIoRemove(statPath);
+            if (card_io::remove(statPath) != 0 && errno != ENOENT)
+                result = CARD_RESULT_IOERROR;
+            const char* suffixes[] = {".bak", ".tmp"};
+            for (const char* suffix : suffixes) {
+                char sidecar[400];
+                std::snprintf(sidecar, sizeof sidecar, "%s%s", statPath, suffix);
+                if (card_io::remove(sidecar) != 0 && errno != ENOENT)
+                    result = CARD_RESULT_IOERROR;
+            }
             if (FileSlot* slot = find_slot(chan, fileName))
                 release_slot(slot);
         }
     }
-    callback(cb, chan, result);
-    return result;
+    return complete_async(cb, chan, result);
 }
 
 s32 CARDFormatAsync(s32 chan, CARDCallback cb)
 {
     ensure_dirs();
-    const s32 result = valid_chan(chan) ? CARD_RESULT_READY : CARD_RESULT_NOCARD;
-    if (result == CARD_RESULT_READY) {
-        remove_all_in_channel(chan);
+    if (!valid_chan(chan))
+        return CARD_RESULT_NOCARD;
+    s32 result = CARD_RESULT_READY;
+    if (!remove_all_in_channel(chan))
+        result = CARD_RESULT_IOERROR;
+    else
         s_xferred[chan] += CARD_WORKAREA_SIZE;
-    }
-    callback(cb, chan, result);
-    return result;
+    return complete_async(cb, chan, result);
 }
 
 } // extern "C"

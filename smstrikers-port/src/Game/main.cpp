@@ -49,6 +49,9 @@ extern "C" void PortInvokePadSamplingCallback(void);
 #include "port/native_audio.hpp"
 #include "port/native_match_runtime.hpp"
 #include "port/native_graphics.hpp"
+#include "port/task_profile.hpp"
+#include "port/snapshot_request.hpp"
+#include "port/frameskip.hpp"
 #endif
 #include "port/determinism.h"
 #include "port/config.h"
@@ -117,6 +120,7 @@ extern "C" void PortInvokePadSamplingCallback(void);
 #include "Game/ReplayChoreo.h"
 #include "Game/NisPlayer.h"
 #include "Game/Render/Presentation.h"
+#include "Game/Sys/movie.h"
 #include "Game/Render/CrowdManager.h"
 #include "Game/ResetTask.h"
 #include "NL/nlDebug.h"
@@ -168,12 +172,66 @@ extern "C" {
 unsigned int _newlib_heap_size_user = 128u * 1024u * 1024u;
 }
 
-// One opt-in diagnostic snapshot, after the selected completed 3D frame. The
-// display queue wait and disk write are intentionally not part of normal play.
-static void VitaMaybeCaptureFrame()
+static bool VitaCaptureFrameToPath(const char* path)
 {
     const bool nativeRenderer=port::directmatch::uses_own_renderer();
+    SceDisplayFrameBuf fb = {};
+    fb.size = sizeof(fb);
+    int result=0;
+    std::vector<uint8_t> nativePixels;
+    if (nativeRenderer) {
+        if (!port::directmatch::readback_presented_rgba8(nativePixels)) result=-1;
+        else {
+            fb.base=nativePixels.data();fb.width=960;fb.height=544;fb.pitch=960;
+            fb.pixelformat=SCE_DISPLAY_PIXELFORMAT_A8B8G8R8;
+        }
+    } else
+    {
+        sceGxmDisplayQueueFinish();
+        result=sceDisplayGetFrameBuf(&fb,SCE_DISPLAY_SETBUF_IMMEDIATE);
+    }
+    if (result < 0 || fb.base == NULL || fb.width == 0 || fb.width > 4096
+        || fb.height == 0 || fb.height > 4096 || fb.pitch < fb.width || fb.pixelformat != 0)
+    {
+        OSReport("[vita] snapshot failed: framebuffer rc=%d format=%u\n", result, fb.pixelformat);
+        return false;
+    }
+    unsigned char* row = (unsigned char*)malloc(fb.width * 3u);
+    if (row == NULL)
+        return false;
+    FILE* output = fopen(path, "wb");
+    bool ok = output != NULL;
+    if (output != NULL)
+    {
+        ok = fprintf(output, "P6\n%u %u\n255\n", fb.width, fb.height) >= 0;
+        const unsigned char* pixels = (const unsigned char*)fb.base;
+        for (unsigned int y = 0; y < fb.height && ok; ++y)
+        {
+            const unsigned char* source = pixels + y * fb.pitch * 4u;
+            for (unsigned int x = 0; x < fb.width; ++x)
+            {
+                row[x*3u] = source[x*4u];
+                row[x*3u+1u] = source[x*4u+1u];
+                row[x*3u+2u] = source[x*4u+2u];
+            }
+            ok = fwrite(row, 3u, fb.width, output) == fb.width;
+        }
+        if (ferror(output))
+            ok = false;
+        if (fclose(output) != 0)
+            ok = false;
+    }
+    free(row);
+    return ok;
+}
+
+// Opt-in snapshots after present. Request IDs are independent of a scheduled
+// snapshot, so UI inspection cannot consume a later match/play-frame capture.
+// Display readback and disk writes are intentionally excluded from normal play.
+static void VitaMaybeCaptureFrame()
+{
     static bool initialized = false;
+    static port::SnapshotRequest requests;
     static unsigned long target = 0;
     static unsigned long matchTarget = 0;
     static unsigned long playTarget = 0;
@@ -192,6 +250,24 @@ static void VitaMaybeCaptureFrame()
         if(playValue!=NULL)playTarget=strtoul(playValue,NULL,10);
         const char* goalValue=getenv("STRIKERS_VITA_SNAPSHOT_GOAL_X");
         if(goalValue!=NULL&&PortDiagnosticsEnabled())goalSnapshotX=fabsf(strtof(goalValue,NULL));
+        if (PortDiagnosticsEnabled())
+        {
+            const char* requestValue = getenv("STRIKERS_VITA_SNAPSHOT_REQUEST");
+            if (requestValue && *requestValue && std::strcmp(requestValue, "0") && !requests.configure(requestValue))
+                OSReport("[vita] snapshot request disabled: path exceeds %u bytes\n",
+                         unsigned(port::SnapshotRequest::MaxPathLength));
+        }
+    }
+    if (requests.enabled())
+    {
+        port::SnapshotRequest::OutputPath path;
+        const auto requestId = requests.poll(port_monotonic_ns, path);
+        if (requestId)
+        {
+            const bool ok = VitaCaptureFrameToPath(path.data());
+            OSReport("[vita] snapshot_request id=%u ok=%d path=%s\n",
+                     unsigned(requestId), ok ? 1 : 0, path.data());
+        }
     }
     if (target == 0 && matchTarget == 0 && playTarget == 0)
         return;
@@ -214,53 +290,9 @@ static void VitaMaybeCaptureFrame()
     }
     // After the single shot, remove every subsequent fence/readback from play.
     target=0;matchTarget=0;playTarget=0;
-    SceDisplayFrameBuf fb = {};
-    fb.size = sizeof(fb);
-    int result=0;
-    std::vector<uint8_t> nativePixels;
-    if (nativeRenderer) {
-        if (!port::directmatch::readback_presented_rgba8(nativePixels)) result=-1;
-        else {
-            fb.base=nativePixels.data();fb.width=960;fb.height=544;fb.pitch=960;
-            fb.pixelformat=SCE_DISPLAY_PIXELFORMAT_A8B8G8R8;
-        }
-    } else
-    {
-        sceGxmDisplayQueueFinish();
-        result=sceDisplayGetFrameBuf(&fb,SCE_DISPLAY_SETBUF_IMMEDIATE);
-    }
-    if (result < 0 || fb.base == NULL || fb.width == 0 || fb.width > 4096
-        || fb.height == 0 || fb.height > 4096 || fb.pitch < fb.width || fb.pixelformat != 0)
-    {
-        OSReport("[vita] snapshot failed: framebuffer rc=%d format=%u\n", result, fb.pixelformat);
-        return;
-    }
-    unsigned char* row = (unsigned char*)malloc(fb.width * 3u);
-    if (row == NULL)
-        return;
     char path[128];
     snprintf(path, sizeof(path), "ux0:data/strikersVita/debug_frame_%s_%lu.ppm", playShot?"play":"3d",shotLabel);
-    FILE* output = fopen(path, "wb");
-    bool ok = output != NULL;
-    if (output != NULL)
-    {
-        fprintf(output, "P6\n%u %u\n255\n", fb.width, fb.height);
-        const unsigned char* pixels = (const unsigned char*)fb.base;
-        for (unsigned int y = 0; y < fb.height && ok; ++y)
-        {
-            const unsigned char* source = pixels + y * fb.pitch * 4u;
-            for (unsigned int x = 0; x < fb.width; ++x)
-            {
-                row[x*3u] = source[x*4u];
-                row[x*3u+1u] = source[x*4u+1u];
-                row[x*3u+2u] = source[x*4u+2u];
-            }
-            ok = fwrite(row, 3u, fb.width, output) == fb.width;
-        }
-        if (fclose(output) != 0)
-            ok = false;
-    }
-    free(row);
+    const bool ok = VitaCaptureFrameToPath(path);
     OSReport("[vita] snapshot 3d_frame=%lu renderer=%s ok=%d path=%s\n",
              heavyFrames,"VitaGL",ok ? 1 : 0,path);
     if(goalSnapshotX>0&&g_pBall)
@@ -829,16 +861,39 @@ static void PortPumpHostEvents()
 static bool s_portRunning=true;
 static const char* s_portExitReason=nullptr;
 static unsigned long s_portFrame=0;
-static void PortPumpHostEvents() {s_portRunning=port::native_runtime::pump();}
+static port::frameskip::Scheduler s_frameskip;
+static void PortPumpHostEvents()
+{
+    s_portRunning = port::native_runtime::pump();
+    if (!s_portRunning)
+        s_portExitReason = "native Start+Select exit";
+}
 #endif
 
 #include "port/native_boot_screen.hpp"
+#include "port/native_watchdog.hpp"
+#include "port/native_avc_continuity_probe.hpp"
+#if defined(STRIKERS_SAVE_D13_FAULT) && STRIKERS_SAVE_D13_FAULT == 1
+#include "port/save_d13_fault.hpp"
+#endif
 int main(int argc, char* argv[])
 {
 #if defined(PORT_VITA)
     (void)port::startup::begin();
     // The master INI gate must be resolved before any runtime file is opened.
     (void)PortConfigLoad();
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    if (PortAvcContinuityProbeRequested())
+        return PortRunAvcContinuityProbe();
+#endif
+    port::watchdog::Session watchdogSession(
+        PortDiagnosticsEnabled() ? getenv("STRIKERS_VITA_WATCHDOG") : nullptr, getenv("STRIKERS_LOG"));
+    if (port::watchdog::error_code())
+        OSReport("[vita] watchdog startup failed: %d\n", port::watchdog::error_code());
+#if defined(STRIKERS_SAVE_D13_FAULT) && STRIKERS_SAVE_D13_FAULT == 1
+    port::save_d13::initialize();
+#endif
+    port::watchdog::stage(port::watchdog::Role::Frontend, port::watchdog::Stage::VerifyArchive);
     const int assetVerification=port::assets::verify_archive_if_requested(
         [](unsigned current,unsigned total) noexcept {
             port::startup::show("VERIFYING GAME DATA",current,total);
@@ -858,7 +913,9 @@ int main(int argc, char* argv[])
     }
 #endif
     port::startup::show("LOADING GAME DATA");
+    port::watchdog::stage(port::watchdog::Role::Frontend, port::watchdog::Stage::NativeAudioInit);
     PortNativeAudioInitialize();
+    port::watchdog::stage(port::watchdog::Role::Frontend, port::watchdog::Stage::NativeAudioReady);
 #endif
 
     // PORT: strikers.ini -> environment, before anything reads one.
@@ -886,12 +943,16 @@ int main(int argc, char* argv[])
     }
     PortBenchInit();
 #if defined(PORT_VITA)
-    // Register only the shaders used by actual gameplay draws when opted in.
-    // With the menu disabled this adds no per-draw counters to the GXM path.
+    port::configure_task_profile();
 #endif
 
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    port::watchdog::stage(port::watchdog::Role::Frontend, port::watchdog::Stage::RuntimeInit);
     if(!port::native_runtime::initialize())return 1;
+    s_frameskip.set_mode(port::frameskip::parse_mode(getenv("STRIKERS_VITA_FRAMESKIP")));
+    if (PortDiagnosticsEnabled())
+        OSReport("[vita] frameskip=%s (render-only)\n",
+                 port::frameskip::mode_name(s_frameskip.mode()));
     PortSetWindowAspect(960,544);
     PortSetDisplayRefresh(60.0,1);
     glxVitaReserveResourceArena();
@@ -1030,6 +1091,7 @@ int main(int argc, char* argv[])
         OSClearStack(g_StackWatermarkFiller);
     }
 
+    port::watchdog::stage(port::watchdog::Role::Frontend, port::watchdog::Stage::GameInit);
     Initialize();
 #if defined(PORT_VITA) && defined(STRIKERS_VITA_NATIVE_RUNTIME)
     // Startup owns the native context and shaders before any game draw.
@@ -1071,12 +1133,27 @@ int main(int argc, char* argv[])
     while (s_portRunning && !PortQuitRequested())
     {
         // PORT: the deferred limiter sleep goes before the event pump so the frame reads input after it.
+        port::watchdog::stage(port::watchdog::Role::Frontend, port::watchdog::Stage::Limiter);
         PortLimiterFlush();
+        port::watchdog::stage(port::watchdog::Role::Frontend, port::watchdog::Stage::HostInput);
         PortPumpHostEvents();
+        port::watchdog::stage(port::watchdog::Role::Frontend, port::watchdog::Stage::Debug);
         PortDebugFrame();
 #if defined(PORT_VITA)
         PortBenchFrameBegin();
         PortProfilerFrameMark();
+        PortBenchCaptureStatus frameskipCapture{};
+        PortBenchGetCaptureStatus(&frameskipCapture);
+        const bool frameskipEligible =
+            g_pGame != nullptr && g_pGame->IsGameplayOrOvertime() &&
+            !FrontEnd::m_bInPauseMenuState &&
+            nlTaskManager::m_pInstance != nullptr &&
+            nlTaskManager::m_pInstance->m_CurrState == 2 &&
+            nlTaskManager::m_pInstance->m_PendingState == 2 &&
+            !PortFixedTimestep() && frameskipCapture.state != PORT_CAPTURE_COLLECTING;
+        port::frameskip::set_render_this_frame(
+            s_frameskip.should_render(port_monotonic_ns(), 60, frameskipEligible));
+        port::watchdog::stage(port::watchdog::Role::Frontend, port::watchdog::Stage::BeginFrame);
         if (!port::directmatch::begin_frame())
         {
             s_portExitReason = "native GXM begin_frame failed";
@@ -1112,44 +1189,92 @@ int main(int argc, char* argv[])
 #endif
 
         // Sample the pad before the tasks that read it. main() registers VBlankPadUpdate through PADSetSamplingCallback.
+        port::watchdog::stage(port::watchdog::Role::Frontend, port::watchdog::Stage::Pad);
         PortInvokePadSamplingCallback();
 
         PortProfilerTasksBegin();
+#if defined(PORT_VITA)
+        auto& taskProfile = port::task_profile();
+        if (taskProfile.enabled())
+        {
+            PortBenchCaptureStatus status{};
+            PortBenchGetCaptureStatus(&status);
+            taskProfile.begin_frame(status);
+        }
+#endif
+        port::watchdog::stage(port::watchdog::Role::Frontend, port::watchdog::Stage::Tasks);
+#if defined(PORT_VITA)
+        if (frameskipCapture.state == PORT_CAPTURE_COLLECTING)
+            PortBenchSetScene(nlTaskManager::m_pInstance->m_CurrState,
+                nlTaskManager::m_pInstance->m_PrevState, Presentation::Instance().mCurrentFunction);
+#endif
         nlTaskManager::RunAllTasks();
+#if defined(PORT_VITA)
+        taskProfile.end_tasks();
+#endif
         PortProfilerTasksEnd();
         PortBenchSetPlayActive(g_pGame != NULL && g_pGame->IsGameplayOrOvertime());
         if (PortDiagnosticsEnabled())
             UpdateProfile();
         PortBenchAfterTasks();
+#if defined(STRIKERS_SAVE_D13_FAULT) && STRIKERS_SAVE_D13_FAULT == 1
+        port::save_d13::sample_frontend();
+        port::save_d13::drain(s_portFrame);
+#endif
 
         // PORT: the audio clock. MusyX runs only inside this call; see include/port/audio.h.
+        port::watchdog::stage(port::watchdog::Role::Frontend, port::watchdog::Stage::AudioUpdate);
         PortAudioUpdate();
 #if defined(PORT_VITA)
+        port::watchdog::stage(port::watchdog::Role::Frontend, port::watchdog::Stage::EndFrame);
         if (!port::directmatch::end_frame())
         {
             s_portExitReason = "native GXM end_frame failed";
             break;
         }
+        port::watchdog::stage(port::watchdog::Role::Frontend, port::watchdog::Stage::Snapshot);
         VitaMaybeCaptureFrame();
+        port::watchdog::stage(port::watchdog::Role::Frontend, port::watchdog::Stage::Capture);
         port::capture_asset_io(g_pGame != NULL && g_pGame->IsGameplayOrOvertime());
 #else
         aurora_end_frame();
 #endif
         s_portFrame++;
+        port::watchdog::frame(static_cast<uint32_t>(s_portFrame));
 
+        port::watchdog::stage(port::watchdog::Role::Frontend, port::watchdog::Stage::FrameEnd);
         PortBenchFrameEnd();
+#if defined(PORT_VITA)
+        port::directmatch::finish_packet_profile_frame();
+        if (taskProfile.enabled())
+        {
+            PortBenchCaptureStatus status{};
+            PortBenchGetCaptureStatus(&status);
+            taskProfile.end_frame(status, glGetCurrentFrame());
+        }
+#endif
     }
     if (s_portExitReason == NULL && PortQuitRequested())
         s_portExitReason = "PortQuitRequested";
+    port::watchdog::stage(port::watchdog::Role::Frontend, port::watchdog::Stage::ExitRequested);
     OSReport("[port] main loop ended at frame %lu: %s\n", s_portFrame,
              s_portExitReason != NULL ? s_portExitReason : "unknown reason");
 #if defined(PORT_VITA)
+    port::watchdog::stage(port::watchdog::Role::Frontend, port::watchdog::Stage::ShutdownAudio);
+    MovieStop(); // joins SceAvPlayer audio and releases movie textures before renderer shutdown
     PortAudioStop();
+    port::watchdog::stage(port::watchdog::Role::Frontend, port::watchdog::Stage::ShutdownAudioLoader);
     PortNativeAudioShutdown();
     PortProfilerStop();
+    port::watchdog::stage(port::watchdog::Role::Frontend, port::watchdog::Stage::ShutdownRenderer);
     port::directmatch::shutdown();
+    port::watchdog::stage(port::watchdog::Role::Frontend, port::watchdog::Stage::ShutdownRuntime);
     port::native_runtime::shutdown();
 
+#if defined(STRIKERS_SAVE_D13_FAULT) && STRIKERS_SAVE_D13_FAULT == 1
+    port::save_d13::shutdown(s_portFrame);
+#endif
+    (void)watchdogSession.finish();
     sceKernelExitProcess(0);
 #else
     PortDiscordShutdown();

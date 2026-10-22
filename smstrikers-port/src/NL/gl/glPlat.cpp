@@ -13,6 +13,7 @@
 #include "NL/glx/glxSwap.h"
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
 #include "port/native_match_runtime.hpp"
+#include "port/frameskip.hpp"
 #endif
 #include "NL/glx/glxMemory.h"
 #include "NL/glx/glxTarget.h"
@@ -329,7 +330,21 @@ static inline void glx_SendFrame(bool bSend)
 void glplatSendFrame()
 {
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
-    glx_SendFrame(true);glx_SendViews();glplatFrameAllocNextFrame();glx_NumVirtMisses=0;glx_VirtLatency=0;
+    if (port::frameskip::render_this_frame())
+    {
+        glx_SendFrame(true);
+        glx_SendViews();
+    }
+    else
+    {
+        // Keep gameplay/FE task side effects, render-list lifetime and
+        // engine frame numbering. Only GPU submission/presentation is skipped.
+        glx_SendReset();
+        port::directmatch::discard_present();
+    }
+    glplatFrameAllocNextFrame();
+    glx_NumVirtMisses = 0;
+    glx_VirtLatency = 0;
 #else
 
     static int profile = -1;
@@ -457,6 +472,7 @@ struct PortProfilerRenderViewScope
 static void glx_SendViews()
 {
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    glx_SendReset();
     for(unsigned view=0;view<GLV_Num;++view){
         const auto v=(eGLView)view;if(!glViewGetEnable(v)||!PortDebugRenderViewEnabled(view))continue;
         const auto* state=glViewGetState(v);const auto* list=gl_ViewGetRenderList(v);
@@ -464,8 +480,23 @@ static void glx_SendViews()
         bool fog=glx_bFog&&(view==3||view==6||view==7||view==11||(view==2&&glx_bFogSky));
         const auto color=glx_GetFogColour();
         port::directmatch::set_fog(glx_FogStart,glx_FogEnd,fog,glx_FogType,{color.r/255.f,color.g/255.f,color.b/255.f,color.a/255.f});
+        if (fog)
+        {
+            std::array<float, 16> gxViewProjection{};
+            if (glx_bFogAdjust)
+            {
+                nlMatrix4 projection;
+                glViewGetProjectionMatrix(v, projection);
+                // Preserve exactly the e2[row][column] layout passed to GX.
+                // DOF's persistent projection and packet overrides have later lifetimes.
+                for (unsigned row = 0; row < 4; ++row)
+                    for (unsigned column = 0; column < 4; ++column)
+                        gxViewProjection[row * 4 + column] = projection.e2[row][column];
+            }
+            if (!port::directmatch::set_fog_range(glx_bFogAdjust, gxViewProjection))
+                continue; // Setter has already invalidated this frame once.
+        }
         port::directmatch::begin_view(v);
-        if(state->bClearDepth)port::directmatch::clear_depth();
         if(view==17){glx_DOFUpdate(glConstantGet("dof/range").x);glx_DOFGrab();}
         if(view==9)glx_ColourGrab();if(view==10)glx_OffsetGrab();if(view==15)glx_ShadowGrab();
         gl_ViewIterate(v,glx_SendFrame_cb);

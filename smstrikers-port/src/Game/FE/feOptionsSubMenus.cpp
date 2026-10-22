@@ -1,4 +1,6 @@
 #include "Game/FE/feOptionsSubMenus.h"
+#include <dolphin/os.h>
+#include <stdlib.h>
 
 #include "NL/platpad.h"
 #include "NL/nlTask.h"
@@ -1549,23 +1551,42 @@ void OptionsSaveLoad::Update(float dt)
 {
     if (g_pFEInput->JustPressed(FE_ALL_PADS, 0x100, false, NULL))
     {
-        if (mMenuItems.GetActiveItemIndex() == 0)
+        const int selected = mMenuItems.GetActiveItemIndex();
+        const bool traceScenes = getenv("STRIKERS_LOG_SCENES") != NULL;
+        const char* operation = selected == 0 ? "save" : "load";
+        if (traceScenes)
+            OSReport("[fe-modal] action=%s stage=selected index=%d\n", operation, selected);
+        if (selected == 0)
         {
             ResetEnableSaveLoadFlag();
-            if (SaveLoadScene::IsIOEnabled())
+            const bool ioEnabled = SaveLoadScene::IsIOEnabled();
+            if (traceScenes)
+                OSReport("[fe-modal] action=%s stage=io_checked enabled=%d\n", operation, (int)ioEnabled);
+            if (ioEnabled)
             {
                 nlSingleton<GameSceneManager>::Instance()->Pop();
+                if (traceScenes)
+                    OSReport("[fe-modal] action=%s stage=pop_done\n", operation);
                 SaveLoadScene* handler = (SaveLoadScene*)nlSingleton<GameSceneManager>::Instance()->Push(SCENE_ASK_SAVE, SCREEN_FORWARD, false);
+                if (traceScenes)
+                    OSReport("[fe-modal] action=%s stage=push_done scene=%d\n", operation, (int)SCENE_ASK_SAVE);
                 handler->mNextScene = SCENE_OPTIONS;
             }
         }
         else
         {
             ResetEnableSaveLoadFlag();
-            if (SaveLoadScene::IsIOEnabled())
+            const bool ioEnabled = SaveLoadScene::IsIOEnabled();
+            if (traceScenes)
+                OSReport("[fe-modal] action=%s stage=io_checked enabled=%d\n", operation, (int)ioEnabled);
+            if (ioEnabled)
             {
                 nlSingleton<GameSceneManager>::Instance()->Pop();
+                if (traceScenes)
+                    OSReport("[fe-modal] action=%s stage=pop_done\n", operation);
                 SaveLoadScene* handler = (SaveLoadScene*)nlSingleton<GameSceneManager>::Instance()->Push(SCENE_ASK_LOAD, SCREEN_FORWARD, false);
+                if (traceScenes)
+                    OSReport("[fe-modal] action=%s stage=push_done scene=%d\n", operation, (int)SCENE_ASK_LOAD);
                 handler->mNextScene = SCENE_OPTIONS;
             }
         }

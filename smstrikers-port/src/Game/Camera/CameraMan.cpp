@@ -12,6 +12,15 @@
 #include "Game/Camera/animcam.h"
 #include "Game/Camera/rumblefilter.h"
 #include "Game/Camera/GameplayCam.h"
+#include "Game/Camera/DebugCam.h"
+#include "Game/Camera/ReplayCamera.h"
+#include "Game/Camera/TopDownCamera.h"
+#include "Game/Camera/FollowCam.h"
+#include "Game/Camera/kickoffcam.h"
+#include "Game/Camera/GoalCam.h"
+#include "Game/Camera/ShootToScoreCam.h"
+#include "Game/Camera/AnimViewerCam.h"
+#include "Game/Camera/FaceCam.h"
 #include "NL/nlBasicString.h"
 #include "Game/Debug/ShapeRender.h"
 #include "Game/Drawable/DrawableObj.h"
@@ -211,68 +220,6 @@ void cCameraManager::Update(float fDeltaT)
 }
 
 void* nlMalloc(size_t, unsigned int, bool);
-
-class cDebugCamera
-{
-public:
-    cDebugCamera();
-};
-
-class ReplayCamera
-{
-public:
-    ReplayCamera();
-};
-
-class TopDownCamera
-{
-public:
-    TopDownCamera();
-};
-
-class cFollowCamera
-{
-public:
-    enum FollowTarget
-    {
-        FOLLOW_BALL = 0,
-        FOLLOW_CHARACTER = 1,
-        FOLLOW_SELECTABLE = 2,
-        FOLLOW_ANIM_VIEWER_CHARACTER = 3,
-    };
-
-    cFollowCamera(FollowTarget);
-};
-
-class cKickOffCamera
-{
-public:
-    cKickOffCamera();
-};
-
-class GoalCamera
-{
-public:
-    GoalCamera();
-};
-
-class cShootToScoreCamera
-{
-public:
-    cShootToScoreCamera();
-};
-
-class cAnimViewerCamera
-{
-public:
-    cAnimViewerCamera();
-};
-
-class FaceCam
-{
-public:
-    FaceCam(float);
-};
 
 /**
  * Offset/Address/Size: 0xD78 | 0x801A7400 | size: 0x354

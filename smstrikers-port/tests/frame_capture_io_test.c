@@ -52,19 +52,22 @@ static void check_fault(int failure)
     PortBenchGetCaptureStatus(&status); CHECK(status.state==PORT_CAPTURE_IDLE);
     PortBenchInit();
     PortBenchGetCaptureStatus(&status); CHECK(status.state==PORT_CAPTURE_COLLECTING);
+    CHECK(opens==1); // The startup-ready marker is written before measurement.
     CHECK(!PortBenchRetryCapture());
     fault=failure;
-    for (int i=0;i<4;++i) frame();
+    for (int i=0;i<3;++i) frame();
+    CHECK(opens==1); // No output while collecting incomplete samples.
+    frame();
     PortBenchGetCaptureStatus(&status);
     CHECK(status.state==PORT_CAPTURE_ERROR && status.samples==4 && status.requested==4);
     CHECK(status.errorCode==(failure==1?EACCES:failure==2?ENOSPC:EIO));
     for (int i=0;i<20;++i) frame();
-    CHECK(opens==1); // No automatic retry and no out-of-bounds extra sample.
+    CHECK(opens==2); // No automatic retry and no out-of-bounds extra sample.
     fault=0;
     CHECK(PortBenchRetryCapture());
     PortBenchGetCaptureStatus(&status);
     CHECK(status.state==PORT_CAPTURE_COMPLETE && status.errorCode==0 && status.samples==4);
-    CHECK(!PortBenchRetryCapture() && opens==2);
+    CHECK(!PortBenchRetryCapture() && opens==3);
     FILE* file=fopen(path,"rb"); CHECK(file);
     char line[256]; int rows=0;
     while (fgets(line,sizeof line,file)) {
@@ -74,6 +77,8 @@ static void check_fault(int failure)
         }
     }
     CHECK(rows==4); fclose(file); unlink(path);
+    char ready[sizeof path + sizeof ".ready"];
+    snprintf(ready,sizeof ready,"%s.ready",path); unlink(ready);
 }
 int main(void)
 {

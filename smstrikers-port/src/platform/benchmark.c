@@ -17,18 +17,70 @@ static int s_read;
 // fixed storage is written once after the requested sample, with capture I/O
 // excluded from that sample. Startup, menus and gameplay remain identifiable.
 #define CAPTURE_LIMIT 8192
-typedef struct FrameCapture { unsigned int frameUs, tasksUs, presentUs, sleepUs; unsigned long matchFrame; int match; } FrameCapture;
+typedef struct FrameCapture {
+    unsigned int frameUs, tasksUs, presentUs, sleepUs;
+    unsigned long matchFrame;
+    int match;
+    unsigned scene, state, previous, sceneSerial, sceneFrame;
+    char presentation[64];
+} FrameCapture;
 static FrameCapture* s_capture;
 static size_t s_captureCount, s_captureGoal;
 static char s_capturePath[1024];
 static PortBenchCaptureState s_captureState;
 static int s_captureError;
+static unsigned long s_captureLastFrame;
 static int s_captureMatchOnly;
 static size_t s_captureSkip;
 static int s_capturePlayOnly, s_playActive;
 static unsigned long s_playFrameCounter;
+enum { SCENE_UNKNOWN, SCENE_INTRO, SCENE_GOAL, SCENE_REPLAY, SCENE_TROPHY, SCENE_PRESENTATION, SCENE_PLAY, SCENE_MENU };
+static const char* s_sceneNames[] = {"unknown", "intro", "goal", "replay", "trophy", "presentation", "play", "menu"};
+static int s_sceneCapture; // 0 off; -1 all; -2 cutscenes; positive exact scene
+static unsigned s_scene, s_sceneState, s_scenePrevious, s_sceneSerial, s_sceneFrame;
+static char s_scenePresentation[64];
+
+void PortBenchSetScene(unsigned current, unsigned previous, const char* presentation)
+{
+    if (!s_sceneCapture || s_captureState != PORT_CAPTURE_COLLECTING) return;
+    char name[64] = {0};
+    snprintf(name, sizeof name, "%s", presentation ? presentation : "");
+    for (unsigned i = 0; name[i]; ++i)
+        if (!((name[i] >= 'a' && name[i] <= 'z') || (name[i] >= 'A' && name[i] <= 'Z') ||
+            (name[i] >= '0' && name[i] <= '9') || name[i] == '_')) name[i] = '_';
+    unsigned scene = SCENE_MENU;
+    if (current == 0x10 || current == 0x20000 || !strcmp(name, "PlayHighlight")) scene = SCENE_REPLAY;
+    else if (strstr(name, "Throphy") || strstr(name, "Trophy")) scene = SCENE_TROPHY;
+    else if (!strcmp(name, "GameBegin")) scene = SCENE_INTRO;
+    else if (!strncmp(name, "Goal", 4)) scene = SCENE_GOAL;
+    else if (current == 0x100) scene = SCENE_PRESENTATION;
+    else if (current == 2) scene = SCENE_PLAY;
+    if (scene != s_scene || current != s_sceneState || strcmp(name, s_scenePresentation))
+    { ++s_sceneSerial; s_sceneFrame = 0; }
+    else ++s_sceneFrame;
+    s_scene = scene; s_sceneState = current; s_scenePrevious = previous;
+    memcpy(s_scenePresentation, name, sizeof name);
+}
 
 static int capture_active(void) { return s_captureState == PORT_CAPTURE_COLLECTING; }
+static void capture_ready(void)
+{
+    // A finite capture can confirm a quiet launch before the timing window.
+    // This one-shot marker is not a gameplay heartbeat or a completion signal.
+    char path[sizeof s_capturePath + sizeof ".ready"];
+    snprintf(path, sizeof path, "%s.ready", s_capturePath);
+    FILE* f = fopen(path, "wb");
+    if (!f) return;
+    int failed = fprintf(f, "# strikers-frame-capture-ready-v1\n"
+        "requested,warmup_remaining,match_only,play_only,diagnostics,fps_overlay\n"
+        "%u,%u,%d,%d,%d,%d\n", (unsigned)s_captureGoal, (unsigned)s_captureSkip,
+        s_captureMatchOnly, s_capturePlayOnly, PortDiagnosticsEnabled(), PortFpsOverlayEnabled()) < 0;
+    if (ferror(f)) failed = 1;
+    if (fclose(f)) failed = 1;
+    if (failed) remove(path);
+    // Marker failure must not discard samples which can still be collected
+    // and exported/retried through the existing capture error contract.
+}
 static void finish_capture(void)
 {
     // Stop sampling before output, including on failure. Keep all samples for
@@ -55,6 +107,29 @@ static void finish_capture(void)
 #undef CAPTURE_WRITE
     if (ferror(f) && !failed) failed=errno ? errno : EIO;
     if (fclose(f) != 0 && !failed) failed=errno ? errno : EIO;
+    if (!failed && s_sceneCapture)
+    {
+        char path[sizeof s_capturePath + sizeof ".scenes.csv"];
+        snprintf(path, sizeof path, "%s.scenes.csv", s_capturePath);
+        f = fopen(path, "wb");
+        if (!f) failed = errno ? errno : EIO;
+        else
+        {
+            if (fprintf(f, "# strikers-scenes-v1 state_sampled=before_tasks\n"
+                "sample,match_frame,scene,task_state,previous_state,scene_serial,scene_frame,presentation\n") < 0)
+                failed = errno ? errno : EIO;
+            for (size_t i = 0; i < s_captureCount && !failed; ++i)
+            {
+                const FrameCapture* r = &s_capture[i];
+                // Script function identifiers contain no CSV metacharacters.
+                if (fprintf(f, "%lu,%lu,%s,%u,%u,%u,%u,%s\n", (unsigned long)i,
+                    r->matchFrame, s_sceneNames[r->scene], r->state, r->previous,
+                    r->sceneSerial, r->sceneFrame, r->presentation) < 0) failed = errno ? errno : EIO;
+            }
+            if (ferror(f) && !failed) failed = errno ? errno : EIO;
+            if (fclose(f) && !failed) failed = errno ? errno : EIO;
+        }
+    }
     s_captureError=failed;
     if (failed) return;
     s_captureState=PORT_CAPTURE_COMPLETE;
@@ -63,7 +138,7 @@ static void finish_capture(void)
 
 void PortBenchGetCaptureStatus(PortBenchCaptureStatus* out)
 {
-    if (out) *out=(PortBenchCaptureStatus){s_captureState,s_captureCount,s_captureGoal,s_captureSkip,s_captureError};
+    if (out) *out=(PortBenchCaptureStatus){s_captureState,s_captureCount,s_captureGoal,s_captureSkip,s_captureError,s_captureLastFrame};
 }
 int PortBenchRetryCapture(void)
 {
@@ -281,8 +356,17 @@ void PortBenchInit(void)
     s_captureMatchOnly=only&&strcmp(only,"1")==0;
     const char* play=getenv("STRIKERS_FRAME_CAPTURE_PLAY_ONLY");
     s_capturePlayOnly=play&&strcmp(play,"1")==0;
+    const char* scene = getenv("STRIKERS_FRAME_CAPTURE_SCENE");
+    if (scene && *scene)
+    {
+        if (!strcmp(scene, "all")) s_sceneCapture = -1;
+        else if (!strcmp(scene, "cutscene")) s_sceneCapture = -2;
+        else for (unsigned i = 1; i < sizeof s_sceneNames / sizeof *s_sceneNames; ++i)
+            if (!strcmp(scene, s_sceneNames[i])) s_sceneCapture = (int)i;
+    }
     const char* skip=getenv("STRIKERS_FRAME_CAPTURE_SKIP");
     if(skip&&*skip){char* end=NULL;unsigned long n=strtoul(skip,&end,10);if(end&&!*end&&n<=100000)s_captureSkip=n;}
+    if (capture_active()) capture_ready();
 }
 
 void PortBenchSetPlayActive(int active)
@@ -431,7 +515,9 @@ void PortBenchFrameEnd(void)
         ++s_matchFrameCounter;
     }
     if(s_playActive) ++s_playFrameCounter;
-    const int captureEligible=(!s_captureMatchOnly||s_matchActive)&&(!s_capturePlayOnly||s_playActive);
+    const int sceneEligible = !s_sceneCapture || s_sceneCapture == -1 ||
+        (s_sceneCapture == -2 ? s_scene >= SCENE_INTRO && s_scene <= SCENE_PRESENTATION : s_scene == (unsigned)s_sceneCapture);
+    const int captureEligible=sceneEligible&&(!s_captureMatchOnly||s_matchActive)&&(!s_capturePlayOnly||s_playActive);
     if(capture_active() && captureEligible && s_captureSkip) {
         --s_captureSkip;
     } else if(capture_active() && captureEligible) {
@@ -439,6 +525,10 @@ void PortBenchFrameEnd(void)
         r->frameUs=s_lastFrameUs;r->tasksUs=s_lastBusyUs;r->presentUs=s_lastPresentUs;r->sleepUs=s_lastSleepUs;
         r->match=s_matchActive;
         r->matchFrame=s_capturePlayOnly?s_playFrameCounter-1:(s_matchActive?s_matchFrameCounter-1:0);
+        r->scene = s_scene; r->state = s_sceneState; r->previous = s_scenePrevious;
+        r->sceneSerial = s_sceneSerial; r->sceneFrame = s_sceneFrame;
+        memcpy(r->presentation, s_scenePresentation, sizeof r->presentation);
+        s_captureLastFrame=r->matchFrame;
         if(s_captureCount==s_captureGoal)finish_capture();
     }
 }

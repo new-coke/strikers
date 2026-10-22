@@ -369,7 +369,7 @@ void CupTickerManager::CreateNewMessage()
         mState = (eCupTickerState)(((int)mState + 1) % 6);
     }
 
-    memcpy(mMessageBuffer, tickerMessage.c_str(), 0x400);
+    nlStrNCpy(mMessageBuffer, tickerMessage.c_str(), sizeof(mMessageBuffer) / sizeof(mMessageBuffer[0]));
     mTicker->SetDisplayMessage(WideBasicString(mMessageBuffer));
 }
 

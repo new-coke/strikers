@@ -86,15 +86,27 @@ void dxt_compress(uint8_t *dst, uint8_t *src, int w, int h, int isdxt5) {
 
 static int unsafe_allocator_counter = 0;
 void *gpu_alloc_mapped_aligned_unsafe(size_t alignment, size_t size, vglMemType type) {
+	// An allocation may occur between scene setup and the draw using it. Ending
+	// that scene here would invalidate the caller; rotating GC could free its
+	// unsubmitted storage. All ordinary allocation pools have already failed.
+	if (gxm_scene_is_active())
+		return NULL;
+
 	// Performing a garbage collection cycle prior to attempting to allocate the memory again
 	unsafe_allocator_counter++;
 	sceGxmFinish(gxm_context);
+	if (sceGxmTransferFinish() < 0) {
+		vgl_error = GL_INVALID_OPERATION;
+		return NULL;
+	}
 #if defined(HAVE_SINGLE_THREADED_GC) && !defined(HAVE_PTHREAD)
 	garbage_collector(0, NULL);
 #else
-	sceKernelWaitSema(gc_mutex[1], 1, NULL);
-	sceKernelSignalSema(gc_mutex[0], 1);
-	sceKernelDelayThread(1000000);
+	if (sceKernelSignalSema(gc_mutex[0], 1) < 0 ||
+		sceKernelWaitSema(gc_mutex[1], 1, NULL) < 0) {
+		vgl_error = GL_INVALID_OPERATION;
+		return NULL;
+	}
 #endif
 
 	// Allocating requested memblock
@@ -336,6 +348,12 @@ void gpu_alloc_texture(uint32_t w, uint32_t h, SceGxmTextureFormat format, const
 	const int aligned_w = VGL_ALIGN(w, 8);
 	const int tex_size = aligned_w * h * bpp;
 	void *texture_data = gpu_alloc_mapped(tex_size, VGL_MEM_MAIN);
+	if (!texture_data) {
+		tex->status = TEX_UNINITIALIZED;
+		tex->data = NULL;
+		vgl_error = GL_OUT_OF_MEMORY;
+		return;
+	}
 
 	if (texture_data != NULL) {
 		// Initializing texture data buffer
@@ -792,6 +810,10 @@ void gpu_alloc_mipmaps(int level, texture *tex) {
 		if (count <= 0 && !texture_data) {
 			// Reallocation in the same mspace failed, try manually.
 			texture_data = gpu_alloc_mapped(size, VGL_MEM_MAIN);
+			if (!texture_data) {
+				vgl_error = GL_OUT_OF_MEMORY;
+				return;
+			}
 			vgl_memcpy(texture_data, tex->data, VGL_ALIGN(orig_w, 8) * orig_h * bpp);
 			gpu_free_texture_data(tex);
 		}
@@ -800,6 +822,7 @@ void gpu_alloc_mipmaps(int level, texture *tex) {
 		uint8_t *curPtr = (uint8_t *)texture_data;
 		uint32_t curWidth = orig_w;
 		uint32_t curHeight = orig_h;
+		GLboolean transferred = GL_FALSE;
 		if (curWidth % 2)
 			curWidth--;
 		if (curHeight % 2)
@@ -811,13 +834,18 @@ void gpu_alloc_mipmaps(int level, texture *tex) {
 			uint32_t curDstStride = VGL_ALIGN(curWidth >> 1, 8);
 			uint8_t *dstPtr = curPtr + jumps[j];
 			if (curWidth <= 1024 && curHeight <= 1024) {
-				sceGxmTransferDownscale(
+				int transfer_result = sceGxmTransferDownscale(
 					fmt, curPtr, 0, 0,
 					curWidth, curHeight,
 					curSrcStride * bpp,
 					fmt, dstPtr, 0, 0,
 					curDstStride * bpp,
 					NULL, 0, NULL);
+				if (transfer_result < 0) {
+					vgl_error = GL_INVALID_OPERATION;
+					break;
+				}
+				transferred = GL_TRUE;
 			} else { // sceGxmTransferDownscale doesn't support higher sizes, so we go for CPU downscaling
 				for (int y = 0, y2 = 0; y < curHeight; y += 2, y2++) {
 					uint8_t *srcLine = curPtr + curSrcStride * bpp * y;
@@ -831,6 +859,14 @@ void gpu_alloc_mipmaps(int level, texture *tex) {
 			curWidth /= 2;
 			curHeight /= 2;
 		}
+		// Transfer work has its own completion API; frame retirement does not
+		// prove that a newly generated, never-sampled mip chain is ready.
+		if (transferred && sceGxmTransferFinish() < 0) {
+			vgl_error = GL_INVALID_OPERATION;
+#ifndef TEXTURES_SPEEDHACK
+			tex->last_frame = vgl_framecount;
+#endif
+		}
 
 		// Initializing texture in sceGxm
 		tex->mip_count = level;
@@ -838,9 +874,6 @@ void gpu_alloc_mipmaps(int level, texture *tex) {
 		tex->palette_data = NULL;
 		tex->status = TEX_VALID;
 		tex->data = texture_data;
-#ifndef TEXTURES_SPEEDHACK
-		tex->last_frame = OBJ_NOT_USED;
-#endif
 #ifdef HAVE_TEX_CACHE
 		mark_as_cacheable(tex)
 #endif

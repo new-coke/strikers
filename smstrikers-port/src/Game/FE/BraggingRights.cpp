@@ -536,7 +536,7 @@ void BraggingRightsOverlay::ChangeTicker(int tickerRow)
         }
     }
 
-    memcpy(mBuffer, formatted.c_str(), sizeof(mBuffer));
+    nlStrNCpy(mBuffer, formatted.c_str(), sizeof(mBuffer) / sizeof(mBuffer[0]));
 
     mTicker->SetDisplayMessage(BasicString<unsigned short, Detail::TempStringAllocator>(mBuffer));
 }
@@ -661,7 +661,7 @@ void BraggingRightsScene::SceneCreated()
             BasicString<unsigned short, Detail::TempStringAllocator> formatted = Format<BasicString<unsigned short, Detail::TempStringAllocator>, unsigned short[32], unsigned short[32]>(
                 unformatted, statWideString, currentStatWideString);
 
-            memcpy(mBuffer[i], formatted.c_str(), sizeof(mBuffer[i]));
+            nlStrNCpy(mBuffer[i], formatted.c_str(), sizeof(mBuffer[i]) / sizeof(mBuffer[i][0]));
             pStatText->SetString(mBuffer[i]);
         }
         else
@@ -712,7 +712,7 @@ void BraggingRightsScene::SceneCreated()
 
     BasicString<unsigned short, Detail::TempStringAllocator> formatted = Format<BasicString<unsigned short, Detail::TempStringAllocator>, unsigned short[32], unsigned short[32]>(
         unformatted, winWideString, lossWideString);
-    memcpy(mRatioBuffer, formatted.c_str(), sizeof(mRatioBuffer));
+    nlStrNCpy(mRatioBuffer, formatted.c_str(), sizeof(mRatioBuffer) / sizeof(mRatioBuffer[0]));
 
     pText = FEFinder<TLTextInstance, 3>::Find(
         presentation,

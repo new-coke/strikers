@@ -1,6 +1,8 @@
 #include "NL/glx/glxTarget.h"
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "port/native_dof.hpp"
 #include "port/native_match_runtime.hpp"
+#include <cmath>
 #endif
 #include "port/aspect.h"
 #include "NL/glx/glxTexture.h"
@@ -69,6 +71,9 @@ bool glx_GetSharedLock()
  */
 void glxInitTargets()
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    port::native_dof::reset_projection();
+#endif
     unsigned long sharedSize;
     unsigned long singleSize;
     PlatTexture* pTex;
@@ -297,8 +302,15 @@ void glx_DOFGrab()
 void glx_DOFUpdate(float startDist)
 {
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
-    nlMatrix4 p;glViewGetProjectionMatrix(GLV_DepthOfField,p);float z=p.e[10]*(-startDist)+p.e[11];if(p.e[14]==-1&&startDist!=0)z/=startDist;
-    const float depth=-z*16777215.f;nlVector4 value={depth,depth,depth,depth};glConstantSet("dof/depth",value);
+    if (std::fabs(startDist) < 0.001f)
+        startDist = 0.001f;
+    const auto projection = port::native_dof::projection();
+    const float z = projection.offset + (-startDist) * projection.scale;
+    const float w = projection.perspective ? 1.0f / startDist : 1.0f;
+    // Keep GXProject arithmetic in this TU's original floating-point mode.
+    const float depth = 16777215.0f * -(1.0f + w * z);
+    nlVector4 value = { depth, depth, depth, depth };
+    glConstantSet("dof/depth", value);
 #else
 
     Mtx view_matrix;
@@ -337,7 +349,8 @@ void glx_UpdateWarble()
 void glPlatGrabFrameBufferToTexture(unsigned long texture, unsigned int destWidth, unsigned int destHeight, unsigned int srcLeft, unsigned int srcTop, unsigned int srcWidth, unsigned int srcHeight)
 {
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
-    if(!glx_SharedLock)port::directmatch::capture_texture(texture,srcLeft,srcTop,srcWidth,srcHeight);
+    if(!glx_SharedLock)port::directmatch::capture_texture(texture,srcLeft,srcTop,srcWidth,srcHeight,
+                                                      false,destWidth,destHeight,true);
 #else
 
     static GXTexFmt gx_format[] = {

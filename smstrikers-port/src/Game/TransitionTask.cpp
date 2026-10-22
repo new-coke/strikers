@@ -928,14 +928,11 @@ void TransitionTask::InitializeFEState()
     if (!gAlreadyBooted)
     {
         gAlreadyBooted = true;
-#if defined(PORT_VITA)
-        // PORT: the retail boot path probes a GameCube memory card before the
-        // legal screen.  On Vita this can enter the popup/save-load flow before
-        // the front end is usable, so keep boot deterministic and defer card IO
-        // until the player explicitly enters save/load UI.
-        OSReport("[port] Vita boot: bypassing GameCube memory-card bootstrap\n");
-        nlSingleton<GameSceneManager>::Instance()->Push(SCENE_LEGAL, (ScreenMovement)0, false);
-#else
+        // A direct match boot reaches FE for the first time after its tracks were unloaded.
+        if (GetConfigBool(Config::Global(), "skipfe", false))
+        {
+            AudioLoader::LoadFE(true);
+        }
         if (SaveLoadScene::IsIOEnabled())
         {
             SaveLoadScene* scene = (SaveLoadScene*)nlSingleton<GameSceneManager>::Instance()->Push(SCENE_SHOULD_LOAD_OR_SAVE, (ScreenMovement)0, false);
@@ -945,7 +942,6 @@ void TransitionTask::InitializeFEState()
         {
             nlSingleton<GameSceneManager>::Instance()->Push(SCENE_LEGAL, (ScreenMovement)0, false);
         }
-#endif
     }
     else
     {

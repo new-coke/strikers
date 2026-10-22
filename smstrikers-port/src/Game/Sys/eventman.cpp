@@ -1,4 +1,7 @@
 #include "Game/Sys/eventman.h"
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "port/native_control_trace.hpp"
+#endif
 #include "dolphin/os.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -287,6 +290,10 @@ void EventManager::DispatchEvents()
     while (m_queue != 0)
     {
         Event* e = nlDLRingRemoveStart(&m_queue); // free->queue ring
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+        if (port::control_trace::enabled)
+            port::control_trace::observe_event(e);
+#endif
         if (m_handlers != 0)
         {
             EventHandler* it = nlDLRingGetStart(m_handlers);

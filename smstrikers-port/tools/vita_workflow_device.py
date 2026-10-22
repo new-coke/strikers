@@ -5,6 +5,7 @@ Does not touch saves, disc data, plugins or other applications. Logs installed
 content hashes; hardware measurements come only from downloaded runtime CSV.
 """
 import argparse
+import csv
 import hashlib
 import io
 import json
@@ -46,6 +47,27 @@ def read(ftp, directory, name):
     ftp.retrbinary("RETR " + name, out.write)
     return out.getvalue()
 
+def missing_file(error):
+    # Other 550 responses include allocation failures; they do not authorize
+    # treating a startup marker as absent and sending a game input.
+    return str(error).strip() in ("550 File not found.", "550 The file doesn't exist.")
+
+def delete_if_present(ftp, directory, name):
+    # VitaCompanion DELE uses the same generic error for an absent file and a
+    # failed deletion. Only SIZE can establish absence before this cleanup.
+    ftp.cwd(directory)
+    ftp.voidcmd("TYPE I")
+    try:
+        size = ftp.size(name)
+    except error_perm as error:
+        if missing_file(error):
+            return False
+        raise
+    if size is None:
+        raise RuntimeError("FTP SIZE did not confirm a file size: " + name)
+    ftp.delete(name)
+    return True
+
 def promote(ftp, directory, name, content, out):
     # Retain rollback history on the PC. Previous remote backup/stage files
     # accumulated in the Vita app/data directories on every test run.
@@ -85,6 +107,24 @@ def ini(original, overrides):
     prefix += "".join(f"{key}={value}\n" for key, value in overrides.items())
     return prefix.encode() + original
 
+def parse_capture_ready(data, config):
+    lines = data.decode("ascii").splitlines()
+    if not lines or lines[0] != "# strikers-frame-capture-ready-v1":
+        raise ValueError("Unknown capture startup marker")
+    rows = list(csv.DictReader(lines[1:]))
+    expected = {"requested": int(config["frame_capture_frames"]),
+                "warmup_remaining": int(config["frame_capture_skip"]),
+                "match_only": int(config["frame_capture_match_only"]),
+                "play_only": int(config["frame_capture_play_only"]),
+                "diagnostics": int(config["diagnostics"]),
+                "fps_overlay": int(config["fps_overlay"])}
+    if len(rows) != 1 or set(rows[0]) != set(expected):
+        raise ValueError("Malformed capture startup marker")
+    actual = {key: int(value) for key, value in rows[0].items()}
+    if actual != expected:
+        raise ValueError("Capture startup settings differ from this run")
+    return actual
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("action", choices=["backup", "install", "run", "fetch", "restore", "restore-config"])
@@ -105,8 +145,8 @@ def main():
     p.add_argument("--play-snapshot", action="store_true",
                    help="snapshot at live-play frame, excluding the introduction")
     p.add_argument("--diagnostics", action="store_true")
-    p.add_argument("--launch-confirm", choices=["twice", "once", "none", "startup-log"],
-                   help="defaults to startup-log with diagnostics, otherwise none; once/twice are explicit LiveArea confirmation")
+    p.add_argument("--launch-confirm", choices=["twice", "once", "none", "startup-log", "capture-ready"],
+                   help="startup-log needs diagnostics; capture-ready verifies a finite capture's one-shot startup marker; once/twice send explicit LiveArea confirmation")
     p.add_argument("--set", dest="ini_settings", action="append", default=[], metavar="KEY=VALUE",
                    help="temporary INI override for one isolated performance experiment")
     args = p.parse_args()
@@ -170,33 +210,32 @@ def main():
         if args.launch_confirm == "startup-log" and (overrides["diagnostics"] != "1"
                 or overrides.get("log") != DATA.replace(":/", ":") + "/" + args.label + ".log"):
             p.error("startup-log requires diagnostics=1 and the run's unique log path")
+        if args.launch_confirm == "capture-ready" and overrides["frame_capture"] != DATA.replace(":/", ":") + "/" + args.label + ".csv":
+            p.error("capture-ready requires the run's unique frame capture path")
         metadata["config"] = overrides
         metadata["ini"] = promote(ftp, DATA, "strikers.ini", ini(original, overrides), args.out)
         metadata["eboot_sha256"] = sha(read(ftp, APP, "eboot.bin"))
         metadata["launch_confirm"] = args.launch_confirm
-        if args.launch_confirm == "startup-log":
-            ftp.cwd(DATA)
-            try:
-                ftp.delete(args.label + ".log")
-            except error_perm as e:
-                if not str(e).startswith("550"):
-                    raise
+        startup_name = args.label + (".csv.ready" if args.launch_confirm == "capture-ready" else ".log")
+        if args.launch_confirm in ("startup-log", "capture-ready"):
+            delete_if_present(ftp, DATA, startup_name)
         if args.visual:
-            ftp.cwd(DATA)
-            try:
-                ftp.delete(snapshot_name)
-            except error_perm as e:
-                if not str(e).startswith("550"):
-                    raise
+            delete_if_present(ftp, DATA, snapshot_name)
         metadata["launch"] = command(args.host, "launch SMSVITA01")
-        if args.launch_confirm == "startup-log":
+        if args.launch_confirm in ("startup-log", "capture-ready"):
             def started():
                 ftp.cwd(DATA)
                 ftp.voidcmd("TYPE I")
                 try:
-                    return ftp.size(args.label + ".log") is not None
+                    if args.launch_confirm == "capture-ready":
+                        payload = read(ftp, DATA, startup_name)
+                        metadata["startup_marker"] = {"sha256": sha(payload),
+                            "settings": parse_capture_ready(payload, overrides)}
+                        (args.out / startup_name).write_bytes(payload)
+                        return True
+                    return ftp.size(startup_name) is not None
                 except error_perm as e:
-                    if not str(e).startswith("550"):
+                    if not missing_file(e):
                         raise
                     return False
             time.sleep(3)
@@ -209,9 +248,9 @@ def main():
             while not started():
                 if time.monotonic() >= deadline:
                     (args.out / "run-identity.json").write_text(json.dumps(metadata, indent=2) + "\n")
-                    raise RuntimeError("No startup log after one confirmation; refusing further game input")
+                    raise RuntimeError("No verified startup after one confirmation; refusing further game input")
                 time.sleep(2)
-            metadata["startup_log_confirmed"] = True
+            metadata["startup_log_confirmed" if args.launch_confirm == "startup-log" else "startup_capture_confirmed"] = True
         # Launch may first show the app's own LiveArea start button.
         elif args.launch_confirm in ("twice", "once"):
             time.sleep(2)
@@ -226,7 +265,7 @@ def main():
             time.sleep(.2)
             metadata["release_retry"] = command(args.host, "release cross")
     else:
-        for name in [args.label + ".csv", args.label + ".log", "strikers.ini"] + ([snapshot_name] if args.visual else []):
+        for name in [args.label + suffix for suffix in (".csv", ".log", ".csv.packets.csv", ".csv.views.csv")] + ["strikers.ini"] + ([snapshot_name] if args.visual else []):
             try:
                 data = read(ftp, DATA, name)
             except error_perm as e:

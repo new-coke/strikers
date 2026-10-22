@@ -5,10 +5,12 @@
 #include "port/host.h"
 #include "port/config.h"
 #include "port/vita_profiler.h"
+#include "port/native_watchdog.hpp"
 #include "port/framerate.h" // PORT: PortTaskClockFrame
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
 #include "port/determinism.h"
 #include "port/simulation_clock.hpp"
+#include "port/task_profile.hpp"
 #endif
 
 #include <cstdio>
@@ -158,9 +160,25 @@ void nlTaskManager::RunAllTasks()
         {
             for (;;)
             {
+                port::watchdog::task(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(currentTask)),
+                                     m_pInstance->m_CurrState, m_pInstance->m_PendingState);
+                port::watchdog::Scope watchdogTask(port::watchdog::Role::Frontend,
+                                                    port::watchdog::Stage::TaskTransition);
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+                const bool captureTransition = port::task_profile().recording();
+                const auto transitionStart = captureTransition ? port_monotonic_ns() : 0;
+#endif
                 PortProfilerTaskTransitionBegin(currentTask);
                 currentTask->StateTransition(m_pInstance->m_CurrState, m_pInstance->m_PendingState);
                 PortProfilerTaskTransitionEnd();
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+                if (captureTransition)
+                {
+                    const auto elapsed = port_monotonic_ns() - transitionStart;
+                    port::task_profile().record(currentTask, currentTask->GetName(),
+                                                port::TaskProfile::Transition, elapsed);
+                }
+#endif
                 if (nlDLRingIsEnd<nlTask>(m_pInstance->m_lTaskList, currentTask) != 0)
                     break;
                 currentTask = currentTask->m_next;
@@ -190,6 +208,10 @@ void nlTaskManager::RunAllTasks()
             taskIterator->nPrevTicker = recordDisplay ? (s32)frameTicker : hostTicker;
             if (taskIterator->statesActive & m_pInstance->m_CurrState)
             {
+                port::watchdog::task(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(taskIterator)),
+                                     m_pInstance->m_CurrState, m_pInstance->m_PendingState);
+                port::watchdog::Scope watchdogTask(port::watchdog::Role::Frontend,
+                                                    port::watchdog::Stage::TaskRun);
                 clampedDeltaTime = tickerDifference / 1000.f;
                 if (clampedDeltaTime < g_fTaskTimeLowerBound)
                 {
@@ -205,20 +227,32 @@ void nlTaskManager::RunAllTasks()
                 deltaTime = clampedDeltaTime * m_pInstance->m_TimeDilation;
 #endif
                 m_pInstance->m_fCurrentTimeDelta = deltaTime;
-                if (profileTasks)
+                bool timeTask = profileTasks;
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+                timeTask = timeTask || port::task_profile().recording();
+#endif
+                if (timeTask)
                 {
                     const unsigned long long started = port_monotonic_ns();
                     PortProfilerTaskRunBegin(taskIterator);
                     taskIterator->Run(deltaTime);
                     PortProfilerTaskRunEnd();
                     const unsigned long long elapsed = port_monotonic_ns() - started;
-                    TaskProfileSlot* slot = TaskProfileGet(taskIterator);
-                    if (slot != nullptr)
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+                    if (port::task_profile().recording())
+                        port::task_profile().record(taskIterator, taskIterator->GetName(),
+                                                    port::TaskProfile::Run, elapsed);
+#endif
+                    if (profileTasks)
                     {
-                        slot->totalNs += elapsed;
-                        if (elapsed > slot->maxNs)
-                            slot->maxNs = elapsed;
-                        slot->calls++;
+                        TaskProfileSlot* slot = TaskProfileGet(taskIterator);
+                        if (slot != nullptr)
+                        {
+                            slot->totalNs += elapsed;
+                            if (elapsed > slot->maxNs)
+                                slot->maxNs = elapsed;
+                            slot->calls++;
+                        }
                     }
                 }
                 else
@@ -235,6 +269,7 @@ void nlTaskManager::RunAllTasks()
         if (profileTasks && ++s_TaskProfileFrames >= s_TaskProfileWindow)
             TaskProfileReport();
     }
+    port::watchdog::task(0, m_pInstance->m_CurrState, m_pInstance->m_PendingState);
 }
 
 /**

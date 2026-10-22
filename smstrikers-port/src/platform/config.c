@@ -7,6 +7,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(PORT_VITA)
+#include <errno.h>
+#include <sys/stat.h>
+#if !defined(STRIKERS_VITA_CONFIG_TEST)
+#include <psp2/io/fcntl.h>
+#endif
+#endif
+
 #include "port/host.h"
 
 // open_log moves stderr onto a file by descriptor, so the file is open before stderr is given up.
@@ -24,6 +32,39 @@
 #define PORT_CONFIG_NAME "strikers.ini"
 #define PORT_CONFIG_PREFIX "STRIKERS_"
 #if defined(PORT_VITA)
+#if defined(STRIKERS_VITA_CONFIG_TEST)
+FILE* port_config_test_fopen(const char*, const char*);
+char* port_config_test_fgets(char*, int, FILE*);
+int port_config_test_fgetc(FILE*);
+int port_config_test_ferror(FILE*);
+int port_config_test_fputs(const char*, FILE*);
+int port_config_test_fprintf(FILE*, const char*, ...);
+int port_config_test_fflush(FILE*);
+int port_config_test_fclose(FILE*);
+int port_config_test_remove(const char*);
+int port_config_test_rename(const char*, const char*);
+#define vita_config_open port_config_test_fopen
+#define vita_config_gets port_config_test_fgets
+#define vita_config_getc port_config_test_fgetc
+#define vita_config_error port_config_test_ferror
+#define vita_config_puts port_config_test_fputs
+#define vita_config_printf port_config_test_fprintf
+#define vita_config_flush port_config_test_fflush
+#define vita_config_close port_config_test_fclose
+#define vita_config_remove port_config_test_remove
+#define vita_config_rename port_config_test_rename
+#else
+#define vita_config_open fopen
+#define vita_config_gets fgets
+#define vita_config_getc fgetc
+#define vita_config_error ferror
+#define vita_config_puts fputs
+#define vita_config_printf fprintf
+#define vita_config_flush fflush
+#define vita_config_close fclose
+#define vita_config_remove remove
+#define vita_config_rename sceIoRename
+#endif
 #define PORT_VITA_DEFAULTS_BEGIN "# --- STRIKERS VALIDATED DEFAULTS BEGIN ---"
 #define PORT_VITA_DEFAULTS_END "# --- STRIKERS VALIDATED DEFAULTS END ---"
 #define PORT_VITA_DEFAULTS_REVISION "2026-10-15-vitagl-unified"
@@ -42,13 +83,16 @@ static const VitaDefaultConfigEntry s_vita_defaults[] = {
     { "fps_overlay", "0" },
     { "vita_test_match", "0" },
     { "vita_frameskip", "0" },
+    { "vita_async_renderer", "1" },
     { "vita_debug_menu", "0" },
+    { "vita_playstation_glyphs", "1" },
     { "seed", "0x53545249" },
     { "fixed_dt", "0" },
     { "frame_capture", "" },
     { "frame_capture_frames", "0" },
     { "frame_capture_match_only", "1" },
     { "frame_capture_play_only", "1" },
+    { "frame_capture_scene", "" },
     { "frame_capture_skip", "600" },
     { "vita_snapshot_match_frame", "0" },
     { "vita_snapshot_play_frame", "0" },
@@ -56,6 +100,8 @@ static const VitaDefaultConfigEntry s_vita_defaults[] = {
     { "asset_archive", "ux0:data/strikersVita/sms.psarc" },
     { "vita_native_audio", "1" },
     { "vita_native_video", "1" },
+    { "vita_video_player", "avplayer" },
+    { "vita_video_archive", "" },
     { "task_profile", "0" },
     { "asset_io_profile", "0" },
     { "vita_view_draw_capture", "0" },
@@ -63,6 +109,7 @@ static const VitaDefaultConfigEntry s_vita_defaults[] = {
     { "cpu_mhz", "500" },
     { "gpu_mhz", "222" },
     { "vitagl_timing", "0" },
+    { "vitagl_packet_profile", "0" },
 };
 #endif
 
@@ -146,26 +193,48 @@ static int line_is_marker(const char* line, const char* marker)
 
 static int write_vita_default_block(FILE* f)
 {
-    if (fprintf(f, "%s\n", PORT_VITA_DEFAULTS_BEGIN) < 0 ||
-        fprintf(f, "# profile_revision = %s\n", PORT_VITA_DEFAULTS_REVISION) < 0 ||
-        fprintf(f, "# Managed automatically. Put custom overrides outside this block.\n") < 0)
+    if (vita_config_printf(f, "%s\n", PORT_VITA_DEFAULTS_BEGIN) < 0 ||
+        vita_config_printf(f, "# profile_revision = %s\n", PORT_VITA_DEFAULTS_REVISION) < 0 ||
+        vita_config_printf(f, "# Managed automatically. Put custom overrides outside this block.\n") < 0)
         return -1;
     for (size_t i = 0; i < sizeof s_vita_defaults / sizeof s_vita_defaults[0]; ++i)
     {
-        if (fprintf(f, "%s = %s\n", s_vita_defaults[i].key, s_vita_defaults[i].value) < 0)
+        if (vita_config_printf(f, "%s = %s\n", s_vita_defaults[i].key, s_vita_defaults[i].value) < 0)
             return -1;
     }
-    return fprintf(f, "%s\n", PORT_VITA_DEFAULTS_END) < 0 ? -1 : 0;
+    return vita_config_printf(f, "%s\n", PORT_VITA_DEFAULTS_END) < 0 ? -1 : 0;
+}
+
+static int vita_config_exists(const char* path)
+{
+    struct stat status;
+    if (stat(path, &status) == 0)
+        return S_ISREG(status.st_mode) ? 1 : -1;
+    return errno == ENOENT ? 0 : -1;
+}
+
+static int vita_config_readable(const char* path)
+{
+    FILE* f = vita_config_open(path, "rb");
+    char line[1024];
+    int failed;
+    if (f == NULL)
+        return -1;
+    while (vita_config_gets(line, sizeof line, f) != NULL) {}
+    failed = vita_config_error(f) != 0;
+    if (vita_config_close(f) != 0)
+        failed = 1;
+    return failed ? -1 : 0;
 }
 
 static int vita_default_block_current(const char* path)
 {
-    FILE* in = fopen(path, "rb");
+    FILE* in = vita_config_open(path, "rb");
     char line[1024], expected[256];
     int found = 0, valid = 0;
     if (in == NULL)
-        return 0;
-    while (fgets(line, sizeof line, in) != NULL)
+        return errno == ENOENT ? 0 : -1;
+    while (vita_config_gets(line, sizeof line, in) != NULL)
     {
         if (line_is_marker(line, PORT_VITA_DEFAULTS_BEGIN))
         {
@@ -176,46 +245,80 @@ static int vita_default_block_current(const char* path)
     if (!found)
         goto done;
     snprintf(expected, sizeof expected, "# profile_revision = %s\n", PORT_VITA_DEFAULTS_REVISION);
-    if (fgets(line, sizeof line, in) == NULL || strcmp(line, expected) != 0 ||
-        fgets(line, sizeof line, in) == NULL ||
+    if (vita_config_gets(line, sizeof line, in) == NULL || strcmp(line, expected) != 0 ||
+        vita_config_gets(line, sizeof line, in) == NULL ||
         strcmp(line, "# Managed automatically. Put custom overrides outside this block.\n") != 0)
         goto done;
     for (size_t i = 0; i < sizeof s_vita_defaults / sizeof s_vita_defaults[0]; ++i)
     {
         snprintf(expected, sizeof expected, "%s = %s\n", s_vita_defaults[i].key, s_vita_defaults[i].value);
-        if (fgets(line, sizeof line, in) == NULL || strcmp(line, expected) != 0)
+        if (vita_config_gets(line, sizeof line, in) == NULL || strcmp(line, expected) != 0)
             goto done;
     }
     // Overrides after the managed block must still move before defaults. Only
     // an exact current block at EOF is safe to keep without rewriting.
-    if (fgets(line, sizeof line, in) != NULL && strcmp(line, PORT_VITA_DEFAULTS_END "\n") == 0 &&
-        fgetc(in) == EOF && !ferror(in))
+    if (vita_config_gets(line, sizeof line, in) != NULL && strcmp(line, PORT_VITA_DEFAULTS_END "\n") == 0 &&
+        vita_config_getc(in) == EOF && !vita_config_error(in))
         valid = 1;
 done:
-    fclose(in);
+    if (vita_config_error(in))
+        valid = -1;
+    if (vita_config_close(in) != 0)
+        valid = -1;
     return valid;
 }
 
-static int refresh_vita_default_config(const char* path)
+static int refresh_vita_default_config(char* path, size_t pathSize)
 {
     char temp[1100];
+    char backup[1100];
     char line[1024];
     FILE* in;
     FILE* out;
     int managed = 0;
     int copied = 0;
+    int failed = 0;
+    int sourceExists;
+    int current;
 
-    if (vita_default_block_current(path))
-        return 0;
-    in = fopen(path, "rb");
-    if (snprintf(temp, sizeof temp, "%s.tmp", path) >= (int)sizeof temp)
+    if (snprintf(temp, sizeof temp, "%s.tmp", path) >= (int)sizeof temp ||
+        snprintf(backup, sizeof backup, "%s.vita-defaults.bak", path) >= (int)sizeof backup)
         return -1;
-    remove(temp);
-    out = fopen(temp, "wb");
+    sourceExists = vita_config_exists(path);
+    if (sourceExists < 0)
+        return -1;
+    if (!sourceExists) {
+        const int backupExists = vita_config_exists(backup);
+        if (backupExists < 0)
+            return -1;
+        if (backupExists) {
+            if (vita_config_readable(backup) != 0)
+                return -1;
+            if (vita_config_rename(backup, path) < 0) {
+                if (strlen(backup) >= pathSize)
+                    return -1;
+                strcpy(path, backup);
+                return 1; // Use the recoverable original read-only for this launch.
+            }
+            sourceExists = 1;
+        }
+    }
+    current = vita_default_block_current(path);
+    if (current != 0)
+        return current > 0 ? 0 : -1;
+    in = vita_config_open(path, "rb");
+    if (in == NULL && (errno != ENOENT || sourceExists))
+        return -1;
+    if (vita_config_remove(temp) != 0 && errno != ENOENT) {
+        if (in != NULL)
+            vita_config_close(in);
+        return -1;
+    }
+    out = vita_config_open(temp, "wb");
     if (out == NULL)
     {
         if (in != NULL)
-            fclose(in);
+            vita_config_close(in);
         return -1;
     }
 
@@ -224,7 +327,7 @@ static int refresh_vita_default_config(const char* path)
     // they remain effective overrides with the loader's first-value-wins rule.
     if (in != NULL)
     {
-        while (fgets(line, (int)sizeof line, in) != NULL)
+        while (vita_config_gets(line, (int)sizeof line, in) != NULL)
         {
             if (line_is_marker(line, PORT_VITA_DEFAULTS_BEGIN))
             {
@@ -237,36 +340,57 @@ static int refresh_vita_default_config(const char* path)
                     managed = 0;
                 continue;
             }
-            if (fputs(line, out) == EOF)
+            if (vita_config_puts(line, out) == EOF)
             {
-                fclose(in);
-                fclose(out);
-                remove(temp);
-                return -1;
+                failed = 1;
+                break;
             }
             copied = 1;
         }
-        fclose(in);
+        if (vita_config_error(in))
+            failed = 1;
+        if (vita_config_close(in) != 0)
+            failed = 1;
     }
 
-    if (copied && fputc('\n', out) == EOF)
+    if (!failed && copied && vita_config_puts("\n", out) == EOF)
+        failed = 1;
     {
-        fclose(out);
-        remove(temp);
-        return -1;
-    }
-    {
-        const int writeFailed = write_vita_default_block(out) != 0;
-        const int closeFailed = fclose(out) != 0;
-        if (writeFailed || closeFailed)
+        const int writeFailed = failed || write_vita_default_block(out) != 0;
+        const int flushFailed = vita_config_flush(out) != 0;
+        const int closeFailed = vita_config_close(out) != 0;
+        if (writeFailed || flushFailed || closeFailed)
         {
-            remove(temp);
+            vita_config_remove(temp);
             return -1;
         }
     }
-    if (rename(temp, path) != 0)
+    if (vita_config_exists(path) != sourceExists) {
+        vita_config_remove(temp);
+        return -1;
+    }
     {
-        remove(temp);
+        const int backupExists = vita_config_exists(backup);
+        if (backupExists < 0 || (backupExists &&
+            (vita_config_readable(backup) != 0 || vita_config_remove(backup) != 0))) {
+            vita_config_remove(temp);
+            return -1;
+        }
+    }
+    // Newlib rename removes an existing destination before calling sceIoRename.
+    // Use native non-overwriting renames and retain one recoverable original.
+    if (sourceExists && vita_config_rename(path, backup) < 0) {
+        vita_config_remove(temp);
+        return -1;
+    }
+    if (vita_config_rename(temp, path) < 0) {
+        vita_config_remove(temp);
+        if (sourceExists && vita_config_rename(backup, path) < 0) {
+            if (strlen(backup) >= pathSize)
+                return -1;
+            strcpy(path, backup);
+            return 1;
+        }
         return -1;
     }
     return 0;
@@ -351,14 +475,22 @@ static int env_name(const char* key, char* out, size_t size)
 
 static int load_file(const char* path)
 {
+#if defined(PORT_VITA)
+    FILE* f = vita_config_open(path, "rb");
+#else
     FILE* f = fopen(path, "rb");
+#endif
     char line[1024];
     int applied = 0;
 
     if (f == NULL)
         return -1;
 
+#if defined(PORT_VITA)
+    while (vita_config_gets(line, (int)sizeof line, f) != NULL)
+#else
     while (fgets(line, (int)sizeof line, f) != NULL)
+#endif
     {
         char name[256];
         char* p = trim(line);
@@ -398,7 +530,16 @@ static int load_file(const char* path)
             applied++;
     }
 
+#if defined(PORT_VITA)
+    {
+        const int readFailed = vita_config_error(f) != 0;
+        const int closeFailed = vita_config_close(f) != 0;
+        if (readFailed || closeFailed)
+            return -1;
+    }
+#else
     fclose(f);
+#endif
     return applied;
 }
 
@@ -532,8 +673,12 @@ static int load_config(void)
     {
         snprintf(s_path, sizeof s_path, "%s/%s", dir, PORT_CONFIG_NAME);
 #if defined(PORT_VITA)
-        if (refresh_vita_default_config(s_path) == 0)
+        const int refreshed = refresh_vita_default_config(s_path, sizeof s_path);
+        if (refreshed >= 0) {
+            if (refreshed > 0)
+                fprintf(stderr, "[port] using preserved Vita config read-only at %s\n", s_path);
             return load_file(s_path);
+        }
         fprintf(stderr, "[port] could not refresh default Vita config at %s\n", s_path);
         return -1;
 #else

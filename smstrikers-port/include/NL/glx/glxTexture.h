@@ -189,6 +189,12 @@ bool glplatLoadTextureBundle(const char* filename);
 PlatTexture* glx_MakeTexture(GXTextureHeader* header, uintptr_t texhandle, unsigned long fileSize);
 bool glx_AddTex(uintptr_t handle, PlatTexture* pTex);
 PlatTexture* glx_GetTex(uintptr_t handle, bool bMissingFatal, bool bAllowGrids);
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+// Material-only positive lookup cache; the public resolver keeps its full path.
+PlatTexture* glx_GetMaterialTex(uintptr_t handle);
+void glx_EnableMaterialTextureCache(bool enabled);
+void glx_InvalidateTextureHandles();
+#endif
 bool glx_SetGridMode(bool bGrid);
 void glxInitTex();
 void glx_BackupTexMarkerLevel(int level);

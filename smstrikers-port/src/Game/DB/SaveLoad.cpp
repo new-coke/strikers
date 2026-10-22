@@ -13,6 +13,9 @@
 #include <dolphin/os.h>
 // PORT: defined in GameInfo.cpp.
 extern "C" void PortLogUserInfo(const char* tag);
+#if defined(STRIKERS_SAVE_D13_FAULT) && STRIKERS_SAVE_D13_FAULT == 1
+#include "port/save_d13_fault.inc"
+#endif
 
 static void (*g_Callback)(long);
 static bool InOperation = false;
@@ -58,11 +61,14 @@ inline IconDataCache::IconDataCache()
     mIconHdrBuffer = NULL;
     mIconBuffer = NULL;
     mBannerBuffer = NULL;
+    mIconHdrCapacity = 0;
 }
 
 inline LoadCallbacks::LoadCallbacks()
     : m_pReadBuffer(NULL)
+    , m_AlignedReadBufferDataSize(0)
     , m_pIconReadBuffer(NULL)
+    , m_AlignedIconReadBufferDataSize(0)
     , m_pLoadFile(NULL)
     , m_MustFreeBuffers(false)
     , m_IconLoadedCRC(0)
@@ -86,6 +92,7 @@ inline IconDataCache::~IconDataCache()
         delete[] mIconHdrBuffer;
         mIconHdrBuffer = NULL;
     }
+    mIconHdrCapacity = 0;
     if (mIconBuffer)
     {
         delete[] mIconBuffer;
@@ -167,6 +174,7 @@ void LoadMemoryCardIconData()
     gIconDataCache.mIconConfig.HeaderSize = headerSize;
 
     gIconDataCache.mIconHdrBuffer = nlMalloc(headerSize, 0x20, false);
+    gIconDataCache.mIconHdrCapacity = gIconDataCache.mIconHdrBuffer != NULL ? headerSize : 0;
     gIconDataCache.mIconDataInfo.pHeaderData = (unsigned char*)gIconDataCache.mIconHdrBuffer;
     void* pHdrBuf = gIconDataCache.mIconDataInfo.pHeaderData;
 
@@ -187,11 +195,107 @@ void LoadMemoryCardIconData()
     nlClose(iconFile);
 }
 
+static long ValidateIconHeaderLayout(const MemCard& card, const MemCard::MC_FILE* file,
+                                    unsigned long& logicalSize, unsigned long& capacity)
+{
+    if (card.m_State != IS_MOUNTED)
+        return -100;
+
+    const MemCard::ICON_CONFIG& cfg = gIconDataCache.mIconConfig;
+    if (gIconDataCache.mIconHdrBuffer == NULL
+        || gIconDataCache.mIconDataInfo.pHeaderData != gIconDataCache.mIconHdrBuffer
+        || cfg.IconCount == 0 || cfg.IconCount > 8
+        || cfg.IconFormat < 1 || cfg.IconFormat > 2 || cfg.BannerFormat > 2)
+        return -1000;
+
+    logicalSize = 0x40 + cfg.BannerFormat * 0xC00
+        + ((cfg.BannerFormat == 1) ? 0x200 : 0)
+        + cfg.IconCount * (cfg.IconFormat << 10)
+        + ((cfg.IconFormat == 1) ? 0x200 : 0);
+    if (cfg.HeaderSize != logicalSize || gIconDataCache.mIconHdrCapacity < logicalSize
+        || card.m_CardInfo.SectorSize <= 0)
+        return -1000;
+
+    const unsigned long sector = card.m_CardInfo.SectorSize;
+    const unsigned long mask = sector - 1;
+    if ((sector & mask) != 0 || logicalSize > 0x7FFFFFFFUL - mask)
+        return -1000;
+    capacity = (logicalSize + mask) & ~mask;
+    // A file is unavailable before CREATE; repeat these checks in its callback.
+    if (file != NULL && (file->IconCfg.HeaderSize != logicalSize
+        || file->IconCfg.BannerFormat != cfg.BannerFormat
+        || file->IconCfg.IconCount != cfg.IconCount
+        || file->IconCfg.IconFormat != cfg.IconFormat
+        || file->TotalHeaderSize != capacity))
+        return -1000;
+    return 0;
+}
+
+static long PrepareIconHeaderForWrite(const MemCard& card, const MemCard::MC_FILE* file)
+{
+    unsigned long logicalSize;
+    unsigned long capacity;
+    const long result = ValidateIconHeaderLayout(card, file, logicalSize, capacity);
+    if (result != 0)
+        return result;
+
+    // CARD writes whole sectors. Keep the logical icon size/CRC unchanged and
+    // retain its zeroed padding in the existing owner through async completion.
+#if defined(STRIKERS_SAVE_D13_FAULT) && STRIKERS_SAVE_D13_FAULT == 1
+    void* replacement = port::save_d13::fail_replacement(card.m_Slot, file == NULL,
+        logicalSize, capacity, gIconDataCache.mIconHdrBuffer,
+        gIconDataCache.mIconDataInfo.pHeaderData, gIconDataCache.mIconHdrCapacity)
+        ? NULL : nlMalloc(capacity, 0x20, false);
+#else
+    void* replacement = nlMalloc(capacity, 0x20, false);
+#endif
+    if (replacement == NULL)
+        return SaveLoad::RESULT_OUT_OF_MEMORY;
+    memset(replacement, 0, capacity);
+    memcpy(replacement, gIconDataCache.mIconHdrBuffer, logicalSize);
+    void* previous = gIconDataCache.mIconHdrBuffer;
+    gIconDataCache.mIconHdrBuffer = replacement;
+    gIconDataCache.mIconDataInfo.pHeaderData = (unsigned char*)replacement;
+    gIconDataCache.mIconHdrCapacity = (u32)capacity;
+    nlFree(previous);
+    return 0;
+}
+
+static long ValidatePreparedIconHeader(const MemCard& card, const MemCard::MC_FILE* file)
+{
+    unsigned long logicalSize;
+    unsigned long capacity;
+    const long result = ValidateIconHeaderLayout(card, file, logicalSize, capacity);
+    if (result != 0)
+        return result;
+    if (file == NULL || gIconDataCache.mIconHdrCapacity != capacity)
+        return -1000;
+    return 0;
+}
+
+static unsigned long FinishLoadError(LoadCallbacks& operation, unsigned long slot,
+                                    long result, void* file)
+{
+    if (file != NULL)
+        g_MemCards[slot]->CloseFile((MemCard::MC_FILE*)file);
+    operation.m_pLoadFile = NULL;
+    operation.m_MustFreeBuffers = true;
+    MemCard* card = g_MemCards[slot];
+    card->m_State = IS_IDLE;
+    card->m_CardState = CS_IDLE;
+    CARDUnmount(card->m_Slot);
+    InOperation = false;
+    g_Callback(result);
+    return -1;
+}
+
 /**
  * Offset/Address/Size: 0x355C | 0x8018CEB8 | size: 0x1C4
  */
 inline unsigned long LoadCallbacks::LoadIconDataDoneCB(unsigned long Slot, long Result, void* pUserData)
 {
+    if (Result != CARD_RESULT_READY)
+        return FinishLoadError(*this, Slot, Result, pUserData);
     MCFILE_HEADER* fileheader = (MCFILE_HEADER*)m_pReadBuffer;
     MemCard::MC_FILE* file = (MemCard::MC_FILE*)pUserData;
     s8 iconFmt = file->IconCfg.IconFormat;
@@ -213,19 +317,7 @@ inline unsigned long LoadCallbacks::LoadIconDataDoneCB(unsigned long Slot, long 
 
     if (fileheader->IconCRC != m_IconLoadedCRC)
     {
-        if (file != NULL)
-        {
-            g_MemCards[Slot]->CloseFile((MemCard::MC_FILE*)pUserData);
-        }
-
-        MemCard* card = g_MemCards[Slot];
-        card->m_State = IS_IDLE;
-        card->m_CardState = CS_IDLE;
-        CARDUnmount(card->m_Slot);
-        InOperation = false;
-        g_Callback(-1000);
-        m_MustFreeBuffers = true;
-        return -1;
+        return FinishLoadError(*this, Slot, -1000, pUserData);
     }
 
     gIconCRC = fileheader->IconCRC;
@@ -241,6 +333,7 @@ inline unsigned long LoadCallbacks::LoadIconDataDoneCB(unsigned long Slot, long 
 
     mRequiredMemoryCardID = g_MemCards[Slot]->GetSerialID();
     g_MemCards[Slot]->CloseFile((MemCard::MC_FILE*)pUserData);
+    m_pLoadFile = NULL;
 
     MemCard* card = g_MemCards[Slot];
     card->m_State = IS_IDLE;
@@ -248,7 +341,6 @@ inline unsigned long LoadCallbacks::LoadIconDataDoneCB(unsigned long Slot, long 
     CARDUnmount(card->m_Slot);
     InOperation = false;
     g_Callback(Result);
-    m_MustFreeBuffers = true;
     return (-Result | Result) >> 31;
 }
 
@@ -257,6 +349,8 @@ inline unsigned long LoadCallbacks::LoadIconDataDoneCB(unsigned long Slot, long 
  */
 unsigned long LoadCallbacks::ReadDoneCB(unsigned long Slot, long Result, void* pUserData)
 {
+    if (Result != CARD_RESULT_READY)
+        return FinishLoadError(*this, Slot, Result, pUserData);
     union FunctorStorage
     {
         FunctorStorage() {}
@@ -291,18 +385,7 @@ unsigned long LoadCallbacks::ReadDoneCB(unsigned long Slot, long Result, void* p
     if (!configValid)
     {
         OSReport("[card] corrupt reason=size\n");
-        if (pUserData != NULL)
-        {
-            g_MemCards[Slot]->CloseFile((MemCard::MC_FILE*)pUserData);
-        }
-        MemCard* card = g_MemCards[Slot];
-        card->m_State = IS_IDLE;
-        card->m_CardState = CS_IDLE;
-        CARDUnmount(card->m_Slot);
-        InOperation = false;
-        g_Callback(-1000);
-        m_MustFreeBuffers = true;
-        return -1;
+        return FinishLoadError(*this, Slot, -1000, pUserData);
     }
 
     header = (MCFILE_HEADER*)m_pReadBuffer;
@@ -311,18 +394,7 @@ unsigned long LoadCallbacks::ReadDoneCB(unsigned long Slot, long Result, void* p
     if (header->CRC != calculatedcrc)
     {
         OSReport("[card] corrupt reason=crc\n");
-        if (pUserData != NULL)
-        {
-            g_MemCards[Slot]->CloseFile((MemCard::MC_FILE*)pUserData);
-        }
-        MemCard* card = g_MemCards[Slot];
-        card->m_State = IS_IDLE;
-        card->m_CardState = CS_IDLE;
-        CARDUnmount(card->m_Slot);
-        InOperation = false;
-        g_Callback(-1000);
-        m_MustFreeBuffers = true;
-        return -1;
+        return FinishLoadError(*this, Slot, -1000, pUserData);
     }
 
     m_pLoadFile = (MemCard::MC_FILE*)pUserData;
@@ -345,23 +417,14 @@ unsigned long LoadCallbacks::ReadDoneCB(unsigned long Slot, long Result, void* p
     headerSize = headerSize + iconClut;
     u32 totalSize = (pLoadFile->IconCfg.HeaderSize = headerSize + 0x40);
     u32 alignedSize = (totalSize + 0x1FF) & ~0x1FF;
+    if (alignedSize > m_AlignedIconReadBufferDataSize)
+        return FinishLoadError(*this, Slot, -1000, pUserData);
 
     long result = card->InternalReadFile(pLoadFile, iconBuf, alignedSize, 0, functor);
 
     if (result != 0)
     {
-        if (pUserData != NULL)
-        {
-            g_MemCards[Slot]->CloseFile((MemCard::MC_FILE*)pUserData);
-        }
-        MemCard* card = g_MemCards[Slot];
-        card->m_State = IS_IDLE;
-        card->m_CardState = CS_IDLE;
-        CARDUnmount(card->m_Slot);
-        InOperation = false;
-        g_Callback(result);
-        m_MustFreeBuffers = true;
-        return -1;
+        return FinishLoadError(*this, Slot, result, pUserData);
     }
 
     return result;
@@ -374,14 +437,7 @@ inline unsigned long LoadCallbacks::CardMountCB(unsigned long Slot, long Result,
 {
     if (Result != 0)
     {
-        MemCard* card = g_MemCards[Slot];
-        card->m_State = IS_IDLE;
-        card->m_CardState = CS_IDLE;
-        CARDUnmount(card->m_Slot);
-        InOperation = false;
-        g_Callback(Result);
-        m_MustFreeBuffers = true;
-        return -1;
+        return FinishLoadError(*this, Slot, Result, NULL);
     }
 
     MemCard::MC_FILE* pFile;
@@ -390,14 +446,7 @@ inline unsigned long LoadCallbacks::CardMountCB(unsigned long Slot, long Result,
 
     if (Result != 0)
     {
-        MemCard* card = g_MemCards[Slot];
-        card->m_State = IS_IDLE;
-        card->m_CardState = CS_IDLE;
-        CARDUnmount(card->m_Slot);
-        InOperation = false;
-        g_Callback(Result);
-        m_MustFreeBuffers = true;
-        return -1;
+        return FinishLoadError(*this, Slot, Result, NULL);
     }
 
     if (!m_PerformLoad)
@@ -411,10 +460,13 @@ inline unsigned long LoadCallbacks::CardMountCB(unsigned long Slot, long Result,
         card->m_CardState = CS_IDLE;
         CARDUnmount(card->m_Slot);
         InOperation = false;
-        g_Callback(Result);
         m_MustFreeBuffers = true;
+        g_Callback(Result);
         return 0;
     }
+
+    if (FileLength < m_AlignedReadBufferDataSize)
+        return FinishLoadError(*this, Slot, -1000, pFile);
 
     memset(m_pReadBuffer, 0, m_AlignedReadBufferDataSize);
 
@@ -434,18 +486,7 @@ inline unsigned long LoadCallbacks::CardMountCB(unsigned long Slot, long Result,
 
     if (Result != 0)
     {
-        if (pFile != NULL)
-        {
-            g_MemCards[Slot]->CloseFile(pFile);
-        }
-        MemCard* card = g_MemCards[Slot];
-        card->m_State = IS_IDLE;
-        card->m_CardState = CS_IDLE;
-        CARDUnmount(card->m_Slot);
-        InOperation = false;
-        g_Callback(Result);
-        m_MustFreeBuffers = true;
-        return -1;
+        return FinishLoadError(*this, Slot, Result, pFile);
     }
 
     return 0;
@@ -634,6 +675,14 @@ unsigned long SaveCallbacks::CreateFileCB(unsigned long Slot, long Result, void*
         HandleError(Slot, Result);
         return -1;
     }
+    // The allocation succeeded before CREATE. Validate its result without a new
+    // allocation that could leave a newly created file without its icon metadata.
+    const long preparedResult = ValidatePreparedIconHeader(*g_MemCards[Slot], m_pSaveFile);
+    if (preparedResult != 0)
+    {
+        HandleError(Slot, preparedResult);
+        return -1;
+    }
     MemCard::ICON_DATA_INFO bannerDataInfo;
     m_pSaveFile->IconCfg.GetValidDataInfo(bannerDataInfo);
     bannerDataInfo.pHeaderData = (unsigned char*)gIconDataCache.mIconHdrBuffer;
@@ -755,6 +804,12 @@ inline unsigned long SaveCallbacks::CardMountCB(unsigned long Slot, long Result,
             HandleError(Slot, openResult);
             return -1;
         }
+        const long prepareResult = PrepareIconHeaderForWrite(*g_MemCards[Slot], m_pSaveFile);
+        if (prepareResult != 0)
+        {
+            HandleError(Slot, prepareResult);
+            return -1;
+        }
         MemCard::ICON_DATA_INFO bannerDataInfo;
         m_pSaveFile->IconCfg.GetValidDataInfo(bannerDataInfo);
         bannerDataInfo.pHeaderData = (unsigned char*)gIconDataCache.mIconHdrBuffer;
@@ -819,6 +874,12 @@ inline unsigned long SaveCallbacks::CardMountCB(unsigned long Slot, long Result,
         IconCfg.IconSpeeds[0] = 3;
         IconCfg.BannerFormat = 2;
         m_pSaveFile = NULL;
+        const long prepareResult = PrepareIconHeaderForWrite(*g_MemCards[Slot], NULL);
+        if (prepareResult != 0)
+        {
+            HandleError(Slot, prepareResult);
+            return -1;
+        }
         MemberCB cb = &SaveCallbacks::CreateFileCB;
         union FunctorStorage
         {
@@ -827,6 +888,9 @@ inline unsigned long SaveCallbacks::CardMountCB(unsigned long Slot, long Result,
         } functorStorage;
         MemCardFunctor& functor = functorStorage.functor;
         new (functor.m_FunctorMem) MemCardFunctor::MCMemberFunctor<SaveCallbacks>(this, cb);
+#if defined(STRIKERS_SAVE_D13_FAULT) && STRIKERS_SAVE_D13_FAULT == 1
+        port::save_d13::note_create();
+#endif
         long createResult = g_MemCards[Slot]->CreateFile(MarioSoccerFileName, dataSize, &IconCfg, m_pSaveFile, functor);
         mRequiredMemoryCardID = 0;
         if (createResult != 0)
@@ -1029,6 +1093,7 @@ long SaveLoad::StartLoad(int Slot, void (*pCB)(long), bool PerformLoad, bool tes
         }
 
         u32 allocSize = (IconCfg.HeaderSize + 0x1FF) & ~0x1FF;
+        LoadSystem.m_AlignedIconReadBufferDataSize = allocSize;
         LoadSystem.m_pIconReadBuffer = nlMalloc(allocSize, 0x20, true);
 
         char iconFmt = IconCfg.IconFormat;
@@ -1061,6 +1126,7 @@ long SaveLoad::StartLoad(int Slot, void (*pCB)(long), bool PerformLoad, bool tes
     if (result != 0)
     {
         InOperation = false;
+        LoadSystem.m_MustFreeBuffers = true;
     }
 
     return result;

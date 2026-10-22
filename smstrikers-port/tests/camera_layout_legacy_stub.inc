@@ -1,0 +1,5 @@
+class TopDownCamera
+{
+public:
+    TopDownCamera();
+};

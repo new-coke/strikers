@@ -2,14 +2,23 @@
 diagnostics = 0
 fps_overlay = 0
 vita_test_match = 0
+# OFF/0: render every frame; 1: render/skip alternating; AUTO/2: adaptive
+# renderer-only skipping (maximum one skipped frame consecutively).
 vita_frameskip = 0
+# 1 pipelines up to two immutable frames across frontend and GPU-owner threads.
+# Set 0 to restore synchronous frame fences for A/B comparison.
+vita_async_renderer = 1
 vita_debug_menu = 0
+# 1: PlayStation button glyphs; 0: original GameCube glyphs. Restart to apply.
+vita_playstation_glyphs = 1
 seed = 0x53545249
 fixed_dt = 0
 frame_capture =
 frame_capture_frames = 0
 frame_capture_match_only = 1
 frame_capture_play_only = 1
+# Optional all/cutscene/intro/goal/replay/trophy; set both *_only filters to 0.
+frame_capture_scene =
 frame_capture_skip = 600
 vita_snapshot_match_frame = 0
 vita_snapshot_play_frame = 0
@@ -17,6 +26,10 @@ log = ux0:data/strikersVita/vitagl.log
 asset_archive = ux0:data/strikersVita/sms.psarc
 vita_native_audio = 1
 vita_native_video = 1
+# MP4 in PSARC uses SceAvPlayer; thp selects the legacy WAVC decoder.
+vita_video_player = avplayer
+# Empty uses asset_archive; optionally select a separate movies-only PSARC.
+vita_video_archive =
 task_profile = 0
 asset_io_profile = 0
 vita_view_draw_capture = 0
@@ -24,6 +37,8 @@ benchmark = 0
 cpu_mhz = 500
 gpu_mhz = 222
 vitagl_timing = 0
+# Finite per-packet CPU attribution, aligned with frame_capture; not an FPS run.
+vitagl_packet_profile = 0
 # Independent shader experiments, disabled until matched hardware validation.
 # Remove projective divides only when every used UV channel has exact Q=1.
 vitagl_affine_uv = 0

@@ -70,4 +70,7 @@ public:
     /* 0x398 */ s8 m_previousErr[4];                   // size 0x4
 };
 
+// Read the processed category selected by UseDefaultPad/UseFixedUpdatePad.
+const PadStatus* GetCurrentPadStatus() noexcept;
+
 #endif // _PLATPAD_H_

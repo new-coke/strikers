@@ -1,7 +1,19 @@
 #include "port/native_model_vertices.hpp"
 #include <cassert>
+#include <cstdlib>
 #include <limits>
+#include <new>
 using namespace port::nativegxm;
+static size_t allocations;
+void* operator new(size_t bytes)
+{
+    ++allocations;
+    if (void* p = std::malloc(bytes ? bytes : 1))
+        return p;
+    throw std::bad_alloc();
+}
+void operator delete(void* p) noexcept { std::free(p); }
+void operator delete(void* p, size_t) noexcept { std::free(p); }
 int main()
 {
     const float positions[]{ 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0 };
@@ -90,6 +102,31 @@ int main()
                                     &compact.vertices[compact.indices[i]], sizeof(ModelVertex)));
         }
     }
+    // High rigid selectors preserve the original GX row-to-slot mapping in
+    // both the CPU reference and resident GPU representations. The shipped
+    // Birdo mesh reaches 13 bones; the native contract is bounded at 32.
+    for (const unsigned boneCount : { 13u, 32u })
+    {
+        std::array<BoneTransform, 32> extendedBones{};
+        for (unsigned i = 0; i < boneCount; ++i)
+            extendedBones[i] = { (i + 1) * 3,
+                { 1, 0, 0, float(i + 1), 0, 1, 0, float((i + 1) * 2),
+                  0, 0, 1, float((i + 1) * 3) } };
+        const std::array<uint8_t, 3> extendedSelectors{ 3, uint8_t(boneCount * 3), 30 };
+        ModelVertices cpu, gpu;
+        const auto palette = std::span(extendedBones).first(boneCount);
+        assert(prepare_model_vertices(streams, indices, 3, 0, extendedSelectors, palette, cpu));
+        assert(prepare_model_vertices(streams, indices, 3, 0, extendedSelectors, palette, gpu,
+                                      true, false));
+        for (unsigned v = 0; v < 3; ++v)
+        {
+            const auto slot = unsigned(extendedSelectors[v]) / 3;
+            assert(gpu.vertices[v].boneSlot == float(slot) && cpu.vertices[v].boneSlot == 0);
+            for (unsigned axis = 0; axis < 3; ++axis)
+                assert(cpu.vertices[v].position[axis] ==
+                       gpu.vertices[v].position[axis] + float(slot * (axis + 1)));
+        }
+    }
     const std::array<uint16_t, 3> degenerate{ 1, 1, 1 };
     assert(prepare_model_vertices(streams, degenerate, 3, 0, {}, {}, out, true));
     assert(out.vertices.size() == 1 && out.indices == std::vector<uint16_t>({ 0, 0, 0 }));
@@ -148,4 +185,79 @@ int main()
     invalid[0] = 3;
     assert(!prepare_model_vertices(streams, invalid, 3, 0, {}, {}, out));
     assert(!prepare_model_vertices(streams, {}, 4, 0, {}, {}, out));
+
+    // Warm producer storage is reused without retaining prior geometry or PN
+    // selectors. Compare the expanded triangles against separately owned draws.
+    std::array<float, 12> changingPositions{ 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0 };
+    ModelStreams changing;
+    changing.position = { { reinterpret_cast<const uint8_t*>(changingPositions.data()),
+                             sizeof(changingPositions) }, 12, true };
+    changing.color = { color, 4, true };
+    ModelVertices reused;
+    ModelVertexScratch scratch;
+    for (uint8_t primitive = 0; primitive < 4; ++primitive)
+        assert(prepare_model_vertices(changing, repeated, repeated.size(), primitive,
+                                      pn, bones, reused, true, false, &scratch));
+    const auto warmAllocations = allocations;
+    for (unsigned frame = 0; frame < 12; ++frame)
+    {
+        recycle_model_vertex_scratch(reused, scratch);
+        changingPositions[0] = float(frame);
+        const uint8_t primitive = frame % 4;
+        assert(prepare_model_vertices(changing, repeated, repeated.size(), primitive,
+                                      pn, bones, reused, true, false, &scratch));
+        assert(reused.vertices.size() == 8);
+        assert(reused.vertices[0].position[0] == float(frame));
+        assert(reused.vertices[0].boneSlot == 33 && reused.vertices[4].boneSlot == 34);
+    }
+    assert(allocations == warmAllocations);
+    ModelVertices owned;
+    assert(prepare_model_vertices(changing, repeated, repeated.size(), 3, pn, bones,
+                                  owned, true, false));
+    for (size_t i = 0; i < owned.indices.size(); ++i)
+        assert(!std::memcmp(&owned.vertices[owned.indices[i]],
+                            &reused.vertices[reused.indices[i]], sizeof(ModelVertex)));
+    const auto ownedPosition = owned.vertices[0].position;
+    recycle_model_vertex_scratch(reused, scratch);
+    changingPositions[0] = -50;
+    assert(prepare_model_vertices(changing, {}, 4, 3, {}, {}, reused, true, false, &scratch));
+    assert(reused.vertices.size() == 4 && reused.vertices[0].boneSlot == 0);
+    assert(reused.vertices[0].position[0] == -50 && owned.vertices[0].position == ownedPosition);
+    auto badIndices = repeated;
+    badIndices[4] = 65535;
+    assert(!prepare_model_vertices(changing, badIndices, badIndices.size(), 0, {}, {},
+                                   reused, true, false, &scratch));
+    assert(reused.vertices.empty() && reused.indices.empty());
+    const auto recoveryAllocations = allocations;
+    assert(prepare_model_vertices(changing, repeated, repeated.size(), 0, {}, {},
+                                  reused, true, false, &scratch));
+    assert(reused.vertices.size() == 4 && reused.vertices[0].position[0] == -50);
+    assert(allocations == recoveryAllocations);
+    // An exceptional large draw cannot leave multi-megabyte scratch resident.
+    reused.vertices.reserve(4097);
+    reused.indices.reserve(4096 * 3 + 1);
+    scratch.lookup.reserve(4096 * 2 + 1);
+    scratch.remap.reserve(4097);
+    recycle_model_vertex_scratch(reused, scratch);
+    assert(!reused.vertices.capacity() && !reused.indices.capacity());
+    assert(!scratch.lookup.capacity() && !scratch.remap.capacity());
+
+    // Transition outlines are line strips; preserve each segment, including
+    // the closing edge, when compacting repeated vertices.
+    const std::array<uint16_t, 5> outline{ 0, 1, 2, 3, 0 };
+    assert(prepare_model_vertices(changing, outline, outline.size(), 5, {}, {},
+                                  reused, true, false, &scratch));
+    assert(reused.vertices.size() == 4);
+    assert(reused.indices == std::vector<uint16_t>({ 0, 1, 1, 2, 2, 3, 3, 0 }));
+    const std::array<uint16_t, 2> segment{ 2, 0 };
+    for (uint8_t primitive : { 4, 5 })
+    {
+        assert(prepare_model_vertices(changing, segment, segment.size(), primitive,
+                                      {}, {}, reused, true, false, &scratch));
+        assert(reused.indices == std::vector<uint16_t>({ 0, 1 }));
+        assert(reused.vertices[0].position[1] == 1 && reused.vertices[1].position[0] == -50);
+    }
+    assert(!prepare_model_vertices(changing, outline, outline.size(), 4, {}, {}, reused));
+    assert(!prepare_model_vertices(changing, {}, 1, 5, {}, {}, reused));
+    assert(!prepare_model_vertices(changing, {}, 4, 6, {}, {}, reused));
 }

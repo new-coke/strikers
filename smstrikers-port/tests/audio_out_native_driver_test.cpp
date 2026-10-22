@@ -1,6 +1,7 @@
 #include "port/audio.h"
 #include "port/config.h"
 #include "port/host.h"
+#include "port/native_watchdog.hpp"
 #include <psp2/audioout.h>
 #include <psp2/kernel/threadmgr.h>
 #include <psp2/kernel/cpu.h>
@@ -8,16 +9,26 @@
 #include <atomic>
 #include <cassert>
 #include <chrono>
+#include <cstdarg>
 #include <cstdio>
 #include <cstring>
 #include <pthread.h>
 #include <thread>
 
+namespace port::watchdog
+{
+std::atomic<uint32_t> enabledFlag{0};
+Channel channels[static_cast<unsigned>(Role::Count)]{};
+}
+
 namespace
 {
 pthread_t caller;
 std::atomic<unsigned> calls{ 0 }, released{ 0 }, dumps{ 0 };
+std::atomic<unsigned> irqEnters{ 0 }, irqLeaves{ 0 }, statsReads{ 0 }, snapshotLogs{ 0 };
+thread_local unsigned irqDepth = 0;
 bool rejectVolume = false, missingDMA = false;
+bool diagnostics = false, renderedStats = false;
 const int16_t* retained = nullptr;
 std::array<int16_t, 1024> previous{};
 std::array<int16_t, 320> input{};
@@ -25,6 +36,7 @@ unsigned tick = 0;
 void reset()
 {
     calls = dumps = 0;
+    irqEnters = irqLeaves = statsReads = snapshotLogs = 0;
     retained = nullptr;
     tick = 0;
 }
@@ -40,6 +52,20 @@ void waitForFailure()
 }
 }
 extern "C" {
+int fprintf(FILE* output, const char* format, ...)
+{
+    assert(irqDepth == 0);
+    if (std::strstr(format, "[audio] outputs="))
+    {
+        assert(statsReads == 1 && irqEnters == 1 && irqLeaves == 1);
+        snapshotLogs.fetch_add(1);
+    }
+    va_list arguments;
+    va_start(arguments, format);
+    const int result = vfprintf(output, format, arguments);
+    va_end(arguments);
+    return result;
+}
 SceUID sceKernelGetThreadId()
 {
     assert(!pthread_equal(pthread_self(), caller));
@@ -69,13 +95,13 @@ int sceAudioOutSetVolume(int port, SceAudioOutChannelFlag channels, int* volume)
 }
 int sceAudioOutReleasePort(int port)
 {
-    assert(port == 3);
+    assert(port == 3 && irqDepth == 0 && irqEnters == irqLeaves);
     released.fetch_add(1);
     return 0;
 }
 int sceAudioOutOutput(int port, const void* pcm)
 {
-    assert(port == 3 && pcm && uintptr_t(pcm) % 64 == 0);
+    assert(port == 3 && pcm && uintptr_t(pcm) % 64 == 0 && irqDepth == 0);
     // Model a driver that retains the previous submitted block until this call.
     if (retained)
     {
@@ -95,6 +121,7 @@ int sceAudioOutOutput(int port, const void* pcm)
 }
 void* salPortNextBuffer()
 {
+    assert(irqDepth == 0);
     if (missingDMA)
         return nullptr;
     ++tick;
@@ -111,11 +138,34 @@ unsigned long long port_monotonic_ns()
     return std::chrono::duration_cast<std::chrono::nanoseconds>(
                std::chrono::steady_clock::now().time_since_epoch()).count();
 }
-int PortDiagnosticsEnabled() { return 0; }
-int PortAudioMixStats(PortAudioMixInfo*) { return 0; }
+int PortDiagnosticsEnabled() { return diagnostics; }
+void hwIRQEnterCritical()
+{
+    assert(!pthread_equal(pthread_self(), caller) && irqDepth == 0);
+    ++irqDepth;
+    irqEnters.fetch_add(1);
+}
+void hwIRQLeaveCritical()
+{
+    assert(!pthread_equal(pthread_self(), caller) && irqDepth == 1);
+    --irqDepth;
+    irqLeaves.fetch_add(1);
+}
+int PortAudioMixStats(PortAudioMixInfo* out)
+{
+    assert(irqDepth == 1 && out);
+    statsReads.fetch_add(1);
+    *out = {};
+    if (renderedStats)
+    {
+        out->studios = 1;
+        out->voices = 3;
+    }
+    return renderedStats;
+}
 void PortAudioDumpWrite(const void*, unsigned int frames)
 {
-    assert(frames == 512);
+    assert(frames == 512 && irqDepth == 0);
     dumps.fetch_add(1);
 }
 }
@@ -128,16 +178,27 @@ int main()
     int nonSilent = 0;
     PortAudioStats(&buffers, &underruns, &nonSilent);
     assert(buffers > 40 && underruns == 1 && nonSilent && dumps == 20 && released == 1);
+    assert(irqEnters == 0 && irqLeaves == 0 && statsReads == 0 && snapshotLogs == 0);
     assert(!PortAudioDeviceOpen());
     reset();
     missingDMA = true;
+    diagnostics = true;
     assert(PortAudioStart());
     waitForFailure();
     PortAudioStats(&buffers, &underruns, &nonSilent);
     assert(!buffers && underruns == 21 && !nonSilent && released == 2);
+    assert(irqEnters == 1 && irqLeaves == 1 && statsReads == 1 && snapshotLogs == 1);
+    reset();
+    missingDMA = false;
+    renderedStats = true;
+    assert(PortAudioStart());
+    waitForFailure();
+    assert(irqEnters == 1 && irqLeaves == 1 && statsReads == 1 && snapshotLogs == 1);
+    assert(released == 3);
     rejectVolume = true;
-    assert(!PortAudioStart() && !PortAudioDeviceOpen() && released == 3);
+    assert(!PortAudioStart() && !PortAudioDeviceOpen() && released == 4);
     PortAudioStop();
     std::puts("Native audio: retained DMA lifetime, aligned alternating buffers, stereo resampling, "
-              "missing DMA, output failure without spin, volume failure and restart passed");
+              "missing DMA, output failure without spin, volume failure, restart and locked stats "
+              "released before logging passed");
 }

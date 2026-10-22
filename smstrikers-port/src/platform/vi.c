@@ -196,13 +196,18 @@ static double fixed_dt_ms(void)
 
 int PortFixedTimestep(void) { return fixed_dt_ms() > 0.0; }
 
-unsigned int PortVirtualTicker(void)
+unsigned long long PortVirtualTickerWide(void)
 {
     // OSGetTick counts bus clocks at 40.5MHz; nlGetTickerDifference converts back through
     // __OSBusClock, so the units have to match OSGetTick's or every delta in the game comes out
     // scaled.
     const double ticksPerFrame = fixed_dt_ms() * 40500.0;   // 40.5e6 / 1000
-    return (unsigned int)(u64)((double)s_retrace_count * ticksPerFrame);
+    return (u64)((double)s_retrace_count * ticksPerFrame);
+}
+
+unsigned int PortVirtualTicker(void)
+{
+    return (unsigned int)PortVirtualTickerWide();
 }
 
 int PortFixedSeed(unsigned int* out)

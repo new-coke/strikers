@@ -1018,6 +1018,57 @@ void vglVertexAttribPointerMapped(GLuint index, const GLvoid *pointer);
 // Get the compiled shader binary of a given GL shader.
 void vglGetShaderBinary(GLuint index, GLsizei bufSize, GLsizei *length, void *binary);
 
+// Optional CPU packing cache. Configure on the GL owner before creating custom
+// programs; values and GPU uniform-buffer reservations remain program-local.
+enum {
+	VGL_UNIFORM_PACK_CALLS, VGL_UNIFORM_PACK_BYTES,
+	VGL_UNIFORM_RESERVATIONS, VGL_UNIFORM_RESERVED_BYTES,
+	VGL_UNIFORM_CACHE_COPIES, VGL_UNIFORM_CACHE_COPY_BYTES,
+	VGL_UNIFORM_REUSED_VALUES, VGL_UNIFORM_REUSED_BYTES,
+	VGL_UNIFORM_COUNTER_COUNT
+};
+typedef struct {
+	uint64_t stage[2][VGL_UNIFORM_COUNTER_COUNT]; // vertex, fragment; sizes in bytes
+	uint64_t fallback_uploads, errors, cache_bytes, cache_peak_bytes;
+	uint64_t verify_checks;
+	GLboolean enabled, profiling, verifying;
+} vglUniformCacheStats;
+GLboolean vglConfigureUniformCache(GLboolean enabled, GLboolean profile, GLboolean verify);
+void vglGetUniformCacheStats(vglUniformCacheStats *stats);
+
+// Optional last-layout cache. It owns CPU metadata only; shader-patcher
+// references and every per-draw GPU binding retain their existing lifetime.
+enum {
+	VGL_VERTEX_PROGRAM_ARRAYS_REQUESTS, VGL_VERTEX_PROGRAM_ELEMENTS_REQUESTS,
+	VGL_VERTEX_PROGRAM_MULTI_REQUESTS, VGL_VERTEX_PROGRAM_CREATE_CALLS,
+	VGL_VERTEX_PROGRAM_CREATE_SUCCESSES, VGL_VERTEX_PROGRAM_CACHE_HITS,
+	VGL_VERTEX_PROGRAM_CACHE_MISSES, VGL_VERTEX_PROGRAM_UNCACHED_REQUESTS,
+	VGL_VERTEX_PROGRAM_ERRORS, VGL_VERTEX_PROGRAM_METADATA_ALLOC_FAILURES,
+	VGL_VERTEX_PROGRAM_METADATA_FALLBACKS, VGL_VERTEX_PROGRAM_COUNTER_COUNT
+};
+typedef struct {
+	uint64_t counters[VGL_VERTEX_PROGRAM_COUNTER_COUNT];
+	uint64_t cache_bytes, cache_peak_bytes;
+	GLboolean enabled, profiling;
+} vglVertexProgramCacheStats;
+GLboolean vglConfigureVertexProgramCache(GLboolean enabled, GLboolean profile);
+void vglGetVertexProgramCacheStats(vglVertexProgramCacheStats *stats);
+
+// Optional one-stream submission for fully interleaved, non-instanced VBOs.
+// Counters observe draw-elements requests and SDK binding calls, not GPU time.
+enum {
+	VGL_VERTEX_STREAM_ELEMENTS_REQUESTS, VGL_VERTEX_STREAM_ELIGIBLE_REQUESTS,
+	VGL_VERTEX_STREAM_COLLAPSED_REQUESTS, VGL_VERTEX_STREAM_FALLBACK_REQUESTS,
+	VGL_VERTEX_STREAM_SOURCE_STREAMS, VGL_VERTEX_STREAM_BINDING_CALLS,
+	VGL_VERTEX_STREAM_COUNTER_COUNT
+};
+typedef struct {
+	uint64_t counters[VGL_VERTEX_STREAM_COUNTER_COUNT];
+	GLboolean enabled, profiling;
+} vglVertexStreamStats;
+GLboolean vglConfigureInterleavedStreams(GLboolean enabled, GLboolean profile);
+void vglGetVertexStreamStats(vglVertexStreamStats *stats);
+
 typedef enum {
 	VGL_MEM_VRAM, // CDRAM
 	VGL_MEM_RAM, // USER_RW RAM

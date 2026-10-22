@@ -7,7 +7,7 @@
 struct ScriptQuestionKey
 {
     uintptr_t question;
-    uintptr_t subjectLo;
+    u64 subjectLo;
     uintptr_t subjectHi;
     int tag;
 

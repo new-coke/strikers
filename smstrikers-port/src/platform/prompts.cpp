@@ -1,6 +1,8 @@
 #include "port/prompts.h"
 
-#if !defined(PORT_USE_AURORA) || defined(STRIKERS_VITA)
+#if defined(STRIKERS_VITA) && defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "prompts_vita.inc"
+#elif !defined(PORT_USE_AURORA) || defined(STRIKERS_VITA)
 
 // Vita uses the native SceCtrl PAD shim rather than Aurora's SDL controller
 // registry/remapping layer.  The desktop prompt resolver depends on those SDL

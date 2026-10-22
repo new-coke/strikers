@@ -2,6 +2,9 @@
 #include <stdlib.h>   // PORT: getenv
 #include "dolphin/os.h" // PORT: OSReport, likewise
 #include "NL/glx/glxLoadModel.h"
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "NL/glx/glxTexture.h"
+#endif
 
 inline GLInventory::GLInventory()
 {
@@ -39,6 +42,9 @@ GLInventory::~GLInventory()
  */
 void GLInventory::Create()
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    glx_InvalidateTextureHandles();
+#endif
     m_bCreated = true;
 
     nlListContainer<void*>** current = m_pFileData;
@@ -107,6 +113,9 @@ void GLInventory::Delete()
     if (!m_bCreated)
         return;
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    glx_InvalidateTextureHandles();
+#endif
     m_bCreated = false;
 
     nlListContainer<void*>* fileData = NULL;
@@ -143,6 +152,9 @@ static inline void DeleteFileEntries(ListEntry<void*>* current)
  */
 void GLInventory::ReleaseLevel(int nLevel)
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    glx_InvalidateTextureHandles();
+#endif
     DeleteFileEntries(m_pFileData[nLevel]->m_Head);
     m_pFileData[nLevel]->Clear();
 
@@ -159,6 +171,9 @@ void GLInventory::ReleaseLevel(int nLevel)
  */
 void GLInventory::ResourceMark()
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    glx_InvalidateTextureHandles();
+#endif
     m_nLevel++;
 }
 
@@ -167,6 +182,9 @@ void GLInventory::ResourceMark()
  */
 void GLInventory::ResourceRelease(int nLevel)
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    glx_InvalidateTextureHandles();
+#endif
     while (m_nLevel != nLevel)
     {
         ReleaseLevel(m_nLevel);
@@ -242,6 +260,9 @@ GLShadowVolume* GLInventory::GetShadowVolume(unsigned long id)
  */
 void GLInventory::AddTextureAnim(unsigned long key, GLTextureAnim* anim)
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    glx_InvalidateTextureHandles();
+#endif
     unsigned long k = key;
     GLTextureAnim* value = anim;
     nlAVLTree<unsigned long, GLTextureAnim*, DefaultKeyCompare<unsigned long> >* pTree = m_pTextureAnims[m_nLevel]->m_pItems;

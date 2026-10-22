@@ -319,11 +319,11 @@ static inline void InsertOutline(
     int offset = at - outline.mData;
     ReserveOutline(outline, outline.mSize + size);
     at = outline.mData + offset;
-    nlVector3* t = outline.mData + outline.mSize - 1;
-    while (t >= at)
+    nlVector3* t = outline.mData + outline.mSize;
+    while (t > at)
     {
+        --t;
         *(t + size) = *t;
-        t--;
     }
     while (begin != end)
     {

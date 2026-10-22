@@ -359,11 +359,11 @@ inline void glNamedBufferData(GLuint buffer, GLsizei size, const void *data, GLe
 #endif
 		gpu_buf->ptr = gpu_alloc_mapped(size, gpu_buf->type);	
 
-#ifndef SKIP_ERROR_HANDLING
 	if (!gpu_buf->ptr) {
+		gpu_buf->size = 0;
+		gpu_buf->last_frame = OBJ_NOT_USED;
 		SET_GL_ERROR(GL_OUT_OF_MEMORY)
 	}
-#endif
 
 	gpu_buf->size = size;
 	gpu_buf->last_frame = OBJ_NOT_USED;

@@ -1,0 +1,42 @@
+{
+  "scope": "Vita CARDAsync and original MemCard/SaveLoad bootstrap callbacks; isolated temporary cards only",
+  "commands": [
+    {
+      "command": [
+        "cmake",
+        "-S",
+        "smstrikers-port",
+        "-B",
+        "/Users/robin994/Documents/Code/strikersVita/smstrikers-port/.tmp/native-gxm-host"
+      ],
+      "exit_code": 0,
+      "seconds": 2.023923249915242
+    },
+    {
+      "command": [
+        "cmake",
+        "--build",
+        "/Users/robin994/Documents/Code/strikersVita/smstrikers-port/.tmp/native-gxm-host",
+        "--target",
+        "card_vita_driver_test",
+        "-j8"
+      ],
+      "exit_code": 0,
+      "seconds": 4.284536375082098
+    },
+    {
+      "command": [
+        "ctest",
+        "--test-dir",
+        "/Users/robin994/Documents/Code/strikersVita/smstrikers-port/.tmp/native-gxm-host",
+        "-R",
+        "^(card_vita_driver|save_load_vita)$",
+        "--output-on-failure"
+      ],
+      "exit_code": 0,
+      "seconds": 9.640783000038937
+    }
+  ],
+  "all_passed": true,
+  "log": "smstrikers-port/performance/2026-10-18-card-bootstrap-host-gate.log"
+}

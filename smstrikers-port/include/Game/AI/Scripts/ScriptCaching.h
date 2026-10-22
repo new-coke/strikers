@@ -24,7 +24,7 @@ inline ScriptQuestionKey MakeScriptQuestionKey(uintptr_t question, const Variant
         memcpy(&x, &argument.mData.vector.x, sizeof x);
         memcpy(&y, &argument.mData.vector.y, sizeof y);
         memcpy(&z, &argument.mData.vector.z, sizeof z);
-        key.subjectLo = ((uintptr_t)y << 32) | (uintptr_t)x;
+        key.subjectLo = ((u64)y << 32) | (u64)x;
         key.subjectHi = (uintptr_t)z;
     }
     else

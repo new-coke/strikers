@@ -129,6 +129,9 @@ uint8_t *vgl_reserve_data_pool(uint32_t size) {
 			vgl_log("%s:%d gpu_alloc_mapped_temp failed with a requested size of 0x%08X\n", __FILE__, __LINE__, size);
 		}
 #endif
+		if (!res) {
+			SET_GL_ERROR_WITH_RET(GL_OUT_OF_MEMORY, NULL)
+		}
 		mark_as_dirty(res);
 	}
 #else

@@ -1,4 +1,7 @@
 #include "Game/CharacterTemplate.h"
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "port/native_control_trace.hpp"
+#endif
 #include "Game/SHierarchy.h"
 #include "Game/SAnim/AnimRetargeter.h"
 #include "Game/Player.h"
@@ -613,6 +616,9 @@ void CreateCharacters()
  */
 void DestroyCharacters()
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    port::control_trace::end_match();
+#endif
     int i;
 
     delete g_pAnimScriptInterp;

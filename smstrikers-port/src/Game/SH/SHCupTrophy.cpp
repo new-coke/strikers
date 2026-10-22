@@ -182,7 +182,7 @@ void CupTrophyScene::SceneCreated()
     BasicString<unsigned short, Detail::TempStringAllocator> unformatted(LookupCupTrophyLoc(0x103642ED));
     BasicString<unsigned short, Detail::TempStringAllocator> formatted = Format(unformatted, timesWonWide);
 
-    memcpy(mWonBuffer, formatted.c_str(), 0x100);
+    nlStrNCpy(mWonBuffer, formatted.c_str(), ARRAY_SIZE(mWonBuffer));
 
     TLTextInstance* pTotal = FEFinder<TLTextInstance, 3>::Find<TLSlide>(
         presentation->m_currentSlide,
@@ -439,7 +439,7 @@ void CupTrophyScene::SetWinRecord(Spoil& spoil)
     BasicString<unsigned short, Detail::TempStringAllocator> msg(LookupCupTrophyLoc(0x49466bc6));
     BasicString<unsigned short, Detail::TempStringAllocator> formattedResult = Format(msg, winBuf);
 
-    memcpy(mFirstWinBuffer, formattedResult.c_str(), 0x100);
+    nlStrNCpy(mFirstWinBuffer, formattedResult.c_str(), ARRAY_SIZE(mFirstWinBuffer));
 
     TLTextInstance* text = FEFinder<TLTextInstance, 3>::Find<TLSlide>(
         presentation->m_currentSlide,
@@ -462,7 +462,7 @@ void CupTrophyScene::SetLossRecord(Spoil& spoil)
     BasicString<unsigned short, Detail::TempStringAllocator> msg(LookupCupTrophyLoc(0x720DF6F9));
     BasicString<unsigned short, Detail::TempStringAllocator> formattedResult = Format(msg, lossBuf);
 
-    memcpy(mHistoryBuffer, formattedResult.c_str(), 0x100);
+    nlStrNCpy(mHistoryBuffer, formattedResult.c_str(), ARRAY_SIZE(mHistoryBuffer));
 
     TLTextInstance* text = FEFinder<TLTextInstance, 3>::Find<TLSlide>(
         presentation->m_currentSlide,
@@ -549,7 +549,7 @@ void CupTrophyScene::SetHistory(Spoil& spoil)
             formatted = Format(unformatted, monthWideString, dayWideString, yearWideString, LookupCupTrophyLoc(GetLOCCharacterName(spoil.mCupHistory[record].mTeam, true, false)), LookupCupTrophyLoc(GetLOCDifficultyName(spoil.mCupHistory[record].mDifficulty)));
         }
 
-        memcpy(mRecordBuffer[i], formatted.c_str(), 0x100);
+        nlStrNCpy(mRecordBuffer[i], formatted.c_str(), ARRAY_SIZE(mRecordBuffer[i]));
         pText->SetString(mRecordBuffer[i]);
     }
 

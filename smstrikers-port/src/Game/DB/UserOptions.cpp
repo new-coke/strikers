@@ -73,6 +73,9 @@ void AudioSettings::ForceApplySettings(bool bUpdateMode)
 {
     if (AudioLoader::gbDisableAudio == false)
     {
+        // Vita has no separate console mono/stereo preference. Keep the current
+        // game choice, including values restored from a save or the menu backup.
+#if !defined(PORT_VITA)
         u32 curr_mode = OSGetSoundMode();
         u32 our_mode = Mode;
 
@@ -87,6 +90,7 @@ void AudioSettings::ForceApplySettings(bool bUpdateMode)
                 Mode = STEREO;
             }
         }
+#endif
 
         DefaultMusicVolume = -1;
         DefaultSFXVolume = -1;

@@ -33,6 +33,9 @@
 #include "NL/gl/glModify.h"
 #include "NL/gl/glState.h"
 #include "NL/gl/glTexture.h"
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "port/task_profile.hpp"
+#endif
 
 class PhotoFlash
 {
@@ -171,6 +174,10 @@ void GameRenderTask::SetupConstants()
  */
 void GameRenderTask::Run(float fDeltaT)
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    auto& capture = port::task_profile();
+    port::TaskProfile::PhaseScope phases(capture, this, port::TaskProfile::RenderLighting);
+#endif
     static unsigned int lastTick;
     static s8 init;
     static float prevTime;
@@ -211,8 +218,14 @@ void GameRenderTask::Run(float fDeltaT)
         FixedUpdateTask::DecrementFrameLock(fDeltaT);
     }
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    capture.next_phase(port::TaskProfile::RenderPresentation);
+#endif
     Presentation::Instance().Update(fDeltaT);
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    capture.next_phase(port::TaskProfile::RenderPreparation);
+#endif
     whiteTexture = glGetTexture("global/white");
 
     SetupConstants();
@@ -277,13 +290,22 @@ void GameRenderTask::Run(float fDeltaT)
         gl_ModifyAddMapping(GLMod_TextureMask, ~mask);
     }
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    capture.next_phase(port::TaskProfile::RenderWorld);
+#endif
     WorldManager::RenderWorld();
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    capture.next_phase(port::TaskProfile::RenderSnapshot);
+#endif
     if (nlTaskManager::m_pInstance->m_CurrState != 4)
     {
         ReplayManager::Instance()->RenderSnapshotAt(fDeltaT);
     }
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    capture.next_phase(port::TaskProfile::RenderInventory);
+#endif
     gl_ModifyClearMappings();
 
     nlTaskManager* taskMgr = nlTaskManager::m_pInstance;
@@ -329,6 +351,9 @@ void GameRenderTask::Run(float fDeltaT)
         prevTime = ReplayManager::Instance()->mTime;
     }
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    capture.next_phase(port::TaskProfile::RenderEffects);
+#endif
     DepthOfFieldManager::instance.Update();
 
     if ((nlTaskManager::m_pInstance->m_CurrState & 0x00020010) == 0)

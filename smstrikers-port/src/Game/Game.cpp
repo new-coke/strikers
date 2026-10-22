@@ -1,4 +1,7 @@
 #include "Game/Game.h"
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "port/native_control_trace.hpp"
+#endif
 #include "Game/Sys/clock.h"
 #include "Game/Sys/eventman.h"
 #include "Game/Team.h"
@@ -451,6 +454,9 @@ void cGame::PostResetCallback(uintptr_t userData, unsigned long clockId)
  */
 void cGame::BeginGame(bool bRematch, bool bStraightToKickoff)
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    port::control_trace::begin_match(bRematch, bStraightToKickoff);
+#endif
     int i;
 
     OSReport("[match] begin rematch=%d kickoff=%d\n",

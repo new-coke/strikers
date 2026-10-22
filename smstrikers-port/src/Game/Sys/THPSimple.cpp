@@ -10,6 +10,9 @@
 #include "dolphin/thp/THPPlayer.h"
 #include "dolphin/thp/THPVideoDecode.h"
 #include "port/native_video.h"
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+#include "port/mp4_movie.hpp"
+#endif
 #include "port/endian.h"   // PORT: the THP container is big-endian, as every file on the disc is
 #include "port/thp.h"      // PORT: the decoder entry points the SDK header cannot declare
 #include <stddef.h>        // PORT: offsetof, for the layout checks above the struct
@@ -1157,6 +1160,9 @@ static void THPAudioMixCallback()
  */
 extern "C" int THPSimpleSetVolume(long vol, long time)
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    if (port::movie::set_volume(vol, time, VolumeTable)) return 1;
+#endif
     THPSimpleControlWork* ctrl = (THPSimpleControlWork*)&SimpleControl;
 
     if (ctrl->open && ctrl->audioExist)

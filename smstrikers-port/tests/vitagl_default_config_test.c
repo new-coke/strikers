@@ -6,6 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include "vita_config_test_io.h"
 static char directory[1024];
 int port_executable_dir(char* out, size_t n)
 {
@@ -34,7 +35,7 @@ int main()
                 FILE* f = fopen(path, "w");
                 assert(f);
                 fputs(
-                    "vita_test_match=1\nframe_capture_frames=30\n# --- STRIKERS VALIDATED DEFAULTS "
+                    "vita_test_match=1\nvita_playstation_glyphs=0\nframe_capture_frames=30\n# --- STRIKERS VALIDATED DEFAULTS "
                     "BEGIN ---\n# profile_revision = stale\ntask_profile=1\ngxm_disable=0x8\n# --- "
                     "STRIKERS VALIDATED DEFAULTS END ---\n",
                     f);
@@ -46,6 +47,12 @@ int main()
             assert(!strcmp(getenv("STRIKERS_BENCHMARK"), "0"));
             assert(!getenv("STRIKERS_NATIVE_ASSET_ARCHIVE"));
             assert(!strcmp(getenv("STRIKERS_VITAGL_TIMING"), "0"));
+            assert(!strcmp(getenv("STRIKERS_VITA_VIDEO_PLAYER"), "avplayer"));
+            assert(!strcmp(getenv("STRIKERS_VITA_VIDEO_ARCHIVE"), ""));
+            assert(!strcmp(getenv("STRIKERS_FRAME_CAPTURE_SCENE"), ""));
+            assert(!strcmp(getenv("STRIKERS_VITA_PLAYSTATION_GLYPHS"), mode ? "0" : "1"));
+            assert(!strcmp(getenv("STRIKERS_VITA_ASYNC_RENDERER"), "1"));
+            assert(!strcmp(getenv("STRIKERS_VITA_FRAMESKIP"), "0"));
             assert(!getenv("STRIKERS_GXM_DISABLE"));
             assert(!PortDiagnosticsEnabled() && !PortFpsOverlayEnabled());
             FILE* f = fopen(path, "r");
@@ -56,11 +63,14 @@ int main()
             assert(strstr(text, "profile_revision = 2026-10-15-vitagl-unified"));
             assert(!strstr(text, "gxm_") && !strstr(text, "aurora"));
             assert(!strstr(text, "task_profile=1"));
+            config_assert_closed();
             exit(0);
         }
         int status;
         assert(waitpid(p, &status, 0) == p && WIFEXITED(status) && WEXITSTATUS(status) == 0);
     }
+    assert(!unlink(path));
+    snprintf(path, sizeof path, "%s/strikers.ini.vita-defaults.bak", directory);
     assert(!unlink(path));
     assert(!chdir("/tmp"));
     assert(!rmdir(directory));

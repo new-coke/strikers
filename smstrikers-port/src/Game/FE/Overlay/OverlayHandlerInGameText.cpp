@@ -220,7 +220,7 @@ void InGameTextOverlay::DisplayFinalScore()
 
         TLTextInstance* winnerNameTextInstance = (TLTextInstance*)winnerNameInstance;
 
-        memcpy(mWinnerBuffer, formattedName.c_str(), sizeof(mWinnerBuffer));
+        nlStrNCpy(mWinnerBuffer, formattedName.c_str(), sizeof(mWinnerBuffer) / sizeof(mWinnerBuffer[0]));
         winnerNameTextInstance->SetString(mWinnerBuffer);
 
         eTeamID team = nlSingleton<GameInfoManager>::Instance()->GetTeam(0);
@@ -260,6 +260,6 @@ void InGameTextOverlay::DisplayFinalScore()
         }
     }
 
-    memcpy(mScoresBuffer, formatted.c_str(), sizeof(mScoresBuffer));
+    nlStrNCpy(mScoresBuffer, formatted.c_str(), sizeof(mScoresBuffer) / sizeof(mScoresBuffer[0]));
     pTextInstance->SetString(mScoresBuffer);
 }

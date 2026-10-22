@@ -15,6 +15,17 @@
 #include "musyx/snd.h"
 #include "musyx/stream.h"
 #include "musyx/synth.h"
+#include "musyx/port_audio_watchdog.h"
+
+#if defined(MUSYX_THREADED_AUDIO) && defined(__GNUC__)
+/* The shared MusyX library also serves transports without the native watchdog.
+ * Its explicit weak default avoids an unresolved optional import on Mach-O.
+ * Native audio supplies the strong bridge; do not inline this fallback. */
+__attribute__((weak, noinline)) unsigned int PortAudioWatchdogSetDetail(unsigned int detail) {
+  (void)detail;
+  return 0;
+}
+#endif
 
 static volatile const u16 itdOffTab[128] = {
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,
@@ -47,13 +58,17 @@ static void snd_handle_irq() {
     return;
   }
 
+  const unsigned int watchdogPrevious = PortAudioWatchdogMark(PORT_AUDIO_WD_STREAM_CORRECT | PORT_AUDIO_WD_WAIT);
+
 #if defined(MUSYX_THREADED_AUDIO)
   /* streamCorrectLoops touches the same streaming state as game-thread MusyX
      calls. On GameCube this ran with interrupt exclusion; on Vita the audio
      worker needs the explicit recursive IRQ lock too. */
   hwIRQEnterCritical();
+  PortAudioWatchdogMark(PORT_AUDIO_WD_STREAM_CORRECT);
   streamCorrectLoops();
   // sndProfStartPCM(&prof.dspCtrl);
+  PortAudioWatchdogMark(PORT_AUDIO_WD_SOFTWARE_DSP);
   salCtrlDsp(salAiGetDest());
   // sndProfStopPMC(&prof.dspCtrl);
   hwIRQLeaveCritical();
@@ -65,12 +80,16 @@ static void snd_handle_irq() {
   // sndProfStopPMC(&prof.dspCtrl);
   hwIRQLeaveCritical();
 #endif
+  PortAudioWatchdogMark(PORT_AUDIO_WD_AUX | PORT_AUDIO_WD_WAIT);
   hwIRQEnterCritical();
+  PortAudioWatchdogMark(PORT_AUDIO_WD_AUX);
   // sndProfStartPCM(&prof.auxProcessing);
   salHandleAuxProcessing();
   // sndProfStopPMC(&prof.auxProcessing);
   hwIRQLeaveCritical();
+  PortAudioWatchdogMark(PORT_AUDIO_WD_STATE | PORT_AUDIO_WD_WAIT);
   hwIRQEnterCritical();
+  PortAudioWatchdogMark(PORT_AUDIO_WD_STATE);
   salFrame ^= 1;
   salAuxFrame = (salAuxFrame + 1) % 3;
 
@@ -86,12 +105,15 @@ static void snd_handle_irq() {
   // sndProfPausePMC(&prof.synthesizer);
   hwIRQLeaveCritical();
   for (r = 0; r < 5; ++r) {
+    PortAudioWatchdogMark(PORT_AUDIO_WD_SUBFRAME(PORT_AUDIO_WD_SEQUENCE | PORT_AUDIO_WD_WAIT, r));
     hwIRQEnterCritical();
     hwSetTimeOffset(r);
     // sndProfStartPMC(&prof.sequencer);
+    PortAudioWatchdogMark(PORT_AUDIO_WD_SUBFRAME(PORT_AUDIO_WD_SEQUENCE, r));
     seqHandle(256);
     // sndProfPausePMC(&prof.sequencer);
     // sndProfStartPMC(&prof.synthesizer);
+    PortAudioWatchdogMark(PORT_AUDIO_WD_SUBFRAME(PORT_AUDIO_WD_SYNTH, r));
     synthHandle(256);
     // sndProfPausePMC(&prof.synthesizer);
     hwIRQLeaveCritical();
@@ -99,20 +121,27 @@ static void snd_handle_irq() {
 
   // sndProfStopPMC(&prof.sequencer);
   // sndProfStopPMC(&prof.synthesizer);
+  PortAudioWatchdogMark(PORT_AUDIO_WD_SPATIAL | PORT_AUDIO_WD_WAIT);
   hwIRQEnterCritical();
+  PortAudioWatchdogMark(PORT_AUDIO_WD_SPATIAL);
   hwSetTimeOffset(0);
   // sndProfStartPMC(&prof.emitters);
   s3dHandle();
   // sndProfStopPMC(&prof.emitters);
   hwIRQLeaveCritical();
+  PortAudioWatchdogMark(PORT_AUDIO_WD_STREAM | PORT_AUDIO_WD_WAIT);
   hwIRQEnterCritical();
+  PortAudioWatchdogMark(PORT_AUDIO_WD_STREAM);
   // sndProfStartPMC(&prof.streaming);
   streamHandle();
   // sndProfStopPMC(&prof.streaming);
   hwIRQLeaveCritical();
+  PortAudioWatchdogMark(PORT_AUDIO_WD_VIRTUAL_SAMPLE | PORT_AUDIO_WD_WAIT);
   hwIRQEnterCritical();
+  PortAudioWatchdogMark(PORT_AUDIO_WD_VIRTUAL_SAMPLE);
   vsSampleUpdates();
   hwIRQLeaveCritical();
+  PortAudioWatchdogMark(watchdogPrevious);
   // sndProfUpdateMisc(&prof);
 
   // if (sndProfUserCallback) {

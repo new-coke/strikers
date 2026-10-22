@@ -164,12 +164,49 @@ static inline void BuildFontCharStringForScroll(FontCharString& fontcharstring, 
     *dest = 0;
 }
 
+// The scroll widget owns 256 UTF-16 words, including the terminator. Bound
+// both the font conversion and the final copy without splitting formatting or
+// a surrogate pair at the end of an oversized message.
+static unsigned int ScrollTextPrefixLength(const unsigned short* text, unsigned int maximum)
+{
+    unsigned int length = 0;
+    while (length < maximum && text[length] != 0)
+    {
+        if (text[length] == nlEscapeSequence::ESCAPE_BEGIN)
+        {
+            unsigned int end = length + 1;
+            while (end < maximum && text[end] != 0 && text[end] != '}')
+                ++end;
+            if (end == maximum || text[end] != '}')
+                break;
+            length = end + 1;
+        }
+        else if (text[length] >= 0xD800 && text[length] <= 0xDBFF
+            && text[length + 1] >= 0xDC00 && text[length + 1] <= 0xDFFF)
+        {
+            if (maximum - length < 2)
+                break;
+            length += 2;
+        }
+        else
+        {
+            ++length;
+        }
+    }
+    return length;
+}
+
 /**
  * Offset/Address/Size: 0x4F0 | 0x800C8EC4 | size: 0x578
  */
 void FEScrollText::SetDisplayMessage(const BasicString<unsigned short, Detail::TempStringAllocator>& theMessage)
 {
-    m_message = theMessage;
+    const unsigned short* source = theMessage.c_str();
+    const unsigned int length = ScrollTextPrefixLength(source, sizeof(m_textBuffer) / sizeof(m_textBuffer[0]) - 1);
+    if (source[length] != 0)
+        m_message = BasicString<unsigned short, Detail::TempStringAllocator>(source, source + length);
+    else
+        m_message = theMessage;
     m_msgTime = 0.0f;
 
     if (m_textFont == NULL)
@@ -220,7 +257,7 @@ void FEScrollText::SetDisplayMessage(const BasicString<unsigned short, Detail::T
     }
 
     const unsigned short* finalStr = m_message.c_str();
-    memcpy(m_textBuffer, finalStr, sizeof(m_textBuffer));
+    memcpy(m_textBuffer, finalStr, (length + 1) * sizeof(m_textBuffer[0]));
     m_controlText->SetString(m_textBuffer);
 
     m_messageWidth = (int)(m_controlText->GetScale().f.x * (float)m_messageWidth);

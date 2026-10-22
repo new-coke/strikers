@@ -240,6 +240,34 @@ cPN_SAnimController& DrawableCharacter::GetAnimController() const
     return *mCharacter->m_pCurrentAnimController;
 }
 
+static void CopySnapshotPose(cPoseAccumulator& destination, const cPoseAccumulator& source)
+{
+    if (&destination == &source)
+        return;
+
+    // Snapshot consumers read Current. Keep both owned history buffers so the
+    // next BuildNodeMatrices can swap them and overwrite all N+1 matrices.
+    // Shape changes and poses without history retain the full-copy contract.
+    const int matrices = source.m_NodeMatrices.mSize;
+    if (source.m_BaseSHierarchy == NULL ||
+        destination.m_BaseSHierarchy != source.m_BaseSHierarchy ||
+        matrices <= 1 || matrices - 1 != source.m_BaseSHierarchy->m_nNumNodes ||
+        destination.m_NodeMatrices.mSize != matrices ||
+        source.m_PrevNodeMatrices.mSize != matrices ||
+        destination.m_PrevNodeMatrices.mSize != matrices)
+    {
+        destination = source;
+        return;
+    }
+
+    destination.m_NodeMatrices = source.m_NodeMatrices;
+    destination.m_rot = source.m_rot;
+    destination.m_scale = source.m_scale;
+    destination.m_trans = source.m_trans;
+    destination.m_cb = source.m_cb;
+    destination.m_MorphWeights = source.m_MorphWeights;
+}
+
 /**
  * Offset/Address/Size: 0x2A1C | 0x8011B8CC | size: 0x17C
  */
@@ -267,7 +295,7 @@ void DrawableCharacter::Grab(cCharacter& character)
     }
     else
     {
-        *mPoseAccumulator = *character.m_pPoseAccumulator;
+        CopySnapshotPose(*mPoseAccumulator, *character.m_pPoseAccumulator);
     }
 
     // at extreme resolution and aspect ratio the goalie isn't drawn
@@ -898,7 +926,7 @@ void DrawableCharacter::Grab(SkinAnimatedMovableNPC& npc)
     }
     else
     {
-        *mPoseAccumulator = *npc.mpPoseAccumulator;
+        CopySnapshotPose(*mPoseAccumulator, *npc.mpPoseAccumulator);
     }
 
     mEffectsTexturing = nullptr;

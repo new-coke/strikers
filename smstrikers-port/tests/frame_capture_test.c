@@ -10,11 +10,20 @@ static unsigned calls;
 int PortDiagnosticsEnabled(void){return 0;}
 int PortFpsOverlayEnabled(void){return 0;}
 unsigned long long port_monotonic_ns(void){++calls;return ns;}
+static void check_ready(const char* path, const char* expected){
+    char ready[160],line[256];snprintf(ready,sizeof ready,"%s.ready",path);
+    FILE* f=fopen(ready,"r");CHECK(f);CHECK(fgets(line,sizeof line,f));
+    CHECK(strcmp(line,"# strikers-frame-capture-ready-v1\n")==0);
+    CHECK(fgets(line,sizeof line,f));CHECK(strstr(line,"requested,warmup_remaining,"));
+    CHECK(fgets(line,sizeof line,f));CHECK(strcmp(line,expected)==0);
+    CHECK(!fgets(line,sizeof line,f));CHECK(fclose(f)==0);CHECK(unlink(ready)==0);
+}
 static void check_play_only(void){
     char path[128];snprintf(path,sizeof path,"/tmp/strikers-play-capture-%ld.csv",(long)getpid());
     setenv("STRIKERS_FRAME_CAPTURE",path,1);setenv("STRIKERS_FRAME_CAPTURE_FRAMES","4",1);
     setenv("STRIKERS_FRAME_CAPTURE_MATCH_ONLY","1",1);setenv("STRIKERS_FRAME_CAPTURE_PLAY_ONLY","1",1);
     setenv("STRIKERS_FRAME_CAPTURE_SKIP","2",1);PortBenchInit();PortBenchRendererGameplayStart();
+    CHECK(calls==0);check_ready(path,"4,2,1,1,0,0\n");CHECK(access(path,F_OK)!=0);
     for(unsigned i=0;i<12;++i){
         // Intro, kickoff/replay and a renderer epoch reset must not consume
         // live-play samples or reset their simulation-frame identity.
@@ -23,6 +32,8 @@ static void check_play_only(void){
         PortBenchFrameBegin();ns+=10000000ull;PortBenchAfterTasks();ns+=2000000ull;PortBenchFrameEnd();
     }
     CHECK(calls==30);PortBenchLive live;PortBenchGetLive(&live);CHECK(live.playFrames==6);
+    PortBenchCaptureStatus status;PortBenchGetCaptureStatus(&status);
+    CHECK(status.state==PORT_CAPTURE_COMPLETE&&status.samples==4&&status.lastFrame==5);
     FILE* f=fopen(path,"r");CHECK(f);char line[256];CHECK(fgets(line,sizeof line,f));CHECK(fgets(line,sizeof line,f));
     CHECK(strstr(line,"play_only=1 counter=live_play"));CHECK(fgets(line,sizeof line,f));
     for(unsigned i=0;i<4;++i){unsigned sample,match,frame,tasks,present,sleep;unsigned long mf;
@@ -37,6 +48,7 @@ int main(void){
     char path[128];snprintf(path,sizeof path,"/tmp/strikers-capture-test-%ld.csv",(long)getpid());
     setenv("STRIKERS_FRAME_CAPTURE",path,1);setenv("STRIKERS_FRAME_CAPTURE_FRAMES","4",1);
     PortBenchInit();
+    CHECK(calls==0);check_ready(path,"4,0,0,0,0,0\n");CHECK(access(path,F_OK)!=0);
     for(unsigned i=0;i<6;++i){
         if(i==1)PortBenchRendererGameplayStart();if(i==3)PortBenchRendererGameplayEnd();
         PortBenchAddPreFrameSleep(2000000ull);PortBenchFrameBegin();PortBenchAddSleep(1000000ull);

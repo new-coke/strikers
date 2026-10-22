@@ -12,6 +12,7 @@
 #include "dolphin/thp/THPInfo.h"
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
 #include "port/native_match_runtime.hpp"
+#include "port/mp4_movie.hpp"
 #endif
 #include "port/audio.h"   // PORT: is anything pulling?
 
@@ -49,6 +50,20 @@ static unsigned long g_GrabTextureSize;
 static const unsigned long GrabTextureHandle = glGetTexture("target/grab_texture");
 static PlatTexture* pTex[4] = { 0 };
 static THPVideoInfo videoInfo;
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+static bool g_mp4Movie;
+static std::array<port::nativegxm::TextureUpload, 3> g_mp4Planes;
+static void mp4_pause_announcer(bool pause)
+{
+    if (nlTaskManager::m_pInstance->m_CurrState != 4 &&
+        GameInfoManager::GetInstance()->mIsInStrikers101Mode && g_pTrackManager)
+        if (auto* track = g_pTrackManager->GetTrack(nlStringLowerHash("Announcer")))
+        {
+            if (pause) track->Pause(0, false);
+            else track->Resume();
+        }
+}
+#endif
 
 /**
  * Offset/Address/Size: 0x28C | 0x801CBA48 | size: 0x4F0
@@ -78,6 +93,18 @@ bool MovieStart(const char* szFilename, bool bSound, bool bLoopMovie)
     if (bIntroMovie)
         size = 6;
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    port::movie::Info mp4Info;
+    g_mp4Movie = port::movie::open(fileName, bSound && PortAudioDeviceOpen(), bLoopMovie, mp4Info);
+    if (g_mp4Movie)
+    {
+        videoInfo = {};
+        videoInfo.mXSize = mp4Info.width;
+        videoInfo.mYSize = mp4Info.height;
+    }
+    else
+#endif
+    {
     // PORT: 3 is retail's, mixing the movie under MusyX in the AI DMA callback, and it needs both a callback to chain and an open audio device; 1 decodes video only.
     THPSimpleInit(bSound && PortAudioDeviceOpen() ? 3 : 1);
 
@@ -88,6 +115,7 @@ bool MovieStart(const char* szFilename, bool bSound, bool bLoopMovie)
     }
 
     THPSimpleGetVideoInfo(&videoInfo);
+    }
     resourceMarker = glResourceMark();
 
     pTex[0] = glx_CreatePlatTexture();
@@ -119,6 +147,19 @@ bool MovieStart(const char* szFilename, bool bSound, bool bLoopMovie)
     GXInvalidateTexAll();
 #endif
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    if (g_mp4Movie)
+    {
+        // Keep the original named movie textures and FE geometry, but bypass
+        // THPSimple's read/decode/audio queues and shared-memory ownership.
+        buffer = nullptr;
+        bMustFreeBuffer = false;
+        mp4_pause_announcer(true);
+        start = false;
+        g_bActive = true;
+        return true;
+    }
+#endif
     size = THPSimpleCalcNeedMemory(bufCount, size);
 
     if (glx_GetSharedMemorySize() >= size)
@@ -229,6 +270,20 @@ bool MovieStop()
         return false;
     }
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    if (g_mp4Movie)
+    {
+        port::movie::close();
+        g_mp4Movie = false;
+        for (auto& plane : g_mp4Planes) plane = {};
+        for (auto& texture : pTex) texture = nullptr;
+        glResourceRelease(resourceMarker);
+        mp4_pause_announcer(false);
+        g_bActive = false;
+        return true;
+    }
+#endif
+
     if (glx_GetSharedLock())
     {
         glx_UnlockSharedMemory();
@@ -293,6 +348,22 @@ bool MoviePlay()
     {
         return false;
     }
+
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    if (g_mp4Movie)
+    {
+        if (g_bMovieMustStop) return false;
+        bool changed = false;
+        const int status = port::movie::poll(g_mp4Planes, changed);
+        if (status <= 0)
+        { std::fprintf(stderr, "[mp4] movie poll finished status=%d\n", status); return false; }
+        if (changed)
+            for (unsigned i = 0; i < 3; ++i)
+                if (!port::directmatch::admit_texture(pTex[i], g_mp4Planes[i]))
+                { std::fprintf(stderr, "[mp4] texture admission failed plane=%u\n", i); return false; }
+        return true;
+    }
+#endif
 
     if (start)
     {
