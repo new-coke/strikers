@@ -41,7 +41,7 @@ containing only the original disc files is not sufficient for this runtime.
 On the PS Vita:
 
 1. Set up VitaShell and `ur0:data/libshacccg.suprx` as described in the
-   [installation guide](ASSET_SETUP.md#3-installare-sulla-ps-vita).
+   [installation guide](ASSET_SETUP.md#3-install-on-ps-vita).
 2. Install the **complete VPK from the matching build**, with MP4/SceAvPlayer support.
 3. Copy `sms.psarc` to **`ux0:data/strikersVita/sms.psarc`** without extracting it.
 4. Copy the [example configuration](smstrikers-port/strikers-vitagl.ini.example)
@@ -96,9 +96,10 @@ smstrikers-port/build-vita-vitagl.sh --release-candidate
 
 This requires a clean, committed source tree. It generates a dedicated
 `strikers.ini` and `release-candidate.json` with the source commit and
-file SHA-256 hashes alongside the VPK. **Keep the release VPK local:** provide
-it privately to testers; do not commit it, attach it to a GitHub release,
-or upload it to GitHub. See [tester instructions](TESTING_RC.md).
+file SHA-256 hashes alongside the VPK. The VPK is available to download from
+[GitHub Releases](https://github.com/robin994/strikersVita/releases).
+Do not commit generated VPKs, game disc images, or copyrighted game assets
+to the repository. See the [tester instructions](TESTING_RC.md).
 
 This build script expects VitaSDK at `/usr/local/vitasdk`; VitaSDK is not
 needed just to prepare the game assets.

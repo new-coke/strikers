@@ -1,9 +1,11 @@
-# Strikers Vita: local release candidate for testers
+# Strikers Vita: public build and tester instructions
 
-Distribute `strikers_vita.vpk`, `strikers.ini`, this document and
-`release-candidate.json` privately from `smstrikers-port/build-vita-gxm-latest`.
-**Keep the VPK local. Do not upload it to GitHub, attach it to a release, or
-include it in a commit.** The ISO and PSARC are not part of the delivery.
+Download `strikers_vita.vpk` and the matching `strikers.ini` from
+[GitHub Releases](https://github.com/robin994/strikersVita/releases).
+The `release-candidate.json` manifest is generated alongside locally built
+VPKs in `smstrikers-port/build-vita-gxm-latest` and is not required to install
+the public release. Do not commit VPKs or distribute copyrighted game assets.
+The game ISO and PSARC are not part of the release.
 Testers must prepare their own archive following the repository's
 [asset setup guide](https://github.com/robin994/strikersVita/blob/main/ASSET_SETUP.md).
 
@@ -21,7 +23,8 @@ Test startup and save loading, menus and controls, one full match, stadium
 entrance, goals/replays, trophy presentations and movies. Include movie
 skipping and returning to the menu. For issues, report the scene and exact
 reproduction steps, video/audio quality and synchronization, Vita model and
-firmware. Include the manifest, and preserve the core dump if the game crashes.
+firmware. Include the manifest if you built locally, and preserve the core dump
+if the game crashes.
 Do not enable profiling during normal-performance tests.
 
 This is a functional test candidate. **Stable 30 FPS and 60 FPS are not yet

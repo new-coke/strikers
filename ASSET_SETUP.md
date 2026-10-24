@@ -1,73 +1,75 @@
-# Preparare il PSARC e avviare Strikers Vita
+# Preparing the PSARC and running Strikers Vita
 
-Questa guida riguarda il runtime **VitaGL attuale**, con grafica nativa,
-audio PCM e filmati **MP4 H.264/AAC riprodotti da SceAvPlayer**. Lo script consigliato e'
+This guide covers the **current vitaGL runtime**, which uses native graphics,
+PCM audio, and **H.264/AAC MP4 movies played through SceAvPlayer**. The
+recommended script is
 [`prepare_strikers_vita.py`](smstrikers-port/tools/prepare_strikers_vita.py).
-Prepara e verifica l'archivio completo; non basta rinominare una ISO o creare
-un PSARC contenente soltanto i file GameCube originali.
+It prepares and verifies the complete archive. Simply renaming an ISO or
+creating a PSARC containing only the original GameCube files is not enough.
 
-## Requisiti sul PC
+## PC requirements
 
-- Una propria immagine **ISO/GCM GameCube non compressa** di Super Mario
-  Strikers / Mario Smash Football. ID riconosciuti: `G4QE01` (USA), `G4QP01`
-  (Europa), `G4QJ01` (Giappone). Il riconoscimento dell'ID non garantisce che
-  ogni revisione o lingua sia stata validata in partita su Vita.
-- Python **3.10 o successivo**, CMake **3.24 o successivo**, un compilatore
-  **C++20**, FFmpeg con encoder **libx264** e **AAC**, e `ffprobe`.
-  Consigliato FFmpeg 6 o successivo.
-- macOS o Linux; su Windows usare **WSL2** con gli strumenti Linux.
-- Connessione Internet alla prima compilazione per scaricare
-  gli header xxHash, fissati alla versione 0.8.3 con controllo SHA-256.
-- Spazio libero per ISO, estrazione, conversioni temporanee e archivio finale.
-  Riservare almeno **8 GiB liberi oltre alla ISO** sul PC; sulla Vita riservare
-  circa **2 GiB** per il PSARC, piu' lo spazio per applicazione e salvataggi.
-  La dimensione esatta dipende dal disco e dalle opzioni di conversione.
+- Your own **uncompressed GameCube ISO/GCM image** of Super Mario Strikers /
+  Mario Smash Football. Recognized game IDs: `G4QE01` (USA), `G4QP01`
+  (Europe), and `G4QJ01` (Japan). A recognized ID does not guarantee that
+  every disc revision or language has been tested in gameplay on the Vita.
+- Python **3.10 or later**, CMake **3.24 or later**, a **C++20** compiler,
+  FFmpeg with the **libx264** and **AAC** encoders, and `ffprobe`.
+  FFmpeg 6 or later is recommended.
+- macOS or Linux; on Windows, use **WSL2** with Linux tools.
+- An Internet connection for the first build to download the xxHash headers,
+  pinned to version 0.8.3 and verified with SHA-256.
+- Enough free space for the ISO, extraction, temporary conversions, and the
+  final archive. Allow at least **8 GiB of free space in addition to the ISO**
+  on your PC. On the Vita, allow approximately **2 GiB** for the PSARC, plus
+  space for the application and save files. Actual sizes depend on the disc
+  and conversion options.
 
-Non servono VitaSDK, SDL, Aurora, librerie Python aggiuntive o una build
-desktop del gioco per eseguire questo comando.
+You do not need VitaSDK, SDL, Aurora, additional Python packages, or a
+desktop build of the game to run the preparation script.
 
-Su macOS, installare gli Xcode Command Line Tools (`xcode-select --install`)
-e, se si usa Homebrew:
+On macOS, install the Xcode Command Line Tools (`xcode-select --install`).
+If you use Homebrew, install the dependencies with:
 
 ```sh
 brew install python cmake ffmpeg
 ```
 
-Su Ubuntu/WSL2, con una distribuzione che fornisca le versioni richieste:
+On Ubuntu/WSL2, using a distribution that provides the required versions:
 
 ```sh
 sudo apt update
 sudo apt install build-essential cmake python3 ffmpeg
 ```
 
-Controllare le versioni con `python3 --version`, `cmake --version` e
-`ffmpeg -version`. RVZ, NKit e altri formati compressi devono essere prima
-convertiti in un'immagine GameCube completa con uno strumento adatto.
+Check the installed versions with `python3 --version`, `cmake --version`,
+and `ffmpeg -version`. RVZ, NKit, and other compressed formats must first
+be converted to a full GameCube disc image with an appropriate tool.
 
-## 1. Creare l'archivio
+## 1. Create the archive
 
-Scaricare/clonare questa repository, aprire un terminale nella sua radice
-ed eseguire, adattando i due percorsi:
+Download or clone this repository, open a terminal in its root directory,
+and run the following command, adjusting the two paths:
 
 ```sh
 python3 smstrikers-port/tools/prepare_strikers_vita.py \
-  --iso "/percorso/Mario Smash Football.iso" \
+  --iso "/path/to/Mario Smash Football.iso" \
   --output "local-data/sms.psarc"
 ```
 
-Su WSL2 un disco Windows e' accessibile, per esempio, come
-`/mnt/c/Games/Mario Smash Football.iso`. Tenere repository, build e output
-nel filesystem Linux puo' ridurre il costo delle molte operazioni sui file.
+Under WSL2, a Windows drive is accessible as, for example,
+`/mnt/c/Games/Mario Smash Football.iso`. Keeping the repository, build
+files, and output on the Linux filesystem may reduce the overhead of the
+many file operations involved.
 
-Lo script compila i due convertitori host in
-`smstrikers-port/build-asset-tools`, estrae il disco in una directory
-temporanea, prepara modelli e texture per il renderer, converte tutto
-l'audio previsto dalla pipeline in PCM e i filmati in MP4 H.264 Baseline
-con audio AAC-LC stereo a 48 kHz,
-poi crea e verifica il PSARC. Le directory temporanee vengono rimosse
-alla conclusione; la ISO sorgente resta intatta.
+The script builds the two host-side converters in
+`smstrikers-port/build-asset-tools`, extracts the disc into a temporary
+directory, prepares models and textures for the renderer, converts all audio
+required by the pipeline to PCM, and converts movies to H.264 Baseline MP4
+with 48 kHz stereo AAC-LC audio. It then creates and verifies the PSARC.
+Temporary directories are removed on completion; the source ISO is unchanged.
 
-L'output finale comprende:
+The generated files are:
 
 ```text
 local-data/
@@ -75,93 +77,98 @@ local-data/
   sms.psarc.json
 ```
 
-Il file JSON contiene identita' della sorgente, SHA-256 dell'archivio e
-resoconto delle conversioni. Conservarlo sul PC. Non occorre copiarlo sulla
-Vita. Il comando puo' richiedere diversi minuti e stampa l'hash finale
-solo dopo la verifica. Un output esistente viene rifiutato: per rigenerarlo
-intenzionalmente aggiungere `--replace`.
+The JSON report contains the source identity, archive SHA-256, and conversion
+results. Keep it on your PC; it does not need to be copied to the Vita.
+Preparation can take several minutes, and the final hash is printed only
+after verification. Existing output is rejected by default; add `--replace`
+if you intentionally want to regenerate it.
 
-Opzioni facoltative:
+Optional parameters:
 
 ```sh
 python3 smstrikers-port/tools/prepare_strikers_vita.py \
-  --iso "/percorso/gioco.iso" --output "local-data/sms.psarc" \
-  --jobs 4 --video-crf 18 --ffmpeg "/percorso/ffmpeg"
+  --iso "/path/to/game.iso" --output "local-data/sms.psarc" \
+  --jobs 4 --video-crf 18 --ffmpeg "/path/to/ffmpeg"
 ```
 
-`--jobs` controlla compilazione e conversione video; `--video-crf` ha valore
-predefinito 18. Lasciare questi valori per la prima preparazione.
-ISO, PSARC e conversioni generate sono esclusi da Git.
+`--jobs` controls compilation and video conversion concurrency;
+`--video-crf` defaults to 18. Keep these defaults for your first attempt.
+Generated ISOs, PSARCs, and converted assets are excluded from Git.
 
-La conversione video mantiene risoluzione, numero di fotogrammi e frequenza
-del THP originale (29,97 Hz per i 17 filmati del disco europeo verificato).
-L'audio viene prima decodificato con l'aritmetica DSP del port, verificando
-numero di campioni e limiti dei record; poi viene ricampionato e codificato
-in AAC. Questa conversione e' lossy. Ogni MP4 viene verificato con `ffprobe`
-e decodificato completamente sul PC prima di pubblicare il PSARC.
+Video conversion preserves the original THP resolution, frame count, and
+frame rate (29.97 Hz for the 17 movies on the verified European disc).
+Audio is first decoded using the port's DSP arithmetic, with sample counts
+and record bounds checked, then resampled and encoded to AAC. This audio
+conversion is lossy. Each MP4 is inspected with `ffprobe` and fully decoded
+on the PC before the PSARC is finalized.
 
-I filmati risiedono in `native/v2/video/`, con un descrittore binario
-`STMP4001` accanto a ciascun `.mp4`. Il gioco continua a richiedere i nomi
-originali `.thp`; il player li risolve nel PSARC tramite callback di lettura
-posizionale. Non occorre estrarre i filmati sulla Vita. Il pacchetto completo
-rimuove i THP sostituiti soltanto dopo una conversione riuscita.
+Movies are stored under `native/v2/video/`, with a binary `STMP4001`
+descriptor next to each `.mp4`. The game still requests the original
+`.thp` names; the player resolves them inside the PSARC through positional
+read callbacks. Movies do not need to be extracted on the Vita. The
+complete package removes replaced THP files only after successful conversion.
 
-Il default e' `--video-format mp4`. Per produrre il formato storico compatibile
-con una vecchia build del port, usare `--video-format wavc`; quel percorso
-mantiene H.264 all-intra dentro THP e usa il vecchio decoder.
-`--ffprobe /percorso/ffprobe` permette di selezionare un eseguibile specifico.
-La verifica sul PC non prova ancora fluidita', colore o sincronizzazione sulla console.
+The default is `--video-format mp4`. To produce the legacy format for an
+older version of the port, use `--video-format wavc`; this retains all-intra
+H.264 inside THP and uses the older decoder.
+`--ffprobe /path/to/ffprobe` selects a specific executable.
+PC-side verification does not establish smooth playback, correct colors,
+or audio/video synchronization on the console.
 
-## 2. Verificare un archivio gia' preparato
+## 2. Verify an existing archive
 
 ```sh
 python3 smstrikers-port/tools/prepare_strikers_vita.py \
   --verify "local-data/sms.psarc"
 ```
 
-Questo comando richiede il JSON accanto al PSARC, confronta il suo SHA-256,
-controlla il marker di grafica nativa, la presenza dell'indice audio completo
-e dei filmati. Per MP4 controlla anche che ogni descrittore corrisponda al
-resoconto di conversione e che non siano rimasti THP nel pacchetto.
-Legge/verifica il contenitore completo e stampa formato video, numero di
-filmati e player da configurare. Non necessita dei convertitori o di FFmpeg.
-La verifica del file non sostituisce una prova di avvio e di partita.
+This command requires the JSON report alongside the PSARC and checks its
+SHA-256, the native graphics marker, the complete audio index, and the
+movie files. For MP4, it also checks that each descriptor matches the
+conversion report and that no replaced THP files remain in the package.
+It reads and verifies the entire archive, then prints the video format,
+movie count, and required player setting. It does not need the converters
+or FFmpeg. File verification is not a substitute for testing game startup
+and gameplay on the Vita.
 
-La pipeline a basso livello resta disponibile in
-[`vita_prepare_assets.py`](smstrikers-port/tools/vita_prepare_assets.py), ma
-le sue opzioni consentono anche archivi generici o formati storici che
-non soddisfano il runtime attuale. Per un nuovo setup usare il comando
-di questa guida, che seleziona `--native-graphics-compiler`, audio `all`
-e video nativo insieme. Il vecchio `--native-compiler` da solo non basta.
+The lower-level pipeline remains available in
+[`vita_prepare_assets.py`](smstrikers-port/tools/vita_prepare_assets.py),
+but its options can produce generic archives or legacy formats that are
+incompatible with the current runtime. For a new setup, use the command
+in this guide: it enables `--native-graphics-compiler`, audio `all`, and
+native video together. The old `--native-compiler` option alone is
+not sufficient.
 
-## 3. Installare sulla PS Vita
+## 3. Install on PS Vita
 
-La console deve poter eseguire homebrew e installare VPK tramite VitaShell.
-Il renderer richiede anche il compilatore shader `libshacccg.suprx`
-estratto e decrittato sulla console, normalmente in
-**`ur0:data/libshacccg.suprx`**. Si vedano i requisiti ufficiali di
-[vitaGL](https://github.com/Rinnegatamante/vitaGL#prerequisites) e il progetto
-[ShaRKF00D](https://github.com/OsirizX/ShaRKF00D) per l'estrazione.
+Your console must be able to run homebrew software and install VPK files
+through VitaShell. The renderer also requires the `libshacccg.suprx`
+shader compiler, extracted and decrypted on the console and normally placed at
+**`ur0:data/libshacccg.suprx`**. See the official
+[vitaGL prerequisites](https://github.com/Rinnegatamante/vitaGL#prerequisites)
+and the [ShaRKF00D](https://github.com/OsirizX/ShaRKF00D) project for extraction.
 
-Usare il **VPK della stessa versione della pipeline**: un vecchio eseguibile
-che riproduce soltanto WAVC/THP non puo' usare un archivio MP4 privo dei THP.
-Chi compila il progetto trova il pacchetto in
-`smstrikers-port/build-vita-gxm-latest/strikers_vita.vpk`, dopo il comando
-di build indicato nel [README](README.md#build-vita-per-sviluppatori).
+Use a **VPK compatible with your asset preparation pipeline**: older builds
+that only play WAVC/THP cannot use a new MP4 archive with the replaced THPs
+removed. Download the full VPK from
+[GitHub Releases](https://github.com/robin994/strikersVita/releases), or,
+if you build the project yourself, find it at
+`smstrikers-port/build-vita-gxm-latest/strikers_vita.vpk` after following
+the [README build instructions](README.md#building-for-ps-vita).
 
-1. Trasferisci il **VPK completo** di Strikers Vita sulla console via USB o
-   FTP di VitaShell, aprilo in VitaShell e conferma l'installazione.
-   Il titolo dell'app e' `Super Mario Strikers Vita`, Title ID `SMSVITA01`.
-2. Crea la directory `ux0:data/strikersVita/` con VitaShell o tramite FTP/USB.
-3. Copia **`sms.psarc`** in quella directory, senza estrarlo.
-4. Copia [`strikers-vitagl.ini.example`](smstrikers-port/strikers-vitagl.ini.example)
-   nella stessa directory, rinominandolo **`strikers.ini`**.
-5. Verifica che nell'INI ci sia una sola voce `asset_archive` e che punti
-   al percorso indicato sotto. Se esiste gia' un INI personale, conservarne
-   una copia prima di sostituirlo.
-6. Avvia il gioco dalla sua bolla nella LiveArea e segui le schermate del gioco.
+1. Transfer the **complete Strikers Vita VPK** to your console using
+   VitaShell USB or FTP, open it in VitaShell, and confirm the installation.
+   The application title is `Super Mario Strikers Vita`, Title ID `SMSVITA01`.
+2. Create the `ux0:data/strikersVita/` directory using VitaShell or FTP/USB.
+3. Copy **`sms.psarc`** into that directory without extracting it.
+4. Copy [`strikers-vitagl.ini.example`](smstrikers-port/strikers-vitagl.ini.example)
+   into the same directory and rename it to **`strikers.ini`**.
+   Alternatively, use the matching INI attached to the release, if provided.
+5. Make sure the INI contains only one `asset_archive` entry, pointing to
+   the path shown below. Back up any existing personal INI before replacing it.
+6. Launch the game from its LiveArea bubble and follow the in-game menus.
 
-La disposizione finale e':
+The final directory layout is:
 
 ```text
 ux0:data/strikersVita/
@@ -169,7 +176,7 @@ ux0:data/strikersVita/
   strikers.ini
 ```
 
-Impostazioni essenziali della configurazione normale:
+Essential settings for normal gameplay:
 
 ```ini
 asset_archive = ux0:data/strikersVita/sms.psarc
@@ -186,61 +193,63 @@ vitagl_affine_uv = 0
 vitagl_vertex_fog = 0
 ```
 
-La partita di test si abilita solo tramite INI quando serve una misura;
-non e' necessaria per l'avvio normale. Gli esperimenti shader rimangono
-disabilitati nella configurazione distribuita.
+The test-match mode is enabled through the INI only when measurements are
+needed; it is not required for normal startup. Experimental shaders remain
+disabled in the distributed configuration.
 
-### Glifi PlayStation o GameCube
+### PlayStation or GameCube button glyphs
 
-`vita_playstation_glyphs = 1` e' il default: i pulsanti A/B/X/Y nei font
-compatibili e nelle legende supportate diventano rispettivamente
-**× / ○ / □ / △**, coerenti con i comandi della Vita. L e R mantengono le
-lettere originali. I badge del controller supportati usano la disposizione
-PlayStation. Le icone sono incluse nell'eseguibile; non serve un pacchetto
-di texture aggiuntivo e non occorre rigenerare il PSARC per cambiare opzione.
+`vita_playstation_glyphs = 1` is the default. In supported fonts and prompts,
+GameCube A/B/X/Y button glyphs are displayed as **× / ○ / □ / △**
+respectively, matching the Vita controls. L and R keep their original
+letters. Supported controller badges use the PlayStation layout.
+The icons are included in the executable; no extra texture pack is required,
+and switching this option does not require regenerating the PSARC.
 
-Per usare la grafica GameCube originale:
+To use the original GameCube button artwork:
 
 ```ini
 vita_playstation_glyphs = 0
 ```
 
-Chiudi e riavvia il gioco dopo aver cambiato il valore. Metti una sola
-occorrenza dell'opzione tra le impostazioni personali, fuori dall'eventuale
-blocco `STRIKERS VALIDATED DEFAULTS`: le impostazioni personali hanno priorita'.
-L'opzione non rimappa i comandi, non modifica i testi che nominano i pulsanti
-e non interviene sulle icone incorporate nei filmati.
+Close and restart the game after changing the setting. Add only one copy
+of the option in your personal settings, outside any
+`STRIKERS VALIDATED DEFAULTS` block: personal settings take priority.
+This option does not remap controls, change literal button names in game
+text, or replace button symbols embedded in movies.
 
-### Aggiornare un'installazione esistente
+### Updating an existing installation
 
-Chiudi il gioco e copia sul PC l'INI personale e le directory dei salvataggi
-`cardA/` e `cardB/` dentro `ux0:data/strikersVita/`. Installa il nuovo VPK
-completo e sostituisci `sms.psarc` con l'archivio verificato della nuova
-pipeline. Mantieni i salvataggi e riporta le impostazioni personali nell'INI
-di esempio aggiornato, evitando chiavi duplicate. Non e' necessario
-disinstallare l'app per aggiornarla.
+Close the game and back up your personal INI and the `cardA/` and `cardB/`
+save directories from `ux0:data/strikersVita/` to your PC. Install the
+new complete VPK and replace `sms.psarc` with the verified archive for
+the updated pipeline. Preserve your saves and reapply personal settings
+to the updated example INI, avoiding duplicate keys. You do not need to
+uninstall the application before updating.
 
-## 4. LiveArea: icona, sfondo e pulsante di avvio
+## 4. LiveArea: icon, background, and launch button
 
-I sorgenti si trovano in
+The source assets are located in
 [`smstrikers-port/assets/vita/sce_sys/`](smstrikers-port/assets/vita/sce_sys/):
 
-| File nel VPK | Funzione |
+| File in the VPK | Purpose |
 | --- | --- |
-| `sce_sys/icon0.png` | Icona della bolla, 128 x 128 |
-| `sce_sys/pic0.png` | Immagine dell'app, 960 x 544 |
-| `sce_sys/livearea/contents/template.xml` | Layout `a1` e riferimenti alle immagini |
-| `sce_sys/livearea/contents/bg.png` | Sfondo LiveArea, 840 x 500 |
-| `sce_sys/livearea/contents/startup.png` | Immagine del pulsante di avvio, 280 x 158 |
+| `sce_sys/icon0.png` | Application bubble icon, 128 x 128 |
+| `sce_sys/pic0.png` | Application image, 960 x 544 |
+| `sce_sys/livearea/contents/template.xml` | `a1` layout and image references |
+| `sce_sys/livearea/contents/bg.png` | LiveArea background, 840 x 500 |
+| `sce_sys/livearea/contents/startup.png` | Launch button image, 280 x 158 |
 
-Il template associa esplicitamente `bg.png` allo sfondo e `startup.png`
-al gate di avvio. Le immagini sono PNG indicizzati, il template e' UTF-8
-con terminazioni CRLF e `content-rev="3"`. Questi vincoli seguono le
-[indicazioni VitaSDK](https://github.com/vitasdk/samples#notes-on-images).
-`template.xml` non controlla l'icona della bolla: quella dipende da `icon0.png`.
+The template explicitly assigns `bg.png` to the background and
+`startup.png` to the launch button. The images are indexed PNGs, and the
+template is UTF-8 with CRLF line endings and `content-rev="3"`.
+These constraints follow the
+[VitaSDK guidance](https://github.com/vitasdk/samples#notes-on-images).
+`template.xml` does not control the application bubble icon; that is
+provided by `icon0.png`.
 
-La build controlla asset sorgenti e contenuto del VPK, inclusa la
-corrispondenza tra `eboot.bin` e SELF appena generato. Controllo manuale:
+The build checks the source assets and VPK contents, including whether
+`eboot.bin` matches the freshly generated SELF. For a manual check:
 
 ```sh
 python3 smstrikers-port/tools/validate_vita_package.py \
@@ -248,38 +257,39 @@ python3 smstrikers-port/tools/validate_vita_package.py \
   --self smstrikers-port/build-vita-gxm-latest/strikers_vita.self
 ```
 
-Per aggiornare la LiveArea installare il VPK completo. La sola copia di
-`eboot.bin`, usata durante lo sviluppo, non aggiorna gli asset della bolla.
-Chiudere l'app e la relativa pagina LiveArea prima di reinstallare.
-Attendere che VitaShell completi l'installazione, poi riaprire la pagina.
-Se la shell continua a mostrare la grafica precedente, riavviare la console
-dopo la reinstallazione e ricontrollare i file installati sotto
+To update LiveArea artwork, install the complete VPK. Copying only
+`eboot.bin`, as commonly done during development, does not update the
+application bubble assets. Close the application and its LiveArea page
+before reinstalling. Let VitaShell finish the installation, then reopen
+the page. If the shell still shows the previous artwork, reboot the
+console after reinstalling and check the files under
 `ux0:app/SMSVITA01/sce_sys/`.
 
-La shell mantiene anche una copia degli asset in **`ur0:appmeta/SMSVITA01/`**.
-Nel caso verificato sul dispositivo, quella directory conteneva soltanto
-`icon0.png`: il template presente sotto `ux0:app/` non era sufficiente a
-far apparire la LiveArea corretta. Dopo l'installazione completa e il
-ricaricamento della pagina, anche la cache conteneva `pic0.png` e
-`livearea/contents/{template.xml,bg.png,startup.png}`. Sfondo e pulsante
-di Strikers sono stati confermati con una cattura del dispositivo.
-La cache viene rigenerata dalla shell; il percorso e' utile per verificare
-l'aggiornamento, mentre i sorgenti da distribuire restano quelli nel VPK.
-Evitare di disinstallare l'app come primo
-tentativo, per non rimuovere dati che si vogliono conservare.
+The shell also caches assets in **`ur0:appmeta/SMSVITA01/`**.
+In the verified on-device case, this directory initially contained only
+`icon0.png`: the template under `ux0:app/` alone was not enough to make
+the correct LiveArea appear. After reinstalling the full VPK and reloading
+the page, the cache also contained `pic0.png` and
+`livearea/contents/{template.xml,bg.png,startup.png}`. A console
+screenshot confirmed that the Strikers background and launch button
+were displayed correctly.
+The shell regenerates this cache. The path is useful for confirming
+an update, but the assets to distribute remain those packaged in the VPK.
+Avoid uninstalling the application as a first troubleshooting step,
+since that may remove data you want to preserve.
 
-## Problemi frequenti
+## Troubleshooting
 
-| Sintomo | Controllo |
+| Symptom | What to check |
 | --- | --- |
-| ISO rifiutata immediatamente | Verificare formato completo e ID; non passare RVZ/NKit o un disco di un altro gioco. |
-| Compilatore, CMake o FFmpeg non trovato | Installare le dipendenze nel medesimo ambiente del terminale; su Windows usare WSL2. |
-| FFmpeg senza `libx264` | Usare una build di FFmpeg che includa quell'encoder. |
-| FFmpeg senza `aac` o `ffprobe` assente | Installare una distribuzione completa di FFmpeg prima della preparazione MP4. |
-| Output gia' esistente | Scegliere un nuovo percorso oppure usare `--replace` intenzionalmente. |
-| SHA-256 diverso dal JSON | Non usare quel trasferimento/output; rigenerare o ricopiare da una coppia verificata. |
-| Archivio senza marker nativo | Rigenerare con `prepare_strikers_vita.py`; un PSARC generico o di una vecchia pipeline e' insufficiente. |
-| Mancato avvio o errore di caricamento | Controllare percorso INI, PSARC completo, modulo shader e `ux0:data/strikersVita/vitagl.log`. |
-| Filmati assenti con un PSARC nuovo | Usare il VPK con supporto MP4, `vita_video_player = avplayer`, `vita_native_video = 1` e `vita_video_archive` vuoto per l'archivio completo. |
-| Glifi ancora originali | Controllare `vita_playstation_glyphs = 1`, rimuovere eventuali override a `0` e riavviare; le icone nei filmati restano originali. |
-| Bolla o LiveArea ancora precedenti | Verificare e reinstallare il VPK completo; il template e' sotto `sce_sys/livearea/contents/`. |
+| ISO rejected immediately | Check the uncompressed image format and game ID; do not pass RVZ/NKit or a disc from a different game. |
+| Compiler, CMake, or FFmpeg not found | Install dependencies in the same environment as your terminal; use WSL2 on Windows. |
+| FFmpeg lacks `libx264` | Use an FFmpeg build that includes this encoder. |
+| FFmpeg lacks `aac` or `ffprobe` is missing | Install a complete FFmpeg distribution before preparing MP4 files. |
+| Output already exists | Choose a new output path or explicitly use `--replace`. |
+| SHA-256 differs from the JSON report | Do not use that transfer or output; regenerate or recopy a verified pair. |
+| Archive lacks the native marker | Regenerate with `prepare_strikers_vita.py`; a generic or legacy PSARC is insufficient. |
+| Game fails to start or load | Check the INI path, complete PSARC, shader module, and `ux0:data/strikersVita/vitagl.log`. |
+| Movies missing with a new PSARC | Use an MP4-capable VPK, set `vita_video_player = avplayer` and `vita_native_video = 1`, and leave `vita_video_archive` empty for the complete archive. |
+| Original button glyphs still displayed | Check `vita_playstation_glyphs = 1`, remove any overrides setting it to `0`, and restart. Symbols embedded in movies remain unchanged. |
+| Old application bubble or LiveArea artwork still displayed | Check and reinstall the complete VPK; the template is under `sce_sys/livearea/contents/`. |
