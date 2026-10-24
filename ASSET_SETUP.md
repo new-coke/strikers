@@ -148,6 +148,12 @@ shader compiler, extracted and decrypted on the console and normally placed at
 [vitaGL prerequisites](https://github.com/Rinnegatamante/vitaGL#prerequisites)
 and the [ShaRKF00D](https://github.com/OsirizX/ShaRKF00D) project for extraction.
 
+For the best possible performance, **CapUnlocker is strongly recommended**.
+It unlocks access to the system-reserved fourth CPU core for game applications.
+Install it before playing by following the
+[CapUnlocker instructions in the README](README.md#capunlocker-for-best-performance).
+It is not included in the VPK and is not required just to launch the game.
+
 Use a **VPK compatible with your asset preparation pipeline**: older builds
 that only play WAVC/THP cannot use a new MP4 archive with the replaced THPs
 removed. Download the full VPK from

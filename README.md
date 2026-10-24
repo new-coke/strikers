@@ -7,6 +7,12 @@ This project is still under development. The next performance milestone is
 **stable 30 FPS in rendered cutscenes**, followed by 60 FPS. Neither target
 has been achieved or certified yet.
 
+**For the best possible performance, installing
+[CapUnlocker](https://github.com/GrapheneCt/CapUnlocker) is strongly recommended.**
+It unlocks access to the Vita's system-reserved fourth CPU core (CPU3) for
+game applications. See the [CapUnlocker setup](#capunlocker-for-best-performance)
+below. The plugin is not included in the VPK.
+
 - [PSARC asset preparation and PS Vita installation](ASSET_SETUP.md)
 - [Performance measurements, MP4 playback and the 30 FPS milestone](smstrikers-port/performance/MIDTERM_30FPS_MP4_2026-10-22.md)
 - [Local release candidate and tester instructions](TESTING_RC.md)
@@ -42,14 +48,42 @@ On the PS Vita:
 
 1. Set up VitaShell and `ur0:data/libshacccg.suprx` as described in the
    [installation guide](ASSET_SETUP.md#3-install-on-ps-vita).
-2. Install the **complete VPK from the matching build**, with MP4/SceAvPlayer support.
-3. Copy `sms.psarc` to **`ux0:data/strikersVita/sms.psarc`** without extracting it.
-4. Copy the [example configuration](smstrikers-port/strikers-vitagl.ini.example)
+2. **Install CapUnlocker for the best possible performance**, following the
+   [setup instructions](#capunlocker-for-best-performance), and reboot the Vita.
+3. Install the **complete VPK from the matching build**, with MP4/SceAvPlayer support.
+4. Copy `sms.psarc` to **`ux0:data/strikersVita/sms.psarc`** without extracting it.
+5. Copy the [example configuration](smstrikers-port/strikers-vitagl.ini.example)
    to **`ux0:data/strikersVita/strikers.ini`**.
-5. Launch Strikers Vita from LiveArea and follow the game's original menus.
+6. Launch Strikers Vita from LiveArea and follow the game's original menus.
 
 The [full setup guide](ASSET_SETUP.md) covers dependencies, file transfers,
 INI settings, updating without losing saves, and troubleshooting.
+
+## CapUnlocker for best performance
+
+**CapUnlocker is strongly recommended when playing Strikers Vita.** The
+[CapUnlocker kernel plugin](https://github.com/GrapheneCt/CapUnlocker) allows
+game-mode applications to use the normally system-reserved fourth CPU core
+(CPU3), providing additional CPU scheduling capacity where supported.
+
+To install it on a homebrew-enabled PS Vita:
+
+1. Obtain `CapUnlocker.skprx` from a trusted CapUnlocker distribution.
+2. Copy it to `ur0:tai/CapUnlocker.skprx`.
+3. Add the plugin path under the existing `*KERNEL` section in
+   `ur0:tai/config.txt` (do not create a duplicate `*KERNEL` section):
+
+   ```text
+   *KERNEL
+   ur0:tai/CapUnlocker.skprx
+   ```
+
+4. Save the configuration and reboot the console to load the plugin.
+
+CapUnlocker does **not** increase CPU/GPU clock frequencies, and installing
+it alone does not guarantee an FPS improvement: the benefit depends on how
+the game schedules its threads. The game can still launch without it, but
+using it is recommended for the best available CPU headroom.
 
 ## PlayStation button glyphs
 
