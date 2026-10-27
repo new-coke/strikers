@@ -198,11 +198,8 @@ void start_load(void)
     info->SetMode(GameInfoManager::GM_FRIENDLY);
     for (int side = 0; side < 2; side++)
     {
-        int team = s_desc.team[side];
-        // A mystery captain comes from the seed, so every machine draws the same one.
-        if (team == TEAM_MYSTERY)
-            team = (int)((s_desc.seed >> (side * 16)) % (unsigned)TEAM_MYSTERY);
-        info->SetTeam((short)side, (eTeamID)team);
+        // Team 8 is the Super Team, built whether or not this machine's save has unlocked it.
+        info->SetTeam((short)side, (eTeamID)s_desc.team[side]);
         info->SetSidekick((short)side, (eSidekickID)s_desc.sidekick[side]);
     }
     info->SetStadium((eStadiumID)s_desc.stadium);
