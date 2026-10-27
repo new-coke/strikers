@@ -1,5 +1,6 @@
 #include "Game/Physics/PhysicsObject.h"
 #include "NL/nlMath.h"
+#include "port/rollback.h"
 
 float PhysicsObject::DefaultGravity = -9.8f;
 
@@ -844,6 +845,8 @@ void PhysicsObject::SetDefaultCollideBits()
  */
 PhysicsObject::~PhysicsObject()
 {
+    // PORT: a sound following this object would read it after it is freed.
+    PortSoundsForgetObject(this);
     if (m_bodyID != nullptr)
     {
         dBodyDestroy(m_bodyID);

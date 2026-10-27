@@ -1,4 +1,5 @@
 #include "NL/plat/plataudio.h"
+#include "port/rollback.h"
 #include "NL/nlMemory.h"
 #include "NL/nlFile.h"
 #include "NL/nlString.h"
@@ -344,6 +345,8 @@ unsigned long Add3DSFXEmitter(const EmitterStartInfo& info)
         }
         else
         {
+            // PORT: emitters outlive a rollback, so their parameters stay off the simulation heap.
+            PortSimHeapPauseScope presentation;
             void* alloc = nlMalloc(8, 8, false);
             pParaInfo = (SND_PARAMETER_INFO*)alloc;
             pParaArray = (SND_PARAMETER*)nlMalloc(numPara * sizeof(SND_PARAMETER), 8, false);

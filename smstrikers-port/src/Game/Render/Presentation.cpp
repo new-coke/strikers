@@ -2,6 +2,7 @@
 #include "port/aspect.h"
 #include "port/lockstep.h"
 #include "port/online.h"
+#include "port/rollback.h"
 #include "Game/BeginFrameTask.h"
 #include "Game/FixedUpdateTask.h"\n#include <stdlib.h>
 #include "Game/ParticleUpdateTask.h"
@@ -744,6 +745,8 @@ void Presentation::Call(const char* functionName, const char* nisFilter)
     mTimeInFunction = 0.0f;
 
     NisPlayer::Instance()->SetExtraNameFilter(nisFilter);
+    // PORT: the match start and end call in from a tick; the streams the script starts outlive it.
+    PortSimHeapPauseScope presentation;
     CallFunction(nlStringHash(functionName));
 }
 struct TreeNodeLocal;

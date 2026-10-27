@@ -62,7 +62,7 @@ struct FadeAudioData
 
 FadeAudioData* g_pFadeList;
 
-// PORT: a sound an undone tick started stops following its object, which the rollback may have freed.
+// PORT: a sound an undone tick started is stopped, since the rollback lost the handle to stop it.
 static unsigned int s_emitterTick[0x40];
 
 static void sounds_snapshot(void (*append)(const void*, size_t))
@@ -80,6 +80,11 @@ static size_t sounds_unsnapshot(const unsigned char* in)
         SFXEmitter* e = Audio::GetEmitter(i);
         if (e == NULL || !e->bInUse || s_emitterTick[i] < tick)
             continue;
+        if (e->pOwner != NULL)
+        {
+            ((cGameSFX*)e->pOwner)->StopEmitter(e, 0);
+            continue;
+        }
         const bool follows = (e->posUpdateMethod == PHYSOBJ && PortSimHeapOwns(e->pPhysObj)) ||
                              (e->posUpdateMethod == PTRS_TO_VECTORS &&
                               (PortSimHeapOwns(e->pos.pvPos) || PortSimHeapOwns(e->dir.pvDir)));
@@ -93,6 +98,20 @@ static size_t sounds_unsnapshot(const unsigned char* in)
 }
 
 static const bool s_soundsRollback = (PortSimStateHook(sounds_snapshot, sounds_unsnapshot), true);
+
+// PORT: a sound can outlive the object it follows, and a replay loses the handle to stop it.
+extern "C" void PortSoundsForgetObject(const void* obj)
+{
+    for (unsigned long i = 0; i < 0x40; i++)
+    {
+        SFXEmitter* e = Audio::GetEmitter(i);
+        if (e != NULL && e->posUpdateMethod == PHYSOBJ && e->pPhysObj == obj)
+        {
+            e->posUpdateMethod = NONE;
+            e->pPhysObj = NULL;
+        }
+    }
+}
 
 // PORT: the mixer's fades outlive the tick that asks for one, so they stay outside the simulation heap.
 static FadeAudioData* NewFadeData()
