@@ -17,9 +17,13 @@ class DeferredRenderer
                            TargetFormat format = TargetFormat::Rgba8) noexcept;
     void release_texture(uint32_t texture) noexcept;
     uint32_t create_model(std::span<const ModelVertex>, std::span<const uint16_t>) noexcept;
+    // The id is usable at once; queue order puts the model ahead of its draws.
+    uint32_t create_model_async(std::span<const ModelVertex>, std::span<const uint16_t>) noexcept;
     void release_model(uint32_t model) noexcept;
+    // paletteRows: leading bone rows the vertices reference; 0 means the zero palette.
     bool draw_scene(uint32_t model, std::span<const ModelVertex>, std::span<const uint16_t>,
-                    const std::array<float, 16>&, const Raster&, const SceneMaterial&) noexcept;
+                    const std::array<float, 16>&, const Raster&, const SceneMaterial&,
+                    unsigned paletteRows = kSceneBoneRows) noexcept;
     bool select_target(uint32_t texture = 0, bool color = false, bool depth = false) noexcept;
     bool copy_texture(uint32_t destination, std::array<float, 4> source,
                       bool intensity = false) noexcept;

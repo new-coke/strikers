@@ -156,6 +156,7 @@ std::vector<GLuint> submittedTargets;
 std::vector<GLenum> submittedPrimitives;
 std::vector<std::array<int, 4>> submittedViewports;
 std::array<int, 4> lastBlitSource{}, lastBlitDestination{};
+GLenum lastBlitFilter = 0;
 GLuint lastBlitReadFb = 0, lastBlitDrawFb = 0;
 std::vector<float> bones;
 std::vector<float> specularDirections, specularColors, material;
@@ -404,6 +405,8 @@ void glGetIntegerv(GLenum key, GLint* data)
     }
 }
 void vglWaitVblankStart(GLboolean) {}
+EGLBoolean eglSwapInterval(EGLDisplay, EGLint) { return EGL_TRUE; }
+void vglStrikersDisplayDepthTransient() {}
 void glPixelStorei(GLenum pname, GLint) { assert(pname == GL_UNPACK_ROW_LENGTH); }
 void glGenBuffers(GLsizei n, GLuint* ids)
 {
@@ -487,6 +490,28 @@ void glTexImage2D(GLenum, GLint level, GLint internalFormat, GLsizei w, GLsizei 
     if (failTexture || level == failTextureLevel)
         error = GL_OUT_OF_MEMORY;
 }
+struct CompressedUpload
+{
+    GLuint texture;
+    GLint level;
+    GLenum format;
+    GLsizei width, height;
+    std::vector<uint8_t> blocks;
+};
+std::vector<CompressedUpload> compressedUploads;
+void glCompressedTexImage2D(GLenum target, GLint level, GLenum internalFormat, GLsizei w, GLsizei h,
+                            GLint border, GLsizei imageSize, const void* data)
+{
+    assert(target == GL_TEXTURE_2D && textures.count(texture) && w > 0 && h > 0 && !border);
+    assert(imageSize == ((w + 3) / 4) * ((h + 3) / 4) * 8 && data);
+    ++textureUploads;
+    const auto* bytes = static_cast<const uint8_t*>(data);
+    compressedUploads.push_back({texture, level, internalFormat, w, h, {bytes, bytes + imageSize}});
+    if (level == 0)
+        textureAllocations[texture] = {GLint(internalFormat), w, h, internalFormat, 0, true};
+    if (failTexture || level == failTextureLevel)
+        error = GL_OUT_OF_MEMORY;
+}
 void glTexParameteri(GLenum target, GLenum name, GLint value)
 {
     assert(target == GL_TEXTURE_2D && textures.count(texture));
@@ -524,13 +549,13 @@ void glDeleteRenderbuffers(GLsizei n, const GLuint* ids) { erase(n, ids, renderb
 void glBindRenderbuffer(GLenum, GLuint id) { assert(renderbuffers.count(id)); }
 void glRenderbufferStorage(GLenum, GLenum fmt, GLsizei, GLsizei)
 {
-    assert(fmt == GL_DEPTH24_STENCIL8);
+    assert(fmt == GL_DEPTH_COMPONENT32F);
     if (failDepthStorage)
         error = GL_OUT_OF_MEMORY;
 }
 void glFramebufferRenderbuffer(GLenum, GLenum attachment, GLenum, GLuint id)
 {
-    assert(attachment == GL_DEPTH_STENCIL_ATTACHMENT && renderbuffers.count(id));
+    assert(attachment == GL_DEPTH_ATTACHMENT && renderbuffers.count(id));
     ++depthAttachments;
 }
 GLenum glCheckFramebufferStatus(GLenum)
@@ -773,8 +798,9 @@ void glDrawElements(GLenum primitive, GLsizei count, GLenum type, const void* of
         error = GL_INVALID_OPERATION;
 }
 void glBlitFramebuffer(GLint sx0, GLint sy0, GLint sx1, GLint sy1, GLint x0, GLint y0, GLint x1, GLint y1,
-                       GLbitfield, GLenum)
+                       GLbitfield, GLenum filter)
 {
+    lastBlitFilter = filter;
     assert(!readFb || framebuffers.count(readFb));
     if (!readFb) {
         assert(drawFb && readMode == GL_FRONT && completedSwaps == swaps && !displayContents.empty());
@@ -850,6 +876,9 @@ void glReadPixels(GLint, GLint, GLsizei w, GLsizei h, GLenum, GLenum, GLvoid* ds
 #include "scene_program_selection_cases.inc"
 #include "fog_off_renderer_cases.inc"
 #include "fog_curve4_renderer_cases.inc"
+#include "bc1_direct_renderer_cases.inc"
+#include "reserved_model_renderer_cases.inc"
+#include "render_scale_renderer_cases.inc"
 int main()
 {
     unsetenv("STRIKERS_VITAGL_UNIFORM_CACHE");
@@ -1271,7 +1300,8 @@ int main()
         SceneMaterial m;
         m.controls[0] = 1;
         m.controls[1] = -1;
-        m.textures[0] = std::numeric_limits<uint32_t>::max();
+        // Below the reserved range: a missing reserved id draws white instead.
+        m.textures[0] = Renderer::kReservedTextures - 1;
         const auto beforeMissingTexture = submitted.size();
         assert(!r.draw_scene(0, vertices, indices, identity, Raster{}, m));
         assert(submitted.size() == beforeMissingTexture &&
@@ -1501,7 +1531,9 @@ int main()
             Renderer r;
             const auto progressStart = shaderProgress.size();
             assert(r.initialize(true) && r.initialize_scene_program());
-            const unsigned total = affine ? 162 : 82;
+            // Including the intensity and alpha-only copy programs: two modes,
+            // alpha test and skinning.
+            const unsigned total = (affine ? 162 : 82) + 8;
             assert(programs.size() == total);
             assert(shaders.size() == (fog ? 4 : 2));
             assert(shaderProgress.size() == progressStart + total + 1);
@@ -1545,12 +1577,20 @@ int main()
             m.environment[1] = 0;
             assert(r.draw_scene(projective, {}, {}, identity, raster, m));
             check_shader(false, fog);
-            // Generic conversion families always retain the reference stages.
-            for (float family : {2.f, 3.f, 4.f})
+            // YUV keeps the generic program's reference stages; mask-1
+            // intensity and alpha-only copies have specialised programs.
+            m.controls[3] = 2;
+            assert(r.draw_scene(model, {}, {}, identity, raster, m));
+            check_shader(false, false, true);
+            for (float family : {3.f, 4.f})
             {
                 m.controls[3] = family;
                 assert(r.draw_scene(model, {}, {}, identity, raster, m));
-                check_shader(false, false, true);
+                check_shader(false, fog);
+                const auto& fs = programSources.at(program).at(GL_CG_FRAGMENT_SHADER_EXT);
+                assert(fs.find(family == 3.f ? " c=float4(c.r,c.r,c.r,c.r);" : " c=float4(d.a,d.a,d.a,d.a);") !=
+                       std::string::npos);
+                assert(fs.find("u_controls.w") == std::string::npos);
             }
             m.controls[3] = 0;
             m.fog = {10000, 10000.01f, 1, 0};
@@ -1635,7 +1675,8 @@ int main()
         std::array<GLuint, 2> fallbackPrograms{};
         for (unsigned fallback = 0; fallback < 5; ++fallback)
         {
-            m.controls[0] = fallback == 0 ? 2.f : 1.f;
+            // Intensity/alpha copies (families 3, 4) are generic only off mask 1.
+            m.controls[0] = fallback == 0 || fallback == 2 || fallback == 3 ? 2.f : 1.f;
             m.controls[3] = fallback >= 1 && fallback <= 3 ? float(fallback + 1) : 0.f;
             m.fog = fallback == 4 ? std::array<float, 4>{10000, 10000.01f, 1, 0}
                                   : std::array<float, 4>{100, 1000, 1, 2};
@@ -1716,7 +1757,7 @@ int main()
             setenv("STRIKERS_VITAGL_VERTEX_FOG", cycle == 1 ? "1" : "0", 1);
             assert(r.initialize() && r.error_code() == 0 && r.initialize_scene_program());
             assert(contextInitializations == initializationsBefore + 1);
-            assert(programs.size() == (cycle == 1 ? 162 : 82));
+            assert(programs.size() == (cycle == 1 ? 162 : 82) + 8);
             assert(shaders.size() == (cycle == 1 ? 4 : 2));
             assert((viewport == std::array<int, 4>{ 0, 0, 960, 544 }));
             const auto target = r.create_target(74, 75);
@@ -1767,7 +1808,7 @@ int main()
         failRigidCompile = failure == 0;
         failRigidLink = failure == 1;
         forceRigidBoneUniform = failure == 2;
-        assert(!r.initialize_scene_program() && programs.size() == 41);
+        assert(!r.initialize_scene_program() && programs.size() == 45);
         const char* expected[]{"shader_compile", "shader_link", "rigid_bone_uniform"};
         assert(std::strcmp(r.last_error(), expected[failure]) == 0);
         const auto creations = programCreations;
@@ -1776,7 +1817,7 @@ int main()
         r.shutdown();
         empty();
         assert(r.initialize() && r.initialize_scene_program() && !r.error_code());
-        assert(programs.size() == 82 && shaders.size() == 2);
+        assert(programs.size() == 90 && shaders.size() == 2);
         assert(contextInitializations == initializationsBefore);
         r.shutdown();
         empty();
@@ -2472,4 +2513,7 @@ int main()
     check_unexpected_material_masks();
     check_fog_off_renderer();
     check_fog_curve4_renderer();
+    check_bc1_direct_renderer();
+    check_reserved_models();
+    check_render_scale();
 }

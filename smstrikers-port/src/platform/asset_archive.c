@@ -15,6 +15,7 @@
 #ifdef STRIKERS_VITA
 #include <psp2/io/fcntl.h>
 #include <psp2/kernel/processmgr.h>
+#include <psp2/kernel/threadmgr.h>
 #elif defined(_WIN32)
 #include <io.h>
 #endif
@@ -36,6 +37,7 @@ struct PortAssetArchive {
     int profile;
 #ifdef STRIKERS_VITA
     SceUID fd;
+    char path[512];
 #endif
     unsigned count, blocks;
     ArchiveEntry* entries;  // Entry 0 is the PSARC path manifest.
@@ -89,7 +91,16 @@ static size_t read_at(PortAssetArchive* a, void* dst, size_t n, uint64_t pos)
     size_t got = 0;
 #ifdef STRIKERS_VITA
     if (pos > INT64_MAX || n > INT_MAX) return 0;
-    const int result = sceIoPread(a->fd, dst, (unsigned)n, (SceOff)pos);
+    int result = sceIoPread(a->fd, dst, (unsigned)n, (SceOff)pos);
+    // After standby the descriptor may be dead: reopen and retry for about a second.
+    for (int attempt = 0; result < 0 && attempt < 20; ++attempt) {
+        sceKernelDelayThread(50000);
+        SceUID fd = sceIoOpen(a->path, SCE_O_RDONLY, 0);
+        if (fd < 0) continue;
+        sceIoClose(a->fd);
+        a->fd = fd;
+        result = sceIoPread(a->fd, dst, (unsigned)n, (SceOff)pos);
+    }
     got = result > 0 ? (size_t)result : 0;
 #else
 #ifdef _WIN32
@@ -267,6 +278,7 @@ PortAssetArchive* port_asset_archive_open(const char* path, char* error, size_t 
 #endif
 #ifdef STRIKERS_VITA
     a->fd = sceIoOpen(path, SCE_O_RDONLY, 0);
+    snprintf(a->path, sizeof a->path, "%s", path);
     if (a->fd < 0) return fail(a, error, n, "cannot open positional reader");
 #endif
     if (file_size < 32 || read_at(a, h, 32, 0) != 32) return fail(a, error, n, "truncated header");

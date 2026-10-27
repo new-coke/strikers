@@ -16,6 +16,17 @@
 
 static u32 gl_clearColour = 0x00000040;
 static s32 gl_frameCounter = 0;
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+// PORT: no __thread on Vita pthreads; the override applies on the thread that set it.
+#include <psp2/kernel/threadmgr.h>
+static s32 s_sendFrame = -1;
+static SceUID s_sendFrameThread = -1;
+void glSetSendFrame(s32 frame)
+{
+    s_sendFrame = frame;
+    s_sendFrameThread = frame >= 0 ? sceKernelGetThreadId() : -1;
+}
+#endif
 static s32 gl_nDiscard = 0;
 static s32 gl_state = 0;
 
@@ -171,6 +182,10 @@ bool glHasQuads()
  */
 s32 glGetCurrentFrame()
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    if (s_sendFrame >= 0 && s_sendFrameThread == sceKernelGetThreadId())
+        return s_sendFrame;
+#endif
     return gl_frameCounter;
 }
 

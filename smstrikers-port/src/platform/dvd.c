@@ -712,6 +712,11 @@ extern void strikers_native_notify_memory_write(const void* address, size_t byte
 /* Disc reads replace guest memory behind the CPU. Publish them like a
  * DCStore so Aurora's display-list shadows and stable-geometry revisions
  * never keep serving the previous contents of a reused buffer. */
+#if defined(__SWITCH__) || defined(PORT_VITA)
+#define DVD_READER_THREAD 1
+#else
+#define DVD_READER_THREAD 0
+#endif
 static s32 dvd_read(const DvdEntry* e, void* addr, s32 length, s32 offset)
 {
 #if defined(PORT_VITA)
@@ -726,7 +731,7 @@ static s32 dvd_read(const DvdEntry* e, void* addr, s32 length, s32 offset)
     return got;
 }
 
-#if defined(__SWITCH__)
+#if DVD_READER_THREAD
 // Pending reads share a fixed-size pool across open files.
 #define DVD_PENDING_MAX 24
 typedef struct DvdPending
@@ -802,7 +807,7 @@ static DvdPending* pending_acquire(void)
 
 BOOL DVDClose(DVDFileInfo* fileInfo)
 {
-#if defined(__SWITCH__)
+#if DVD_READER_THREAD
     int i;
     if (fileInfo == NULL)
         return TRUE;
@@ -879,7 +884,7 @@ s32 DVDReadAsyncPrio(DVDFileInfo* fileInfo, void* addr, s32 length, s32 offset,
         return FALSE;
     }
 
-#if defined(__SWITCH__)
+#if DVD_READER_THREAD
     // Read synchronously once the entire image is in RAM.
     if (s_disc != NULL && port_disc_in_memory(s_disc))
     {
@@ -980,7 +985,7 @@ static s32 dvd_read_raw(const DvdEntry* e, void* addr, s32 length, s32 offset)
     return got;
 }
 
-#if defined(__SWITCH__)
+#if DVD_READER_THREAD
 static s32 pending_read_now(const DvdEntry* e, void* addr, s32 length, s32 offset)
 {
     const s32 got = dvd_read(e, addr, length, offset);
@@ -1011,7 +1016,7 @@ s32 DVDGetCommandBlockStatus(const DVDCommandBlock* block)
 {
     if (!block)
         return DVD_STATE_END;
-#if defined(__SWITCH__)
+#if DVD_READER_THREAD
     if (take_busy_poll(block))
         return DVD_STATE_BUSY;
     return port_load_acquire_i32(&block->state);

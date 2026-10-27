@@ -43,7 +43,7 @@ option(STRIKERS_ASAN "Build with AddressSanitizer" OFF)
 option(STRIKERS_VITA_NO_LOGS "Build the Vita port without runtime log files" OFF)
 option(STRIKERS_VITA_AVC_CONTINUITY_PROBE "Build the local-only frozen AVC diagnostic probe" OFF)
 option(STRIKERS_VITA_HOT_LTO "Use LTO/fast math only on Vita render/matrix hot paths" ON)
-option(STRIKERS_VITA_NATIVE_LTO "Use LTO across native Vita game/platform sources" OFF)
+option(STRIKERS_VITA_NATIVE_LTO "Use LTO across native Vita game/platform sources" ON)
 set(STRIKERS_VITA_LTO_JOBS "auto" CACHE STRING
     "Vita LTO parallelism: auto or a positive GCC -flto job count")
 option(STRIKERS_VITA_AUDIO_THREAD "Run the Vita MusyX software mixer on a dedicated worker" ON)
@@ -320,6 +320,7 @@ if(STRIKERS_VITA)
         $<$<COMPILE_LANGUAGE:CXX>:-fpermissive>
         -ffunction-sections
         -fdata-sections
+        -fno-math-errno
         -Wno-invalid-offsetof)
 elseif(MSVC)
     target_compile_options(port_flags INTERFACE
@@ -852,6 +853,11 @@ endif()
 if(STRIKERS_VITA)
     target_compile_options(port_flags INTERFACE -ffunction-sections -fdata-sections)
     target_link_options(strikers PRIVATE -Wl,--gc-sections -Wl,-q)
+    # Text-segment padding for vita-elf-create (src/platform/config.c).
+    target_link_options(strikers PRIVATE -Wl,--undefined=port_elf_create_gap)
+    # Without pthread_cancel linked, libstdc++ treats threads as inactive:
+    # std::mutex does not lock and std::thread throws.
+    target_link_options(strikers PRIVATE -Wl,--undefined=pthread_cancel)
 elseif(APPLE)
     target_link_options(strikers PRIVATE -dead_strip)
 elseif(MSVC)
@@ -923,6 +929,7 @@ if(STRIKERS_VITA)
     FetchContent_MakeAvailable(xxhash)
     target_include_directories(strikers_platform PRIVATE "${xxhash_SOURCE_DIR}")
     target_link_options(strikers PRIVATE -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/strikers.map)
+    target_link_options(strikers PRIVATE -Wl,--wrap=pte_osSemaphoreCancellablePend)
     target_link_libraries(strikers PRIVATE
         strikers_vitagl vitashark SceShaccCgExt taihen_stub SceShaccCg_stub mathneon
         SceCommonDialog_stub SceKernelDmacMgr_stub SceKernelThreadMgr_stub SceSysmem_stub SceProcessmgr_stub

@@ -192,6 +192,8 @@ PlatTexture* glx_GetTex(uintptr_t handle, bool bMissingFatal, bool bAllowGrids);
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
 // Material-only positive lookup cache; the public resolver keeps its full path.
 PlatTexture* glx_GetMaterialTex(uintptr_t handle);
+unsigned long glx_TextureHandleEpoch();
+bool glx_IsAnimatedTexture(uintptr_t handle);
 void glx_EnableMaterialTextureCache(bool enabled);
 void glx_InvalidateTextureHandles();
 #endif

@@ -37,7 +37,10 @@ void* worker_main(void*)
     // pthread_create registers the VitaSDK TLS record required by cond_wait and libc.
     const SceUID id = sceKernelGetThreadId();
     watchdog::enter_thread(watchdog::Role::Jobs, id);
-    const int affinity = sceKernelChangeThreadCpuAffinityMask(id, SCE_KERNEL_CPU_MASK_USER_0);
+    // Core 3 when CapUnlocker grants it, else core 0.
+    int affinity = sceKernelChangeThreadCpuAffinityMask(id, SCE_KERNEL_CPU_MASK_SYSTEM);
+    if (affinity < 0)
+        affinity = sceKernelChangeThreadCpuAffinityMask(id, SCE_KERNEL_CPU_MASK_USER_0);
     if (affinity < 0)
         std::fprintf(stderr, "[jobs] affinity error=%08x\n", unsigned(affinity));
     sceKernelChangeThreadPriority(id, 0x10000100);

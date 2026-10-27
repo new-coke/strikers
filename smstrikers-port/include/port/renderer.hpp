@@ -126,10 +126,15 @@ class Renderer
     bool initialize(bool timings = false) noexcept;
     bool initialize_scene_program() noexcept;
     uint32_t create_texture(const TextureUpload&) noexcept;
+    // A reserved id whose creation failed draws as white.
+    bool create_texture_as(uint32_t id, const TextureUpload&) noexcept;
+    static constexpr uint32_t kReservedTextures = 0x40000000u;
     uint32_t create_target(uint32_t width, uint32_t height,
                            TargetFormat format = TargetFormat::Rgba8) noexcept;
     void release_texture(uint32_t texture) noexcept;
     uint32_t create_model(std::span<const ModelVertex>, std::span<const uint16_t>) noexcept;
+    // A model that cannot be admitted keeps a copy of its geometry and draws stream it.
+    void create_model_as(uint32_t id, std::span<const ModelVertex>, std::span<const uint16_t>) noexcept;
     void release_model(uint32_t model) noexcept;
     bool draw_scene(uint32_t model, std::span<const ModelVertex>, std::span<const uint16_t>,
                     const std::array<float, 16>&, const Raster&, const SceneMaterial&) noexcept;
@@ -161,7 +166,9 @@ class Renderer
     FrameTiming completed_timing() const noexcept;
 
   private:
+    uint32_t create_texture_keyed(const TextureUpload&, uint32_t key) noexcept;
     uint32_t create_target_internal(uint32_t, uint32_t, TargetFormat, bool depth) noexcept;
+    uint32_t admit_model(uint32_t reserved, std::span<const ModelVertex>, std::span<const uint16_t>) noexcept;
     struct Impl;
     std::unique_ptr<Impl> impl_;
 };

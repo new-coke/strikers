@@ -3,6 +3,7 @@
 // Capture the engine's original host-order indices before dlMakeDisplayList
 // replaces them with a GX display list. The live draw path never parses GX.
 #include "port/scene_skinning.hpp"
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -96,10 +97,20 @@ class ModelSourceRegistry
     const ModelSource* find(uintptr_t list, uintptr_t data, uint32_t count, uint8_t primitive,
                             uint8_t streams, bool hasPn) const noexcept
     {
-        const auto it = sources_.find(list);
-        if (it == sources_.end())
-            return nullptr;
-        const auto& e = it->second;
+        // Direct-mapped hint in front of the map; every erase bumps frontGeneration_.
+        auto& front = front_[(list >> 4 ^ list >> 13) & (Front::Slots - 1)];
+        const ModelSource* found = nullptr;
+        if (front.entry && front.list == list && front.generation == frontGeneration_)
+            found = front.entry;
+        else
+        {
+            const auto it = sources_.find(list);
+            if (it == sources_.end())
+                return nullptr;
+            found = &it->second;
+            front = { list, found, frontGeneration_ };
+        }
+        const auto& e = *found;
         if (e.data != data || e.count != count || e.primitive != primitive ||
             e.streams != streams || e.hasPn != hasPn || (hasPn && e.selectors.size() != count))
             return nullptr;
@@ -114,6 +125,7 @@ class ModelSourceRegistry
             {
                 bytes_ -= occupied(*it);
                 it = sources_.erase(it);
+                ++frontGeneration_;
             }
             else
                 ++it;
@@ -122,6 +134,7 @@ class ModelSourceRegistry
     void clear() noexcept
     {
         sources_.clear();
+        ++frontGeneration_;
         bytes_ = 0;
     }
     size_t size() const noexcept { return sources_.size(); }
@@ -134,6 +147,15 @@ class ModelSourceRegistry
         return pair.second.count * (sizeof(uint16_t) + size_t(pair.second.hasPn));
     }
     std::unordered_map<uintptr_t, ModelSource> sources_{};
+    struct Front
+    {
+        static constexpr size_t Slots = 512;
+        uintptr_t list = 0;
+        const ModelSource* entry = nullptr;
+        uint32_t generation = 0;
+    };
+    mutable std::array<Front, Front::Slots> front_{};
+    uint32_t frontGeneration_ = 1;
     size_t bytes_ = 0;
     uint64_t generation_ = 0;
 };

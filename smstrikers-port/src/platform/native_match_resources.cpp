@@ -57,6 +57,7 @@ void MatchRuntime::consume_writes()
         {
             gpu.release_model(it->second.id);
             it = geometry.erase(it);
+            forget_geometry();
         }
         else
             ++it;
@@ -78,6 +79,7 @@ void MatchRuntime::consume_writes()
         {
             gpu.release_texture(it->second.id);
             it = textures.erase(it);
+            forget_textures();
         }
         else
             ++it;
@@ -92,9 +94,17 @@ uint32_t MatchRuntime::texture_for(const PlatTexture* p, int* shadowPartition)
         *shadowPartition = -1;
     if (!p || p->m_Magic != 0x50544558 || !p->m_Width || !p->m_Height || unsigned(p->m_Format) > 8)
         return 0;
+    auto& front = textureFront[(reinterpret_cast<uintptr_t>(p) >> 4 ^ reinterpret_cast<uintptr_t>(p) >> 12) & 255u];
+    if (front.key == p && front.generation == textureGeneration)
+    {
+        if (shadowPartition)
+            *shadowPartition = front.entry->shadowPartition;
+        return front.entry->id;
+    }
     auto existing = textures.find(p);
     if (existing != textures.end())
     {
+        front = { p, &existing->second, textureGeneration };
         if (shadowPartition)
             *shadowPartition = existing->second.shadowPartition;
         return existing->second.id;
@@ -228,6 +238,7 @@ void MatchRuntime::on_stitch_selectors(const glModelPacket* p, const uint8_t* s,
                 {
                     gpu.release_model(it->second.id);
                     it = geometry.erase(it);
+                    forget_geometry();
                 }
                 else
                     ++it;
@@ -250,6 +261,7 @@ void MatchRuntime::on_resource_release(uint32_t level) noexcept
         {
             gpu.release_model(it->second.id);
             it = geometry.erase(it);
+            forget_geometry();
         }
         else
             ++it;
@@ -260,6 +272,7 @@ void MatchRuntime::on_resource_release(uint32_t level) noexcept
         {
             gpu.release_texture(it->second.id);
             it = textures.erase(it);
+            forget_textures();
         }
         else
             ++it;
@@ -276,6 +289,7 @@ void MatchRuntime::on_texture_release(uint32_t level) noexcept
             if (it->second.id != shadowAtlas)
                 gpu.release_texture(it->second.id);
             it = textures.erase(it);
+            forget_textures();
         }
         else
             ++it;
@@ -451,7 +465,10 @@ void MatchRuntime::capture_texture(uintptr_t handle, unsigned x, unsigned y, uns
             if (!id)
             {
                 if (inserted)
+                {
                     textures.erase(entryIt);
+                    forget_textures();
+                }
                 failure = "capture_target";
                 ++invalid;
                 frameDiscarded = true;

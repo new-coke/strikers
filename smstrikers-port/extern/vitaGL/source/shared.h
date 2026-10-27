@@ -1130,6 +1130,7 @@ void init_display_depth_stencil_surfaces(void); // Creates depth and stencil sur
 void start_shader_patcher(void); // Creates a shader patcher instance
 GLboolean scene_reset(void); // Resets drawing scene if required
 GLboolean gxm_scene_is_active(void); // An open scene can still reference retired storage
+GLboolean gxm_scene_begin_pending(void); // The next scene_reset() begins a new scene
 GLboolean start_shader_compiler(void); // Starts a shader compiler instance
 
 /* framebuffers.c */

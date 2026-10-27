@@ -7,6 +7,7 @@
 #include <psp2/kernel/cpu.h>
 #include <pthread.h>
 #include <atomic>
+#include <cstddef>
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
@@ -50,6 +51,12 @@ struct DeferredRenderer::Impl
     uint32_t slotWaits = 0;
     FrameTimeline* producerCapture = nullptr;
     FrameTimeline::Owner* ownerCapture = nullptr;
+    // Owner-only material; its palette stays zero across rigid draws.
+    SceneMaterial drawMaterial{};
+    bool drawPaletteZero = true;
+    static constexpr uint32_t ReservedModels = 0x80000000u;
+    uint32_t nextReservedModel = ReservedModels;
+    uint32_t nextReservedTexture = Renderer::kReservedTextures;
     std::array<bool, Slots> slotDraws{};
     static uint64_t timeline_now() noexcept
     {
@@ -547,7 +554,27 @@ bool DeferredRenderer::initialize_scene_program() noexcept
 }
 uint32_t DeferredRenderer::create_texture(const TextureUpload& upload) noexcept
 {
-    return impl_ ? impl_->sync<watchdog::Command::CreateTexture>([&] { return impl_->core.create_texture(upload); }) : 0;
+    if (!impl_)
+        return 0;
+    auto& d = *impl_;
+    if (d.created && d.bootResult && nativegxm::texture_upload_bytes(upload) &&
+        upload.pixels.size() == nativegxm::texture_upload_bytes(upload))
+    {
+        try
+        {
+            const uint32_t id = d.nextReservedTexture;
+            if (!d.enqueue<watchdog::Command::CreateTexture>(
+                    [owner = &d, id, copy = TextureUpload(upload)] { owner->core.create_texture_as(id, copy); }))
+                return 0;
+            if (++d.nextReservedTexture == Impl::ReservedModels)
+                d.nextReservedTexture = Renderer::kReservedTextures;
+            return id;
+        }
+        catch (...)
+        {
+        }
+    }
+    return d.sync<watchdog::Command::CreateTexture>([&] { return d.core.create_texture(upload); });
 }
 uint32_t DeferredRenderer::create_target(uint32_t w, uint32_t h, TargetFormat format) noexcept
 {
@@ -557,6 +584,42 @@ uint32_t DeferredRenderer::create_model(std::span<const ModelVertex> v,
                                         std::span<const uint16_t> i) noexcept
 {
     return impl_ ? impl_->sync<watchdog::Command::CreateModel>([&] { return impl_->core.create_model(v, i); }) : 0;
+}
+uint32_t DeferredRenderer::create_model_async(std::span<const ModelVertex> v,
+                                              std::span<const uint16_t> i) noexcept
+{
+    if (!impl_)
+        return 0;
+    auto& d = *impl_;
+    struct Create
+    {
+        Impl* owner;
+        uint32_t id, vertexCount, indexCount;
+        Create(Impl* owner, uint32_t id, uint32_t vertexCount, uint32_t indexCount) noexcept
+            : owner(owner), id(id), vertexCount(vertexCount), indexCount(indexCount)
+        {}
+        void operator()()
+        {
+            watchdog::CommandScope observed(watchdog::Command::CreateModel);
+            const auto* vertices = reinterpret_cast<const ModelVertex*>(this + 1);
+            const auto* indices = reinterpret_cast<const uint16_t*>(vertices + vertexCount);
+            owner->core.create_model_as(id, { vertices, vertexCount }, { indices, indexCount });
+        }
+    };
+    // A model larger than a slot keeps the synchronous call and its borrowed arrays.
+    const size_t bytes = v.size_bytes() + i.size_bytes();
+    if (bytes > Impl::SlotBytes - sizeof(Create) - 32)
+        return create_model(v, i);
+    const uint32_t id = d.nextReservedModel;
+    auto* command = d.emplace<Create>(bytes, &d, id, uint32_t(v.size()), uint32_t(i.size()));
+    if (!command)
+        return 0;
+    if (++d.nextReservedModel == 0)
+        d.nextReservedModel = Impl::ReservedModels;
+    auto* payload = reinterpret_cast<uint8_t*>(command + 1);
+    std::memcpy(payload, v.data(), v.size_bytes());
+    std::memcpy(payload + v.size_bytes(), i.data(), i.size_bytes());
+    return id;
 }
 void DeferredRenderer::release_texture(uint32_t id) noexcept
 {
@@ -571,28 +634,53 @@ void DeferredRenderer::release_model(uint32_t id) noexcept
 bool DeferredRenderer::draw_scene(uint32_t model, std::span<const ModelVertex> vertices,
                                   std::span<const uint16_t> indices,
                                   const std::array<float, 16>& matrix, const Raster& raster,
-                                  const SceneMaterial& material) noexcept
+                                  const SceneMaterial& material, unsigned paletteRows) noexcept
 {
     if (!impl_ || !impl_->active)
         return false;
+    paletteRows = std::min(paletteRows, unsigned(kSceneBoneRows));
     auto& d = *impl_;
+    // The command stores the material around its bone palette, which skinned
+    // draws carry as payload.
+    static_assert(std::is_trivially_copyable_v<SceneMaterial> && std::is_standard_layout_v<SceneMaterial>);
+    static constexpr size_t paletteBegin = offsetof(SceneMaterial, bones),
+                            paletteEnd = paletteBegin + sizeof(SceneBonePalette);
     struct Draw
     {
         Impl* owner;
         uint32_t model, vertexCount, indexCount;
         std::array<float, 16> matrix;
         Raster raster;
-        SceneMaterial material;
+        unsigned paletteRows;
+        std::array<unsigned char, paletteBegin> head;
+        std::array<unsigned char, sizeof(SceneMaterial) - paletteEnd> tail;
         Draw(Impl* owner, uint32_t model, uint32_t vertexCount, uint32_t indexCount,
              const std::array<float, 16>& matrix, const Raster& raster,
-             const SceneMaterial& material) noexcept
+             const SceneMaterial& material, unsigned paletteRows) noexcept
             : owner(owner), model(model), vertexCount(vertexCount), indexCount(indexCount),
-              matrix(matrix), raster(raster), material(material)
-        {}
+              matrix(matrix), raster(raster), paletteRows(paletteRows)
+        {
+            const auto* bytes = reinterpret_cast<const unsigned char*>(&material);
+            std::memcpy(head.data(), bytes, head.size());
+            std::memcpy(tail.data(), bytes + paletteEnd, tail.size());
+        }
         void operator()()
         {
             watchdog::CommandScope observed(watchdog::Command::Draw);
-            const auto* v = reinterpret_cast<const ModelVertex*>(this + 1);
+            const auto* payload = reinterpret_cast<const unsigned char*>(this + 1);
+            auto& material = owner->drawMaterial;
+            auto* bytes = reinterpret_cast<unsigned char*>(&material);
+            std::memcpy(bytes, head.data(), head.size());
+            std::memcpy(bytes + paletteEnd, tail.data(), tail.size());
+            if (paletteRows)
+            {
+                std::memcpy(material.bones.data(), payload, paletteRows * sizeof(material.bones[0]));
+                payload += paletteRows * sizeof(material.bones[0]);
+            }
+            else if (!owner->drawPaletteZero)
+                material.bones = {};
+            owner->drawPaletteZero = !paletteRows;
+            const auto* v = reinterpret_cast<const ModelVertex*>(payload);
             const auto* i = reinterpret_cast<const uint16_t*>(v + vertexCount);
             owner->draw_begin();
             const bool result = owner->record(owner->core.draw_scene(model, { v, vertexCount }, { i, indexCount },
@@ -600,12 +688,13 @@ bool DeferredRenderer::draw_scene(uint32_t model, std::span<const ModelVertex> v
             owner->draw_end(result);
         }
     };
-    const size_t vertexBytes = model ? 0 : vertices.size_bytes(),
+    const size_t paletteBytes = paletteRows * sizeof(material.bones[0]),
+                 vertexBytes = model ? 0 : vertices.size_bytes(),
                  indexBytes = model ? 0 : indices.size_bytes();
     // Rare oversized CPU arrays use a synchronized borrowed-pointer call,
     // with result-bearing pointer calls. The normal path copies.
-    if (vertexBytes > Impl::SlotBytes - sizeof(Draw) - 32 ||
-        indexBytes > Impl::SlotBytes - sizeof(Draw) - 32 - vertexBytes)
+    if (vertexBytes > Impl::SlotBytes - sizeof(Draw) - paletteBytes - 32 ||
+        indexBytes > Impl::SlotBytes - sizeof(Draw) - paletteBytes - 32 - vertexBytes)
         return d.sync<watchdog::Command::Draw>([&] {
             d.draw_begin();
             const bool result = d.record(d.core.draw_scene(model, vertices, indices, matrix, raster, material),
@@ -614,12 +703,17 @@ bool DeferredRenderer::draw_scene(uint32_t model, std::span<const ModelVertex> v
             return result;
         });
     auto* command =
-        d.emplace<Draw>(vertexBytes + indexBytes, &d, model,
+        d.emplace<Draw>(paletteBytes + vertexBytes + indexBytes, &d, model,
                         model ? 0u : uint32_t(vertices.size()),
-                        model ? 0u : uint32_t(indices.size()), matrix, raster, material);
+                        model ? 0u : uint32_t(indices.size()), matrix, raster, material, paletteRows);
     if (!command)
         return false;
     auto* payload = reinterpret_cast<uint8_t*>(command + 1);
+    if (paletteBytes)
+    {
+        std::memcpy(payload, material.bones.data(), paletteBytes);
+        payload += paletteBytes;
+    }
     const auto copyBegin = d.timed && (vertexBytes || indexBytes) ? port_monotonic_ns() : 0;
     if (vertexBytes)
         std::memcpy(payload, vertices.data(), vertexBytes);

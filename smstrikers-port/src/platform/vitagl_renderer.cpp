@@ -1,4 +1,5 @@
 #if defined(PORT_VITA) && defined(STRIKERS_VITA_VITAGL)
+#include <atomic>
 #include "port/renderer.hpp"
 #include "port/scene_shader_variants.hpp"
 #include "port/scene_material_alpha.hpp"
@@ -24,6 +25,8 @@ namespace port::render
 namespace
 {
 constexpr unsigned W = 960, H = 544, MB = 1024 * 1024;
+// 0 play, 1 cinematic at 30 fps, 2 cinematic uncapped.
+std::atomic<int> g_cinematicFrame{ 0 };
 constexpr const char* attribs[]{ "a_position", "a_color", "a_normal", "a_uv0", "a_uv1",
                                  "a_uv2",      "a_uv3",   "a_uv4",    "a_uv5", "a_bone" };
 constexpr const char* uniforms[]{ "u_mvp",        "u_mv",       "u_bones",         "u_environment",
@@ -45,6 +48,8 @@ static_assert([] {
 constexpr unsigned affineProgramBit = 256;
 constexpr unsigned rigidProgramBit = 512;
 constexpr unsigned fogOffProgramBit = 1024;
+constexpr unsigned copyIntensityProgramBit = 2048;
+constexpr unsigned copyAlphaProgramBit = 4096;
 bool valid_geometry(std::span<const ModelVertex> v, std::span<const uint16_t> i, bool& usesBones)
 {
     usesBones = false;
@@ -86,6 +91,16 @@ struct Texture
     TargetFormat format = TargetFormat::Rgba8;
     uint8_t minAlpha = 255;
     int wrapU = -1, wrapV = -1, filter = -1;
+    // Physical over logical size: callers address a scaled target in 960x544.
+    float scale = 1.f;
+    unsigned logical_width() const { return scale == 1.f ? width : W; }
+    unsigned logical_height() const { return scale == 1.f ? height : H; }
+    std::array<int, 4> physical(const std::array<int, 4>& r) const
+    {
+        const auto at = [&](int v) { return int(std::lround(float(v) * scale)); };
+        const int x0 = at(r[0]), y0 = at(r[1]);
+        return { x0, y0, at(r[0] + r[2]) - x0, at(r[1] + r[3]) - y0 };
+    }
 };
 struct Model
 {
@@ -133,6 +148,16 @@ struct Renderer::Impl
     bool initialized = false, contextInitialized = false, sceneInitialized = false, active = false,
          presented = false, timed = false, startupRetired = false;
     bool affineUv = false, vertexFog = false, fogOffSpecialize = false, fogCurve4Specialize = false;
+    bool bc1Direct = false;
+    bool fogNoRange = false;
+    float renderScale = 1.f;
+    float lowScale = 0.f;
+    unsigned mainFull = 0, mainLow = 0;
+    static constexpr unsigned dynamicHold = 120;
+    unsigned dynamicFrames = 0;
+    bool cinematic30 = false, frameCinematic = false, frameHalfRate = false;
+    unsigned swapInterval = 1, lastPresentVcount = 0;
+    bool displayDraw = false;
     bool stagedBlack = false;
     unsigned firstFrames = 0;
     SceUID owner = -1;
@@ -166,6 +191,12 @@ struct Renderer::Impl
     unsigned uniformVerifyFrames = 0;
     std::unordered_map<unsigned, Texture> textures;
     std::unordered_map<unsigned, Model> models;
+    struct StreamedModel
+    {
+        std::vector<ModelVertex> vertices;
+        std::vector<uint16_t> indices;
+    };
+    std::unordered_map<unsigned, StreamedModel> streamedModels;
     std::unordered_map<unsigned, Program> programs;
     std::array<GLuint, 2> vertexShaders{}, referenceVertexShaders{};
     GLuint dynamicVbo = 0, dynamicEbo = 0;
@@ -423,12 +454,14 @@ struct Renderer::Impl
         }
         return id;
     }
-    bool make_program(unsigned key, unsigned mask, bool alpha, bool generic, bool affine, bool usesBones)
+    bool make_program(unsigned key, unsigned mask, bool alpha, bool generic, bool affine, bool usesBones,
+                      unsigned copyMode = 0)
     {
         const bool fogOff = (key & fogOffProgramBit) != 0;
         const bool fog = vertexFog && !generic && !fogOff;
+        const bool noRange = fogNoRange && !generic && !fogOff;
         const auto source = scene_fragment_shader(mask, alpha, generic, affine, fog, fogOff,
-                                                  fogCurve4Specialize);
+                                                  fogCurve4Specialize, noRange, copyMode);
         if (source.empty())
             return fail("shader_variant_source");
         GLuint fs = compile(GL_CG_FRAGMENT_SHADER_EXT, source);
@@ -472,14 +505,14 @@ struct Renderer::Impl
                     glDeleteProgram(p.id);
                     return fail("bone_uniform_missing");
                 }
-                if (!fogOff && (u == fogRangeTableUniform || u == fogRangeControlUniform))
+                if (!fogOff && !noRange && (u == fogRangeTableUniform || u == fogRangeControlUniform))
                 {
                     glDeleteProgram(p.id);
                     return fail("fog_range_uniform_missing");
                 }
                 continue;
             }
-            if (fogOff && (u == fogRangeTableUniform || u == fogRangeControlUniform))
+            if ((fogOff || noRange) && (u == fogRangeTableUniform || u == fogRangeControlUniform))
             {
                 glDeleteProgram(p.id);
                 return fail("fog_off_uniform");
@@ -763,6 +796,19 @@ bool Renderer::initialize(bool timed) noexcept
                      unsigned(interleavedStreams), unsigned(d.vertexStreamProfile));
     d.affineUv = enabled("STRIKERS_VITAGL_AFFINE_UV");
     d.vertexFog = enabled("STRIKERS_VITAGL_VERTEX_FOG");
+    d.bc1Direct = enabled("STRIKERS_VITAGL_BC1_DIRECT");
+    {
+        const char* range = std::getenv("STRIKERS_VITAGL_FOG_RANGE");
+        d.fogNoRange = range && std::strcmp(range, "0") == 0;
+    }
+    {
+        const char* scale = std::getenv("STRIKERS_VITAGL_RENDER_SCALE");
+        const int percent = scale ? std::atoi(scale) : 100;
+        d.renderScale = percent >= 50 && percent < 100 ? float(percent) / 100.f : 1.f;
+        const char* dynamic = std::getenv("STRIKERS_VITAGL_DYNAMIC_SCALE");
+        const int low = dynamic ? std::atoi(dynamic) : 0;
+        d.lowScale = low >= 50 && float(low) / 100.f < d.renderScale ? float(low) / 100.f : 0.f;
+    }
     d.fogOffSpecialize = enabled("STRIKERS_VITAGL_FOG_OFF_SPECIALIZE");
     // Generic fallback uses reference depth and projective UV. Keep the other
     // opt-in arithmetic paths unchanged when a non-4 fog curve is submitted.
@@ -806,19 +852,42 @@ bool Renderer::initialize(bool timed) noexcept
         std::fprintf(stderr, "[vitagl] context viewport=%dx%d resolution_fallback=%u\n", viewport[2],
                      viewport[3], unsigned(fallback));
         d.contextInitialized = true;
+        if (const char* store = std::getenv("STRIKERS_VITAGL_DISPLAY_DEPTH_STORE"); store && !std::strcmp(store, "0"))
+            vglStrikersDisplayDepthTransient();
     }
     // The provider retains its context across renderer resource shutdowns.
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, W, H);
     d.initialized = true;
-    vglWaitVblankStart(GL_TRUE);
+    {
+        const char* vsync = std::getenv("STRIKERS_VITA_VSYNC");
+        const bool vsyncOn = !(vsync && std::strcmp(vsync, "0") == 0);
+        vglWaitVblankStart(vsyncOn ? GL_TRUE : GL_FALSE);
+        const char* half = std::getenv("STRIKERS_VITA_CINEMATIC_30");
+        d.cinematic30 = vsyncOn && half && std::strcmp(half, "0") != 0;
+    }
     // VitaGL uses tightly packed RGBA uploads and does not implement the
     // desktop PACK/UNPACK_ALIGNMENT settings. RGB capture rows are 960*3 bytes.
     glGenBuffers(1, &d.dynamicVbo);
     glGenBuffers(1, &d.dynamicEbo);
-    d.main = create_target(W, H);
+    d.main = create_target(unsigned(std::lround(W * d.renderScale)),
+                           unsigned(std::lround(H * d.renderScale)));
     if (!d.main)
         return false;
+    d.textures.at(d.main).scale = d.renderScale;
+    if (d.renderScale != 1.f)
+        std::fprintf(stderr, "[vitagl] render scale %.2f: main target %ux%u\n", d.renderScale,
+                     d.textures.at(d.main).width, d.textures.at(d.main).height);
+    d.mainFull = d.main;
+    if (d.lowScale)
+    {
+        d.mainLow = create_target(unsigned(std::lround(W * d.lowScale)),
+                                  unsigned(std::lround(H * d.lowScale)));
+        if (d.mainLow)
+            d.textures.at(d.mainLow).scale = d.lowScale;
+        else
+            d.lowScale = 0.f;
+    }
     TextureUpload white;
     white.width = white.height = white.mipCount = 1;
     white.stride = 8;
@@ -837,7 +906,7 @@ bool Renderer::initialize_scene_program() noexcept
     if (d.error)
         return false;
     const unsigned standard = d.affineUv ? 160 : 80;
-    const unsigned total = 2 + standard * (d.fogOffSpecialize ? 2 : 1);
+    const unsigned total = 2 + (standard + 8) * (d.fogOffSpecialize ? 2 : 1);
     port::startup::show("PREPARING SHADERS", 0, total);
     unsigned prepared = 0;
     constexpr unsigned masks[]{ 0,  1,  3,  5,  7,  9,  13, 17, 19, 21,
@@ -878,6 +947,14 @@ bool Renderer::initialize_scene_program() noexcept
                             return false;
                         port::startup::show("PREPARING SHADERS", ++prepared, total);
                     }
+                    if (mask == 1)
+                        for (unsigned mode : { 3u, 4u })
+                        {
+                            if (!d.make_program(key | (mode == 3 ? copyIntensityProgramBit : copyAlphaProgramBit),
+                                                mask, alpha, false, false, usesBones, mode))
+                                return false;
+                            port::startup::show("PREPARING SHADERS", ++prepared, total);
+                        }
                 }
     }
     port::startup::show("STARTING GAME");
@@ -890,6 +967,14 @@ bool Renderer::initialize_scene_program() noexcept
     return true;
 }
 uint32_t Renderer::create_texture(const TextureUpload& image) noexcept
+{
+    return create_texture_keyed(image, 0);
+}
+bool Renderer::create_texture_as(uint32_t id, const TextureUpload& image) noexcept
+{
+    return id >= kReservedTextures && create_texture_keyed(image, id) == id;
+}
+uint32_t Renderer::create_texture_keyed(const TextureUpload& image, uint32_t key) noexcept
 {
     try
     {
@@ -907,8 +992,33 @@ uint32_t Renderer::create_texture(const TextureUpload& image) noexcept
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, t.id);
         d.boundTextures[0] = t.id;
+        // BC1 levels must be at least 4x4, so the chain ends at the last whole block.
+        const bool compressed =
+            d.bc1Direct && image.width >= 4 && image.height >= 4 && texture_bc1_opaque(image);
+        if (compressed)
+        {
+            std::vector<uint8_t> blocks;
+            unsigned levels = 0;
+            for (unsigned level = 0; level < image.mipCount; ++level)
+            {
+                unsigned width = 0, height = 0;
+                if (!texture_level_bc1(image, level, blocks, width, height))
+                {
+                    d.fail("texture_decode");
+                    return 0;
+                }
+                if (width < 4 || height < 4)
+                    break;
+                glCompressedTexImage2D(GL_TEXTURE_2D, level, GL_COMPRESSED_RGB_S3TC_DXT1_EXT, width,
+                                       height, 0, GLsizei(blocks.size()), blocks.data());
+                if (!d.check("texture_upload"))
+                    return 0;
+                ++levels;
+            }
+            t.levels = levels;
+        }
         size_t linearOffset = 0;
-        for (unsigned level = 0; level < image.mipCount; ++level)
+        for (unsigned level = 0; !compressed && level < image.mipCount; ++level)
         {
             TextureLevel decoded;
             const unsigned width = std::max(1u, image.width >> level),
@@ -944,10 +1054,10 @@ uint32_t Renderer::create_texture(const TextureUpload& image) noexcept
         {
             return 0;
         }
-        d.textures.emplace(t.id, t);
+        d.textures.emplace(key ? key : t.id, t);
         lease.committed = true;
         d.current.uploadUs += d.now() - start;
-        return t.id;
+        return key ? key : t.id;
     }
     catch (...)
     {
@@ -999,11 +1109,11 @@ uint32_t Renderer::create_target_internal(uint32_t width, uint32_t height, Targe
         {
             glGenRenderbuffers(1, &t.depth);
             glBindRenderbuffer(GL_RENDERBUFFER, t.depth);
-            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+            // No stencil: a scene opened by a depth clear then skips loading depth.
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32F, width, height);
             ok = d.check("target_depth");
             if (ok)
-                glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER,
-                                          t.depth);
+                glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, t.depth);
         }
         ok = ok && glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
         if (ok)
@@ -1055,11 +1165,39 @@ void Renderer::release_texture(uint32_t id) noexcept
 uint32_t Renderer::create_model(std::span<const ModelVertex> vertices,
                                 std::span<const uint16_t> indices) noexcept
 {
+    return admit_model(0, vertices, indices);
+}
+void Renderer::create_model_as(uint32_t id, std::span<const ModelVertex> vertices,
+                               std::span<const uint16_t> indices) noexcept
+{
+    if (!impl_ || !id)
+        return;
+    if (impl_->models.count(id) || impl_->streamedModels.count(id))
+    {
+        impl_->fail("model_reserved_id", GL_INVALID_VALUE);
+        return;
+    }
+    if (admit_model(id, vertices, indices))
+        return;
+    try
+    {
+        impl_->streamedModels[id] = { { vertices.begin(), vertices.end() },
+                                      { indices.begin(), indices.end() } };
+    }
+    catch (...)
+    {
+        impl_->fail("model_allocation", GL_OUT_OF_MEMORY);
+    }
+}
+uint32_t Renderer::admit_model(uint32_t reserved, std::span<const ModelVertex> vertices,
+                               std::span<const uint16_t> indices) noexcept
+{
     try
     {
         auto& d = *impl_;
         bool usesBones = false;
-        if (!valid_geometry(vertices, indices, usesBones) || !d.on_owner())
+        if (!valid_geometry(vertices, indices, usesBones) || !d.on_owner() ||
+            (reserved && (d.models.count(reserved) || d.streamedModels.count(reserved))))
             return 0;
         const size_t size = vertices.size_bytes() + indices.size_bytes();
         if (size > 48 * MB - d.geometryBytes)
@@ -1087,7 +1225,7 @@ uint32_t Renderer::create_model(std::span<const ModelVertex> vertices,
         {
             return 0;
         }
-        const unsigned id = d.nextModel++;
+        const unsigned id = reserved ? reserved : d.nextModel++;
         d.models.emplace(id, m);
         lease.committed = true;
         d.geometryBytes += size;
@@ -1107,7 +1245,10 @@ void Renderer::release_model(uint32_t id) noexcept
     auto& d = *impl_;
     auto it = d.models.find(id);
     if (it == d.models.end())
+    {
+        d.streamedModels.erase(id);
         return;
+    }
     d.geometryBytes -= it->second.bytes;
     if (d.attributeBuffer == it->second.vbo)
         d.attributeBuffer = 0;
@@ -1153,7 +1294,12 @@ bool Renderer::draw_scene(uint32_t model, std::span<const ModelVertex> vertices,
     {
         auto i = d.models.find(model);
         if (i == d.models.end())
-            return d.fail("draw_model");
+        {
+            const auto s = d.streamedModels.find(model);
+            if (s == d.streamedModels.end())
+                return d.fail("draw_model");
+            return draw_scene(0, s->second.vertices, s->second.indices, mvp, r, m);
+        }
         count = i->second.count;
         if (count % primitiveSize)
             return d.fail("draw_topology");
@@ -1222,8 +1368,12 @@ bool Renderer::draw_scene(uint32_t model, std::span<const ModelVertex> vertices,
         key |= affineProgramBit;
     if (d.fogOffSpecialize && !(m.fog[2] > .5f))
         key |= fogOffProgramBit;
+    const bool copyMode = mask == 1 && (m.controls[3] == 3.f || m.controls[3] == 4.f);
+    if (copyMode)
+        key = (key & ~affineProgramBit) |
+              (m.controls[3] == 3.f ? copyIntensityProgramBit : copyAlphaProgramBit);
     auto it = d.programs.find(key);
-    if (m.controls[3] >= 2 || it == d.programs.end() ||
+    if ((m.controls[3] >= 2 && !copyMode) || it == d.programs.end() ||
         it->second.mask != mask ||
         (d.fogCurve4Specialize && m.fog[2] > .5f && m.fog[3] != 4.f) ||
         (d.vertexFog && (fogRangeEnabled || !scene_vertex_fog_eligible(m.fog))))
@@ -1235,6 +1385,19 @@ bool Renderer::draw_scene(uint32_t model, std::span<const ModelVertex> vertices,
     {
         glUseProgram(p.id);
         d.boundProgram = p.id;
+    }
+    auto* surface = d.surface();
+    if (!surface)
+        return d.fail("draw_target");
+    if (fogRangeEnabled && m.fogRangeControl[2] != .5f * float(surface->logical_width()))
+        return d.fail("draw_fog_range_target", GL_INVALID_VALUE);
+    // Range fog reads WPOS in physical pixels.
+    const float scale = d.displayDraw ? 1.f : surface->scale;
+    auto fogRangeControl = m.fogRangeControl;
+    if (scale != 1.f)
+    {
+        fogRangeControl[1] /= scale;
+        fogRangeControl[2] *= scale;
     }
     float lighting[]{ float(m.lit), rasterAlpha, float(m.controls[3] == 1), m.effects[3] };
     const float* values[]{ mvp.data(),
@@ -1258,7 +1421,7 @@ bool Renderer::draw_scene(uint32_t model, std::span<const ModelVertex> vertices,
                            m.material.data(),
                            m.alpha.data(),
                            m.fogRangeTable.data(),
-                           m.fogRangeControl.data() };
+                           fogRangeControl.data() };
     static_assert(std::size(values) == std::size(uniforms));
     for (unsigned u = 0; u < std::size(uniforms); ++u)
         d.uniform(p, u, values[u]);
@@ -1268,6 +1431,12 @@ bool Renderer::draw_scene(uint32_t model, std::span<const ModelVertex> vertices,
             continue;
         unsigned id = m.textures[a] ? m.textures[a] : d.white;
         auto t = d.textures.find(id);
+        if (t == d.textures.end() && id >= kReservedTextures)
+        {
+            // A failed queued creation draws white, as GX samples an unloaded texture.
+            id = d.white;
+            t = d.textures.find(id);
+        }
         if (t == d.textures.end())
             return d.fail("draw_texture");
         auto& tex = t->second;
@@ -1278,7 +1447,7 @@ bool Renderer::draw_scene(uint32_t model, std::span<const ModelVertex> vertices,
             glActiveTexture(GL_TEXTURE0 + a);
             if (d.boundTextures[a] != id)
             {
-                glBindTexture(GL_TEXTURE_2D, id);
+                glBindTexture(GL_TEXTURE_2D, tex.id);
                 d.boundTextures[a] = id;
             }
             if (sampler)
@@ -1300,15 +1469,12 @@ bool Renderer::draw_scene(uint32_t model, std::span<const ModelVertex> vertices,
         }
     }
     d.raster(r);
-    auto* surface = d.surface();
-    if (!surface)
-        return d.fail("draw_target");
-    if (fogRangeEnabled && m.fogRangeControl[2] != .5f * float(surface->width))
-        return d.fail("draw_fog_range_target", GL_INVALID_VALUE);
-    const int h = surface->height;
+    const int h = int(surface->logical_height());
     std::array<int, 4> viewport{ int(std::lround(m.viewport[0])),
                                  h - int(std::lround(m.viewport[1] + m.viewport[3])),
                                  viewportWidth, int(std::lround(m.viewport[3])) };
+    if (scale != 1.f)
+        viewport = surface->physical(viewport);
     if (!d.viewportValid || viewport != d.lastViewport)
     {
         glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
@@ -1318,12 +1484,14 @@ bool Renderer::draw_scene(uint32_t model, std::span<const ModelVertex> vertices,
     // Original scissor edges are top-left physical pixel coordinates.
     const int l = std::max(0, int(std::ceil(m.scissor[0]))),
               t = std::max(0, int(std::ceil(m.scissor[1]))),
-              right = std::min(int(surface->width), int(std::ceil(m.scissor[2]))),
+              right = std::min(int(surface->logical_width()), int(std::ceil(m.scissor[2]))),
               bottom = std::min(h, int(std::ceil(m.scissor[3])));
     std::array<int, 4> scissor{ l, h - bottom, std::max(0, right - l), std::max(0, bottom - t) };
+    if (scale != 1.f)
+        scissor = surface->physical(scissor);
     if (!d.scissorValid || scissor != d.lastScissor)
     {
-        if (l == 0 && t == 0 && right == int(surface->width) && bottom == h)
+        if (l == 0 && t == 0 && right == int(surface->logical_width()) && bottom == h)
             glDisable(GL_SCISSOR_TEST);
         else
         {
@@ -1437,8 +1605,9 @@ bool Renderer::copy_textures(std::span<const TextureCopy> copies) noexcept
     const auto src = *source;
     // Validate the whole batch before clearing or overwriting any destination.
     // Allow one float ULP at the scaled framebuffer's right/bottom edges.
-    const double sourceWidth = std::nextafter(float(src.width), float(src.width + 1));
-    const double sourceHeight = std::nextafter(float(src.height), float(src.height + 1));
+    const float logicalWidth = float(src.logical_width()), logicalHeight = float(src.logical_height());
+    const double sourceWidth = std::nextafter(logicalWidth, logicalWidth + 1);
+    const double sourceHeight = std::nextafter(logicalHeight, logicalHeight + 1);
     for (const auto& c : copies)
     {
         auto t = d.textures.find(c.destination);
@@ -1519,10 +1688,10 @@ bool Renderer::copy_textures(std::span<const TextureCopy> copies) noexcept
             v[1].position = { 1, 1, 0, 1 };
             v[2].position = { 1, -1, 0, 1 };
             v[3].position = { -1, -1, 0, 1 };
-            float l = c.sourceRect[0] / src.width,
-                  r = (c.sourceRect[0] + c.sourceRect[2]) / src.width,
-                  top = 1.f - (c.sourceRect[1] + c.sourceRect[3]) / src.height,
-                  b = 1.f - c.sourceRect[1] / src.height;
+            float l = c.sourceRect[0] / logicalWidth,
+                  r = (c.sourceRect[0] + c.sourceRect[2]) / logicalWidth,
+                  top = 1.f - (c.sourceRect[1] + c.sourceRect[3]) / logicalHeight,
+                  b = 1.f - c.sourceRect[1] / logicalHeight;
             v[0].uv = { l, top, 1 };
             v[1].uv = { r, top, 1 };
             v[2].uv = { r, b, 1 };
@@ -1559,8 +1728,12 @@ bool Renderer::copy_textures(std::span<const TextureCopy> copies) noexcept
             const auto right = std::lround(a[0] + a[2]);
             const auto top = std::lround(a[1]);
             const auto bottom = std::lround(a[1] + a[3]);
+            std::array<int, 4> region{ int(left), int(src.logical_height()) - int(bottom),
+                                       int(right - left), int(bottom - top) };
+            if (src.scale != 1.f)
+                region = src.physical(region);
             glEnable(GL_SCISSOR_TEST);
-            glScissor(left, src.height - bottom, right - left, bottom - top);
+            glScissor(region[0], region[1], region[2], region[3]);
             glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
             glDepthMask(GL_TRUE);
             glClearColor(c.clearColor[0], c.clearColor[1], c.clearColor[2], c.clearColor[3]);
@@ -1651,8 +1824,12 @@ bool Renderer::present_bitmap(const TextureUpload& image,
     glColorMask(1, 1, 1, 1);
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
-    if (!d.check("bitmap_clear") ||
-        !draw_scene(0, vertices, indices, identity, raster, material))
+    if (!d.check("bitmap_clear"))
+        return false;
+    d.displayDraw = true;
+    const bool drawn = draw_scene(0, vertices, indices, identity, raster, material);
+    d.displayDraw = false;
+    if (!drawn)
         return false;
     vglSwapBuffers(GL_FALSE);
     if (!d.check("bitmap_swap"))
@@ -1867,6 +2044,15 @@ bool Renderer::begin_frame(FrameTimeline::Owner* capture) noexcept
     d.attributeBuffer = 0;
     d.attributesEnabled = false;
     d.active = true;
+    const int cinematicMode = g_cinematicFrame.load(std::memory_order_relaxed);
+    d.frameCinematic = cinematicMode != 0;
+    d.frameHalfRate = cinematicMode == 1;
+    if (d.mainLow)
+    {
+        d.main = d.dynamicFrames ? d.mainLow : d.mainFull;
+        if (d.dynamicFrames)
+            --d.dynamicFrames;
+    }
     const bool result = select_target(0, true, true);
     if (!result && d.capture) d.capture = nullptr;
     return result;
@@ -1907,16 +2093,34 @@ bool Renderer::end_frame(bool present) noexcept
     }
     else
     {
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, d.textures.at(d.main).fbo);
-        glBlitFramebuffer(0, 0, W, H, 0, 0, W, H, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        const auto& main = d.textures.at(d.main);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, main.fbo);
+        glBlitFramebuffer(0, 0, main.width, main.height, 0, 0, W, H, GL_COLOR_BUFFER_BIT,
+                          main.scale == 1.f ? GL_NEAREST : GL_LINEAR);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     if (!d.check(black ? "present_black" : "present_blit"))
         return false;
     const auto swapStart = d.capture && d.timed ? d.now() : 0;
+    if (d.cinematic30)
+    {
+        const unsigned interval = d.frameHalfRate ? 2u : 1u;
+        if (interval != d.swapInterval)
+        {
+            eglSwapInterval(EGL_NO_DISPLAY, EGLint(interval));
+            d.swapInterval = interval;
+        }
+    }
     {
         Impl::PresentProfileScope profile{d.capture, d.timed};
         vglSwapBuffers(GL_FALSE);
+    }
+    if (d.mainLow)
+    {
+        const unsigned vcount = unsigned(sceDisplayGetVcount());
+        if (d.lastPresentVcount && vcount - d.lastPresentVcount > d.swapInterval && !d.frameCinematic)
+            d.dynamicFrames = d.dynamicHold;
+        d.lastPresentVcount = vcount;
     }
     const auto swapEnd = d.capture && d.timed ? d.now() : 0;
     const bool result = d.check("present");
@@ -1987,6 +2191,7 @@ void Renderer::shutdown() noexcept
     d.discard_loading(*this);
     while (!d.models.empty())
         release_model(d.models.begin()->first);
+    d.streamedModels.clear();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     while (!d.textures.empty())
         release_texture(d.textures.begin()->first);
@@ -2010,6 +2215,7 @@ void Renderer::shutdown() noexcept
     d.referenceVertexShaders.fill(0);
     d.dynamicVbo = d.dynamicEbo = 0;
     d.main = d.target = d.white = d.boundProgram = 0;
+    d.mainFull = d.mainLow = 0;
     d.boundTextures.fill(0);
     d.invalidate_fixed();
     d.geometryBytes = 0;
@@ -2030,3 +2236,8 @@ Renderer::FrameTiming Renderer::completed_timing() const noexcept
 }
 }   // namespace port::render
 #endif
+
+extern "C" void PortRenderSetCinematic(int cinematic)
+{
+    port::render::g_cinematicFrame.store(cinematic, std::memory_order_relaxed);
+}

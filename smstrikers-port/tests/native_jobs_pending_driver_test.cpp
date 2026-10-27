@@ -282,6 +282,9 @@ SceUID sceKernelGetThreadId()
 }
 int sceKernelChangeThreadCpuAffinityMask(SceUID id, int affinity)
 {
+    // Without CapUnlocker the fourth core is refused and core 0 follows.
+    if (affinity == SCE_KERNEL_CPU_MASK_SYSTEM)
+        return -1;
     assert(isWorker && id == 17 && affinity == SCE_KERNEL_CPU_MASK_USER_0);
     affinityCalls.fetch_add(1);
     return 0;

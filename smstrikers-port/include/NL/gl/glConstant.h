@@ -4,6 +4,7 @@
 #include "NL/nlMath.h"
 
 nlVector4 glConstantGet(const char* constantName);
+nlVector4 glConstantGetHashed(unsigned long constantHash);
 bool glConstantGet(const char* constantName, nlVector4& result);
 void glConstantSet(const char* constantName, const nlVector4& value);
 void gl_ConstantMarkerBackup(int arg);

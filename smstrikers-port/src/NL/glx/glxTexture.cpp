@@ -45,6 +45,12 @@ static PlatTexture texobj;
 
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
 static port::StaticTextureHandleCache materialTextureCache;
+static unsigned long s_textureHandleEpoch = 1;
+
+unsigned long glx_TextureHandleEpoch()
+{
+    return s_textureHandleEpoch;
+}
 
 void glx_EnableMaterialTextureCache(bool enabled)
 {
@@ -54,6 +60,7 @@ void glx_EnableMaterialTextureCache(bool enabled)
 void glx_InvalidateTextureHandles()
 {
     materialTextureCache.invalidate();
+    ++s_textureHandleEpoch;
 }
 #endif
 
@@ -390,6 +397,11 @@ PlatTexture* glx_GetMaterialTex(uintptr_t handle)
     if (!materialTextureCache.enabled())
         return glx_GetTex(handle, false, false);
     return glx_ResolveTex(handle, false, false, &materialTextureCache);
+}
+
+bool glx_IsAnimatedTexture(uintptr_t handle)
+{
+    return glInventory.GetTextureAnim(handle) != NULL;
 }
 #endif
 #pragma dont_inline off

@@ -6,6 +6,7 @@
 #include "NL/glx/glxMemory.h"
 #include "port/scene_skinning.hpp"
 #include <cmath>
+#include <algorithm>
 #include <cstring>
 
 namespace port::directmatch::detail
@@ -185,9 +186,11 @@ bool MatchRuntime::resolve_model(const glModelPacket& p, const PacketGeometry& d
     // Environment materials alter streamed colour/UV arrays; take a fresh snapshot.
     // Fresnel and environment UVs are evaluated on the GPU; immutable source
     // positions/colours remain resident while only uniforms change.
-    auto it = geometry.find(key);
-    if (immutable && it != geometry.end())
+    auto* resident = find_geometry(key);
+    resolvedGeometry = nullptr;
+    if (immutable && resident)
     {
+        resolvedGeometry = resident;
         if (hasPn)
         {
             // A VBO retains its PN slots, but a later draw supplies a fresh
@@ -203,7 +206,7 @@ bool MatchRuntime::resolve_model(const glModelPacket& p, const PacketGeometry& d
                 return false;
             }
         }
-        modelId = it->second.id;
+        modelId = resident->id;
     }
     else
     {
@@ -240,7 +243,9 @@ bool MatchRuntime::resolve_model(const glModelPacket& p, const PacketGeometry& d
         // with absent intermediate arrays, sampling a single texture coordinate.
         if (immutable)
         {
-            modelId = gpu.create_model(model.vertices, model.indices);
+            modelId = frameAsync && asyncModels
+                          ? gpu.create_model_async(model.vertices, model.indices)
+                          : gpu.create_model(model.vertices, model.indices);
             if (modelId)
             {
                 try
@@ -251,6 +256,21 @@ bool MatchRuntime::resolve_model(const glModelPacket& p, const PacketGeometry& d
                     if (inserted)
                         for (const auto range : entryIt->second.ranges)
                             geometryBounds.include(range);
+                    auto& entry = entryIt->second;
+                    if (!hasPn && !model.vertices.empty())
+                    {
+                        entry.box = { model.vertices[0].position[0], model.vertices[0].position[1],
+                                      model.vertices[0].position[2], model.vertices[0].position[0],
+                                      model.vertices[0].position[1], model.vertices[0].position[2] };
+                        for (const auto& v : model.vertices)
+                            for (unsigned k = 0; k < 3; ++k)
+                            {
+                                entry.box[k] = std::min(entry.box[k], v.position[k]);
+                                entry.box[3 + k] = std::max(entry.box[3 + k], v.position[k]);
+                            }
+                        entry.boxed = true;
+                    }
+                    resolvedGeometry = &entry;
                 }
                 catch (...)
                 {

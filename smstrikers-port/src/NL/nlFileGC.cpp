@@ -1,4 +1,5 @@
 #include "NL/nlFileGC.h"
+#include "NL/nlDebug.h"
 #include "NL/nlFile.h"
 #include "NL/nlMemory.h"
 #include "NL/nlFunction.h"
@@ -277,6 +278,9 @@ static inline void HandleGCIOErrors(GCFile* pFile)
 
         nlSNPrintf(message, 0x100, "Read error %d. File start addr %d\n", Status, pFile->GetDiscPosition());
         OSReport(message);
+#if defined(PORT_VITA)
+        nlBreakReason(message);
+#endif
         nlBreak();
 
         if (g_CheckForResetCB)

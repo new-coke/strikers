@@ -67,7 +67,7 @@ int port_config_test_rename(const char*, const char*);
 #endif
 #define PORT_VITA_DEFAULTS_BEGIN "# --- STRIKERS VALIDATED DEFAULTS BEGIN ---"
 #define PORT_VITA_DEFAULTS_END "# --- STRIKERS VALIDATED DEFAULTS END ---"
-#define PORT_VITA_DEFAULTS_REVISION "2026-10-15-vitagl-unified"
+#define PORT_VITA_DEFAULTS_REVISION "2026-10-27-vita-performance-10"
 
 typedef struct VitaDefaultConfigEntry
 {
@@ -80,7 +80,7 @@ typedef struct VitaDefaultConfigEntry
 // leave an already current file untouched to avoid redundant storage writes.
 static const VitaDefaultConfigEntry s_vita_defaults[] = {
     { "diagnostics", "0" },
-    { "fps_overlay", "0" },
+    { "fps_overlay", "1" },
     { "vita_test_match", "0" },
     { "vita_frameskip", "0" },
     { "vita_async_renderer", "1" },
@@ -110,6 +110,26 @@ static const VitaDefaultConfigEntry s_vita_defaults[] = {
     { "gpu_mhz", "222" },
     { "vitagl_timing", "0" },
     { "vitagl_packet_profile", "0" },
+    { "vitagl_bc1_direct", "1" },
+    { "vitagl_fog_off_specialize", "1" },
+    { "vitagl_fog_curve4_specialize", "1" },
+    { "vitagl_render_scale", "72" },
+    { "vitagl_texture_handle_cache", "1" },
+    { "vitagl_net_conversion", "1" },
+    { "vitagl_vertex_program_cache", "1" },
+    { "vitagl_interleaved_streams", "1" },
+    { "vitagl_uniform_cache", "1" },
+    { "vita_async_models", "1" },
+    { "vita_dof", "0" },
+    { "vita_vsync", "1" },
+    { "vita_cinematic_30", "1" },
+    { "vitagl_dynamic_scale", "64" },
+    { "vitagl_fog_range", "0" },
+    { "vitagl_display_depth_store", "0" },
+    { "vitagl_affine_uv", "1" },
+    { "vitagl_vertex_fog", "1" },
+    { "vita_async_send", "1" },
+    { "gfx_resource_cached", "1" },
 };
 #endif
 
@@ -694,3 +714,8 @@ static int load_config(void)
     s_path[0] = '\0';
     return 0;
 }
+
+#if defined(__vita__)
+/* vita-elf-create overruns its buffer when the text segment ends within ~2 KiB of the data segment. */
+const char port_elf_create_gap[8192] = { 1 };
+#endif

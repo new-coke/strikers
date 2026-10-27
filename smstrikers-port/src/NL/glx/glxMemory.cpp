@@ -68,8 +68,11 @@ static int s_vitaResourceSegmentCount;
 static u32 s_vitaResourceReservedSize;
 #endif
 
-static uintptr_t p_frame[2][2];   // PORT: addresses, not offsets
-static u32 n_frame[2][2];
+// PORT: addresses, not offsets. vita_async_send needs a third frame buffer
+// because some packets reuse the previous frame's allocations.
+static uintptr_t p_frame[3][2];
+static u32 n_frame[3][2];
+static int s_frameBuffers = 2;
 
 Tweakable glx_memory_tweaks[] = {
     { TWEAK_Title, NULL, "Engine", 1.0f, 0.0f, 0.0f, NULL },
@@ -352,35 +355,47 @@ bool glxInitMemory()
     FrameMemSizeReal = GetFromConfig("frame vertex memory", FrameMemSizeReal);
     FrameMemSizeReal *= PORT_GFX_ARENA_SCALE;
 
-    pMem = (uintptr_t)nlMalloc(FrameMemSizeReal * 2, 32, false);
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    {
+        const char* asyncSend = getenv("STRIKERS_VITA_ASYNC_SEND");
+        s_frameBuffers = asyncSend && strcmp(asyncSend, "1") == 0 ? 3 : 2;
+    }
+#endif
+    pMem = (uintptr_t)nlMalloc(FrameMemSizeReal * s_frameBuffers, 32, false);
+    if (pMem == 0 && s_frameBuffers == 3)
+    {
+        OSReport("[gfxmem] no room for a third frame buffer; asynchronous send off\n");
+        s_frameBuffers = 2;
+        pMem = (uintptr_t)nlMalloc(FrameMemSizeReal * s_frameBuffers, 32, false);
+    }
     if (pMem == 0)
     {
         OSReport("[gfxmem] frame vertex allocation failed: %u KB requested\n",
-                 (FrameMemSizeReal * 2) >> 10);
+                 (FrameMemSizeReal * s_frameBuffers) >> 10);
         return false;
     }
-    p_frame[0][0] = pMem;
-    p_frame[1][0] = pMem + FrameMemSizeReal;
+    for (int i = 0; i < s_frameBuffers; ++i)
+        p_frame[i][0] = pMem + FrameMemSizeReal * i;
 
     FrameMemSizeVirt = GetFromConfig("frame header memory", FrameMemSizeVirt);
     FrameMemSizeVirt *= PORT_GFX_ARENA_SCALE;
 
-    uintptr_t pVirt = (uintptr_t)nlVirtualAlloc(FrameMemSizeVirt * 2, false);
+    uintptr_t pVirt = (uintptr_t)nlVirtualAlloc(FrameMemSizeVirt * s_frameBuffers, false);
     if (pVirt == 0)
     {
         OSReport("[gfxmem] frame header allocation failed: %u KB requested\n",
-                 (FrameMemSizeVirt * 2) >> 10);
+                 (FrameMemSizeVirt * s_frameBuffers) >> 10);
         return false;
     }
 
-    p_frame[0][1] = pVirt;
-    p_frame[1][1] = pVirt + FrameMemSizeVirt;
+    for (int i = 0; i < s_frameBuffers; ++i)
+    {
+        p_frame[i][1] = pVirt + FrameMemSizeVirt * i;
+        n_frame[i][0] = 0;
+        n_frame[i][1] = 0;
+    }
     i_frame = 0;
     n_phys = 0;
-    n_frame[1][0] = 0;
-    n_frame[0][0] = 0;
-    n_frame[1][1] = 0;
-    n_frame[0][1] = 0;
     FrameMemSizes[0] = FrameMemSizeReal;
     FrameMemSizes[1] = FrameMemSizeVirt;
 
@@ -699,7 +714,7 @@ void glplatFrameAllocNextFrame()
         glx_MemoryDump = false;
     }
 
-    int newFrame = i_frame ^ 1;
+    int newFrame = (i_frame + 1) % s_frameBuffers;
     i_frame = newFrame;
 #if defined(STRIKERS_VITA)
     // Everything the new frame half held is rewritten this frame.
@@ -740,3 +755,5 @@ void glplatSetMatrix(uintptr_t matrix, const nlMatrix4& m)
     GLMatrix* matrixPtr = (GLMatrix*)matrix;
     matrixPtr->Set(m);
 }
+
+int glxFrameBufferCount() { return s_frameBuffers; }

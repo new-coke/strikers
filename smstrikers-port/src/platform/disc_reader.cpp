@@ -1,6 +1,9 @@
 #include "port/disc_reader.h"
 
 #include <condition_variable>
+#if defined(__vita__)
+#include <psp2/kernel/threadmgr.h>
+#endif
 #include <mutex>
 #include <thread>
 
@@ -27,6 +30,11 @@ std::thread* g_thread = nullptr;
 
 void reader_main()
 {
+#if defined(__vita__)
+    // CPU0, below both audio threads.
+    sceKernelChangeThreadCpuAffinityMask(sceKernelGetThreadId(), SCE_KERNEL_CPU_MASK_USER_0);
+    sceKernelChangeThreadPriority(sceKernelGetThreadId(), 0x10000140);
+#endif
     for (;;)
     {
         Job job;

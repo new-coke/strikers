@@ -522,7 +522,10 @@ void Presentation::UnloadJumbotron()
 
 void Presentation::PlayJumbotron()
 {
+    // PORT: a jumbotron still loading enters PlayingButWaiting and starts when it loads.
+#if !defined(PORT_VITA)
     Jumbotron::instance.WaitForLoad();
+#endif
     Jumbotron::instance.BeginPlaying();
 }
 

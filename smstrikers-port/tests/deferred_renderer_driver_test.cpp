@@ -69,13 +69,19 @@ bool verifyDrawPayloads=false;
 unsigned verifiedDrawPayloads=0;
 constexpr unsigned PayloadDraws=20,PayloadVertices=12000;
 // Retain the existing command layout independently of its new constructor.
+// The material is stored around its bone palette; skinned draws carry the
+// palette as the first payload bytes.
+constexpr size_t PaletteBegin=offsetof(SceneMaterial,bones),PaletteEnd=PaletteBegin+sizeof(SceneBonePalette);
 struct DrawLayout {
  void* owner;
  uint32_t model,vertexCount,indexCount;
  std::array<float,16> matrix;
  Raster raster;
- SceneMaterial material;
+ unsigned paletteRows;
+ std::array<unsigned char,PaletteBegin> head;
+ std::array<unsigned char,sizeof(SceneMaterial)-PaletteEnd> tail;
 };
+bool payload_skinned(unsigned draw){return draw%3!=0;}
 template<class T> auto material_fields(T& m) {
  return std::tie(m.textures,m.wrapU,m.wrapV,m.filter,m.tint,m.ambient,m.diffuse,
   m.controls,m.effects,m.shadow,m.shadowAdd,m.fog,m.fogColor,m.specular,m.specularColor,
@@ -99,6 +105,8 @@ SceneMaterial payload_material(unsigned draw) {
  SceneMaterial m;
  unsigned next=draw*41;
  std::apply([&](auto&... fields){(fill_pattern(fields,next),...);},material_fields(m));
+ // A rigid draw's palette is the zero default by contract.
+ if(!payload_skinned(draw))m.bones={};
  return m;
 }
 Raster payload_raster(unsigned draw) {
@@ -172,14 +180,21 @@ Renderer::~Renderer(){shutdown();}
 bool Renderer::initialize(bool) noexcept {owner=pthread_self();initialized=true;active=loadingArmed=false;selectedTarget=0;driverError=0;owned();return true;}
 bool Renderer::initialize_scene_program() noexcept {owned();return true;}
 uint32_t Renderer::create_texture(const TextureUpload&) noexcept {owned();return 17;}
+bool Renderer::create_texture_as(uint32_t,const TextureUpload&) noexcept {owned();return true;}
 uint32_t Renderer::create_target(uint32_t width,uint32_t height,TargetFormat format) noexcept {
  owned();targetRequests.push_back({width,height,format});return 18;
 }
 uint32_t Renderer::create_model(std::span<const ModelVertex> v,std::span<const uint16_t> i) noexcept {owned();assert(v.size()==3&&i.size()==3);if(modelAdmissionFailure){driverError=1285;return 0;}return 19;}
 void Renderer::release_texture(uint32_t) noexcept {owned();++released;}
+// Owner-ordered reserved-id creations and the draws that name them.
+std::vector<uint32_t> reservedModelEvents;
+void Renderer::create_model_as(uint32_t id,std::span<const ModelVertex> v,std::span<const uint16_t> i) noexcept {
+ owned();assert(v.size()==3&&i.size()==3&&v[0].position[0]==55&&i[2]==2);reservedModelEvents.push_back(id);
+}
 void Renderer::release_model(uint32_t) noexcept {owned();++released;}
 bool Renderer::draw_scene(uint32_t model,std::span<const ModelVertex> v,std::span<const uint16_t> i,const std::array<float,16>& m,const Raster& raster,const SceneMaterial& material) noexcept {
  owned();assert(active);
+ if(model>=0x80000000u)reservedModelEvents.push_back(model);
  slot_acquire_owner_draw(m[0]);
  if(verifyDrawPayloads) {
   const unsigned draw=verifiedDrawPayloads++;
@@ -187,12 +202,12 @@ bool Renderer::draw_scene(uint32_t model,std::span<const ModelVertex> v,std::spa
   const auto expected=payload_material(draw);
   assert(material_fields(material)==material_fields(expected));
   assert(m==payload_matrix(draw)&&raster_fields(raster)==raster_fields(payload_raster(draw)));
-  const uintptr_t command=reinterpret_cast<uintptr_t>(&material)-offsetof(DrawLayout,material);
-  assert(command%16==0&&reinterpret_cast<uintptr_t>(&m)==command+offsetof(DrawLayout,matrix));
-  assert(reinterpret_cast<uintptr_t>(&raster)==command+offsetof(DrawLayout,raster));
+  const uintptr_t command=reinterpret_cast<uintptr_t>(&m)-offsetof(DrawLayout,matrix);
+  assert(command%16==0&&reinterpret_cast<uintptr_t>(&raster)==command+offsetof(DrawLayout,raster));
+  const size_t palette=payload_skinned(draw)?sizeof(SceneBonePalette):0;
   if(model)assert(v.empty()&&i.empty());
   else {
-   assert(v.size()==PayloadVertices&&reinterpret_cast<uintptr_t>(v.data())==command+sizeof(DrawLayout));
+   assert(v.size()==PayloadVertices&&reinterpret_cast<uintptr_t>(v.data())==command+sizeof(DrawLayout)+palette);
    assert(reinterpret_cast<uintptr_t>(i.data())==reinterpret_cast<uintptr_t>(v.data())+v.size_bytes());
    assert(vertex_fields(v.front())==vertex_fields(payload_vertex(draw,false)));
    assert(vertex_fields(v.back())==vertex_fields(payload_vertex(draw,true)));
@@ -285,7 +300,8 @@ int main(int argc,char** argv){
  for(unsigned i=0;i<3;++i){assert(copiedRegions[i].alphaOnly&&copiedRegions[i].preserveDestination);assert((copiedRegions[i].destinationRect==std::array<uint32_t,4>{80*i,160,80,74}));assert(copiedRegions[i].clearSource&&(copiedRegions[i].clearColor==std::array<float,4>{float(i),.5f,0,1}));}
  std::vector<uint8_t> pixels;assert(r.readback_presented_rgba8(pixels)&&pixels[0]==42);
  assert(r.completed_timing().draws==501&&r.completed_timing().globalFinishes==0);
- assert(r.completed_timing().frontendWaitUs>0&&r.completed_timing().commandBytes>500*sizeof(SceneMaterial)&&r.completed_timing().slotWaits>0);
+ // Draws carry only the palette rows they use, so 500 fit the ring without a slot wait.
+ assert(r.completed_timing().frontendWaitUs>0&&r.completed_timing().commandBytes>500*sizeof(SceneMaterial));
  assert(r.completed_timing().commandVertexBytes==500*vertices.size()*sizeof(ModelVertex));
  assert(r.completed_timing().commandIndexBytes==500*indices.size()*sizeof(uint16_t));
  assert(r.completed_timing().commandCopyNs>0);
@@ -463,8 +479,9 @@ int main(int argc,char** argv){
   payloadVertices.front()=payload_vertex(draw,false);
   payloadVertices.back()=payload_vertex(draw,true);
   assert(r.select_target(77u+draw%2));
-  assert(r.draw_scene(model,payloadVertices,drawIndices,drawMatrix,drawRaster,drawMaterial));
-  const size_t extra=model?0:payloadVertices.size()*sizeof(ModelVertex)+sizeof(drawIndices);
+  assert(r.draw_scene(model,payloadVertices,drawIndices,drawMatrix,drawRaster,drawMaterial,payload_skinned(draw)?kSceneBoneRows:0u));
+  const size_t extra=(payload_skinned(draw)?sizeof(SceneBonePalette):0)+
+   (model?0:payloadVertices.size()*sizeof(ModelVertex)+sizeof(drawIndices));
   expectedCommandBytes+=(16+sizeof(DrawLayout)+extra+15)&~size_t(15);
   // These inputs die or change while queued commands still own their copies.
   drawMatrix.fill(-1);drawRaster={};drawMaterial={};drawIndices.fill(99);
@@ -475,6 +492,22 @@ int main(int argc,char** argv){
  assert(r.completed_timing().commandVertexBytes==PayloadDraws/2*PayloadVertices*sizeof(ModelVertex));
  assert(r.completed_timing().commandIndexBytes==PayloadDraws/2*3*sizeof(uint16_t));
  verifyDrawPayloads=false;r.shutdown();
+ // Queued creation reserves ids above the core's own and reaches the owner
+ // ahead of the draws naming it, from its own copy of the geometry.
+ {
+  restart();assert(r.begin_frame());reservedModelEvents.clear();
+  std::array<ModelVertex,3> modelVertices{};std::array<uint16_t,3> modelIndices{0,1,2};
+  modelVertices[0].position[0]=55;
+  const auto queued=r.create_model_async(modelVertices,modelIndices);
+  modelVertices[0].position[0]=-1;modelIndices.fill(9);
+  assert(queued==0x80000000u&&r.draw_scene(queued,{},{},matrix,raster,material,false));
+  modelVertices[0].position[0]=55;modelIndices={0,1,2};
+  const auto next=r.create_model_async(modelVertices,modelIndices);
+  assert(next==queued+1&&r.draw_scene(next,{},{},matrix,raster,material,false));
+  assert(r.end_frame()&&r.error_code()==0);
+  assert((reservedModelEvents==std::vector<uint32_t>{queued,queued,next,next}));
+  r.shutdown();
+ }
  // Loading OFF leaves the owner's original indefinite wait untouched. In
  // particular ordinary rendering has never queried the loading core at all.
  assert(loadingTicks==0&&loadingQueries==0&&clockQueries==0&&timedWaitCalls==0);

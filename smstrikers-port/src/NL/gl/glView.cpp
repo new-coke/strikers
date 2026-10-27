@@ -9,17 +9,40 @@
 #endif
 #include <string.h>
 
-bool gl_ViewEnable[34] = { true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false };
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+bool gl_ViewEnableStorage[34] = {
+#else
+bool gl_ViewEnable[34] = {
+#endif
+    true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false };
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+static glView* g_liveViews[34];
+static GLRenderList* g_spareLists[34];
+// No __thread on Vita pthreads; the snapshot applies on the thread that bound it.
+#include <psp2/kernel/threadmgr.h>
+static glView* const* s_snapshotViews = NULL;
+static const bool* s_snapshotEnable = NULL;
+static SceUID s_snapshotThread = -1;
+static inline bool snapshot_bound() { return s_snapshotViews && s_snapshotThread == sceKernelGetThreadId(); }
+#define views (snapshot_bound() ? s_snapshotViews : g_liveViews)
+#define gl_ViewEnable (snapshot_bound() ? s_snapshotEnable : gl_ViewEnableStorage)
+#else
 glView* views[34];
+#endif
 
 /**
  * Offset/Address/Size: 0x0 | 0x801DE4A4 | size: 0x18
  */
 bool glViewSetEnable(eGLView view, bool enable)
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    bool bPrev = gl_ViewEnableStorage[view];
+    gl_ViewEnableStorage[view] = enable;
+#else
     bool bPrev = gl_ViewEnable[view];
     gl_ViewEnable[view] = enable;
+#endif
     return bPrev;
 }
 
@@ -197,7 +220,11 @@ void gl_ViewStartup()
     for (i = 0; i < 0x22; i++)
     {
         view = (eGLView)i;
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+        gl_ViewEnableStorage[i] = TRUE;
+#else
         gl_ViewEnable[i] = TRUE;
+#endif
 
         pView = (glView*)nlMalloc(sizeof(glView), 8, FALSE);
         if (pView != NULL)
@@ -210,7 +237,11 @@ void gl_ViewStartup()
             pView->bClearDepth = FALSE;
         }
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+        g_liveViews[i] = pView;
+#else
         views[i] = pView;
+#endif
 
         pView = views[view];
         pView->sortMode = GLVSort_Texture;
@@ -343,3 +374,40 @@ GLRenderList* gl_ViewGetRenderList(eGLView view)
 }
 
 const glView* glViewGetState(eGLView view){return views[view];}
+
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+void gl_ViewCaptureSnapshot(GLViewSnapshot& snapshot)
+{
+    for (int i = 0; i < 0x22; i++)
+    {
+        glView* live = g_liveViews[i];
+        snapshot.copies[i] = *live;
+        snapshot.pointers[i] = &snapshot.copies[i];
+        snapshot.enable[i] = gl_ViewEnableStorage[i];
+        GLRenderList* spare = g_spareLists[i];
+        if (spare == NULL)
+            spare = new (nlMalloc(sizeof(GLRenderList), 8, FALSE)) GLRenderList();
+        spare->view = live->renderList->view;
+        spare->sortMode = live->renderList->sortMode;
+        g_spareLists[i] = live->renderList;
+        live->renderList = spare;
+    }
+    snapshot.captured = true;
+}
+
+void gl_ViewBindSnapshot(const GLViewSnapshot* snapshot)
+{
+    s_snapshotThread = snapshot ? sceKernelGetThreadId() : -1;
+    s_snapshotEnable = snapshot ? snapshot->enable : NULL;
+    s_snapshotViews = snapshot ? snapshot->pointers : NULL;
+}
+
+void gl_ViewReleaseSnapshot(GLViewSnapshot& snapshot)
+{
+    if (!snapshot.captured)
+        return;
+    for (int i = 0; i < 0x22; i++)
+        snapshot.copies[i].renderList->Clear();
+    snapshot.captured = false;
+}
+#endif

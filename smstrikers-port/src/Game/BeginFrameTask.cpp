@@ -20,6 +20,10 @@
 #include "NL/gl/glView.h"
 #include "NL/glx/glxTexture.h"
 #include "Game/GL/gluMeshWriter.h"
+#if defined(PORT_VITA)
+#include <cstdlib>
+#include <cstring>
+#endif
 
 #include "Game/Camera/CameraMan.h"
 #include "Game/Character.h"
@@ -284,6 +288,18 @@ static void SetupRenderInfo()
             cCharacter::m_ModelType = CharModel_Blend;
         }
     }
+#if defined(PORT_VITA)
+    // PORT: replays use the GPU-skinned gameplay model; presentations keep the
+    // CPU-skinned blend model for facial animation.
+    {
+        u32 skinState = nlTaskManager::m_pInstance->m_CurrState;
+        if (skinState == 1)
+            skinState = nlTaskManager::m_pInstance->m_PrevState;
+        const bool captain = g_pGame != NULL && g_pGame->mbCaptainShotToScoreOn;
+        if ((skinState == 0x10 || skinState == 0x20000) && !captain)
+            cCharacter::m_ModelType = CharModel_Rigid;
+    }
+#endif
 
     if (!init)
     {
@@ -665,7 +681,16 @@ void BeginFrameTask::Run(float dt)
     NisPlayer::Instance()->Render();
     cCameraManager::Update(dt);
 
-    if ((nlTaskManager::m_pInstance->m_CurrState & 0x110) != 0)
+#if defined(PORT_VITA)
+    // PORT: vita_dof = 1 keeps the depth-of-field blur.
+    static const bool dof = [] {
+        const char* value = std::getenv("STRIKERS_VITA_DOF");
+        return value && std::strcmp(value, "1") == 0;
+    }();
+#else
+    const bool dof = true;
+#endif
+    if (dof && (nlTaskManager::m_pInstance->m_CurrState & 0x110) != 0)
     {
         DepthOfFieldManager::instance.TurnOn();
     }

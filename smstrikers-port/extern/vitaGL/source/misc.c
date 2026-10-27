@@ -621,7 +621,21 @@ void glClear(GLbitfield mask) {
 		SET_GL_ERROR(GL_INVALID_VALUE);
 	}
 #endif
-	if (!scene_reset())
+	// Strikers: a scene opened by a full depth (and stencil) clear never
+	// reads the stored surface, so skip loading it.
+	SceGxmDepthStencilSurface *skip_load = NULL;
+	if ((mask & GL_DEPTH_BUFFER_BIT) && depth_mask_state && !scissor_test_state && gxm_scene_begin_pending()) {
+		skip_load = active_write_fb ? active_write_fb->depthbuffer_ptr : &gxm_depth_stencil_surface;
+		if (skip_load && skip_load->stencilData &&
+			(!(mask & GL_STENCIL_BUFFER_BIT) || (stencil_mask_front_write & 0xFF) != 0xFF || (stencil_mask_back_write & 0xFF) != 0xFF))
+			skip_load = NULL;
+		if (skip_load)
+			sceGxmDepthStencilSurfaceSetForceLoadMode(skip_load, SCE_GXM_DEPTH_STENCIL_FORCE_LOAD_DISABLED);
+	}
+	const GLboolean began = scene_reset();
+	if (skip_load)
+		sceGxmDepthStencilSurfaceSetForceLoadMode(skip_load, SCE_GXM_DEPTH_STENCIL_FORCE_LOAD_ENABLED);
+	if (!began)
 		return;
 
 	// Invalidating viewport and culling

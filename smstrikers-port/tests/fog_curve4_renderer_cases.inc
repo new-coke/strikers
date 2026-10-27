@@ -18,6 +18,10 @@ std::map<FogProgramSignature, GLuint> curve4_program_inventory(const Curve4Confi
         const bool off = program_fog_off(id), pn = program_uses_bones(id);
         const bool alpha = fs.find("discard;") != std::string::npos;
         const bool affine = fs.find("STRIKERS_AFFINE_UV 1") != std::string::npos;
+        // The intensity and alpha-only copy programs are outside this inventory.
+        if (!generic && (fs.find(" c=float4(c.r,c.r,c.r,c.r);") != std::string::npos ||
+                         fs.find(" c=float4(d.a,d.a,d.a,d.a);") != std::string::npos))
+            continue;
         unsigned mask = 63, matches = 0;
         if (!generic)
         {
@@ -91,7 +95,7 @@ void check_fog_curve4_renderer()
         // Capture the flag at initialize, even if it changes before prewarming.
         setenv("STRIKERS_VITAGL_FOG_CURVE4_SPECIALIZE", config.effective ? "0" : "1", 1);
         assert(r.initialize_scene_program());
-        const unsigned total = 2 + (config.affine ? 160 : 80) * (config.off ? 2 : 1);
+        const unsigned total = 2 + (config.affine ? 160 : 80) * (config.off ? 2 : 1) + (config.off ? 16 : 8);
         assert(programs.size() == total && shaderProgress.size() == progress + total + 1);
         for (unsigned step = 0; step <= total; ++step)
             assert((shaderProgress[progress + step] == std::array<unsigned, 2>{step, total}));
@@ -144,7 +148,7 @@ void check_fog_curve4_renderer()
                     for (float type : {4.f, 2.f})
                         for (float enable : {0.f, 1.f})
                             draw(materialFor(mask, true, enable, type), mask, true, enable == 1, true);
-                for (float movie : {2.f, 3.f, 4.f})
+                for (float movie : {2.f}) // mask-1 families 3, 4 have copy programs
                     for (float type : {4.f, 2.f})
                         for (float enable : {0.f, 1.f})
                         {
@@ -191,7 +195,7 @@ void check_fog_curve4_renderer()
     unsetenv("STRIKERS_VITAGL_FOG_OFF_SPECIALIZE");
     unsetenv("STRIKERS_VITAGL_AFFINE_UV");
     unsetenv("STRIKERS_VITAGL_VERTEX_FOG");
-    assert(checkedDraws == 1688 && rejectedDraws == 2);
+    assert(checkedDraws == 1656 && rejectedDraws == 2);
     std::printf("Fog curve4 renderer: %u draws, %u invalid range rejections, 11 init-only configurations, exact keys/sources, transitions and no draw-time compilation passed\n",
                 checkedDraws, rejectedDraws);
 }

@@ -327,13 +327,45 @@ static inline void glx_SendFrame(bool bSend)
 /**
  * Offset/Address/Size: 0x160 | 0x801B4754 | size: 0x2FC
  */
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+// PORT: vita_async_send converts and presents the captured views on the send thread.
+static GLViewSnapshot s_sendSnapshot;
+static s32 s_sendFrameNumber;
+static void glx_SendJob(void*)
+{
+    gl_ViewBindSnapshot(&s_sendSnapshot);
+    glSetSendFrame(s_sendFrameNumber);
+    if (!port::directmatch::begin_frame())
+        port::directmatch::send_failed();
+    else
+    {
+        glx_SendViews();
+        if (!port::directmatch::end_frame())
+            port::directmatch::send_failed();
+    }
+    glSetSendFrame(-1);
+    gl_ViewBindSnapshot(NULL);
+}
+#endif
+
 void glplatSendFrame()
 {
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
     if (port::frameskip::render_this_frame())
     {
         glx_SendFrame(true);
-        glx_SendViews();
+        if (port::directmatch::send_async_frame())
+        {
+            // The previous send has finished with its lists before they are reused.
+            port::directmatch::send_join();
+            gl_ViewReleaseSnapshot(s_sendSnapshot);
+            gl_ViewCaptureSnapshot(s_sendSnapshot);
+            s_sendFrameNumber = glGetCurrentFrame();
+            if (!port::directmatch::send_async(glx_SendJob, NULL))
+                glx_SendJob(NULL);
+        }
+        else
+            glx_SendViews();
     }
     else
     {

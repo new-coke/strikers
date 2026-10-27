@@ -8,6 +8,9 @@ vita_frameskip = 0
 # 1 pipelines up to two immutable frames across frontend and GPU-owner threads.
 # Set 0 to restore synchronous frame fences for A/B comparison.
 vita_async_renderer = 1
+# With the async renderer, queue new resident models instead of waiting for
+# the GPU owner to finish its backlog (cutscene and scene-change hitches).
+vita_async_models = 0
 vita_debug_menu = 0
 # 1: PlayStation button glyphs; 0: original GameCube glyphs. Restart to apply.
 vita_playstation_glyphs = 1
@@ -44,3 +47,8 @@ vitagl_packet_profile = 0
 vitagl_affine_uv = 0
 # Move affine fog distance to vertices; keep clamp/curves per fragment.
 vitagl_vertex_fog = 0
+# Keep opaque BC1 textures compressed on the GPU instead of decoding to RGBA8.
+vitagl_bc1_direct = 0
+# Render the 3D scene at this percentage of 960x544 (50-99) and filter it up;
+# 100 keeps native resolution. Fill and fragment cost scale with its square.
+vitagl_render_scale = 100

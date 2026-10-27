@@ -55,5 +55,12 @@ bool set_fog_range(bool enabled, const std::array<float, 16>& gxViewProjection) 
 void on_texture_release(uint32_t level) noexcept;
 bool admit_texture(const PlatTexture* texture, const nativegxm::TextureUpload& image) noexcept;
 void notify_write(const void* ptr, size_t bytes) noexcept;
+bool send_async_enabled() noexcept;
+bool send_async(void (*job)(void*), void* argument) noexcept;
+void send_join() noexcept;
+void send_failed() noexcept;
+bool send_has_failed() noexcept;
+void set_send_async_frame(bool yes) noexcept;
+bool send_async_frame() noexcept;
 }   // namespace port::directmatch
 #endif

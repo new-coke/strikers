@@ -13,6 +13,10 @@ std::map<FogProgramSignature, GLuint> fog_program_inventory(bool affine, bool ve
         const auto& fs = stages.at(GL_CG_FRAGMENT_SHADER_EXT);
         const bool generic = fs.find("float mask=u_controls.x;") != std::string::npos;
         const bool off = program_fog_off(id), pn = program_uses_bones(id);
+        // The intensity and alpha-only copy programs are outside this inventory.
+        if (!generic && (fs.find(" c=float4(c.r,c.r,c.r,c.r);") != std::string::npos ||
+                         fs.find(" c=float4(d.a,d.a,d.a,d.a);") != std::string::npos))
+            continue;
         unsigned mask = 63, matches = 0;
         if (!generic)
         {
@@ -53,7 +57,7 @@ void check_fog_off_renderer()
         else unsetenv("STRIKERS_VITAGL_FOG_OFF_SPECIALIZE");
         Renderer r;
         assert(r.initialize() && r.initialize_scene_program());
-        assert(programs.size() == (flag && std::strcmp(flag, "1") == 0 ? 162u : 82u));
+        assert(programs.size() == (flag && std::strcmp(flag, "1") == 0 ? 178u : 90u));
         r.shutdown(); empty();
     }
     unsigned checkedDraws = 0;
@@ -66,7 +70,7 @@ void check_fog_off_renderer()
             Renderer r;
             const auto progress = shaderProgress.size();
             assert(r.initialize() && r.initialize_scene_program());
-            const unsigned total = affine ? 322 : 162;
+            const unsigned total = (affine ? 322 : 162) + 16;
             assert(programs.size() == total && shaders.size() == (vertexFog ? 4u : 2u));
             assert(shaderProgress.size() == progress + total + 1);
             for (unsigned step = 0; step <= total; ++step)
@@ -144,7 +148,7 @@ void check_fog_off_renderer()
                 for (unsigned mask : {2u, 63u, 128u, 256u, 512u, 513u})
                     for (float fog : {0.f, 1.f})
                         draw(materialFor(mask, true, fog), {63, 1, 1, 0, pn, 0});
-                for (float family : {2.f, 3.f, 4.f})
+                for (float family : {2.f}) // mask-1 families 3, 4 have copy programs
                     for (float fog : {0.f, 1.f})
                     {
                         auto m = materialFor(1, true, fog);
@@ -193,12 +197,12 @@ void check_fog_off_renderer()
         assert(std::strcmp(r.last_error(), reason[failure]) == 0);
         failFogOffCompile = failFogOffLink = forceFogOffRangeUniform = false;
         r.shutdown(); empty();
-        assert(r.initialize() && r.initialize_scene_program() && programs.size() == 162);
+        assert(r.initialize() && r.initialize_scene_program() && programs.size() == 178);
         assert(contextInitializations == contexts);
         r.shutdown(); empty();
     }
     unsetenv("STRIKERS_VITAGL_FOG_OFF_SPECIALIZE");
-    assert(checkedDraws == 2752);
+    assert(checkedDraws == 2720);
     std::printf("Fog-OFF renderer: %u draws, exact program inventory, sampling, fallbacks, init-only option and failure restart passed\n",
                 checkedDraws);
 }

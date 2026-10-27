@@ -5,14 +5,21 @@
 #include "port/config.h"
 #include "port/host.h"
 #include "port/loading_indicator.hpp"
+#include <atomic>
 #include <cstdlib>
 #include <cstring>
+#include <pthread.h>
+#include <psp2/kernel/threadmgr.h>
+#include <psp2/kernel/cpu.h>
 
 namespace port::directmatch::detail
 {
 bool MatchRuntime::active = false, MatchRuntime::started = false;
 bool MatchRuntime::frameAsync = false;
+bool MatchRuntime::asyncModels = false;
 Renderer MatchRuntime::gpu;
+MatchRuntime::PreparedMaterial MatchRuntime::prepared;
+bool MatchRuntime::preparedPalette = true;
 ModelSourceRegistry MatchRuntime::sources;
 ModelVertices MatchRuntime::modelScratch;
 ModelVertexScratch MatchRuntime::vertexScratch;
@@ -23,7 +30,12 @@ uint64_t MatchRuntime::frameDrawStart = 0, MatchRuntime::frameStartNs = 0;
 uint32_t MatchRuntime::shadowAtlas = 0;
 std::array<uint32_t, 4> MatchRuntime::viewTargets{};
 std::unordered_map<uint64_t, MatchRuntime::Geometry> MatchRuntime::geometry;
+const MatchRuntime::Geometry* MatchRuntime::resolvedGeometry = nullptr;
+std::array<MatchRuntime::GeometryFront, 512> MatchRuntime::geometryFront;
+uint32_t MatchRuntime::geometryGeneration = 1;
 std::unordered_map<const PlatTexture*, MatchRuntime::Texture> MatchRuntime::textures;
+std::array<MatchRuntime::TextureFront, 256> MatchRuntime::textureFront;
+uint32_t MatchRuntime::textureGeneration = 1;
 MatchRuntime::RangeBounds MatchRuntime::geometryBounds, MatchRuntime::mutableTextureBounds;
 std::mutex MatchRuntime::writeMutex;
 std::array<MatchRuntime::Range, 4096> MatchRuntime::writes{};
@@ -107,9 +119,14 @@ bool MatchRuntime::begin_frame() noexcept
     PortBenchCaptureStatus status{};
     PortBenchGetCaptureStatus(&status);
     const char* asynchronous = std::getenv("STRIKERS_VITA_ASYNC_RENDERER");
+    // vita_capture_async = 1 captures on the asynchronous path normal play uses.
+    const char* captureAsync = std::getenv("STRIKERS_VITA_CAPTURE_ASYNC");
+    const bool collectingSync = status.state == PORT_CAPTURE_COLLECTING &&
+                                !(captureAsync && std::strcmp(captureAsync, "1") == 0);
     frameAsync = (!asynchronous || std::strcmp(asynchronous, "1") == 0) &&
-                 !PortDiagnosticsEnabled() && !packetProfile.enabled() &&
-                 status.state != PORT_CAPTURE_COLLECTING;
+                 !PortDiagnosticsEnabled() && !packetProfile.enabled() && !collectingSync;
+    const char* models = std::getenv("STRIKERS_VITA_ASYNC_MODELS");
+    asyncModels = models && std::strcmp(models, "1") == 0;
     return gpu.begin_frame(frameAsync ? nullptr : packetProfile.capture_timeline(), frameAsync);
 }
 
@@ -257,7 +274,11 @@ bool MatchRuntime::reject_fog_range(const char* reason) noexcept
 bool MatchRuntime::set_fog_range(bool enabled,
                                 const std::array<float, 16>& gxViewProjection) noexcept
 {
-    if (!enabled)
+    static const bool rangeFog = [] {
+        const char* value = std::getenv("STRIKERS_VITAGL_FOG_RANGE");
+        return !value || std::strcmp(value, "0") != 0;
+    }();
+    if (!enabled || !rangeFog)
     {
         viewFogRange.enabled = false;
         return true;
@@ -281,7 +302,9 @@ void MatchRuntime::shutdown() noexcept
     gpu.shutdown();
     sources.clear();
     geometry.clear();
+    forget_geometry();
     textures.clear();
+    forget_textures();
     geometryBounds = {};
     mutableTextureBounds = {};
     modelScratch = {};
@@ -406,14 +429,105 @@ void MatchRuntime::draw_message_bitmap(unsigned width, unsigned height, const ui
 }
 }   // namespace port::directmatch::detail
 
+int glxFrameBufferCount();
+
 namespace port::directmatch
 {
+namespace
+{
+// vita_async_send: every entry point below waits for the send thread first,
+// except on that thread and notify_write, which is already locked.
+pthread_t sendThread{};
+bool sendStarted = false, sendPending = false, sendBusy = false;
+pthread_mutex_t sendMutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t sendReady = PTHREAD_COND_INITIALIZER, sendDone = PTHREAD_COND_INITIALIZER;
+void (*sendJob)(void*) = nullptr;
+void* sendArgument = nullptr;
+std::atomic<bool> sendFailedFlag{ false };
+SceUID sendThreadId = -1;
+bool sendAsyncFrame = false;
+inline bool on_send_thread() { return sendThreadId >= 0 && sceKernelGetThreadId() == sendThreadId; }
+
+void* send_main(void*)
+{
+    const SceUID id = sceKernelGetThreadId();
+    sendThreadId = id;
+    if (sceKernelChangeThreadCpuAffinityMask(id, SCE_KERNEL_CPU_MASK_SYSTEM) < 0)
+        sceKernelChangeThreadCpuAffinityMask(id, SCE_KERNEL_CPU_MASK_USER_0);
+    sceKernelChangeThreadPriority(id, 0x10000100);
+    pthread_mutex_lock(&sendMutex);
+    for (;;)
+    {
+        while (!sendPending)
+            pthread_cond_wait(&sendReady, &sendMutex);
+        sendPending = false;
+        sendBusy = true;
+        auto* job = sendJob;
+        auto* argument = sendArgument;
+        pthread_mutex_unlock(&sendMutex);
+        job(argument);
+        pthread_mutex_lock(&sendMutex);
+        sendBusy = false;
+        pthread_cond_broadcast(&sendDone);
+    }
+    return nullptr;
+}
+}   // namespace
+
+bool send_async_enabled() noexcept
+{
+    static const bool enabled = glxFrameBufferCount() == 3;
+    return enabled;
+}
+
+bool send_async(void (*job)(void*), void* argument) noexcept
+{
+    if (!sendStarted)
+    {
+        pthread_attr_t attr;
+        if (pthread_attr_init(&attr))
+            return false;
+        pthread_attr_setstacksize(&attr, 0x80000);
+        const int error = pthread_create(&sendThread, &attr, send_main, nullptr);
+        pthread_attr_destroy(&attr);
+        if (error)
+            return false;
+        sendStarted = true;
+    }
+    pthread_mutex_lock(&sendMutex);
+    while (sendPending || sendBusy)
+        pthread_cond_wait(&sendDone, &sendMutex);
+    sendJob = job;
+    sendArgument = argument;
+    sendPending = true;
+    pthread_cond_signal(&sendReady);
+    pthread_mutex_unlock(&sendMutex);
+    return true;
+}
+
+void send_join() noexcept
+{
+    if (!sendStarted || on_send_thread())
+        return;
+    pthread_mutex_lock(&sendMutex);
+    while (sendPending || sendBusy)
+        pthread_cond_wait(&sendDone, &sendMutex);
+    pthread_mutex_unlock(&sendMutex);
+}
+
+void send_failed() noexcept { sendFailedFlag.store(true, std::memory_order_release); }
+void set_send_async_frame(bool yes) noexcept { sendAsyncFrame = yes; }
+bool send_async_frame() noexcept { return sendAsyncFrame; }
+bool send_has_failed() noexcept { return sendFailedFlag.load(std::memory_order_acquire); }
+
 void note_ball_packets(const glModel* model) noexcept
 {
+    send_join();
     detail::MatchRuntime::note_ball_packets(model);
 }
 void note_net_packet(const glModelPacket* packet, unsigned source) noexcept
 {
+    send_join();
     detail::MatchRuntime::note_net_packet(packet, source);
 }
 
@@ -423,88 +537,143 @@ bool enabled() noexcept { return detail::MatchRuntime::enabled(); }
 
 bool uses_own_renderer() noexcept { return detail::MatchRuntime::uses_own_renderer(); }
 
-bool preload() noexcept { return detail::MatchRuntime::preload(); }
+bool preload() noexcept
+{
+    send_join();
+    return detail::MatchRuntime::preload();
+}
 
-bool begin_frame() noexcept { return detail::MatchRuntime::begin_frame(); }
+bool begin_frame() noexcept
+{
+    send_join();
+    return detail::MatchRuntime::begin_frame();
+}
 
-bool end_frame() noexcept { return detail::MatchRuntime::end_frame(); }
+bool end_frame() noexcept
+{
+    send_join();
+    return detail::MatchRuntime::end_frame();
+}
 
 void finish_packet_profile_frame() noexcept { detail::MatchRuntime::finish_packet_profile_frame(); }
 
-void discard_present() noexcept { detail::MatchRuntime::discard_present(); }
+void discard_present() noexcept
+{
+    send_join();
+    detail::MatchRuntime::discard_present();
+}
 
-void set_black(bool black) noexcept { detail::MatchRuntime::set_black(black); }
-bool set_loading(const loading::Request& request) noexcept { return detail::MatchRuntime::set_loading(request); }
+void set_black(bool black) noexcept
+{
+    send_join();
+    detail::MatchRuntime::set_black(black);
+}
+bool set_loading(const loading::Request& request) noexcept
+{
+    send_join();
+    return detail::MatchRuntime::set_loading(request);
+}
 
 bool readback_presented_rgba8(std::vector<uint8_t>& pixels) noexcept
 {
+    send_join();
     return detail::MatchRuntime::readback_presented_rgba8(pixels);
 }
 
 void on_packet(eGLView view, unsigned long flags, const glModelPacket* packet) noexcept
 {
+    send_join();
     detail::MatchRuntime::on_packet(view, flags, packet);
 }
 
 void on_display_list_created(const glModelPacket* packet, uintptr_t displayList,
                              uint32_t markerLevel) noexcept
 {
+    send_join();
     detail::MatchRuntime::on_display_list_created(packet, displayList, markerLevel);
 }
 
 void on_stitch_selectors(const glModelPacket* packet, const uint8_t* selectors,
                          uint32_t count) noexcept
 {
+    send_join();
     detail::MatchRuntime::on_stitch_selectors(packet, selectors, count);
 }
 
 void on_resource_release(uint32_t markerLevel) noexcept
 {
+    send_join();
     detail::MatchRuntime::on_resource_release(markerLevel);
 }
 
-void shutdown() noexcept { detail::MatchRuntime::shutdown(); }
+void shutdown() noexcept
+{
+    send_join();
+    detail::MatchRuntime::shutdown();
+}
 
-void begin_view(eGLView view) noexcept { detail::MatchRuntime::begin_view(view); }
+void begin_view(eGLView view) noexcept
+{
+    send_join();
+    detail::MatchRuntime::begin_view(view);
+}
 
 void capture_texture(uintptr_t handle, unsigned x, unsigned y, unsigned width, unsigned height,
                      bool intensity, unsigned destinationWidth, unsigned destinationHeight,
                      bool clearSource) noexcept
 {
+    send_join();
     detail::MatchRuntime::capture_texture(handle, x, y, width, height, intensity,
                                          destinationWidth, destinationHeight, clearSource);
 }
 
-void capture_shadow_atlas() noexcept { detail::MatchRuntime::capture_shadow_atlas(); }
+void capture_shadow_atlas() noexcept
+{
+    send_join();
+    detail::MatchRuntime::capture_shadow_atlas();
+}
 
-void clear_scene(std::array<float, 4> color) noexcept { detail::MatchRuntime::clear_scene(color); }
+void clear_scene(std::array<float, 4> color) noexcept
+{
+    send_join();
+    detail::MatchRuntime::clear_scene(color);
+}
 
 void draw_message_bitmap(unsigned width, unsigned height, const uint8_t* bits, uint32_t color,
                          bool centered) noexcept
 {
+    send_join();
     detail::MatchRuntime::draw_message_bitmap(width, height, bits, color, centered);
 }
 
-void clear_depth() noexcept { detail::MatchRuntime::clear_depth(); }
+void clear_depth() noexcept
+{
+    send_join();
+    detail::MatchRuntime::clear_depth();
+}
 
 void set_fog(float start, float end, bool enabled, unsigned type,
              std::array<float, 4> color) noexcept
 {
+    send_join();
     detail::MatchRuntime::set_fog(start, end, enabled, type, color);
 }
 
 bool set_fog_range(bool enabled, const std::array<float, 16>& gxViewProjection) noexcept
 {
+    send_join();
     return detail::MatchRuntime::set_fog_range(enabled, gxViewProjection);
 }
 
 void on_texture_release(uint32_t level) noexcept
 {
+    send_join();
     detail::MatchRuntime::on_texture_release(level);
 }
 
 bool admit_texture(const PlatTexture* texture, const nativegxm::TextureUpload& image) noexcept
 {
+    send_join();
     return detail::MatchRuntime::admit_texture(texture, image);
 }
 

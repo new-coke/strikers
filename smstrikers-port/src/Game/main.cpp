@@ -172,6 +172,7 @@ extern "C" {
 unsigned int _newlib_heap_size_user = 128u * 1024u * 1024u;
 }
 
+extern "C" void PortRenderSetCinematic(int cinematic);
 static bool VitaCaptureFrameToPath(const char* path)
 {
     const bool nativeRenderer=port::directmatch::uses_own_renderer();
@@ -1154,7 +1155,21 @@ int main(int argc, char* argv[])
         port::frameskip::set_render_this_frame(
             s_frameskip.should_render(port_monotonic_ns(), 60, frameskipEligible));
         port::watchdog::stage(port::watchdog::Role::Frontend, port::watchdog::Stage::BeginFrame);
-        if (!port::directmatch::begin_frame())
+        // vita_async_send: in play and match cinematics, the frame is sent on the
+        // send thread while the next one simulates. Never across a state change.
+        const unsigned asyncState = nlTaskManager::m_pInstance ? nlTaskManager::m_pInstance->m_CurrState : 0u;
+        const bool asyncSend = port::directmatch::send_async_enabled() && g_pGame != nullptr &&
+            !FrontEnd::m_bInPauseMenuState && nlTaskManager::m_pInstance != nullptr &&
+            (asyncState == 2 || asyncState == 0x10 || asyncState == 0x100) &&
+            nlTaskManager::m_pInstance->m_PendingState == asyncState && !PortFixedTimestep() &&
+            port::frameskip::render_this_frame();
+        port::directmatch::set_send_async_frame(asyncSend);
+        if (port::directmatch::send_has_failed())
+        {
+            s_portExitReason = "native GXM asynchronous send failed";
+            break;
+        }
+        if (!asyncSend && !port::directmatch::begin_frame())
         {
             s_portExitReason = "native GXM begin_frame failed";
             break;
@@ -1214,6 +1229,18 @@ int main(int argc, char* argv[])
 #endif
         PortProfilerTasksEnd();
         PortBenchSetPlayActive(g_pGame != NULL && g_pGame->IsGameplayOrOvertime());
+#if defined(PORT_VITA)
+        // Intros and replays present at 30 fps, celebrations uncapped. The kickoff
+        // lead-up (play state, idle presentation) counts as play.
+        {
+            const char* presentation = Presentation::Instance().mCurrentFunction;
+            const bool lead = nlTaskManager::m_pInstance->m_CurrState == 2 &&
+                              (!presentation || !strcmp(presentation, "Idle"));
+            const bool cinematic = g_pGame != NULL && !g_pGame->IsGameplayOrOvertime() && !lead;
+            const bool celebration = presentation && !strncmp(presentation, "Goal", 4);
+            PortRenderSetCinematic(!cinematic ? 0 : celebration ? 2 : 1);
+        }
+#endif
         if (PortDiagnosticsEnabled())
             UpdateProfile();
         PortBenchAfterTasks();
@@ -1227,7 +1254,7 @@ int main(int argc, char* argv[])
         PortAudioUpdate();
 #if defined(PORT_VITA)
         port::watchdog::stage(port::watchdog::Role::Frontend, port::watchdog::Stage::EndFrame);
-        if (!port::directmatch::end_frame())
+        if (!asyncSend && !port::directmatch::end_frame())
         {
             s_portExitReason = "native GXM end_frame failed";
             break;

@@ -17,9 +17,14 @@ SceUID sceKernelGetThreadId()
     assert(!pthread_equal(pthread_self(), caller));
     return 17;
 }
+// Core 3 (the SYSTEM mask) is refused unless CapUnlocker is simulated.
+std::atomic<bool> core3Granted{ false };
 int sceKernelChangeThreadCpuAffinityMask(SceUID id, int affinity)
 {
-    assert(id == 17 && affinity == SCE_KERNEL_CPU_MASK_USER_0);
+    assert(id == 17);
+    if (affinity == SCE_KERNEL_CPU_MASK_SYSTEM)
+        return core3Granted ? 0 : -1;
+    assert(affinity == SCE_KERNEL_CPU_MASK_USER_0);
     affinityCalls.fetch_add(1);
     return 0;
 }
@@ -59,6 +64,7 @@ int main()
         assert(serial.values[i] == i + 1);
     for (unsigned cycle = 0; cycle < 3; ++cycle)
     {
+        core3Granted = cycle == 2;
         assert(initialize() && worker_threads() == 1 && game_execution_lanes() == 2);
         assert(initialize());
         for (unsigned n : { 1u, 10u, 1000u, 10000u })
@@ -74,7 +80,8 @@ int main()
         assert(parallel_for(0, 1, fail, nullptr));
         shutdown();
         assert(!worker_threads());
-        assert(affinityCalls == cycle + 1);
+        // Core 0 is requested only when core 3 is refused.
+        assert(affinityCalls == (cycle < 2 ? cycle + 1 : 2u));
     }
     std::puts("Native jobs: real pthread create/join, affinity, complete-before-return, repeated "
               "lifecycle, failure propagation and serial fallback passed");

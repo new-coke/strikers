@@ -85,9 +85,44 @@ inline bool scene_specialize_fog_curve4(std::string& source)
     return true;
 }
 
+// Remove GX's fog range adjustment. Exact for draws whose range control is off.
+inline bool scene_strip_fog_range(std::string& source)
+{
+    const auto once = [&](const char* from, const char* to) {
+        const auto p = source.find(from);
+        if (p == std::string::npos || source.find(from, p + 1) != std::string::npos)
+            return false;
+        source.replace(p, std::char_traits<char>::length(from), to);
+        return true;
+    };
+    const auto erase = [&](const char* begin, const char* end) {
+        const auto first = source.find(begin);
+        if (first == std::string::npos || source.find(begin, first + 1) != std::string::npos)
+            return false;
+        const auto last = source.find(end, first + std::char_traits<char>::length(begin));
+        if (last == std::string::npos)
+            return false;
+        source.erase(first, last + std::char_traits<char>::length(end) - first);
+        return true;
+    };
+    if (!erase("// One constant-component ladder selects both adjacent coefficients for q in 0..9.\n", "\n}\n") ||
+        !erase("  float rangeAdjust=1.0;\n", "rangeAdjust=sqrt(offset*offset+k*k)/k;\n  }\n") ||
+        !once("  if(u_fograngecontrol.x>0.5)\n   affineFog=eyeZ*rangeAdjust+u_fograngecontrol.w*(rangeAdjust-1.0);\n", "") ||
+        !once("  if(u_fograngecontrol.x>0.5)fogDepth*=rangeAdjust;\n", "") ||
+        !once(" float4 fragmentPosition:WPOS,\n", "") ||
+        !once("uniform float4 u_alpha,\n uniform float4 u_fogrange[3],uniform float4 u_fograngecontrol):COLOR {",
+              "uniform float4 u_alpha):COLOR {"))
+        return false;
+    for (const char* dependency : { "scene_fog_range", "fragmentPosition", "WPOS", "u_fograng", "rangeAdjust" })
+        if (source.find(dependency) != std::string::npos)
+            return false;
+    return true;
+}
+
 inline std::string scene_fragment_shader(unsigned mask, bool alpha, bool generic,
                                           bool affineUv, bool vertexFog, bool fogOff = false,
-                                          bool fogCurve4 = false)
+                                          bool fogCurve4 = false, bool fogNoRange = false,
+                                          unsigned copyMode = 0)
 {
     std::string source = kSceneFragmentShader;
     const auto replace = [&](const char* from, const std::string& to) {
@@ -134,6 +169,8 @@ inline std::string scene_fragment_shader(unsigned mask, bool alpha, bool generic
     }
     if (fogCurve4 && !generic && !fogOff && !scene_specialize_fog_curve4(source))
         return {};
+    if (fogNoRange && !generic && !fogOff && !scene_strip_fog_range(source))
+        return {};
     if (!generic)
     {
         replace("float mask=u_controls.x;", "float mask=" + std::to_string(mask) + ".0;");
@@ -142,8 +179,10 @@ inline std::string scene_fragment_shader(unsigned mask, bool alpha, bool generic
         replace(" if(u_controls.w==2.0){float "
                 "y=d.r,u=detail.r-0.5,v=sh.r-0.5;c=float4(y+1.402*v,y-0.344136*u-0.714136*v,y+"
                 "1.772*u,1.0);}", "");
-        replace(" if(u_controls.w==3.0)c=float4(c.r,c.r,c.r,c.r);", "");
-        replace(" if(u_controls.w==4.0)c=float4(d.a,d.a,d.a,d.a);", "");
+        replace(" if(u_controls.w==3.0)c=float4(c.r,c.r,c.r,c.r);",
+                copyMode == 3 ? " c=float4(c.r,c.r,c.r,c.r);" : "");
+        replace(" if(u_controls.w==4.0)c=float4(d.a,d.a,d.a,d.a);",
+                copyMode == 4 ? " c=float4(d.a,d.a,d.a,d.a);" : "");
     }
     if (!alpha)
         replace(" if(u_controls.y>=0.0&&c.a<=u_controls.y)discard;", "");

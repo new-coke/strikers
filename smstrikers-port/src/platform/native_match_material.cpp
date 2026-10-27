@@ -7,6 +7,7 @@
 #include "NL/gl/glState.h"
 #include "NL/gl/glMatrix.h"
 #include "NL/gl/glConstant.h"
+#include "NL/nlString.h"
 #include "NL/gl/glLightUserData.h"
 #include "port/aspect.h"
 #include <algorithm>
@@ -21,6 +22,40 @@ struct ProgramIds
 {
     u32 movie, pointlitDirt, crowd, crowdLit, pointlit, unlit2x;
 };
+
+struct ConstantHashes
+{
+    unsigned long lightingRange, crowdFrame, ambient;
+};
+
+const ConstantHashes& constant_hashes()
+{
+    static const ConstantHashes hashes{ nlStringHash("lighting/range"), nlStringHash("crowd/frame"),
+                                        nlStringHash("lighting/ambient_colour") };
+    return hashes;
+}
+
+// Nothing sets constants while a frame is sent, so read them once per frame.
+struct FrameConstants
+{
+    s32 frame = -1;
+    nlVector4 lightingRange, crowdFrame, ambient;
+};
+
+const FrameConstants& frame_constants()
+{
+    static FrameConstants c;
+    const s32 frame = glGetCurrentFrame();
+    if (c.frame != frame)
+    {
+        const auto& h = constant_hashes();
+        c.lightingRange = glConstantGetHashed(h.lightingRange);
+        c.crowdFrame = glConstantGetHashed(h.crowdFrame);
+        c.ambient = glConstantGetHashed(h.ambient);
+        c.frame = frame;
+    }
+    return c;
+}
 
 const ProgramIds& program_ids()
 {
@@ -159,11 +194,11 @@ bool MatchRuntime::prepare_material(eGLView view, const glModelPacket& p,
     // The light-ramp materials scale their diffuse stage by lighting/range.
     // GameRenderTask defaults that range to 2; GLX selected scale 2 unless it was 1.
     m.controls[2] = (p.state.texconfig & 32)
-                        ? (glConstantGet("lighting/range").x == 1.f ? 1.f : 2.f)
+                        ? (frame_constants().lightingRange.x == 1.f ? 1.f : 2.f)
                         : (program == ids.unlit2x ? 2.f : 1.f);
     m.controls[3] =
         program == ids.movie ? 2.f : (program == ids.crowd || program == ids.crowdLit) ? 1.f : 0.f;
-    m.effects[3] = m.controls[3] == 1.f ? glConstantGet("crowd/frame").x : 0.f;
+    m.effects[3] = m.controls[3] == 1.f ? frame_constants().crowdFrame.x : 0.f;
     m.effects[2] = render::scene_material_konst(
         glGetTextureState(p.state.texturestate, GLTS_DiffuseLevel) * (1.f / 63.f));
     // Standard shadow-map combiners use K1=ShadowLevel and K2=1-ShadowLevel.
@@ -190,7 +225,7 @@ bool MatchRuntime::prepare_material(eGLView view, const glModelPacket& p,
         m.effects[1] = 1.f;
     if (m.lit)
     {
-        m.ambient = vector4(glConstantGet("lighting/ambient_colour"));
+        m.ambient = vector4(frame_constants().ambient);
         if (const auto* a = static_cast<const float*>(userdata(p, GLUD_Ambient)))
             std::copy_n(a, 4, m.ambient.begin());
         if (const auto* a = static_cast<const float*>(userdata(p, GLUD_Diffuse)))
@@ -235,6 +270,15 @@ bool MatchRuntime::prepare_material(eGLView view, const glModelPacket& p,
             m.specularColor[i] = light.color;
         }
     }
+    // Slot 7 is not a light: it holds the slot counts for the shader.
+    {
+        const auto* point = static_cast<const uint32_t*>(userdata(p, GLUD_Light));
+        const auto* directional = static_cast<const uint32_t*>(userdata(p, GLUD_DirectionalLight));
+        const auto* specular = static_cast<const uint32_t*>(userdata(p, GLUD_Specular));
+        const unsigned lights = std::max(point ? std::min(*point, 4u) : 0u,
+                                         directional ? std::min(*directional, 4u) : 0u);
+        m.lightPosition[7] = { float(lights), float(specular ? std::min(*specular, 4u) : 0u), 0, 0 };
+    }
     m.fog = viewFog;
     m.fogColor = viewFogColor;
     if (userdata(p, GLUD_NoFog))
@@ -258,9 +302,35 @@ bool MatchRuntime::prepare_material(eGLView view, const glModelPacket& p,
         if (p.state.texconfig & (1u << semantic))
         {
             if (profile) profile->material_count(Profile::TextureRequests);
-            auto* pTex = glx_GetMaterialTex(p.state.texture[semantic]);
+            // Valid while neither handle mappings nor the texture table changed.
+            struct HandleMemo
+            {
+                uintptr_t handle;
+                uint32_t id;
+                int partition;
+                unsigned long epoch;
+                uint32_t generation;
+            };
+            static std::array<HandleMemo, 1024> memo{};
+            const uintptr_t handle = p.state.texture[semantic];
+            auto& entry = memo[(handle >> 4 ^ handle >> 14) & 1023u];
             int shadowPartition = -1;
-            m.textures[semantic] = texture_for(pTex, semantic == 0 ? &shadowPartition : nullptr);
+            if (entry.handle == handle && entry.id && entry.epoch == glx_TextureHandleEpoch() &&
+                entry.generation == textureGeneration)
+            {
+                m.textures[semantic] = entry.id;
+                shadowPartition = entry.partition;
+            }
+            else
+            {
+                auto* pTex = glx_GetMaterialTex(handle);
+                m.textures[semantic] = texture_for(pTex, &shadowPartition);
+                if (m.textures[semantic] && !glx_IsAnimatedTexture(handle))
+                    entry = { handle, m.textures[semantic], shadowPartition, glx_TextureHandleEpoch(),
+                              textureGeneration };
+            }
+            if (semantic != 0)
+                shadowPartition = -1;
             if (!m.textures[semantic])
             {
                 if (profile) profile->material_count(Profile::TextureFailures);

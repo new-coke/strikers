@@ -76,7 +76,8 @@ void* audio_thread(void*)
     const int affinity = sceKernelChangeThreadCpuAffinityMask(id, SCE_KERNEL_CPU_MASK_USER_0);
     if (affinity < 0)
         std::fprintf(stderr, "[audio] affinity error=%08x\n", unsigned(affinity));
-    sceKernelChangeThreadPriority(id, 0x10000100);
+    // Above the other CPU0 threads, so blocks are never submitted late.
+    sceKernelChangeThreadPriority(id, 96);
     std::array<int16_t, 2048> queue{};
     size_t used = 0;
     // AudioOut can retain a submitted block until the following call (alternating-block transport).

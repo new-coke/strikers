@@ -105,4 +105,51 @@ inline bool texture_level_rgba(const nativegxm::TextureUpload& image, unsigned l
         }
     return true;
 }
+// GXM decodes index 3 of a three-colour BC1 block as transparent black and the
+// GameCube decodes it as the endpoint average, so only images without it upload as BC1.
+inline bool texture_bc1_opaque(const nativegxm::TextureUpload& image) noexcept
+{
+    using namespace nativegxm;
+    if (image.storage != TextureStorage::Bc1 || image.pixels.size() != texture_upload_bytes(image))
+        return false;
+    for (size_t at = 0; at + 8 <= image.pixels.size(); at += 8)
+    {
+        const auto* p = image.pixels.data() + at;
+        if ((p[0] | unsigned(p[1]) << 8) > (p[2] | unsigned(p[3]) << 8))
+            continue;
+        const uint32_t bits = p[4] | uint32_t(p[5]) << 8 | uint32_t(p[6]) << 16 | uint32_t(p[7]) << 24;
+        if (bits & bits >> 1 & 0x55555555u)
+            return false;
+    }
+    return true;
+}
+inline bool texture_level_bc1(const nativegxm::TextureUpload& image, unsigned level,
+                              std::vector<uint8_t>& out, unsigned& width, unsigned& height)
+{
+    using namespace nativegxm;
+    if (image.storage != TextureStorage::Bc1 || level >= image.mipCount ||
+        image.pixels.size() != texture_upload_bytes(image))
+        return false;
+    unsigned w = image.width, h = image.height;
+    size_t offset = 0;
+    for (unsigned i = 0; i < level; ++i)
+    {
+        offset += size_t((w + 3) / 4) * ((h + 3) / 4) * 8;
+        w = std::max(1u, w / 2);
+        h = std::max(1u, h / 2);
+    }
+    const unsigned bw = (w + 3) / 4, bh = (h + 3) / 4;
+    const auto* data = image.pixels.data() + offset;
+    out.resize(size_t(bw) * bh * 8);
+    if (!image.swizzled)
+        std::memcpy(out.data(), data, out.size());
+    else
+        for (unsigned by = 0; by < bh; ++by)
+            for (unsigned bx = 0; bx < bw; ++bx)
+                std::memcpy(out.data() + (size_t(by) * bw + bx) * 8,
+                            data + texture_morton(bx, by, bw, bh) * 8, 8);
+    width = w;
+    height = h;
+    return true;
+}
 }   // namespace port::render

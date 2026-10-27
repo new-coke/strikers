@@ -333,11 +333,16 @@ float nlRecipSqrt(float x, bool bAccurate)
     float zero = 0.0f;
     if (x > zero)
     {
+#if defined(PORT_VITA)
+        // PORT: a VFP square root matches the emulated estimate to within an ulp.
+        return 1.0f / __builtin_sqrtf(x);
+#else
         float y = __frsqrte(x);
         y = 0.5f * y * (3.0f - y * y * x);
         y = 0.5f * y * (3.0f - y * y * x);
         y = 0.5f * y * (3.0f - y * y * x);
         return y;
+#endif
     }
     else if (x != zero)
     {
@@ -356,6 +361,9 @@ float nlSqrt(float x, bool bAccurate)
 {
     if (x > 0.0f)
     {
+#if defined(PORT_VITA)
+        return __builtin_sqrtf(x);
+#else
         double guess = __frsqrte((double)x);
         guess = 0.5 * guess * (3.0 - guess * guess * x);
         if (bAccurate)
@@ -364,6 +372,7 @@ float nlSqrt(float x, bool bAccurate)
             guess = 0.5 * guess * (3.0 - guess * guess * x);
         }
         return (float)(x * guess);
+#endif
     }
     else if (x < 0.0)
     {

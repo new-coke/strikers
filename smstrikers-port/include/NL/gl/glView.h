@@ -63,4 +63,19 @@ void glViewAttachModel(eGLView view, const glModel* model);
 void glViewAttachModel(eGLView view, unsigned long arg, const glModel* model);
 GLRenderList* gl_ViewGetRenderList(eGLView view);
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+// PORT: a frame's views, captured so another thread can send them while
+// the next frame attaches to fresh render lists.
+struct GLViewSnapshot
+{
+    glView copies[34];
+    glView* pointers[34];
+    bool enable[34];
+    bool captured;
+};
+void gl_ViewCaptureSnapshot(GLViewSnapshot& snapshot);
+void gl_ViewBindSnapshot(const GLViewSnapshot* snapshot);
+void gl_ViewReleaseSnapshot(GLViewSnapshot& snapshot);
+#endif
+
 #endif // _GLVIEW_H_

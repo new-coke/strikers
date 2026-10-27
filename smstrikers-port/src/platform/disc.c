@@ -9,6 +9,7 @@
 
 #ifdef STRIKERS_VITA
 #include <psp2/io/fcntl.h>
+#include <psp2/kernel/threadmgr.h>
 #endif
 #include "port/disc_reader.h"
 #include "port/host.h"
@@ -58,6 +59,7 @@ struct PortDisc
     // Raw ISO reads on Vita use positional I/O.  stdio seek state is shared and
     // proved unreliable once the game starts issuing many random FST reads.
     SceUID rawFd;
+    char rawPath[512];
 #endif
     int kind;
     const char* name;
@@ -453,6 +455,17 @@ long port_disc_read(PortDisc* d, void* dst, size_t len, unsigned long long offse
             return -1;
         {
             int got = sceIoPread(d->rawFd, out, (SceSize)len, (SceOff)offset);
+            // After standby the descriptor may be dead: reopen and retry for about a second.
+            for (int attempt = 0; got < 0 && attempt < 20; ++attempt)
+            {
+                sceKernelDelayThread(50000);
+                SceUID fd = sceIoOpen(d->rawPath, SCE_O_RDONLY, 0);
+                if (fd < 0)
+                    continue;
+                sceIoClose(d->rawFd);
+                d->rawFd = fd;
+                got = sceIoPread(d->rawFd, out, (SceSize)len, (SceOff)offset);
+            }
             return got < 0 ? -1 : (long)got;
         }
 #else
@@ -589,6 +602,7 @@ PortDisc* port_disc_open(const char* path, char* err, size_t errsize)
         d->name = note_nkit(head, got) ? "NKit/raw" : "raw";
 #ifdef STRIKERS_VITA
         d->rawFd = sceIoOpen(path, SCE_O_RDONLY, 0);
+        snprintf(d->rawPath, sizeof d->rawPath, "%s", path);
         if (d->rawFd < 0)
         {
             char msg[1024];

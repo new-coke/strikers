@@ -10,12 +10,23 @@
 #include "NL/nlMath.h"
 #include "NL/nlPrint.h"
 #include "NL/nlString.h"
+#include <cstring>
 
 static void CrowdBundleLoad_cb(void*, unsigned long, void*);
 
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+// PORT: a goal force-reloads the crowd bundle; skip reloading an identical atlas.
+static char s_loadedCrowdBundle[64];
+#endif
 static void BeginCrowdBundleLoad(const char* filename,uintptr_t buffer)
 {
 #if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    if (s_loadedCrowdBundle[0] != '\0' && strcmp(s_loadedCrowdBundle, filename) == 0)
+    {
+        CrowdManager::instance.m_fAnimScale = CrowdManager::instance.m_State == Crowd_Happy ? 1.625f : 1.0f;
+        return;
+    }
+    nlStrNCpy(s_loadedCrowdBundle, filename, sizeof s_loadedCrowdBundle);
     // Retail updates the atlas through a shared staging buffer. Native bundles
     // own their decoded data and must explicitly replace the stable atlas
     // handle, even when a stadium-specific bundle uses a different entry ID.
@@ -36,6 +47,9 @@ CrowdManager CrowdManager::instance;
  */
 void CrowdManager::Initialize()
 {
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+    s_loadedCrowdBundle[0] = '\0';
+#endif
     m_State = Crowd_Idle;
     m_fTime = 0.0f;
     m_fAnimScale = 1.0f;

@@ -94,6 +94,9 @@ void glEndFrame();
 void glBeginFrame();
 bool glHasQuads();
 s32 glGetCurrentFrame();
+#if defined(STRIKERS_VITA_NATIVE_RUNTIME)
+void glSetSendFrame(s32 frame);
+#endif
 u32 glHash(const char* string);
 bool glStartup();
 

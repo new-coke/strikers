@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -25,6 +26,9 @@ struct ModelArray
     std::span<const uint8_t> bytes{};
     uint32_t stride = 0;
     bool littleEndian = false;
+    // Set by prepare_model_vertices on its own copy: every index up to this
+    // (non-zero) value addresses a whole stride inside bytes.
+    uint32_t checkedLimit = 0;
 };
 struct ModelStreams
 {
@@ -50,6 +54,9 @@ struct ModelVertexScratch
     };
     std::vector<Entry> lookup;
     std::vector<uint16_t> remap;
+    std::vector<uint32_t> stamp;
+    std::vector<uint16_t> stampVertex;
+    uint32_t generation = 0;
 };
 
 // Retain at most 528 KiB of producer scratch. Oversized packets still decode
@@ -74,6 +81,11 @@ inline void recycle_model_vertex_scratch(ModelVertices& model, ModelVertexScratc
 inline bool model_array_at(const ModelArray& a, uint32_t index, uint32_t need,
                            const uint8_t*& p) noexcept
 {
+    if (a.checkedLimit && index <= a.checkedLimit && need <= a.stride)
+    {
+        p = a.bytes.data() + size_t(index) * a.stride;
+        return true;
+    }
     const uint64_t offset = uint64_t(index) * a.stride;
     if (a.stride < need || offset > a.bytes.size() || need > a.bytes.size() - offset)
         return false;
@@ -82,10 +94,9 @@ inline bool model_array_at(const ModelArray& a, uint32_t index, uint32_t need,
 }
 inline uint32_t model_word(const uint8_t* p, bool little) noexcept
 {
-    if (little)
-        return uint32_t(p[0]) | (uint32_t(p[1]) << 8) | (uint32_t(p[2]) << 16) |
-               (uint32_t(p[3]) << 24);
-    return uint32_t(p[3]) | (uint32_t(p[2]) << 8) | (uint32_t(p[1]) << 16) | (uint32_t(p[0]) << 24);
+    uint32_t word;
+    std::memcpy(&word, p, 4);
+    return little ? word : __builtin_bswap32(word);
 }
 inline float model_float(const uint8_t* p, bool little) noexcept
 {
@@ -136,13 +147,34 @@ inline bool model_position_bounds(const ModelArray& position, std::span<const ui
 // inputs. No GX opcode/display-list decoder or Aurora canonical vertex enters
 // this path. Rigid bones are applied to owned vertices before queueing; CPU
 // skinned arrays use exactly the same bounded snapshot path.
-inline bool prepare_model_vertices(const ModelStreams& streams,
+inline bool prepare_model_vertices(const ModelStreams& streamsIn,
                                    std::span<const uint16_t> originalIndices, uint32_t count,
                                    uint8_t primitive, std::span<const uint8_t> selectors,
                                    std::span<const BoneTransform> bones, ModelVertices& out,
                                    bool compact = false, bool applyBoneMatrix = true,
                                    ModelVertexScratch* reusableScratch = nullptr)
 {
+    ModelStreams streams = streamsIn;
+    {
+        uint32_t highest = 0;
+        if (originalIndices.empty())
+            highest = count ? count - 1 : 0;
+        else
+            for (const uint16_t index : originalIndices)
+                highest = std::max<uint32_t>(highest, index);
+        const auto limit = [&](ModelArray& a) {
+            a.checkedLimit = 0;
+            if (highest && a.stride && !a.bytes.empty() &&
+                (uint64_t(highest) + 1) * a.stride <= a.bytes.size())
+                a.checkedLimit = highest;
+        };
+        limit(streams.position);
+        limit(streams.color);
+        limit(streams.uv);
+        limit(streams.normal);
+        for (auto& a : streams.extraUv)
+            limit(a);
+    }
     out.vertices.clear();
     out.indices.clear();
     struct ClearOnFailure
@@ -194,7 +226,23 @@ inline bool prepare_model_vertices(const ModelStreams& streams,
     auto& remap = scratch.remap;
     lookup.clear();
     remap.clear();
-    if (compact && !originalIndices.empty())
+    const bool direct = reusableScratch && compact && !originalIndices.empty() && selectors.empty();
+    if (direct)
+    {
+        if (scratch.stamp.size() < 65536)
+        {
+            scratch.stamp.assign(65536, 0);
+            scratch.stampVertex.assign(65536, 0);
+            scratch.generation = 0;
+        }
+        if (++scratch.generation == 0)
+        {
+            std::fill(scratch.stamp.begin(), scratch.stamp.end(), 0u);
+            scratch.generation = 1;
+        }
+        remap.resize(count);
+    }
+    else if (compact && !originalIndices.empty())
     {
         size_t size = 8;
         while (size < size_t(count) * 2u)
@@ -202,10 +250,95 @@ inline bool prepare_model_vertices(const ModelStreams& streams,
         lookup.resize(size);
         remap.resize(count);
     }
+    // Fast path for the CPU-skinned cinematic meshes; same results as the loop below.
+    const bool lean =
+        direct && bones.empty() &&
+        (streams.normal.bytes.empty() ||
+         ((streams.normal.stride == 3 || streams.normal.stride == 12) && streams.normal.checkedLimit)) &&
+        std::all_of(streams.extraUv.begin(), streams.extraUv.end(),
+                    [](const ModelArray& a) {
+                        return a.bytes.empty() || ((a.stride == 4 || a.stride == 8) && a.checkedLimit);
+                    }) &&
+        streams.position.stride == 12 && streams.position.checkedLimit &&
+        (streams.color.bytes.empty() || (streams.color.stride >= 4 && streams.color.checkedLimit)) &&
+        (streams.uv.bytes.empty() ||
+         ((streams.uv.stride == 4 || streams.uv.stride == 8) && streams.uv.checkedLimit));
+    if (lean)
+    {
+        static const ModelVertex blank{};
+        const auto& ps = streams.position;
+        const auto& cs = streams.color;
+        const auto& us = streams.uv;
+        for (uint32_t i = 0; i < count; ++i)
+        {
+            const uint32_t index = originalIndices[i];
+            if (scratch.stamp[index] == scratch.generation)
+            {
+                remap[i] = scratch.stampVertex[index];
+                continue;
+            }
+            ModelVertex v = blank;
+            const uint8_t* p = ps.bytes.data() + size_t(index) * 12;
+            v.position[0] = model_float(p, ps.littleEndian);
+            v.position[1] = model_float(p + 4, ps.littleEndian);
+            v.position[2] = model_float(p + 8, ps.littleEndian);
+            if (!cs.bytes.empty())
+                std::memcpy(v.color.data(), cs.bytes.data() + size_t(index) * cs.stride, 4);
+            if (!us.bytes.empty())
+            {
+                const uint8_t* q = us.bytes.data() + size_t(index) * us.stride;
+                if (us.stride == 4)
+                {
+                    v.uv[0] = model_short(q, us.littleEndian, 1.f / 1024.f);
+                    v.uv[1] = model_short(q + 2, us.littleEndian, 1.f / 1024.f);
+                }
+                else
+                {
+                    v.uv[0] = model_float(q, us.littleEndian);
+                    v.uv[1] = model_float(q + 4, us.littleEndian);
+                }
+            }
+            if (!streams.normal.bytes.empty())
+            {
+                const auto& ns = streams.normal;
+                const uint8_t* q = ns.bytes.data() + size_t(index) * ns.stride;
+                for (unsigned n = 0; n < 3; ++n)
+                    v.normal[n] = ns.stride == 3 ? float(int8_t(q[n])) / 64.f
+                                                 : model_float(q + n * 4, ns.littleEndian);
+                if (!std::isfinite(v.normal[0]) || !std::isfinite(v.normal[1]) || !std::isfinite(v.normal[2]))
+                    return false;
+            }
+            for (unsigned u = 0; u < 5; ++u)
+            {
+                const auto& a = streams.extraUv[u];
+                if (a.bytes.empty())
+                    continue;
+                const uint8_t* q = a.bytes.data() + size_t(index) * a.stride;
+                for (unsigned n = 0; n < 2; ++n)
+                    v.extraUv[u][n] = a.stride == 4 ? model_short(q + n * 2, a.littleEndian, 1.f / 1024.f)
+                                                    : model_float(q + n * 4, a.littleEndian);
+                if (!std::isfinite(v.extraUv[u][0]) || !std::isfinite(v.extraUv[u][1]))
+                    return false;
+            }
+            if (!std::isfinite(v.position[0]) || !std::isfinite(v.position[1]) ||
+                !std::isfinite(v.position[2]) || !std::isfinite(v.uv[0]) || !std::isfinite(v.uv[1]))
+                return false;
+            scratch.stamp[index] = scratch.generation;
+            scratch.stampVertex[index] = uint16_t(candidate.vertices.size());
+            remap[i] = scratch.stampVertex[index];
+            candidate.vertices.push_back(v);
+        }
+    }
+    else
     for (uint32_t i = 0; i < count; ++i)
     {
         const uint32_t index = originalIndices.empty() ? i : originalIndices[i];
         ModelVertexScratch::Entry* entry = nullptr;
+        if (direct && scratch.stamp[index] == scratch.generation)
+        {
+            remap[i] = scratch.stampVertex[index];
+            continue;
+        }
         if (!lookup.empty())
         {
             const uint32_t key = index | (uint32_t(selectors.empty() ? 0 : selectors[i]) << 16);
@@ -313,6 +446,12 @@ inline bool prepare_model_vertices(const ModelStreams& streams,
             entry->key = index | (uint32_t(selectors.empty() ? 0 : selectors[i]) << 16);
             entry->vertex = uint16_t(candidate.vertices.size());
             remap[i] = entry->vertex;
+        }
+        else if (direct)
+        {
+            scratch.stamp[index] = scratch.generation;
+            scratch.stampVertex[index] = uint16_t(candidate.vertices.size());
+            remap[i] = scratch.stampVertex[index];
         }
         candidate.vertices.push_back(v);
     }

@@ -12,6 +12,8 @@
 #include "port/native_net_vertices.hpp"
 #include "NL/glx/glxTexture.h"
 #include "NL/nlMath.h"
+#include <cstddef>
+#include <cstring>
 #include <mutex>
 #include <unordered_map>
 
@@ -106,7 +108,10 @@ class MatchRuntime final
         uint32_t id = 0, level = 0;
         uint64_t generation = 0;
         std::vector<Range> ranges;
+        std::array<float, 6> box{};
+        bool boxed = false;
     };
+    static const Geometry* resolvedGeometry;
     struct Texture
     {
         uint32_t id = 0, level = 0;
@@ -137,7 +142,24 @@ class MatchRuntime final
         Raster raster;
         std::array<float, 16> matrix;
         bool matrixOwned = false;
+        // Only PN packets write the palette, so it is reset only after one did.
+        void reset(bool paletteWritten) noexcept
+        {
+            constexpr size_t begin = offsetof(SceneMaterial, bones),
+                             end = begin + sizeof(render::SceneBonePalette);
+            auto* to = reinterpret_cast<unsigned char*>(&scene);
+            const auto* from = reinterpret_cast<const unsigned char*>(&initialScene);
+            std::memcpy(to, from, begin);
+            std::memcpy(to + end, from + end, sizeof(SceneMaterial) - end);
+            if (paletteWritten)
+                scene.bones = initialScene.bones;
+            raster = {};
+            matrix = {};
+            matrixOwned = false;
+        }
     };
+    static PreparedMaterial prepared;
+    static bool preparedPalette;
     struct PacketTrace
     {
         eGLView view;
@@ -146,7 +168,7 @@ class MatchRuntime final
         ~PacketTrace();
     };
 
-    static bool active, started, frameDiscarded, frameAsync;
+    static bool active, started, frameDiscarded, frameAsync, asyncModels;
     static Renderer gpu;
     static ModelSourceRegistry sources;
     static ModelVertices modelScratch;
@@ -157,7 +179,37 @@ class MatchRuntime final
     static uint32_t shadowAtlas;
     static std::array<uint32_t, 4> viewTargets;
     static std::unordered_map<uint64_t, Geometry> geometry;
+    struct GeometryFront
+    {
+        uint64_t key = 0;
+        Geometry* entry = nullptr;
+        uint32_t generation = 0;
+    };
+    static std::array<GeometryFront, 512> geometryFront;
+    static uint32_t geometryGeneration;
+    static void forget_geometry() noexcept { ++geometryGeneration; }
+    static Geometry* find_geometry(uint64_t key) noexcept
+    {
+        auto& front = geometryFront[(key ^ key >> 17 ^ key >> 37) & 511u];
+        if (front.entry && front.key == key && front.generation == geometryGeneration)
+            return front.entry;
+        const auto it = geometry.find(key);
+        if (it == geometry.end())
+            return nullptr;
+        front = { key, &it->second, geometryGeneration };
+        return &it->second;
+    }
     static std::unordered_map<const PlatTexture*, Texture> textures;
+    // Direct-mapped hints in front of the maps; every erase bumps the generation.
+    struct TextureFront
+    {
+        const PlatTexture* key = nullptr;
+        Texture* entry = nullptr;
+        uint32_t generation = 0;
+    };
+    static std::array<TextureFront, 256> textureFront;
+    static uint32_t textureGeneration;
+    static void forget_textures() noexcept { ++textureGeneration; }
     // Frontend-only supersets: removals may leave gaps, checked by exact ranges.
     static RangeBounds geometryBounds, mutableTextureBounds;
     static std::mutex writeMutex;

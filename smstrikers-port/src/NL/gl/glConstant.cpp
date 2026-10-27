@@ -120,3 +120,8 @@ nlVector4 glConstantGet(const char* constantName)
 {
     return glConstantGet(nlStringHash(constantName));
 }
+
+nlVector4 glConstantGetHashed(unsigned long constantHash)
+{
+    return glConstantGet(constantHash);
+}

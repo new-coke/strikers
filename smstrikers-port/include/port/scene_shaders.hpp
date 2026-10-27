@@ -21,8 +21,9 @@ void main(float4 a_position:POSITION,float4 a_color:COLOR0,float3 a_normal:NORMA
  float3 eyeNormal=u_mv[0].xyz*n.x+u_mv[1].xyz*n.y+u_mv[2].xyz*n.z;
  float3 N=eyeNormal*rsqrt(max(dot(eyeNormal,eyeNormal),0.000001));
  float4 lit=u_ambient;
+ // u_lightpos[7].xy holds the light and specular slot counts.
  if(u_lighting.x>0.5){
- for(int i=0;i<8;++i){float3 L=u_lightpos[i].w<0.0?u_lightpos[i].xyz:u_lightpos[i].xyz-eye.xyz;
+ for(int i=0;i<4;++i){if(i>=(int)u_lightpos[7].x)break;float3 L=u_lightpos[i].w<0.0?u_lightpos[i].xyz:u_lightpos[i].xyz-eye.xyz;
   float d2=dot(L,L);float diffuse=max(dot(N,L*rsqrt(max(d2,0.000001))),0.0);
   float attenuation=u_lightpos[i].w>0.0?1.0/(1.0+d2*u_lightpos[i].w):1.0;
   lit+=u_lightcolor[i]*diffuse*attenuation;}}
@@ -33,7 +34,7 @@ void main(float4 a_position:POSITION,float4 a_color:COLOR0,float3 a_normal:NORMA
  // GXInitSpecularDir uses the normalized incoming light direction, a fixed
  // view half-vector and GX_AF_SPEC's rational attenuation, not a power lobe.
  spec=float4(0,0,0,0);
- for(int j=0;j<4;++j){if(dot(u_specularcolor[j].rgb,u_specularcolor[j].rgb)>0.0){
+ for(int j=0;j<4;++j){if(j>=(int)u_lightpos[7].y)break;if(dot(u_specularcolor[j].rgb,u_specularcolor[j].rgb)>0.0){
   float3 L=-u_specular[j].xyz;float3 halfVector=L+float3(0.0,0.0,1.0);
   float3 H=halfVector*rsqrt(max(dot(halfVector,halfVector),0.000001));
   float cosine=dot(N,L)>=0.0?max(dot(N,H),0.0):0.0;

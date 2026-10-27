@@ -1251,6 +1251,7 @@ void vglUseExtraMem(GLboolean usage);
 
 // Simplified function to enable or disable V-Sync. For more fine granularity on the swap interval use eglSwapInterval.
 void vglWaitVblankStart(GLboolean enable);
+void vglStrikersDisplayDepthTransient(void);
 
 #ifdef __cplusplus
 }

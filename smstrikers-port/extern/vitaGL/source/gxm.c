@@ -558,6 +558,11 @@ void init_display_depth_stencil_surfaces(void) {
 	init_depth_stencil_buffer(DISPLAY_WIDTH, DISPLAY_HEIGHT, &gxm_depth_stencil_surface, GL_TRUE);
 }
 
+void vglStrikersDisplayDepthTransient(void) {
+	sceGxmDepthStencilSurfaceSetForceLoadMode(&gxm_depth_stencil_surface, SCE_GXM_DEPTH_STENCIL_FORCE_LOAD_DISABLED);
+	sceGxmDepthStencilSurfaceSetForceStoreMode(&gxm_depth_stencil_surface, SCE_GXM_DEPTH_STENCIL_FORCE_STORE_DISABLED);
+}
+
 void start_shader_patcher(void) {
 	// Allocating Shader Patcher buffer
 	gxm_shader_patcher_buffer_addr = gpu_alloc_mapped_aligned(4, shader_patcher_buffer_size, VGL_MEM_VRAM);
@@ -605,6 +610,10 @@ static inline __attribute__((always_inline)) void scene_end(void) {
 
 GLboolean gxm_scene_is_active(void) {
 	return needs_end_scene;
+}
+
+GLboolean gxm_scene_begin_pending(void) {
+	return in_use_framebuffer != active_write_fb || needs_scene_reset || dirty_framebuffer || dirty_query;
 }
 
 GLboolean scene_reset(void) {
