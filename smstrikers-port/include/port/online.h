@@ -63,7 +63,7 @@ enum
 typedef struct OnlineMatchDesc
 {
     uint16_t protocol;          // ONLINE_PROTOCOL_VERSION
-    uint16_t gameTime;          // seconds: 120, 180, 240, 300, 600 or 900
+    uint16_t gameTime;          // seconds: 120, 180, 240, 300, 600, 900, 1200, 1800, 2700 or 3600
     uint32_t build;             // hash of the version string, binary family and protocol
     uint32_t dataFamily;        // hash of the simulation data and parsed settings
     uint32_t reserved0;         // zero
@@ -88,6 +88,9 @@ typedef struct OnlineMatchDesc
 
 // A valid descriptor: Mario against Luigi at the Peach and Toad stadium, no humans, identity 0.
 void PortOnlineDescDefault(OnlineMatchDesc* desc);
+
+// The length `step` entries after `gameTime` in the accepted list, wrapping; the first if unlisted.
+uint16_t PortOnlineGameTimeStep(uint16_t gameTime, int step);
 
 // NULL when every field is in range, else the name of the first field that is not.
 const char* PortOnlineDescCheck(const OnlineMatchDesc* desc);

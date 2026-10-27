@@ -2183,6 +2183,56 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
         <translation>Pausen erlauben (3 pro Team)</translation>
     </message>
     <message>
+        <source>Match settings</source>
+        <extracomment>T_MATCH_SETTINGS; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Spieleinstellungen</translation>
+    </message>
+    <message>
+        <source>Match length</source>
+        <extracomment>T_MATCH_LENGTH; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Spieldauer</translation>
+    </message>
+    <message>
+        <source>Items</source>
+        <extracomment>T_ITEMS; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Items</translation>
+    </message>
+    <message>
+        <source>Red shells</source>
+        <extracomment>T_ITEM_RED_SHELLS; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Rote Panzer</translation>
+    </message>
+    <message>
+        <source>Green shells</source>
+        <extracomment>T_ITEM_GREEN_SHELLS; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Grüne Panzer</translation>
+    </message>
+    <message>
+        <source>Freeze shells</source>
+        <extracomment>T_ITEM_FREEZE_SHELLS; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Eispanzer</translation>
+    </message>
+    <message>
+        <source>Spiny shells</source>
+        <extracomment>T_ITEM_SPINY_SHELLS; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Stachipanzer</translation>
+    </message>
+    <message>
+        <source>Stars</source>
+        <extracomment>T_ITEM_STARS; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Sterne</translation>
+    </message>
+    <message>
+        <source>Bob-ombs</source>
+        <extracomment>T_ITEM_BOBOMBS; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Bob-ombs</translation>
+    </message>
+    <message>
+        <source>Bananas</source>
+        <extracomment>T_ITEM_BANANAS; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Bananen</translation>
+    </message>
+    <message>
         <source>Share an address the other players can reach:</source>
         <extracomment>T_OTHER_ADDRESSES; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
         <translation>Teile eine Adresse, die die anderen Spieler erreichen können:</translation>

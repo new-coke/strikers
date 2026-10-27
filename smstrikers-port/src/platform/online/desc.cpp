@@ -8,7 +8,9 @@ static_assert(sizeof(OnlineMatchDesc) == ONLINE_DESC_BYTES, "OnlineMatchDesc has
 
 namespace
 {
-const uint16_t kGameTimes[] = { 120, 180, 240, 300, 600, 900 };
+// The retail menu's lengths, then the online-only ones.
+const uint16_t kGameTimes[] = { 120, 180, 240, 300, 600, 900, 1200, 1800, 2700, 3600 };
+const int kGameTimeCount = (int)(sizeof kGameTimes / sizeof kGameTimes[0]);
 
 bool is_flag(uint8_t v) { return v <= 1; }
 
@@ -96,6 +98,16 @@ extern "C" void PortOnlineDescDefault(OnlineMatchDesc* desc)
     desc->powerupMask = 0xFF;
     desc->shoot2Score = 1;
     desc->bowser = 1;
+}
+
+extern "C" uint16_t PortOnlineGameTimeStep(uint16_t gameTime, int step)
+{
+    int i = 0;
+    while (i < kGameTimeCount && kGameTimes[i] != gameTime)
+        i++;
+    if (i == kGameTimeCount)
+        return kGameTimes[0];
+    return kGameTimes[((i + step) % kGameTimeCount + kGameTimeCount) % kGameTimeCount];
 }
 
 extern "C" const char* PortOnlineDescCheck(const OnlineMatchDesc* d)

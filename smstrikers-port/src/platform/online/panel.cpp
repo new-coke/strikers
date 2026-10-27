@@ -635,6 +635,7 @@ enum Screen
     SCR_CONNECTING,
     SCR_ROOM,
     SCR_SETUP,
+    SCR_OPTIONS,
     SCR_ADDRESS,
     SCR_LEAVE,
     SCR_LOADING,
@@ -1769,11 +1770,6 @@ void draw_room(const OnlineState& st)
     }
     ImGui::Dummy(ImVec2(0, px() * 0.4f));
     muted_text(summary(st.desc));
-    if (host && spin_row("pause", text(T_PAUSE_ALLOWED), text(d.pauseAllowed ? T_ON : T_OFF), true))
-    {
-        d.pauseAllowed = !d.pauseAllowed;
-        changed = true;
-    }
     if (changed)
         PortOnlineSetDesc(&d);
     if (st.desync == ONLINE_DESYNC_ENDED)
@@ -1804,6 +1800,8 @@ void draw_room(const OnlineState& st)
         if (row("add", text(T_ADD_PLAYER), sub))
             s_addWaitUntil = ImGui::GetTime() + 15.0;
     }
+    if (host && row("match", text(T_MATCH_SETTINGS)))
+        s_roomScreen = SCR_OPTIONS;
     if (row("details", text(T_CONNECTION_DETAILS)))
         s_roomScreen = SCR_SETUP;
     if (row("leave", text(T_LEAVE)))
@@ -1843,6 +1841,64 @@ void local_players(const OnlineState& st)
         if (port >= 0 && port < PAD_CHANMAX && (s_pressed[port] & PAD_BUTTON_B) != 0)
             PortOnlineRemoveLocalPlayer(port);
     }
+}
+
+void draw_match_settings(const OnlineState& st)
+{
+    if (st.self < 0 || st.self != st.host)
+    {
+        s_roomScreen = SCR_ROOM;
+        return;
+    }
+    OnlineMatchDesc d = st.desc;
+    bool changed = false;
+    begin_screen("##online.options", text(T_MATCH_SETTINGS), nullptr, false, 33.0f);
+    const int step =
+        spin_row("length", text(T_MATCH_LENGTH), format(text(T_MINUTES), d.gameTime / 60), true);
+    if (step != 0)
+    {
+        d.gameTime = PortOnlineGameTimeStep(d.gameTime, step);
+        changed = true;
+    }
+    if (spin_row("pause", text(T_PAUSE_ALLOWED), text(d.pauseAllowed ? T_ON : T_OFF), true))
+    {
+        d.pauseAllowed = !d.pauseAllowed;
+        changed = true;
+    }
+    section(text(T_ITEMS));
+    // The game's Twister setting turns off red shells.
+    static const struct
+    {
+        uint8_t bits;
+        Text label;
+    } kItems[] = {
+        { ONLINE_POWERUP_RED_SHELLS | ONLINE_POWERUP_TWISTER, T_ITEM_RED_SHELLS },
+        { ONLINE_POWERUP_GREEN_SHELLS, T_ITEM_GREEN_SHELLS },
+        { ONLINE_POWERUP_BLUE_SHELLS, T_ITEM_FREEZE_SHELLS },
+        { ONLINE_POWERUP_SPINY_SHELLS, T_ITEM_SPINY_SHELLS },
+        { ONLINE_POWERUP_STARMAN, T_ITEM_STARS },
+        { ONLINE_POWERUP_BOBOMBS, T_ITEM_BOBOMBS },
+        { ONLINE_POWERUP_BANANAS, T_ITEM_BANANAS },
+    };
+    for (int i = 0; i < 7; ++i)
+    {
+        const bool on = (d.powerupMask & kItems[i].bits) == kItems[i].bits;
+        ImGui::PushID(i);
+        if (spin_row("item", text(kItems[i].label), text(on ? T_ON : T_OFF), true))
+        {
+            d.powerupMask = on ? d.powerupMask & ~kItems[i].bits : d.powerupMask | kItems[i].bits;
+            changed = true;
+        }
+        ImGui::PopID();
+    }
+    if (changed)
+        PortOnlineSetDesc(&d);
+    ImGui::Dummy(ImVec2(0.0f, px() * 0.2f));
+    const bool done = row("done", text(T_DONE));
+    const Hint hints[] = { { PAD_BUTTON_B, T_HINT_BACK } };
+    end_screen(hints, 1);
+    if (done || back_pressed())
+        s_roomScreen = SCR_ROOM;
 }
 
 void draw_setup(const OnlineState& st)
@@ -2500,6 +2556,7 @@ void draw_panel(const OnlineState& st)
     case SCR_CONNECTING: draw_connecting(st); break;
     case SCR_ROOM:       draw_room(st); break;
     case SCR_SETUP:      draw_setup(st); break;
+    case SCR_OPTIONS:    draw_match_settings(st); break;
     case SCR_ADDRESS:    draw_address(st); break;
     case SCR_LEAVE:      draw_leave(st); break;
     case SCR_LOADING:    draw_loading(st); break;

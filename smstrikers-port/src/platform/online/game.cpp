@@ -639,7 +639,9 @@ extern "C" void PortOnlineGameSaveOptions(void)
     OnlineMatchDesc d = st.desc;
     const GameplaySettings& g = GameInfoManager::Instance()->mCurGameGameplayOptions;
     d.skill = g.SkillLevel;
-    d.gameTime = g.GameTime;
+    // The retail menu has no entry past 900 and shows a longer length as 120.
+    if (st.desc.gameTime <= 900 || g.GameTime != 120)
+        d.gameTime = g.GameTime;
     d.powerUps = g.PowerUps;
     d.shoot2Score = g.Shoot2Score;
     d.bowser = g.BowserAttackEnabled;

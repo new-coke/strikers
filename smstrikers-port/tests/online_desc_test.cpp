@@ -54,6 +54,12 @@ int main()
     check(rejects([](OnlineMatchDesc* x) { x->gameTime = 121; }, "gameTime"), "gameTime 121");
     check(rejects([](OnlineMatchDesc* x) { x->gameTime = 0; }, "gameTime"), "gameTime 0");
     check(check_field([](OnlineMatchDesc* x) { x->gameTime = 900; }) == NULL, "gameTime 900");
+    check(check_field([](OnlineMatchDesc* x) { x->gameTime = 3600; }) == NULL, "gameTime 3600");
+    check(rejects([](OnlineMatchDesc* x) { x->gameTime = 1000; }, "gameTime"), "gameTime 1000");
+    check(PortOnlineGameTimeStep(900, 1) == 1200, "step past retail");
+    check(PortOnlineGameTimeStep(3600, 1) == 120, "step wraps up");
+    check(PortOnlineGameTimeStep(120, -1) == 3600, "step wraps down");
+    check(PortOnlineGameTimeStep(121, 1) == 120, "step from unknown");
     check(rejects([](OnlineMatchDesc* x) { x->team[1] = 9; }, "team"), "team 9");
     check(rejects([](OnlineMatchDesc* x) { x->team[0] = -1; }, "team"), "team -1");
     check(check_field([](OnlineMatchDesc* x) { x->team[0] = 8; }) == NULL, "team 8");
