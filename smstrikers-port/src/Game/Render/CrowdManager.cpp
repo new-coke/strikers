@@ -14,6 +14,20 @@
 
 static void CrowdBundleLoad_cb(void*, unsigned long, void*);
 
+// PORT: Idle and Happy share a bundle; skip rereading the atlas the buffer already holds.
+static char s_loadedCrowdBundle[64];
+
+static void BeginCrowdBundleLoad(const char* filename, void* buffer)
+{
+    if (nlStrCmp<char>(s_loadedCrowdBundle, filename) == 0)
+    {
+        CrowdBundleLoad_cb(NULL, 0, NULL);
+        return;
+    }
+    if (glBeginLoadTextureBundle(filename, CrowdBundleLoad_cb, buffer))
+        nlStrNCpy(s_loadedCrowdBundle, filename, 64);
+}
+
 CrowdManager CrowdManager::instance;
 
 /**
@@ -30,6 +44,7 @@ void CrowdManager::Initialize()
 
     nlStrNCpy(m_szTexture, "idle/idle", 64);
     m_TextureHandle = glGetTexture(m_szTexture);
+    s_loadedCrowdBundle[0] = '\0';
 
     GCTextureSize(GXTex_CMPR, 256, 512, 6, -1); // Result discarded
     m_BundleLoadBase = (uintptr_t)glResourceAlloc(0x155A0, GLM_TextureData);
@@ -128,7 +143,7 @@ void CrowdManager::Replay(LoadFrame& frame)
             nlSNPrintf(szFilename, 64, "crowd/%s_%s.glt", m_szStadium, szBundle);
         }
 
-        glBeginLoadTextureBundle(szFilename, CrowdBundleLoad_cb, (void*)m_BundleLoadBase);
+        BeginCrowdBundleLoad(szFilename, (void*)m_BundleLoadBase);
 
         m_nCurrentFrame = 0;
         nlStrNCpy(m_szTexture, "idle/idle", 64);
@@ -205,7 +220,7 @@ void CrowdManager::SetState(eCrowdState state, bool force)
         nlSNPrintf(szFilename, 64, "crowd/%s_%s.glt", m_szStadium, szBundle);
     }
 
-    glBeginLoadTextureBundle(szFilename, CrowdBundleLoad_cb, (void*)m_BundleLoadBase);
+    BeginCrowdBundleLoad(szFilename, (void*)m_BundleLoadBase);
 
     m_nCurrentFrame = 0;
     nlStrNCpy(m_szTexture, "idle/idle", 64);

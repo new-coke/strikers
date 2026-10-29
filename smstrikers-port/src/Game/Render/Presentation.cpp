@@ -545,7 +545,7 @@ void Presentation::UnloadJumbotron()
 
 void Presentation::PlayJumbotron()
 {
-    Jumbotron::instance.WaitForLoad();
+    // PORT: WaitForLoad waits on every read, streams too; the load callback starts the jumbotron.
     Jumbotron::instance.BeginPlaying();
 }
 
