@@ -1,7 +1,5 @@
 # Strikers - A native multi-platform port of Super Mario Strikers
 
-![](media/strikers-gameplay.webp)
-
 **Download:**&nbsp;&nbsp;
 [![Download for Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge)](https://github.com/new-coke/strikers/releases/latest/download/strikers-windows-x86_64.zip)
 [![Download for macOS](https://img.shields.io/badge/macOS-6E6E73?style=for-the-badge)](https://github.com/new-coke/strikers/releases/latest/download/strikers-macos-arm64.tar.gz)
