@@ -70,6 +70,7 @@ struct QueuedEvent {
         Ready,
         Disconnected,
         Error,
+        ActivityJoin,  // smstrikers-port: `message` holds the join secret.
     };
 
     Type type = Type::Ready;
@@ -119,36 +120,18 @@ public:
         }
         return false;
 #else
-        const auto tempPaths = get_temp_paths();
-        for (const std::string& tempPath : tempPaths) {
-            for (int pipeNumber = 0; pipeNumber < 10; ++pipeNumber) {
-                socketFd = socket(AF_UNIX, SOCK_STREAM, 0);
-                if (socketFd == -1) {
-                    return false;
+        // smstrikers-port: sandboxed clients' folders, as the discord-rich-presence crate has them.
+        static constexpr const char* kClientFolders[] = {"", "/app/com.discordapp.Discord",
+            "/app/dev.vencord.Vesktop", "/.flatpak/com.discordapp.Discord/xdg-run",
+            "/.flatpak/dev.vencord.Vesktop/xdg-run", "/snap.discord-canary", "/snap.discord"};
+        for (const std::string& tempPath : get_temp_paths()) {
+            for (const char* clientFolder : kClientFolders) {
+                for (int pipeNumber = 0; pipeNumber < 10; ++pipeNumber) {
+                    if (connect_to(tempPath + clientFolder + "/discord-ipc-" +
+                                   std::to_string(pipeNumber))) {
+                        return true;
+                    }
                 }
-
-                sockaddr_un pipeAddress{};
-                pipeAddress.sun_family = AF_UNIX;
-                const std::string socketPath =
-                    tempPath + "/discord-ipc-" + std::to_string(pipeNumber);
-                if (socketPath.size() >= sizeof(pipeAddress.sun_path)) {
-                    close();
-                    continue;
-                }
-
-                std::strncpy(
-                    pipeAddress.sun_path, socketPath.c_str(), sizeof(pipeAddress.sun_path) - 1);
-                if (connect(socketFd, reinterpret_cast<const sockaddr*>(&pipeAddress),
-                        sizeof(pipeAddress)) == 0)
-                {
-                    fcntl(socketFd, F_SETFL, O_NONBLOCK);
-#ifdef SO_NOSIGPIPE
-                    int optval = 1;
-                    setsockopt(socketFd, SOL_SOCKET, SO_NOSIGPIPE, &optval, sizeof(optval));
-#endif
-                    return true;
-                }
-                close();
             }
         }
         return false;
@@ -218,6 +201,31 @@ private:
             paths.emplace_back("/tmp");
         }
         return paths;
+    }
+
+    bool connect_to(const std::string& socketPath) {
+        sockaddr_un pipeAddress{};
+        pipeAddress.sun_family = AF_UNIX;
+        if (socketPath.size() >= sizeof(pipeAddress.sun_path)) {
+            return false;
+        }
+        socketFd = socket(AF_UNIX, SOCK_STREAM, 0);
+        if (socketFd == -1) {
+            return false;
+        }
+        std::strncpy(pipeAddress.sun_path, socketPath.c_str(), sizeof(pipeAddress.sun_path) - 1);
+        if (connect(socketFd, reinterpret_cast<const sockaddr*>(&pipeAddress),
+                sizeof(pipeAddress)) == 0)
+        {
+            fcntl(socketFd, F_SETFL, O_NONBLOCK);
+#ifdef SO_NOSIGPIPE
+            int optval = 1;
+            setsockopt(socketFd, SOL_SOCKET, SO_NOSIGPIPE, &optval, sizeof(optval));
+#endif
+            return true;
+        }
+        close();
+        return false;
     }
 #endif
 
@@ -411,6 +419,11 @@ public:
                     localHandlers.error(event.code, event.message);
                 }
                 break;
+            case QueuedEvent::Type::ActivityJoin:
+                if (localHandlers.activityJoin) {
+                    localHandlers.activityJoin(event.message);
+                }
+                break;
             }
         }
     }
@@ -540,7 +553,7 @@ private:
 
             switch (frame.opcode) {
             case Opcode::Frame:
-                process_json_frame(frame.payload, state, reconnectBackoff);
+                process_json_frame(frame.payload, connection, state, reconnectBackoff);
                 break;
             case Opcode::Close:
                 process_close_frame(
@@ -560,8 +573,8 @@ private:
         }
     }
 
-    void process_json_frame(
-        const std::string& payload, ConnectionState& state, Backoff& reconnectBackoff) {
+    void process_json_frame(const std::string& payload, IpcConnection& connection,
+        ConnectionState& state, Backoff& reconnectBackoff) {
         json message;
         try {
             message = json::parse(payload);
@@ -581,7 +594,19 @@ private:
                 std::lock_guard lock(mutex);
                 presenceState.mark_dirty();
             }
+            // smstrikers-port: subscriptions last one connection, so every READY asks again.
+            connection.write_frame(detail::make_subscribe_frame(next_nonce(), "ACTIVITY_JOIN"));
             enqueue_ready(message);
+            return;
+        }
+
+        if (cmd == "DISPATCH" && evt == "ACTIVITY_JOIN") {
+            const json* data = find_member(message, "data");
+            std::lock_guard lock(mutex);
+            QueuedEvent event;
+            event.type = QueuedEvent::Type::ActivityJoin;
+            event.message = data ? json_string_member(*data, "secret") : std::string{};
+            queuedEvents.push_back(std::move(event));
             return;
         }
 

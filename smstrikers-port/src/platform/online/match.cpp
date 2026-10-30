@@ -114,6 +114,7 @@ void Session::BeginMatch(uint32_t startInUs, uint8_t delayTicks, uint64_t now)
         for (int m = 0; m < ONLINE_MAX_MACHINES; m++)
             l.peerHas[m] = 0;
         l.componentsLeft = 0;
+        l.matchGapUs = 0;
     }
     Record("go serial %u delay %d start-in-us %u machines %x", (unsigned)m_serial, m_delay,
            (unsigned)startInUs, (unsigned)mask);
@@ -488,6 +489,19 @@ void Session::MatchEnded()
     if (IsHost())
         m_voteDeadlineUs = now + 60000000;
     Record("end tick %u", m_endTick);
+    for (size_t i = 0; i < m_links.size(); i++)
+    {
+        const Link& l = *m_links[i];
+        if (!l.used || l.machine < 0)
+            continue;
+        char line[160];
+        std::snprintf(line, sizeof line,
+                      "machine %d: round trip %u ms, jitter %u ms, loss %d%%, longest gap %u ms",
+                      l.machine, l.stats.HasRtt() ? l.stats.SrttUs() / 1000 : 0,
+                      l.stats.JitterUs(now) / 1000, l.stats.LossPercent(now),
+                      (unsigned)(l.matchGapUs / 1000));
+        m_env->Log(line);
+    }
     RoomChanged();
 }
 

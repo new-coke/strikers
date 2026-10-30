@@ -207,6 +207,15 @@ const Entry kEnglish[] = {
     { T_HINT_SAVE, "", QT_TRANSLATE_NOOP("Online", "Save") },
     { T_CHANGE_TEAMS, "", QT_TRANSLATE_NOOP("Online", "Change teams") },
     { T_NOT_VOTED, "", QT_TRANSLATE_NOOP("Online", "Choosing...") },
+    { T_FOR_INTERNET, "", QT_TRANSLATE_NOOP("Online", "Players on the internet") },
+    { T_FOR_THIS_NETWORK, "", QT_TRANSLATE_NOOP("Online", "Players on this network") },
+    { T_PUBLIC_LOOKING, "", QT_TRANSLATE_NOOP("Online", "Finding your internet address...") },
+    { T_PUBLIC_OPEN, "", QT_TRANSLATE_NOOP("Online", "Share this address with players anywhere.") },
+    { T_PUBLIC_FOUND, "", QT_TRANSLATE_NOOP("Online", "Players elsewhere may not be able to join. If they can't, use Tailscale or ZeroTier.") },
+    { T_PUBLIC_SHARED, "", QT_TRANSLATE_NOOP("Online", "Your connection doesn't let players elsewhere join. Use Tailscale or ZeroTier instead.") },
+    { T_PUBLIC_FAILED, "", QT_TRANSLATE_NOOP("Online", "Couldn't find your internet address. Players elsewhere can join over Tailscale or ZeroTier.") },
+    { T_SHARE_PRIVATELY, "", QT_TRANSLATE_NOOP("Online", "Share it only with people you're playing with.") },
+    { T_ERR_HOME_ADDRESS, "", QT_TRANSLATE_NOOP("Online", "That address only works on the host's own network. Ask them for their internet address.") },
 
     // The US disc's own names, in the order of the game's enums.
     { (Text)(T_CAPTAIN_FIRST + 0),  "", "Daisy" },

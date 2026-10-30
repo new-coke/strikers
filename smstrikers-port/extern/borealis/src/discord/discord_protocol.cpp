@@ -61,6 +61,17 @@ json make_presence_activity(const Presence& presence) {
         }
         activity["assets"] = std::move(assets);
     }
+    // smstrikers-port: Join needs a party id, a size with room left and a join secret.
+    if (!presence.partyId.empty()) {
+        json party = {{"id", presence.partyId}};
+        if (presence.partyMax > 0) {
+            party["size"] = {presence.partySize, presence.partyMax};
+        }
+        activity["party"] = std::move(party);
+    }
+    if (!presence.joinSecret.empty()) {
+        activity["secrets"] = {{"join", presence.joinSecret}};
+    }
     return activity;
 }
 
@@ -112,6 +123,19 @@ Frame make_set_activity_frame(std::string nonce, int pid, std::optional<Presence
             {"cmd", "SET_ACTIVITY"},
             {"nonce", std::move(nonce)},
             {"args", std::move(args)},
+        }
+            .dump(),
+    };
+}
+
+Frame make_subscribe_frame(std::string nonce, std::string_view event) {
+    return {
+        Opcode::Frame,
+        json{
+            {"cmd", "SUBSCRIBE"},
+            {"evt", std::string(event)},
+            {"nonce", std::move(nonce)},
+            {"args", json::object()},
         }
             .dump(),
     };

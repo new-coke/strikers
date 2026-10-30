@@ -169,4 +169,13 @@ const Translation kTranslations[] = {
     {T_HINT_SAVE, {"Speichern", "Enregistrer", "Guardar"}},
     {T_CHANGE_TEAMS, {"Teams ändern", "Changer les équipes", "Cambiar equipos"}},
     {T_NOT_VOTED, {"Auswahl läuft...", "Choix en cours...", "Eligiendo..."}},
+    {T_FOR_INTERNET, {"Spieler im Internet", "Joueurs sur Internet", "Jugadores en internet"}},
+    {T_FOR_THIS_NETWORK, {"Spieler in diesem Netzwerk", "Joueurs sur ce réseau", "Jugadores en esta red"}},
+    {T_PUBLIC_LOOKING, {"Deine Internetadresse wird ermittelt...", "Recherche de votre adresse Internet...", "Buscando tu dirección de internet..."}},
+    {T_PUBLIC_OPEN, {"Teile diese Adresse mit Spielern, egal wo sie sind.", "Partagez cette adresse avec des joueurs où qu'ils soient.", "Comparte esta dirección con jugadores de cualquier lugar."}},
+    {T_PUBLIC_FOUND, {"Spieler von außerhalb kommen vielleicht nicht rein. Falls nicht, nutze Tailscale oder ZeroTier.", "Les joueurs extérieurs ne pourront peut-être pas rejoindre. Sinon, utilisez Tailscale ou ZeroTier.", "Puede que los jugadores de fuera no puedan unirse. Si no pueden, usa Tailscale o ZeroTier."}},
+    {T_PUBLIC_SHARED, {"Über deine Verbindung können Spieler von außerhalb nicht beitreten. Nutze stattdessen Tailscale oder ZeroTier.", "Votre connexion ne permet pas aux joueurs extérieurs de rejoindre. Utilisez plutôt Tailscale ou ZeroTier.", "Tu conexión no permite que se unan jugadores de fuera. Usa Tailscale o ZeroTier."}},
+    {T_PUBLIC_FAILED, {"Deine Internetadresse wurde nicht gefunden. Spieler von außerhalb können über Tailscale oder ZeroTier beitreten.", "Impossible de trouver votre adresse Internet. Les joueurs extérieurs peuvent rejoindre via Tailscale ou ZeroTier.", "No se encontró tu dirección de internet. Los jugadores de fuera pueden unirse con Tailscale o ZeroTier."}},
+    {T_SHARE_PRIVATELY, {"Teile sie nur mit Leuten, mit denen du spielst.", "Ne la partagez qu'avec les personnes avec qui vous jouez.", "Compártela solo con las personas con las que juegas."}},
+    {T_ERR_HOME_ADDRESS, {"Diese Adresse funktioniert nur im Netzwerk des Hosts. Frag den Host nach der Internetadresse.", "Cette adresse ne fonctionne que sur le réseau de l'hôte. Demandez-lui son adresse Internet.", "Esa dirección solo funciona en la red del anfitrión. Pídele su dirección de internet."}},
 };

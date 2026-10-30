@@ -221,6 +221,8 @@ void TestSettings()
     std::fclose(f);
     setenv("STRIKERS_ONLINE_NICKNAME", "  Apitest ", 1);
     setenv("STRIKERS_ONLINE_DELAY", "3", 1);
+    // A test never asks the internet or the router for the room's address.
+    setenv("STRIKERS_ONLINE_PUBLIC", "0", 1);
     PortOnlineInit();
     const OnlineState* s = PortOnlineGetState();
     CHECK(std::strcmp(s->settings.nickname, "Apitest") == 0);
@@ -384,7 +386,7 @@ int main()
     }
 
     UdpEnv env;
-    SessionConfig config = { (uint16_t)(port + 7), true };
+    SessionConfig config = { (uint16_t)(port + 7), true, false };
     {
         Session r(&env, id, config);
         SessionSide rs(&r);

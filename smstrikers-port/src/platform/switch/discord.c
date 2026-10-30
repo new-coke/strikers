@@ -4,9 +4,10 @@
 
 void PortDiscordInit(void) {}
 
-void PortDiscordUpdate(int inMenuState)
+void PortDiscordUpdate(int inMenuState, int menu)
 {
     (void)inMenuState;
+    (void)menu;
 }
 
 void PortDiscordSetMatch(const PortDiscordMatch* match)

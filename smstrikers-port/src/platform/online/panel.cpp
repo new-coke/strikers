@@ -10,6 +10,7 @@
 #include "panel_edit.h"
 #include "panel_font.h"
 #include "panel_text.h"
+#include "pipe.h"
 #include "strikers_version.h"
 
 #include <cmath>
@@ -1918,30 +1919,91 @@ void draw_setup(const OnlineState& st)
         s_roomScreen = SCR_ROOM;
 }
 
+void big_address(const char* address)
+{
+    ImFont* big = s_fonts->big;
+    const ImVec2 ts = text_size(big, address);
+    const float w = ImGui::GetContentRegionAvail().x;
+    const float scale = ts.x > w ? w / ts.x : 1.0f;
+    const ImVec2 at = ImGui::GetCursorScreenPos();
+    ImGui::GetWindowDrawList()->AddText(big, big->FontSize * big->Scale * scale,
+                                        ImVec2(at.x + ImMax(0.0f, (w - ts.x) * 0.5f), at.y),
+                                        col(kGold), address);
+    ImGui::Dummy(ImVec2(w, ts.y * scale + px() * 0.7f));
+}
+
+void copy_row(const char* id, const char* address)
+{
+#if defined(PANEL_HAS_CLIPBOARD)
+    static char copied[ONLINE_ADDRESS_MAX];
+    static double copiedUntil = 0;
+    const bool recent = ImGui::GetTime() < copiedUntil && std::strcmp(copied, address) == 0;
+    if (row(id, text(recent ? T_COPIED : T_COPY_ADDRESS)))
+    {
+        SDL_SetClipboardText(address);
+        std::snprintf(copied, sizeof copied, "%s", address);
+        copiedUntil = ImGui::GetTime() + 2.0;
+    }
+#else
+    (void)id;
+    (void)address;
+#endif
+}
+
+void public_status(int state)
+{
+    const char* s = state == ONLINE_PUBLIC_LOOKING  ? text(T_PUBLIC_LOOKING)
+                    : state == ONLINE_PUBLIC_OPEN   ? text(T_PUBLIC_OPEN)
+                    : state == ONLINE_PUBLIC_FOUND  ? text(T_PUBLIC_FOUND)
+                    : state == ONLINE_PUBLIC_SHARED ? text(T_PUBLIC_SHARED)
+                                                    : text(T_PUBLIC_FAILED);
+    ImGui::PushStyleColor(ImGuiCol_Text, state == ONLINE_PUBLIC_LOOKING ? kMuted
+                                         : state == ONLINE_PUBLIC_OPEN  ? kGreen
+                                                                        : kOrange);
+    ImGui::TextWrapped("%s", s);
+    ImGui::PopStyleColor();
+}
+
 void draw_address(const OnlineState& st)
 {
     static bool showNetworks = false;
-    begin_screen("##online.address", text(T_INVITE), nullptr, false, showNetworks ? 30.0f : 23.0f);
-    const char* where = room_where(st);
-    ImFont* big = s_fonts->big;
-    const ImVec2 ts = text_size(big, where);
-    const float w = ImGui::GetContentRegionAvail().x;
-    ImGui::Dummy(ImVec2(0.0f, px() * 0.8f));
-    const ImVec2 at = ImGui::GetCursorScreenPos();
-    text_at(ImGui::GetWindowDrawList(), big, ImVec2(at.x + ImMax(0.0f, (w - ts.x) * 0.5f), at.y),
-            kGold, where);
-    ImGui::Dummy(ImVec2(w, ts.y + px() * 0.7f));
-#if defined(PANEL_HAS_CLIPBOARD)
-    static double copiedUntil = 0;
-    if (row("copy", text(ImGui::GetTime() < copiedUntil ? T_COPIED : T_COPY_ADDRESS)))
+    const bool host = st.self >= 0 && st.self == st.host;
+    const int pub = host ? st.publicState : ONLINE_PUBLIC_NONE;
+    const bool havePublic = pub != ONLINE_PUBLIC_NONE && st.publicAddress[0] != '\0';
+    const float rows =
+        pub == ONLINE_PUBLIC_NONE ? (showNetworks ? 30.0f : 23.0f) : (showNetworks ? 37.0f : 30.0f);
+    begin_screen("##online.address", text(T_INVITE), nullptr, pub == ONLINE_PUBLIC_LOOKING, rows);
+    const char* lan = room_where(st);
+    if (pub == ONLINE_PUBLIC_NONE)
     {
-        SDL_SetClipboardText(where);
-        copiedUntil = ImGui::GetTime() + 2.0;
+        ImGui::Dummy(ImVec2(0.0f, px() * 0.8f));
+        big_address(lan);
+        copy_row("copy", lan);
+        if (host)
+            muted_text(text(T_ADDRESS_BIG_HINT));
     }
-#endif
-    if (st.self >= 0 && st.self == st.host)
-        muted_text(text(T_ADDRESS_BIG_HINT));
-    if (st.self >= 0 && st.self == st.host && st.roomOtherAddressCount > 0)
+    else if (havePublic)
+    {
+        section(text(T_FOR_INTERNET));
+        big_address(st.publicAddress);
+        copy_row("copy", st.publicAddress);
+        public_status(pub);
+        muted_text(text(T_SHARE_PRIVATELY));
+        section(text(T_FOR_THIS_NETWORK));
+        ImGui::PushFont(s_fonts->head);
+        ImGui::TextUnformatted(lan);
+        ImGui::PopFont();
+        copy_row("copy.lan", lan);
+    }
+    else
+    {
+        section(text(T_FOR_THIS_NETWORK));
+        big_address(lan);
+        copy_row("copy", lan);
+        section(text(T_FOR_INTERNET));
+        public_status(pub);
+    }
+    if (host && st.roomOtherAddressCount > 0)
     {
         ImGui::Dummy(ImVec2(0.0f, px() * 0.5f));
         if (row("networks", text(T_OTHER_NETWORKS), nullptr, true, showNetworks ? "-" : "+"))
@@ -2169,16 +2231,14 @@ void draw_post(const OnlineState& st)
                     hu.vote == ONLINE_VOTE_NONE ? kMuted : kGold, vote_name(hu.vote));
         }
     }
-    const Hint hints[] = { { PAD_BUTTON_A, T_HINT_SELECT }, { PAD_BUTTON_B, T_CLOSE } };
-    end_screen(hints, 2);
+    const Hint hints[] = { { PAD_BUTTON_A, T_HINT_SELECT } };
+    end_screen(hints, 1);
     if (rematch)
         PortOnlineVote(-1, ONLINE_VOTE_REMATCH);
     else if (room)
         PortOnlineVote(-1, ONLINE_VOTE_BACK_TO_ROOM);
     else if (leave)
         s_leaveAsked = true;
-    else if (back_pressed())
-        set_open(false);
 }
 
 void draw_opponents(const OnlineState&)
@@ -2193,6 +2253,22 @@ void draw_opponents(const OnlineState&)
         PortOnlineAfterOpponentsLeft(1);
     else if (end)
         PortOnlineAfterOpponentsLeft(0);
+}
+
+// A private IPv4 address typed by hand; a room Nearby found is on this network anyway.
+bool typed_home_address(const OnlineState& st)
+{
+    for (int i = 0; i < st.nearbyCount && i < ONLINE_MAX_NEARBY; i++)
+        if (std::strcmp(st.nearby[i].address, s_address.text) == 0)
+            return false;
+    char host[ONLINE_ADDRESS_MAX];
+    uint16_t port = 0;
+    online::NetAddr a;
+    if (!online::AddrSplit(s_address.text, host, sizeof host, &port, ONLINE_DEFAULT_PORT) ||
+        !online::AddrParseNumeric(host, port, &a) || a.family != 4)
+        return false;
+    return a.ip[0] == 10 || (a.ip[0] == 172 && (a.ip[1] & 0xF0) == 16) ||
+           (a.ip[0] == 192 && a.ip[1] == 168);
 }
 
 void draw_error(const OnlineState& st)
@@ -2216,6 +2292,8 @@ void draw_error(const OnlineState& st)
     ImGui::PopFont();
     ImGui::SetCursorScreenPos(
         ImVec2(a.x, ImMax(ImGui::GetCursorScreenPos().y, a.y + s) + p * 1.5f));
+    if (st.error == ONLINE_ERR_UNREACHABLE && typed_home_address(st))
+        muted_text(text(T_ERR_HOME_ADDRESS));
     const bool ok = row("ok", text(T_OK));
     const Hint hints[] = { { PAD_BUTTON_A, T_OK } };
     end_screen(hints, 1);
@@ -2682,6 +2760,8 @@ extern "C" void PortOnlinePanelDraw(void)
             set_open(false);
     }
     s_startPressed = false;
+    // The full-time vote keeps the panel open, so no vote is cast from the game's menu behind it.
+    const bool voting = st.phase == ONLINE_PHASE_POST_MATCH;
     if (s_toggleRequest)
     {
         s_toggleRequest = false;
@@ -2689,8 +2769,15 @@ extern "C" void PortOnlinePanelDraw(void)
             set_open(true);
         else if (!s_focused)
             s_focusRequest = true;
-        else
+        else if (!voting)
             set_open(false);
+    }
+    if (voting)
+    {
+        if (!s_open)
+            set_open(true);
+        else if (!s_focused)
+            s_focusRequest = true;
     }
 
     ImGuiStyle saved = ImGui::GetStyle();

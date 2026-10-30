@@ -901,6 +901,12 @@ namespace
 {
 int s_ended;   // the session has heard this match's last tick
 
+// This match's rollbacks, logged with its last tick.
+unsigned int s_rollbacks;
+unsigned int s_rollbackTicks;
+unsigned int s_rollbackDeepest;
+unsigned long long s_rollbackSlowestNs;
+
 // The components a desync report compares; it names the first that differs.
 const char* const kComponents[] = { "ball",  "c0",   "c1",  "c2",  "c3",   "c4",
                                     "c5",    "c6",   "c7",  "c8",  "c9",   "clk",
@@ -921,6 +927,8 @@ void online_end(unsigned int last, uint64_t hash)
     s_ended = 1;
     PortOnlineMatchEnded();
     OSReport("[online] last tick t=%u, hash %016llx\n", last, (unsigned long long)hash);
+    OSReport("[online] rollbacks %u, %u ticks replayed, deepest %u, slowest %.2f ms\n", s_rollbacks,
+             s_rollbackTicks, s_rollbackDeepest, (double)s_rollbackSlowestNs / 1e6);
 }
 
 bool online_may_run(unsigned int k)
@@ -1065,9 +1073,15 @@ void online_rollback(void)
     if (k < now)
         PortOnlineRewind(k);
     events_check("after replay");
+    const unsigned long long replayNs = port_monotonic_ns() - replayStart;
+    s_rollbacks++;
+    s_rollbackTicks += k - to;
+    if (now - to > s_rollbackDeepest)
+        s_rollbackDeepest = now - to;
+    if (replayNs > s_rollbackSlowestNs)
+        s_rollbackSlowestNs = replayNs;
     if (log)
-        OSReport("[rollback] replayed %u ticks in %.3f ms\n", k - to,
-                 (double)(port_monotonic_ns() - replayStart) / 1e6);
+        OSReport("[rollback] replayed %u ticks in %.3f ms\n", k - to, (double)replayNs / 1e6);
 }
 
 // What Choose Sides does from the pause menu, at a tick every machine runs.
@@ -1195,6 +1209,10 @@ extern "C" void PortSimBeginMatch(void)
     std::memset(s_lastTickButtons, 0, sizeof s_lastTickButtons);
     s_begun = 0;
     s_ended = 0;
+    s_rollbacks = 0;
+    s_rollbackTicks = 0;
+    s_rollbackDeepest = 0;
+    s_rollbackSlowestNs = 0;
     s_reseeded = false;
     // A rollback never reaches into the previous match.
     PortRollbackReset();

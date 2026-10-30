@@ -12,6 +12,9 @@
 #include "strikers_version.h"
 
 #include "session.h"
+#if defined(STRIKERS_UPNP)
+#include "portmap.h"
+#endif
 
 #include <atomic>
 #include <chrono>
@@ -172,6 +175,12 @@ class GameEnv : public online::SessionEnv
         return k;
     }
 
+#if defined(STRIKERS_UPNP)
+    void StartPortMap(uint16_t port) override { m_portMap.Start(port); }
+    int PollPortMap(char* wan, size_t size) override { return m_portMap.Poll(wan, size); }
+    void StopPortMap() override { m_portMap.Stop(); }
+#endif
+
     bool Random(void* buf, size_t size) override { return online::NetRandom(buf, size); }
 
     bool ReportPath(char* out, size_t size) override
@@ -216,6 +225,9 @@ class GameEnv : public online::SessionEnv
   private:
     bool m_net;
     std::shared_ptr<ResolveJob> m_job;
+#if defined(STRIKERS_UPNP)
+    online::PortMap m_portMap;
+#endif
 };
 
 int binary_family(void)
@@ -461,6 +473,9 @@ void ensure_locked(void)
 #else
     config.canHost = true;
 #endif
+    const char* findPublic = std::getenv("STRIKERS_ONLINE_PUBLIC");
+    config.findPublic =
+        config.canHost && (findPublic == NULL || std::strtol(findPublic, NULL, 10) != 0);
     s_session = new online::Session(s_env, make_identity(), config);
     s_session->SetSettings(load_settings());
     s_session->Update(1.0f);

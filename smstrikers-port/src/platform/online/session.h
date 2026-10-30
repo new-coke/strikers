@@ -38,6 +38,15 @@ enum
     PIPE_SEARCH       // an ephemeral IPv4 socket that may broadcast
 };
 
+enum
+{
+    PORTMAP_NONE = -1,   // this platform has no port mapping
+    PORTMAP_PENDING,
+    PORTMAP_OPEN,     // the router forwards the port
+    PORTMAP_SHARED,   // the router's own outside address is private or a carrier's
+    PORTMAP_FAILED
+};
+
 class SessionEnv
 {
   public:
@@ -58,6 +67,15 @@ class SessionEnv
         (void)max;
         return 0;
     }
+    // A router forwarding UDP `port` here, off the calling thread; Poll gives its outside IPv4.
+    virtual void StartPortMap(uint16_t port) { (void)port; }
+    virtual int PollPortMap(char* wan, size_t size)
+    {
+        (void)wan;
+        (void)size;
+        return PORTMAP_NONE;
+    }
+    virtual void StopPortMap() {}
     // Cryptographic randomness from the system; false when the source failed.
     virtual bool Random(void* buf, size_t size) = 0;
     // A fresh desync report's path, its folder created; false when there is nowhere to write.
@@ -68,7 +86,8 @@ class SessionEnv
 struct SessionConfig
 {
     uint16_t discoveryPort;
-    bool canHost;   // false where the platform never waits for connections
+    bool canHost;      // false where the platform never waits for connections
+    bool findPublic;   // a host asks a STUN server and the router for its outside address
 };
 
 // A device port's sample, as the session keeps it.
@@ -215,6 +234,7 @@ class Session
         uint32_t peerHas[ONLINE_MAX_MACHINES];
         int malformed;
         int componentsLeft;
+        uint64_t matchGapUs;   // this match's longest silence from the peer
         bool sendNow;
         int byeReason;   // -1 until a BYE came
     };
@@ -321,6 +341,10 @@ class Session
     uint32_t WorstRttUs() const;
     void LinkGone(int machine, int reason, bool bye);
     void FillState(uint64_t now);
+    void PublicTimers(uint64_t now);
+    void NextStunServer(uint64_t now);
+    void SettlePublic();
+    void StopPublic();
     void BuildError(int error, const char* detail);
 
     Link* NewLink(uint64_t now);
@@ -439,6 +463,25 @@ class Session
         uint64_t firstHelloUs;
         char text[ONLINE_ADDRESS_MAX];
     } m_join;
+
+    // A host's search for its outside address.
+    struct
+    {
+        bool active;
+        bool mapStarted;
+        int map;   // PORTMAP_*
+        char mapWan[16];
+        int stunServer;   // into the server list; past its end once STUN is done
+        bool stunResolving;
+        NetAddr stunAddr;   // family 0 until resolved
+        uint8_t txid[12];
+        int stunSends;
+        uint64_t stunStartUs;
+        uint64_t stunSentUs;
+        NetAddr mapped;   // family 0 until STUN answers
+        int state;        // ONLINE_PUBLIC_*
+        char address[ONLINE_ADDRESS_MAX];
+    } m_public;
 
     uint32_t m_nextSeed;   // a seed SetDesc carried, for the next Start only
 

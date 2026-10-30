@@ -2254,5 +2254,50 @@ Le jeu utilise désormais ce dossier ; l&apos;image peut donc être déplacée o
         <extracomment>T_NOT_VOTED; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
         <translation>Choix en cours...</translation>
     </message>
+    <message>
+        <source>Players on the internet</source>
+        <extracomment>T_FOR_INTERNET; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Joueurs sur Internet</translation>
+    </message>
+    <message>
+        <source>Players on this network</source>
+        <extracomment>T_FOR_THIS_NETWORK; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Joueurs sur ce réseau</translation>
+    </message>
+    <message>
+        <source>Finding your internet address...</source>
+        <extracomment>T_PUBLIC_LOOKING; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Recherche de votre adresse Internet...</translation>
+    </message>
+    <message>
+        <source>Share this address with players anywhere.</source>
+        <extracomment>T_PUBLIC_OPEN; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Partagez cette adresse avec des joueurs où qu'ils soient.</translation>
+    </message>
+    <message>
+        <source>Players elsewhere may not be able to join. If they can't, use Tailscale or ZeroTier.</source>
+        <extracomment>T_PUBLIC_FOUND; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Les joueurs extérieurs ne pourront peut-être pas rejoindre. Sinon, utilisez Tailscale ou ZeroTier.</translation>
+    </message>
+    <message>
+        <source>Your connection doesn't let players elsewhere join. Use Tailscale or ZeroTier instead.</source>
+        <extracomment>T_PUBLIC_SHARED; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Votre connexion ne permet pas aux joueurs extérieurs de rejoindre. Utilisez plutôt Tailscale ou ZeroTier.</translation>
+    </message>
+    <message>
+        <source>Couldn't find your internet address. Players elsewhere can join over Tailscale or ZeroTier.</source>
+        <extracomment>T_PUBLIC_FAILED; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Impossible de trouver votre adresse Internet. Les joueurs extérieurs peuvent rejoindre via Tailscale ou ZeroTier.</translation>
+    </message>
+    <message>
+        <source>Share it only with people you're playing with.</source>
+        <extracomment>T_SHARE_PRIVATELY; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Ne la partagez qu'avec les personnes avec qui vous jouez.</translation>
+    </message>
+    <message>
+        <source>That address only works on the host's own network. Ask them for their internet address.</source>
+        <extracomment>T_ERR_HOME_ADDRESS; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Cette adresse ne fonctionne que sur le réseau de l'hôte. Demandez-lui son adresse Internet.</translation>
+    </message>
 </context>
 </TS>

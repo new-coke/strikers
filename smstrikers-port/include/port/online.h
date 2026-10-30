@@ -134,6 +134,17 @@ enum
     ONLINE_ROOM_DIRECT
 };
 
+// How far a host has got finding the address players outside its network join.
+enum
+{
+    ONLINE_PUBLIC_NONE = 0,   // not hosting, or this platform never looks
+    ONLINE_PUBLIC_LOOKING,    // asking the router and a STUN server
+    ONLINE_PUBLIC_OPEN,       // the router forwarded the port: publicAddress takes joins
+    ONLINE_PUBLIC_FOUND,      // STUN answered and the router did not open the port
+    ONLINE_PUBLIC_SHARED,     // the internet sees an address other homes share
+    ONLINE_PUBLIC_FAILED      // neither answered
+};
+
 enum
 {
     ONLINE_PLATFORM_UNKNOWN = 0,
@@ -297,6 +308,10 @@ typedef struct OnlineState
     // A host's other addresses with the room's port, such as a VPN's.
     char roomOtherAddresses[ONLINE_MAX_OTHER_ADDRESSES][24];
     int roomOtherAddressCount;
+    // A host's internet address and room port; empty until found.
+    int publicState;        // ONLINE_PUBLIC_*
+    char publicAddress[ONLINE_ADDRESS_MAX];
+    uint32_t roomId;        // non-zero in a room; the same on every machine in it
 
     int self;               // this machine's index, or -1
     int host;               // the host's index, or -1

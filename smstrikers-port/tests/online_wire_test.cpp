@@ -2,6 +2,7 @@
 
 #include "../src/platform/online/pipe.h"
 #include "../src/platform/online/seal.h"
+#include "../src/platform/online/stun.h"
 #include "../src/platform/online/wire.h"
 
 #include <cstdio>
@@ -802,6 +803,81 @@ void TestRobustness()
 }
 }   // namespace
 
+// RFC 5769's IPv4 Binding response: 192.0.2.1:32853, after SOFTWARE and before MESSAGE-INTEGRITY.
+const uint8_t kStunVector[] = {
+    0x01, 0x01, 0x00, 0x3c, 0x21, 0x12, 0xa4, 0x42, 0xb7, 0xe7, 0xa7, 0x01, 0xbc, 0x34, 0xd6, 0x86,
+    0xfa, 0x87, 0xdf, 0xae, 0x80, 0x22, 0x00, 0x0b, 0x74, 0x65, 0x73, 0x74, 0x20, 0x76, 0x65, 0x63,
+    0x74, 0x6f, 0x72, 0x20, 0x00, 0x20, 0x00, 0x08, 0x00, 0x01, 0xa1, 0x47, 0xe1, 0x12, 0xa6, 0x43,
+    0x00, 0x08, 0x00, 0x14, 0x2b, 0x91, 0xf5, 0x99, 0xfd, 0x9e, 0x90, 0xc3, 0x8c, 0x74, 0x89, 0xf9,
+    0x2a, 0xf9, 0xba, 0x53, 0xf0, 0x6b, 0xe7, 0xd7, 0x80, 0x28, 0x00, 0x04, 0xc0, 0x7d, 0x4c, 0x96
+};
+
+void TestStun()
+{
+    const uint8_t* txid = kStunVector + 8;
+    std::vector<uint8_t> v(kStunVector, kStunVector + sizeof kStunVector);
+    NetAddr a;
+    CHECK(DecodeStunResponse(v.data(), v.size(), txid, &a));
+    CHECK(a.family == 4 && a.ip[0] == 192 && a.ip[1] == 0 && a.ip[2] == 2 && a.ip[3] == 1 &&
+          a.port == 32853);
+
+    uint8_t req[kStunRequestSize];
+    CHECK(EncodeStunRequest(txid, req) == kStunRequestSize);
+    CHECK(req[0] == 0x00 && req[1] == 0x01 && req[2] == 0 && req[3] == 0 &&
+          std::memcmp(req + 4, kStunVector + 4, 16) == 0);
+
+    uint8_t otherTxid[kStunTxidSize];
+    std::memcpy(otherTxid, txid, sizeof otherTxid);
+    otherTxid[11] ^= 1;
+    CHECK(!DecodeStunResponse(v.data(), v.size(), otherTxid, &a));
+
+    auto mutated = [&](size_t at, uint8_t value) {
+        std::vector<uint8_t> m = v;
+        m[at] = value;
+        return DecodeStunResponse(m.data(), m.size(), txid, &a);
+    };
+    CHECK(!mutated(4, 0x22));    // cookie
+    CHECK(!mutated(0, 0x41));    // the top two bits
+    CHECK(!mutated(1, 0x11));    // an error response
+    CHECK(!mutated(3, 0x40));    // message length past the datagram
+    CHECK(!mutated(3, 0x3d));    // message length not a multiple of 4
+    CHECK(!mutated(23, 0x40));   // SOFTWARE's length past the message
+    CHECK(!mutated(39, 0x0c));   // XOR-MAPPED-ADDRESS overrunning into the next attribute
+    CHECK(!mutated(41, 0x02));   // IPv6, which this does not read
+    CHECK(!DecodeStunResponse(v.data(), 20, txid, &a));
+    CHECK(!DecodeStunResponse(v.data(), 19, txid, &a));
+    for (size_t n = 21; n < v.size(); n++)
+        CHECK(!DecodeStunResponse(v.data(), n, txid, &a));
+
+    // An attribute header cut short by the end of the message.
+    std::vector<uint8_t> cut(v.begin(), v.begin() + 20);
+    cut[3] = 4;
+    cut.insert(cut.end(), { 0x00, 0x20, 0x00 });
+    cut.push_back(0x08);
+    CHECK(!DecodeStunResponse(cut.data(), cut.size(), txid, &a));
+
+    // MAPPED-ADDRESS alone, as an RFC 3489 server answers.
+    std::vector<uint8_t> plain(v.begin(), v.begin() + 20);
+    plain[3] = 12;
+    const uint8_t mapped[] = { 0x00, 0x01, 0x00, 0x08, 0x00, 0x01, 0xa1, 0x02, 203, 0, 113, 9 };
+    plain.insert(plain.end(), mapped, mapped + sizeof mapped);
+    CHECK(DecodeStunResponse(plain.data(), plain.size(), txid, &a));
+    CHECK(a.ip[0] == 203 && a.ip[3] == 9 && a.port == 0xa102);
+    // XOR-MAPPED-ADDRESS wins when both come.
+    plain[3] = 24;
+    plain.insert(plain.end(), kStunVector + 36, kStunVector + 48);
+    CHECK(DecodeStunResponse(plain.data(), plain.size(), txid, &a));
+    CHECK(a.ip[0] == 192 && a.port == 32853);
+
+    // The session's plaintext classes and a STUN reply never pass for each other.
+    CHECK(PlainClass(v.data(), v.size(), NULL) == 0 && v[0] != DG_SEALED);
+    uint8_t hello[kHelloSize];
+    Hello h;
+    std::memset(&h, 0, sizeof h);
+    EncodeHello(h, hello);
+    CHECK(!DecodeStunResponse(hello, sizeof hello, hello + 8, &a));
+}
+
 int main()
 {
     TestMessages();
@@ -813,6 +889,7 @@ int main()
     TestSeal();
     TestReplay();
     TestAddresses();
+    TestStun();
     TestRobustness();
     if (g_failures != 0)
     {

@@ -187,6 +187,7 @@
 [discord]
 # Your Discord status while the game runs: in the menus, or a match's mode, cup round, stadium,
 # captains, score and time left. Off by default; 1 turns it on while Discord's desktop app runs.
+# A room you host gets a Join button once the router opens its port; friends need the game open.
 # discord = 1
 
 [online]
@@ -202,6 +203,11 @@
 
 # The UDP port a room you host listens on, 1025 to 49151. Guests joining by address need it open.
 # online_port = 41210
+
+# 1 finds a hosted room's internet address: the game asks a public STUN server (Cloudflare's, then
+# Google's) what address it sees, and asks your router over UPnP to forward online_port. 0 never
+# contacts either.
+# online_public = 1
 
 [debug]
 # The debug overlay and menu. `menu` opens the menu straight away, `1` draws only the compact

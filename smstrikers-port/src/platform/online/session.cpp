@@ -49,6 +49,8 @@ Session::Session(SessionEnv* env, const Identity& identity, const SessionConfig&
     m_timeScale = 1.0f;
     m_error = ONLINE_ERR_NONE;
     m_lastError[0] = '\0';
+    std::memset(&m_public, 0, sizeof m_public);
+    m_public.map = PORTMAP_NONE;
     Reset(false);
     FillState(m_env->NowUs());
 }
@@ -95,6 +97,7 @@ void Session::Reset(bool keepNearby)
     else
         ClosePipe(m_game);
     ClosePipe(m_discovery);
+    StopPublic();
     if (!keepNearby)
     {
         ClosePipe(m_search);
@@ -565,6 +568,17 @@ int Session::Host(uint16_t port, const char* nickname)
         n += std::snprintf(line + n, sizeof line - (size_t)n, "%s %s", i == 0 ? ", also" : "",
                            m_roomOthers[i]);
     m_env->Log(line);
+    if (m_config.findPublic)
+    {
+        m_public.active = true;
+        m_public.state = ONLINE_PUBLIC_LOOKING;
+        m_public.stunServer = -1;
+        m_public.mapStarted = true;
+        m_env->StartPortMap(m_roomPort);
+        m_public.map = m_env->PollPortMap(m_public.mapWan, sizeof m_public.mapWan);
+        NextStunServer(now);
+        PublicTimers(now);
+    }
     FillState(now);
     return 1;
 }
@@ -1687,6 +1701,9 @@ void Session::FillState(uint64_t now)
     std::memcpy(s.roomOtherAddresses, m_roomOthers, sizeof s.roomOtherAddresses);
     s.roomOtherAddressCount = m_roomOtherCount;
     s.roomPort = m_roomPort;
+    s.publicState = m_public.state;
+    std::memcpy(s.publicAddress, m_public.address, sizeof s.publicAddress);
+    s.roomId = m_roomId;
     s.self = m_self;
     s.host = m_phase == ONLINE_PHASE_IDLE || m_phase == ONLINE_PHASE_ERROR ||
                      m_phase == ONLINE_PHASE_JOINING

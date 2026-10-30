@@ -276,9 +276,22 @@ class SimEnv : public SessionEnv
 
     void StartResolve(const char* host, uint16_t port) override
     {
-        m_resolved = std::string(host) == "host-a" ? 1 : -1;
-        m_resolvedAddr = SimAddr(0x0A000001, port);
+        auto it = names.find(host);
+        m_resolved = std::string(host) == "host-a" || it != names.end() ? 1 : -1;
+        m_resolvedAddr = SimAddr(it != names.end() ? it->second : 0x0A000001, port);
     }
+
+    void StartPortMap(uint16_t port) override
+    {
+        portMapPort = port;
+        portMapStops = 0;
+    }
+    int PollPortMap(char* wan, size_t size) override
+    {
+        std::snprintf(wan, size, "%s", portMapWan.c_str());
+        return portMap;
+    }
+    void StopPortMap() override { portMapStops++; }
 
     int PollResolve(NetAddr* out) override
     {
@@ -349,6 +362,12 @@ class SimEnv : public SessionEnv
     uint16_t m_nextPort;
     int m_resolved = -1;
     NetAddr m_resolvedAddr;
+    // Names StartResolve knows besides host-a, and the router's answer to a port mapping.
+    std::map<std::string, uint32_t> names;
+    int portMap = PORTMAP_NONE;
+    std::string portMapWan;
+    uint16_t portMapPort = 0;
+    int portMapStops = 0;
 
   public:
     bool verbose;

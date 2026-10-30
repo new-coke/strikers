@@ -33,6 +33,7 @@ set(ONLINE_WIRE_SOURCES
     ../src/platform/online/wire.cpp
     ../src/platform/online/seal.cpp
     ../src/platform/online/addr.cpp
+    ../src/platform/online/stun.cpp
     ${MONOCYPHER_SRC}/monocypher.c)
 set(ONLINE_SESSION_SOURCES
     ${ONLINE_WIRE_SOURCES}

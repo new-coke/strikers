@@ -9,8 +9,26 @@ extern "C" {
 // Discord rich presence; every call is a no-op while it is off.
 void PortDiscordInit(void);
 
+// The front end screen a player's Discord status names.
+enum PortDiscordMenu
+{
+    PORT_DISCORD_MENU_OTHER = 0,
+    PORT_DISCORD_MENU_TITLE,
+    PORT_DISCORD_MENU_MAIN,
+    PORT_DISCORD_MENU_TEAMS,
+    PORT_DISCORD_MENU_STADIUM,
+    PORT_DISCORD_MENU_CUP,
+    PORT_DISCORD_MENU_SUPER_CUP,
+    PORT_DISCORD_MENU_STANDINGS,
+    PORT_DISCORD_MENU_CUSTOM_BATTLE,
+    PORT_DISCORD_MENU_TROPHY_ROOM,
+    PORT_DISCORD_MENU_OPTIONS,
+    PORT_DISCORD_MENU_CREDITS,
+    PORT_DISCORD_MENU_COUNT
+};
+
 // Once a frame; `inMenuState` is the pause menu, which stops cGame::Update but not the match.
-void PortDiscordUpdate(int inMenuState);
+void PortDiscordUpdate(int inMenuState, int menu);
 
 typedef struct PortDiscordMatch
 {
@@ -25,6 +43,7 @@ typedef struct PortDiscordMatch
     float clock;       // counts up to `duration`
     float duration;
     int suddenDeath;
+    int finished;      // past the final whistle
 } PortDiscordMatch;
 
 // Every cGame::Update; sends are held to one per 15 seconds.

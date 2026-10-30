@@ -1235,6 +1235,7 @@ void cGame::Update(float deltaTime)
         m.clock = m_pGameClock->m_fTimer;
         m.duration = m_fGameDuration;
         m.suddenDeath = mInSuddenDeath ? 1 : 0;
+        m.finished = m_eGameState == GS_END_GAME ? 1 : 0;
         PortDiscordSetMatch(&m);
     }
 

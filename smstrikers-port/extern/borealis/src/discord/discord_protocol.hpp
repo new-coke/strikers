@@ -37,6 +37,8 @@ std::vector<uint8_t> encode_frame(const Frame& frame);
 DecodeStatus decode_frame(std::vector<uint8_t>& pending, Frame& frame);
 Frame make_handshake_frame(std::string_view applicationId);
 Frame make_set_activity_frame(std::string nonce, int pid, std::optional<Presence> presence);
+// smstrikers-port: asks for DISPATCH frames of `event`.
+Frame make_subscribe_frame(std::string nonce, std::string_view event);
 
 // Suppresses unchanged presence updates.
 class PresenceState {

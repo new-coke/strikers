@@ -1,6 +1,7 @@
 // Links between machines: handshake, sealed datagrams, reliable messages, discovery, the poll.
 
 #include "session.h"
+#include "stun.h"
 
 #include <cstdio>
 #include <cstring>
@@ -25,6 +26,18 @@ const int kMaxPendingHandshakes = 8;
 const int kMaxHellosPerSecond = 20;
 const int kMaxAnnouncesPerSecond = 20;
 const int kMalformedLimit = 50;
+const uint64_t kStunResolveGiveUpUs = 5000000;
+const uint64_t kStunEveryUs = 500000;
+const int kStunSends = 6;
+
+struct StunServer
+{
+    const char* host;
+    uint16_t port;
+};
+const StunServer kStunServers[] = { { "stun.cloudflare.com", 3478 },
+                                    { "stun.l.google.com", 19302 } };
+const int kStunServerCount = (int)(sizeof kStunServers / sizeof kStunServers[0]);
 
 // Order of relSeq within the reliable window, modulo 2^16.
 bool seq_before(uint16_t a, uint16_t b) { return (int16_t)(uint16_t)(a - b) < 0; }
@@ -88,6 +101,7 @@ Session::Link* Session::NewLink(uint64_t now)
         l->peerHas[m] = 0;
     l->malformed = 0;
     l->componentsLeft = 0;
+    l->matchGapUs = 0;
     l->sendNow = true;
     l->byeReason = -1;
     return l;
@@ -188,6 +202,22 @@ void Session::Receive(uint64_t now)
 void Session::OnDatagram(NetPipe* pipe, const NetAddr& from, const uint8_t* data, size_t size,
                          uint64_t now)
 {
+    // A STUN reply comes only from the server's address and is never a session datagram.
+    if (pipe == m_game && m_public.stunAddr.family != 0 && AddrEqual(from, m_public.stunAddr))
+    {
+        NetAddr mapped;
+        if (m_public.mapped.family == 0 && DecodeStunResponse(data, size, m_public.txid, &mapped))
+        {
+            m_public.mapped = mapped;
+            // Shown before the router answers; a shared or failed result clears it.
+            if (!AddrIsLanSource(mapped))
+                std::snprintf(m_public.address, sizeof m_public.address, "%u.%u.%u.%u:%u",
+                              mapped.ip[0], mapped.ip[1], mapped.ip[2], mapped.ip[3],
+                              (unsigned)m_roomPort);
+            SettlePublic();
+        }
+        return;
+    }
     if (data[0] == DG_SEALED)
     {
         if (pipe == m_game)
@@ -495,6 +525,8 @@ void Session::OnSealed(const NetAddr& from, const uint8_t* data, size_t size, ui
     }
     l->awayRecv += size;
     l->authed = true;
+    if (m_phase == ONLINE_PHASE_MATCH && Since(now, l->lastHeardUs) > l->matchGapUs)
+        l->matchGapUs = Since(now, l->lastHeardUs);
     l->lastHeardUs = now;
     l->stats.OnSeq(h.seq, now);
     if (!ParsePayload(plain, plainSize, m_payload))
@@ -910,6 +942,162 @@ void Session::JoinTimers(uint64_t now)
              "This device couldn't send to that IPv6 address. Enter the room's IPv4 address.");
 }
 
+void Session::NextStunServer(uint64_t now)
+{
+    m_public.stunResolving = false;
+    std::memset(&m_public.stunAddr, 0, sizeof m_public.stunAddr);
+    if (++m_public.stunServer >= kStunServerCount)
+        return;
+    if (!m_env->Random(m_public.txid, sizeof m_public.txid))
+    {
+        m_public.stunServer = kStunServerCount;
+        return;
+    }
+    const StunServer& server = kStunServers[m_public.stunServer];
+    m_public.stunResolving = true;
+    m_public.stunSends = 0;
+    m_public.stunStartUs = now;
+    m_env->StartResolve(server.host, server.port);
+}
+
+void Session::PublicTimers(uint64_t now)
+{
+    if (m_public.active && m_public.state == ONLINE_PUBLIC_OPEN &&
+        m_env->PollPortMap(m_public.mapWan, sizeof m_public.mapWan) != PORTMAP_OPEN)
+    {
+        m_public.state = ONLINE_PUBLIC_FOUND;
+        m_env->Log("the router stopped forwarding the room's port");
+    }
+    if (!m_public.active || m_public.state != ONLINE_PUBLIC_LOOKING)
+        return;
+    if (m_public.map == PORTMAP_PENDING)
+        m_public.map = m_env->PollPortMap(m_public.mapWan, sizeof m_public.mapWan);
+    if (m_public.stunServer < kStunServerCount && m_public.mapped.family == 0)
+    {
+        const char* name = kStunServers[m_public.stunServer].host;
+        char line[160];
+        if (m_public.stunResolving)
+        {
+            NetAddr a;
+            const int r = m_env->PollResolve(&a);
+            if (r < 0 || (r > 0 && a.family != 4) ||
+                (r == 0 && Since(now, m_public.stunStartUs) > kStunResolveGiveUpUs))
+            {
+                std::snprintf(line, sizeof line, "couldn't find the STUN server %s", name);
+                m_env->Log(line);
+                NextStunServer(now);
+            }
+            else if (r > 0)
+            {
+                m_public.stunResolving = false;
+                m_public.stunAddr = a;
+            }
+        }
+        if (m_public.stunServer < kStunServerCount && m_public.stunAddr.family != 0 &&
+            (m_public.stunSends == 0 || Since(now, m_public.stunSentUs) >= kStunEveryUs))
+        {
+            if (m_public.stunSends >= kStunSends)
+            {
+                std::snprintf(line, sizeof line, "no answer from the STUN server %s", name);
+                m_env->Log(line);
+                NextStunServer(now);
+            }
+            else
+            {
+                uint8_t out[kStunRequestSize];
+                EncodeStunRequest(m_public.txid, out);
+                SendPlain(m_game, m_public.stunAddr, out, sizeof out);
+                m_public.stunSends++;
+                m_public.stunSentUs = now;
+            }
+        }
+    }
+    SettlePublic();
+}
+
+void Session::SettlePublic()
+{
+    if (!m_public.active || m_public.state != ONLINE_PUBLIC_LOOKING)
+        return;
+    const bool stunDone = m_public.mapped.family != 0 || m_public.stunServer >= kStunServerCount;
+    if (!stunDone || m_public.map == PORTMAP_PENDING)
+        return;
+    const unsigned port = m_roomPort;
+    const NetAddr& stun = m_public.mapped;
+    char stunIp[16] = "";
+    if (stun.family != 0)
+        std::snprintf(stunIp, sizeof stunIp, "%u.%u.%u.%u", stun.ip[0], stun.ip[1], stun.ip[2],
+                      stun.ip[3]);
+    const bool stunPublic = stun.family != 0 && !AddrIsLanSource(stun);
+    NetAddr wan;
+    const bool wanOk = AddrParseNumeric(m_public.mapWan, 1, &wan) && wan.family == 4;
+    const bool wanPublic = wanOk && !AddrIsLanSource(wan);
+    const bool open = m_public.map == PORTMAP_OPEN;
+    // A private outside address is a second router's or, in 100.64/10, a carrier's.
+    const bool routerBehind = m_public.map == PORTMAP_SHARED || (open && wanOk && !wanPublic);
+    const bool wanCarrier = wanOk && wan.ip[0] == 100 && (wan.ip[1] & 0xC0) == 64;
+    const bool shared =
+        (stun.family != 0 && !stunPublic) || (routerBehind && (wanCarrier || stun.family == 0));
+    const char* openIp = NULL;
+    char line[200];
+    if (shared)
+    {
+        m_public.state = ONLINE_PUBLIC_SHARED;
+        m_public.address[0] = '\0';
+        std::snprintf(line, sizeof line,
+                      "the internet sees this network through a shared address (%s); only a VPN "
+                      "reaches the room",
+                      stun.family != 0 ? stunIp : m_public.mapWan);
+    }
+    else if (open && wanPublic && (stun.family == 0 || std::memcmp(stun.ip, wan.ip, 4) == 0))
+        openIp = m_public.mapWan;
+    else if (open && !wanOk && stunPublic)
+        openIp = stunIp;
+    else if (stunPublic)
+    {
+        if (open || routerBehind)
+        {
+            std::snprintf(line, sizeof line,
+                          "the internet sees %s, past a second router that doesn't forward port %u",
+                          stunIp, port);
+            m_env->Log(line);
+        }
+        if (stun.port != port)
+        {
+            std::snprintf(line, sizeof line,
+                          "the router sends port %u out as %u; a forwarded %u still reaches the "
+                          "room",
+                          port, (unsigned)stun.port, port);
+            m_env->Log(line);
+        }
+        m_public.state = ONLINE_PUBLIC_FOUND;
+        std::snprintf(m_public.address, sizeof m_public.address, "%s:%u", stunIp, port);
+        std::snprintf(line, sizeof line, "public address %s, port not forwarded", m_public.address);
+    }
+    else
+    {
+        m_public.state = ONLINE_PUBLIC_FAILED;
+        m_public.address[0] = '\0';
+        std::snprintf(line, sizeof line, "no public address found");
+    }
+    if (openIp != NULL)
+    {
+        m_public.state = ONLINE_PUBLIC_OPEN;
+        std::snprintf(m_public.address, sizeof m_public.address, "%s:%u", openIp, port);
+        std::snprintf(line, sizeof line, "public address %s, port opened by the router",
+                      m_public.address);
+    }
+    m_env->Log(line);
+}
+
+void Session::StopPublic()
+{
+    if (m_public.mapStarted)
+        m_env->StopPortMap();
+    std::memset(&m_public, 0, sizeof m_public);
+    m_public.map = PORTMAP_NONE;
+}
+
 void Session::SearchTimers(uint64_t now)
 {
     if (m_search == NULL)
@@ -992,6 +1180,7 @@ void Session::Poll()
 
     Receive(now);
     JoinTimers(now);
+    PublicTimers(now);
     SearchTimers(now);
     LinkTimers(now);
     MatchTimers(now);
@@ -1021,6 +1210,14 @@ uint64_t Session::NextWakeUs()
     }
     if (m_join.active && m_join.resolving)
         wake = now + 5000 < wake ? now + 5000 : wake;
+    if (m_public.state == ONLINE_PUBLIC_LOOKING)
+    {
+        if (m_public.stunResolving)
+            wake = now + 5000 < wake ? now + 5000 : wake;
+        else if (m_public.stunAddr.family != 0 && m_public.mapped.family == 0 &&
+                 m_public.stunSentUs + kStunEveryUs < wake)
+            wake = m_public.stunSentUs + kStunEveryUs;
+    }
     if (m_searching && m_discoversLeft > 0 && m_discoverNextUs < wake)
         wake = m_discoverNextUs;
     for (size_t i = 0; i < m_farewells.size(); i++)
@@ -1078,6 +1275,7 @@ uint64_t Session::NextWakeUs()
 
 void Session::Shutdown()
 {
+    StopPublic();
     for (size_t i = 0; i < m_links.size(); i++)
         if (m_links[i]->used)
             CloseLink(*m_links[i], true, 0);

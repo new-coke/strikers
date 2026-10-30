@@ -447,12 +447,59 @@ FetchContent_MakeAvailable(monocypher)
 set(MONOCYPHER_SRC "${monocypher_SOURCE_DIR}/src")
 add_library(strikers_monocypher OBJECT "${MONOCYPHER_SRC}/monocypher.c")
 
+# miniupnpc opens a hosted room's port; its own CMakeLists would also build tests and a DLL.
+if(NOT NX AND NOT WINDOWS_STORE)
+    FetchContent_Declare(miniupnpc
+        URL https://miniupnp.tuxfamily.org/files/miniupnpc-2.3.3.tar.gz
+        URL_HASH SHA256=d52a0afa614ad6c088cc9ddff1ae7d29c8c595ac5fdd321170a05f41e634bd1a
+        DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+        SOURCE_SUBDIR no-cmake
+    )
+    FetchContent_MakeAvailable(miniupnpc)
+    set(_upnp "${miniupnpc_SOURCE_DIR}")
+    set(_upnp_gen "${CMAKE_CURRENT_BINARY_DIR}/miniupnpc")
+    file(WRITE "${_upnp_gen}/miniupnpcstrings.h.new"
+        "#ifndef MINIUPNPCSTRINGS_H_INCLUDED\n#define MINIUPNPCSTRINGS_H_INCLUDED\n"
+        "#define OS_STRING \"${CMAKE_SYSTEM_NAME}\"\n#define MINIUPNPC_VERSION_STRING \"2.3.3\"\n"
+        "#define UPNP_VERSION_MAJOR 1\n#define UPNP_VERSION_MINOR 1\n"
+        "#define UPNP_VERSION_STRING \"UPnP/1.1\"\n#endif\n")
+    configure_file("${_upnp_gen}/miniupnpcstrings.h.new" "${_upnp_gen}/miniupnpcstrings.h"
+        COPYONLY)
+    set(_upnp_sources)
+    foreach(_f igd_desc_parse miniupnpc minixml minisoap minissdpc miniwget upnpcommands upnpdev
+            upnpreplyparse upnperrors connecthostport portlistingparse receivedata
+            addr_is_reserved)
+        list(APPEND _upnp_sources "${_upnp}/src/${_f}.c")
+    endforeach()
+    add_library(strikers_miniupnpc OBJECT ${_upnp_sources})
+    target_include_directories(strikers_miniupnpc PRIVATE "${_upnp}/include" "${_upnp_gen}")
+    target_compile_definitions(strikers_miniupnpc PRIVATE MINIUPNP_STATICLIB)
+    if(WIN32)
+        target_compile_definitions(strikers_miniupnpc PRIVATE _CRT_SECURE_NO_WARNINGS
+            _WINSOCK_DEPRECATED_NO_WARNINGS)
+    else()
+        target_compile_definitions(strikers_miniupnpc PRIVATE MINIUPNPC_SET_SOCKET_TIMEOUT
+            MINIUPNPC_GET_SRC_ADDR _BSD_SOURCE _DEFAULT_SOURCE
+            $<$<BOOL:${APPLE}>:_DARWIN_C_SOURCE>
+            $<$<NOT:$<BOOL:${APPLE}>>:_XOPEN_SOURCE=600>)
+    endif()
+    target_compile_options(strikers_miniupnpc PRIVATE -w)
+    set(MINIUPNPC_INCLUDE "${_upnp}/include")
+else()
+    list(REMOVE_ITEM PLATFORM_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/online/portmap.cpp")
+endif()
+
 add_library(strikers_ode      OBJECT ${ODE_SOURCES})
 add_library(strikers_game     OBJECT ${GAME_SOURCES})
 add_library(strikers_platform OBJECT ${PLATFORM_SOURCES})
 # The crash log stamps the build into every file it writes.
 target_include_directories(strikers_platform PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/version")
 target_include_directories(strikers_platform PRIVATE "${MONOCYPHER_SRC}")
+if(TARGET strikers_miniupnpc)
+    target_include_directories(strikers_platform PRIVATE "${MINIUPNPC_INCLUDE}")
+    target_compile_definitions(strikers_platform PRIVATE STRIKERS_UPNP=1 MINIUPNP_STATICLIB)
+endif()
 
 foreach(_t strikers_ode strikers_game strikers_platform strikers_sdk
           strikers_operators)
@@ -466,6 +513,9 @@ add_custom_target(strikers_scan
             strikers_musyx strikers_operators strikers_monocypher)
 if(TARGET strikers_discord)
     add_dependencies(strikers_scan strikers_discord)
+endif()
+if(TARGET strikers_miniupnpc)
+    add_dependencies(strikers_scan strikers_miniupnpc)
 endif()
 
 # The link test. Aurora, MusyX and the THP decoder are not wired up, so tools/genstubs.py supplies
@@ -483,6 +533,12 @@ target_link_libraries(strikers PRIVATE port_flags)
 if(TARGET strikers_discord)
     target_sources(strikers PRIVATE $<TARGET_OBJECTS:strikers_discord>)
     target_link_libraries(strikers PRIVATE borealis::discord)
+endif()
+if(TARGET strikers_miniupnpc)
+    target_sources(strikers PRIVATE $<TARGET_OBJECTS:strikers_miniupnpc>)
+    if(WIN32)
+        target_link_libraries(strikers PRIVATE ws2_32 iphlpapi)
+    endif()
 endif()
 
 # The executable's icon on Windows: the game's memory card icon, from assets/icon. The files are

@@ -83,6 +83,7 @@ extern "C" void PortDebugFrame(void);   // PORT: defined in Game.cpp
 #include "Game/Debug/ShapeRender.h"
 #include "Game/Debug/FrameCounter.h"
 #include "Game/GameInfo.h"
+#include "Game/GameSceneManager.h"
 #include "Game/DB/StatsTracker.h"
 #include "Game/DB/SaveLoad.h"
 #include "Game/SH/SHSaveLoad.h"
@@ -173,6 +174,49 @@ static void SetupViews();
 static void AddTasks();
 static void PreInitFS();
 static void DoMemCheck();
+
+// PORT: Discord names the topmost front end screen that says where the player is.
+static int port_DiscordMenu()
+{
+    const GameSceneManager* pScenes = nlSingleton<GameSceneManager>::Instance();
+    for (int i = pScenes != NULL ? (int)pScenes->mCurrentStackDepth - 1 : -1; i >= 0; i--)
+    {
+        switch (pScenes->m_sceneStack[i])
+        {
+        case SCENE_TITLE:
+            return PORT_DISCORD_MENU_TITLE;
+        case SCENE_MAIN_MENU:
+            return PORT_DISCORD_MENU_MAIN;
+        case SCENE_CHOOSE_SIDES_FRIENDLY:
+        case SCENE_CHOOSE_CAPTAINS:
+            return PORT_DISCORD_MENU_TEAMS;
+        case SCENE_STADIUM_SELECT:
+            return PORT_DISCORD_MENU_STADIUM;
+        case SCENE_CUP_CHOOSE_CUP:
+        case SCENE_CUP_CHOOSE_CAPTAIN:
+            return PORT_DISCORD_MENU_CUP;
+        case SCENE_SUPER_CUP_CHOOSE_CUP:
+        case SCENE_SUPER_CUP_CHOOSE_CAPTAIN:
+            return PORT_DISCORD_MENU_SUPER_CUP;
+        case SCENE_CUP_STANDINGS:
+        case SCENE_SUPER_CUP_STANDINGS:
+        case SCENE_TOURNAMENT_STANDINGS:
+            return PORT_DISCORD_MENU_STANDINGS;
+        case SCENE_TOURN_SETPARAMS:
+        case SCENE_TOURN_SETTEAMS:
+            return PORT_DISCORD_MENU_CUSTOM_BATTLE;
+        case SCENE_TROPHY_ROOM:
+            return PORT_DISCORD_MENU_TROPHY_ROOM;
+        case SCENE_OPTIONS:
+            return PORT_DISCORD_MENU_OPTIONS;
+        case SCENE_CREDITS:
+            return PORT_DISCORD_MENU_CREDITS;
+        default:
+            break;
+        }
+    }
+    return PORT_DISCORD_MENU_OTHER;
+}
 
 /**
  * Offset/Address/Size: 0x1BAC | 0x801750BC | size: 0x8
@@ -908,7 +952,8 @@ int main(int argc, char* argv[])
         PortUpdateSyntheticInput(s_portFrame);
         PortDebugFrame();
         // PORT: ReturnToFE leaves the pause flag set, so it is a pause only while a match exists.
-        PortDiscordUpdate(FrontEnd::m_bInPauseMenuState && g_pGame != NULL ? 1 : 0);
+        PortDiscordUpdate(FrontEnd::m_bInPauseMenuState && g_pGame != NULL ? 1 : 0,
+                          port_DiscordMenu());
 
         // PORT: timed, since the swapchain acquire blocks inside aurora_begin_frame under vsync.
         const unsigned long long acquireStart = port_monotonic_ns();

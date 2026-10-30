@@ -139,8 +139,8 @@ cp extern/musyx/LICENSE "$OUT/LICENSE-MUSYX.txt"
 cp extern/aurora/LICENSE "$OUT/LICENSE-AURORA.txt"
 cp extern/borealis/LICENSE "$OUT/LICENSE-BOREALIS.txt"
 LINKED_LICENSES="LICENSE-APACHE-2.0.txt LICENSE-DAWN.txt LICENSE-FMT.txt LICENSE-FREETYPE.txt
-                 LICENSE-IMGUI.txt LICENSE-MONOCYPHER.txt LICENSE-NLOHMANN-JSON.txt LICENSE-XXHASH.txt
-                 LICENSE-ZSTD.txt"
+                 LICENSE-IMGUI.txt LICENSE-MINIUPNPC.txt LICENSE-MONOCYPHER.txt
+                 LICENSE-NLOHMANN-JSON.txt LICENSE-XXHASH.txt LICENSE-ZSTD.txt"
 for _l in $LINKED_LICENSES; do
     cp "licenses/$_l" "$OUT/"
 done

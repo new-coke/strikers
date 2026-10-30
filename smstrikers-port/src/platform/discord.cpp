@@ -1,4 +1,7 @@
 #include "port/discord.h"
+#include "port/online.h"
+#include "port/online_panel.h"
+#include "port/region.h"
 
 #include <borealis/discord.hpp>
 
@@ -7,7 +10,9 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <iterator>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace {
@@ -100,10 +105,30 @@ bool enabled() {
 
 constexpr const char* kApplicationId = "1550132237826261123";
 
+// By PortDiscordMenu.
+constexpr const char* kMenus[] = { "In the menus",
+                                   "Title screen",
+                                   "Main menu",
+                                   "Choosing teams",
+                                   "Choosing a stadium",
+                                   "Setting up a cup",
+                                   "Setting up a Super Cup",
+                                   "Checking the standings",
+                                   "Setting up a Custom Battle",
+                                   "In the Trophy Room",
+                                   "Options",
+                                   "Watching the credits" };
+static_assert(std::size(kMenus) == PORT_DISCORD_MENU_COUNT);
+
+int s_menu = PORT_DISCORD_MENU_OTHER;
+
 Presence menus() {
     Presence p{};
-    p.details = "In the menus";
+    p.details = or_unknown(name_of(kMenus, s_menu));
     p.startTimestamp = s_startTime;
+    p.largeImageKey = "app-icon";
+    p.largeImageText = std::string("Super Mario Strikers (") + port_disc_game_code() +
+                       port_disc_maker_code() + ")";
     return p;
 }
 
@@ -121,14 +146,112 @@ bool same(const Presence& a, const Presence& b) {
            (a.endTimestamp == 0) == (b.endTimestamp == 0);
 }
 
+// A join secret's format version; the host's public address follows it.
+constexpr std::string_view kSecretPrefix = "s1 ";
+
+// Decimal digits at `i` without a leading zero, up to `max`; -1 when there are none or more.
+long take_number(std::string_view s, size_t& i, long max)
+{
+    const size_t start = i;
+    long v = 0;
+    while (i < s.size() && i - start < 5 && s[i] >= '0' && s[i] <= '9')
+        v = v * 10 + (s[i++] - '0');
+    if (i == start || (s[start] == '0' && i - start > 1) || v > max)
+        return -1;
+    return v;
+}
+
+// Exactly "a.b.c.d:port", with an address the internet routes to.
+bool public_room_address(std::string_view s)
+{
+    uint32_t ip = 0;
+    size_t i = 0;
+    for (int octet = 0; octet < 4; ++octet)
+    {
+        if (octet > 0 && (i >= s.size() || s[i++] != '.'))
+            return false;
+        const long v = take_number(s, i, 255);
+        if (v < 0)
+            return false;
+        ip = ip << 8 | (uint32_t)v;
+    }
+    if (i >= s.size() || s[i++] != ':')
+        return false;
+    const long port = take_number(s, i, 65535);
+    if (port < 1 || i != s.size())
+        return false;
+    // This network, private, carrier NAT, loopback, link-local, multicast and reserved.
+    const uint32_t a = ip >> 24;
+    const uint32_t b = ip >> 16 & 0xff;
+    return !(a == 0 || a == 10 || (a == 100 && b >= 64 && b < 128) || a == 127 ||
+             (a == 169 && b == 254) || (a == 172 && b >= 16 && b < 32) || (a == 192 && b == 168) ||
+             a >= 224);
+}
+
+// The online room as a Discord party; only a host the internet reaches offers Join.
+Presence with_room(Presence p)
+{
+    const OnlineState& st = *PortOnlineGetState();
+    const bool inRoom = st.phase == ONLINE_PHASE_HOSTING || st.phase == ONLINE_PHASE_ROOM ||
+                        st.phase == ONLINE_PHASE_LOADING || st.phase == ONLINE_PHASE_MATCH ||
+                        st.phase == ONLINE_PHASE_POST_MATCH;
+    if (!inRoom || st.roomId == 0 || st.self < 0)
+        return p;
+    const bool host = st.self == st.host;
+
+    // A room holds four humans across all its machines.
+    int humans = 0;
+    for (const OnlineMachine& m : st.machines)
+        if (m.present)
+            humans += m.humanCount;
+    char id[32];
+    std::snprintf(id, sizeof id, "strikers-room-%08x", (unsigned)st.roomId);
+    p.partyId = id;
+    p.partySize = humans;
+    p.partyMax = ONLINE_MAX_SLOTS;
+
+    // A host takes joins only between matches.
+    if (host && (st.phase == ONLINE_PHASE_HOSTING || st.phase == ONLINE_PHASE_ROOM) &&
+        st.publicState == ONLINE_PUBLIC_OPEN && public_room_address(st.publicAddress))
+        p.joinSecret = std::string(kSecretPrefix) + st.publicAddress;
+
+    if (!s_inMatch)
+    {
+        p.details = "In an online room";
+        p.state = host ? "Hosting" : "Guest";
+    }
+    return p;
+}
+
 void flush() {
+    const Presence wanted = with_room(s_wanted);
     const Clock::time_point now = Clock::now();
-    if (s_sentAny && (same(s_wanted, s_sent) || now - s_lastSent < kMinInterval))
+    if (s_sentAny && (same(wanted, s_sent) || now - s_lastSent < kMinInterval))
         return;
     s_sentAny = true;
     s_lastSent = now;
-    s_sent = s_wanted;
-    borealis::discord::update_presence(s_wanted);
+    s_sent = wanted;
+    borealis::discord::update_presence(wanted);
+}
+
+void join_from_discord(std::string_view secret)
+{
+    const std::string address(secret.substr(0, kSecretPrefix.size()) == kSecretPrefix
+                                  ? secret.substr(kSecretPrefix.size())
+                                  : std::string_view());
+    const int phase = PortOnlineGetState()->phase;
+    if (!public_room_address(address) ||
+        (phase != ONLINE_PHASE_IDLE && phase != ONLINE_PHASE_ERROR))
+    {
+        std::fprintf(stderr, "[port] discord: ignored a join from Discord\n");
+        return;
+    }
+    if (phase == ONLINE_PHASE_ERROR)
+        PortOnlineLeave();
+    if (PortOnlineJoin(address.c_str(), nullptr) == 0)
+        return;
+    std::fprintf(stderr, "[port] discord: joining a room from Discord\n");
+    PortOnlinePanelSetOpen(1);
 }
 
 } // namespace
@@ -152,15 +275,23 @@ void PortDiscordInit(void) {
         std::fprintf(stderr, "[port] discord: error %d: %.*s\n", code, (int)message.size(),
                      message.data());
     };
+    handlers.activityJoin = join_from_discord;
 
     s_initialized = borealis::discord::initialize(info, std::move(handlers));
     s_wanted = menus();
 }
 
-void PortDiscordUpdate(int inMenuState) {
+void PortDiscordUpdate(int inMenuState, int menu)
+{
     if (!s_initialized)
         return;
     borealis::discord::run_callbacks();
+    if (menu != s_menu)
+    {
+        s_menu = menu;
+        if (!s_inMatch)
+            s_wanted = menus();
+    }
 
     if (s_inMatch) {
         const Clock::time_point now = Clock::now();
@@ -205,14 +336,22 @@ void PortDiscordSetMatch(const PortDiscordMatch* match) {
         p.state = or_unknown(name_of(kModes, match->mode));
         if (match->hasRound)
             p.state += round_name(match->round);
-        p.state += std::string(" vs ") + or_unknown(name_of(kCaptains, match->team[them])) + ", " +
-                   std::to_string(match->score[me]) + " - " + std::to_string(match->score[them]);
-        if (match->suddenDeath) {
+        p.state += std::string(" vs ") + or_unknown(name_of(kCaptains, match->team[them])) +
+                   (match->finished ? ", final score " : ", ") + std::to_string(match->score[me]) +
+                   " - " + std::to_string(match->score[them]);
+        if (match->finished)
+        {
+            s_suddenDeathSince = 0;
+        }
+        else if (match->suddenDeath)
+        {
             if (s_suddenDeathSince == 0)
                 s_suddenDeathSince = unix_now();
             p.state += ", sudden death";
             p.startTimestamp = s_suddenDeathSince;
-        } else {
+        }
+        else
+        {
             s_suddenDeathSince = 0;
             const float remaining = match->duration - match->clock;
             p.endTimestamp = unix_now() + (remaining > 0.0f ? (int64_t)remaining : 0);

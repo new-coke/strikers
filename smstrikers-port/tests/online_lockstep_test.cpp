@@ -3,6 +3,8 @@
 #include "online_fake_game.h"
 #include "online_netsim.h"
 
+#include "../src/platform/online/stun.h"
+
 #include <cmath>
 #include <algorithm>
 #include <cstdio>
@@ -70,6 +72,7 @@ struct Machine
         SessionConfig c;
         c.discoveryPort = ONLINE_DISCOVERY_PORT;
         c.canHost = true;
+        c.findPublic = false;
         return c;
     }
 
@@ -1413,6 +1416,284 @@ void TestBarrierPresses()
 }
 
 // The host answers from an address other than the one the guest typed.
+// A STUN server on the simulated network that answers each Binding request with `mapped`.
+struct StunResponder
+{
+    StunResponder(SimNet* net, uint32_t ip, uint16_t port) : pipe(net, SimAddr(ip, port))
+    {
+        net->Bind(&pipe);
+    }
+
+    void Answer()
+    {
+        uint8_t buf[256];
+        NetAddr from;
+        int n;
+        while ((n = pipe.Receive(&from, buf, sizeof buf)) >= 0)
+        {
+            requests++;
+            if (n != (int)kStunRequestSize || !answering)
+                continue;
+            pipe.Send(from, Response(buf + 8, mapped), 32);
+        }
+    }
+
+    // A Binding Success response to `txid` carrying `a` as XOR-MAPPED-ADDRESS.
+    static const uint8_t* Response(const uint8_t* txid, const NetAddr& a)
+    {
+        static uint8_t r[32];
+        const uint8_t head[] = { 0x01, 0x01, 0x00, 0x0c, 0x21, 0x12, 0xa4, 0x42 };
+        std::memcpy(r, head, 8);
+        std::memcpy(r + 8, txid, 12);
+        const uint8_t attr[] = { 0x00, 0x20, 0x00, 0x08, 0x00, 0x01 };
+        std::memcpy(r + 20, attr, 6);
+        r[26] = (uint8_t)((a.port >> 8) ^ 0x21);
+        r[27] = (uint8_t)((a.port & 255) ^ 0x12);
+        const uint8_t cookie[4] = { 0x21, 0x12, 0xa4, 0x42 };
+        for (int i = 0; i < 4; i++)
+            r[28 + i] = (uint8_t)(a.ip[i] ^ cookie[i]);
+        return r;
+    }
+
+    SimPipe pipe;
+    NetAddr mapped;
+    bool answering = true;
+    int requests = 0;
+};
+
+struct PublicHost
+{
+    PublicHost(SimNet* net, bool findPublic)
+        : env(net, 0x0A000001, 7, 0, 0, OutDir("public")),
+          session(&env, TestIdentity(), Config(findPublic))
+    {
+        env.names["stun.cloudflare.com"] = 0x08080801;
+        env.names["stun.l.google.com"] = 0x08080802;
+        env.verbose = std::getenv("ONLINE_TEST_VERBOSE") != NULL;
+    }
+
+    static SessionConfig Config(bool findPublic)
+    {
+        SessionConfig c;
+        c.discoveryPort = ONLINE_DISCOVERY_PORT;
+        c.canHost = true;
+        c.findPublic = findPublic;
+        return c;
+    }
+
+    // Runs the host and the responders for `seconds` of simulated time, a millisecond at a time.
+    void Run(SimNet& net, std::vector<StunResponder*> servers, double seconds)
+    {
+        const uint64_t end = net.now + (uint64_t)(seconds * 1e6);
+        while (net.now < end)
+        {
+            net.now += 1000;
+            net.Deliver(NULL);
+            for (StunResponder* r : servers)
+                r->Answer();
+            session.Poll();
+            session.Update(1.0f);
+        }
+    }
+
+    SimEnv env;
+    Session session;
+};
+
+void TestPublicAddress()
+{
+    auto quiet = [](SimNet& net) {
+        net.params.oneWayMs = 10;
+        net.params.jitterMs = 0;
+        net.params.loss = 0;
+        net.params.duplicate = 0;
+    };
+
+    // STUN alone: the outside IP with the room's port, though the NAT sent it out on another.
+    {
+        SimNet net(11);
+        quiet(net);
+        StunResponder cloudflare(&net, 0x08080801, 3478);
+        cloudflare.mapped = SimAddr(0x56010203, 61000);
+        PublicHost h(&net, true);
+        h.env.portMap = PORTMAP_FAILED;
+        CHECK(h.session.Host(ONLINE_DEFAULT_PORT, "Alice"));
+        CHECK(h.session.State().publicState == ONLINE_PUBLIC_LOOKING);
+        CHECK(h.session.State().roomId != 0);
+        CHECK(h.env.portMapPort == ONLINE_DEFAULT_PORT);
+        h.Run(net, { &cloudflare }, 1);
+        CHECK(h.session.State().publicState == ONLINE_PUBLIC_FOUND);
+        CHECK(std::strcmp(h.session.State().publicAddress, "86.1.2.3:41210") == 0);
+        CHECK(cloudflare.requests == 1);
+        h.session.Leave();
+        CHECK(h.session.State().publicState == ONLINE_PUBLIC_NONE);
+        CHECK(h.session.State().publicAddress[0] == '\0' && h.session.State().roomId == 0);
+        CHECK(h.env.portMapStops == 1);
+    }
+
+    // Forged answers: the right transaction from elsewhere, and the wrong one from the server.
+    {
+        SimNet net(12);
+        quiet(net);
+        StunResponder cloudflare(&net, 0x08080801, 3478);
+        StunResponder forger(&net, 0x09090909, 3478);
+        PublicHost h(&net, true);
+        h.env.portMap = PORTMAP_FAILED;
+        CHECK(h.session.Host(ONLINE_DEFAULT_PORT, "Alice"));
+        // An on-path forger knows the transaction id.
+        uint8_t req[64];
+        NetAddr host;
+        bool got = false;
+        for (int i = 0; i < 100 && !got; i++)
+        {
+            h.Run(net, {}, 0.001);
+            got = cloudflare.pipe.Receive(&host, req, sizeof req) == (int)kStunRequestSize;
+        }
+        CHECK(got);
+        const NetAddr evil = SimAddr(0x01010101, 1);
+        forger.pipe.Send(host, StunResponder::Response(req + 8, evil), 32);
+        uint8_t wrong[12];
+        std::memcpy(wrong, req + 8, 12);
+        wrong[0] ^= 1;
+        cloudflare.pipe.Send(host, StunResponder::Response(wrong, evil), 32);
+        h.Run(net, {}, 0.05);
+        CHECK(h.session.State().publicState == ONLINE_PUBLIC_LOOKING);
+        cloudflare.pipe.Send(host, StunResponder::Response(req + 8, SimAddr(0x56010203, 41210)),
+                             32);
+        h.Run(net, {}, 0.05);
+        CHECK(h.session.State().publicState == ONLINE_PUBLIC_FOUND);
+        CHECK(std::strcmp(h.session.State().publicAddress, "86.1.2.3:41210") == 0);
+    }
+
+    // The router forwards the port and STUN agrees on the address.
+    {
+        SimNet net(13);
+        quiet(net);
+        StunResponder cloudflare(&net, 0x08080801, 3478);
+        cloudflare.mapped = SimAddr(0x56010203, ONLINE_DEFAULT_PORT);
+        PublicHost h(&net, true);
+        h.env.portMap = PORTMAP_PENDING;
+        CHECK(h.session.Host(ONLINE_DEFAULT_PORT, "Alice"));
+        h.Run(net, { &cloudflare }, 1);
+        CHECK(h.session.State().publicState == ONLINE_PUBLIC_LOOKING);
+        CHECK(std::strcmp(h.session.State().publicAddress, "86.1.2.3:41210") == 0);
+        h.env.portMap = PORTMAP_OPEN;
+        h.env.portMapWan = "86.1.2.3";
+        h.Run(net, { &cloudflare }, 0.05);
+        CHECK(h.session.State().publicState == ONLINE_PUBLIC_OPEN);
+        CHECK(std::strcmp(h.session.State().publicAddress, "86.1.2.3:41210") == 0);
+        // A refused renewal drops the room back to found.
+        h.env.portMap = PORTMAP_FAILED;
+        h.Run(net, { &cloudflare }, 0.05);
+        CHECK(h.session.State().publicState == ONLINE_PUBLIC_FOUND);
+        CHECK(std::strcmp(h.session.State().publicAddress, "86.1.2.3:41210") == 0);
+    }
+
+    // A second router: the inner one forwarded, but the internet sees the outer one.
+    {
+        SimNet net(14);
+        quiet(net);
+        StunResponder cloudflare(&net, 0x08080801, 3478);
+        cloudflare.mapped = SimAddr(0x56010203, ONLINE_DEFAULT_PORT);
+        PublicHost h(&net, true);
+        h.env.portMap = PORTMAP_OPEN;
+        h.env.portMapWan = "192.168.1.5";
+        CHECK(h.session.Host(ONLINE_DEFAULT_PORT, "Alice"));
+        h.Run(net, { &cloudflare }, 1);
+        CHECK(h.session.State().publicState == ONLINE_PUBLIC_FOUND);
+        CHECK(std::strcmp(h.session.State().publicAddress, "86.1.2.3:41210") == 0);
+    }
+
+    // The router forwarded but didn't say its outside address: STUN's stands in.
+    {
+        SimNet net(19);
+        quiet(net);
+        StunResponder cloudflare(&net, 0x08080801, 3478);
+        cloudflare.mapped = SimAddr(0x25E4ED83, 26420);
+        PublicHost h(&net, true);
+        h.env.portMap = PORTMAP_OPEN;
+        CHECK(h.session.Host(ONLINE_DEFAULT_PORT, "Alice"));
+        h.Run(net, { &cloudflare }, 1);
+        CHECK(h.session.State().publicState == ONLINE_PUBLIC_OPEN);
+        CHECK(std::strcmp(h.session.State().publicAddress, "37.228.237.131:41210") == 0);
+    }
+
+    // STUN's address shows at once, and goes when the router turns out to be a carrier's.
+    {
+        SimNet net(20);
+        quiet(net);
+        StunResponder cloudflare(&net, 0x08080801, 3478);
+        cloudflare.mapped = SimAddr(0x56010203, ONLINE_DEFAULT_PORT);
+        PublicHost h(&net, true);
+        h.env.portMap = PORTMAP_PENDING;
+        CHECK(h.session.Host(ONLINE_DEFAULT_PORT, "Alice"));
+        h.Run(net, { &cloudflare }, 1);
+        CHECK(std::strcmp(h.session.State().publicAddress, "86.1.2.3:41210") == 0);
+        h.env.portMap = PORTMAP_SHARED;
+        h.env.portMapWan = "100.64.0.1";
+        h.Run(net, { &cloudflare }, 0.05);
+        CHECK(h.session.State().publicState == ONLINE_PUBLIC_SHARED);
+        CHECK(h.session.State().publicAddress[0] == '\0');
+    }
+
+    // A carrier's NAT, seen by STUN and by the router.
+    {
+        SimNet net(15);
+        quiet(net);
+        StunResponder cloudflare(&net, 0x08080801, 3478);
+        cloudflare.mapped = SimAddr(0x64400001, 1234);
+        PublicHost h(&net, true);
+        h.env.portMap = PORTMAP_SHARED;
+        h.env.portMapWan = "100.64.0.1";
+        CHECK(h.session.Host(ONLINE_DEFAULT_PORT, "Alice"));
+        h.Run(net, { &cloudflare }, 1);
+        CHECK(h.session.State().publicState == ONLINE_PUBLIC_SHARED);
+        CHECK(h.session.State().publicAddress[0] == '\0');
+    }
+
+    // The first server is silent, the second answers.
+    {
+        SimNet net(16);
+        quiet(net);
+        StunResponder cloudflare(&net, 0x08080801, 3478);
+        cloudflare.answering = false;
+        StunResponder google(&net, 0x08080802, 19302);
+        google.mapped = SimAddr(0x56010204, ONLINE_DEFAULT_PORT);
+        PublicHost h(&net, true);
+        h.env.portMap = PORTMAP_FAILED;
+        CHECK(h.session.Host(ONLINE_DEFAULT_PORT, "Alice"));
+        h.Run(net, { &cloudflare, &google }, 2.5);
+        CHECK(h.session.State().publicState == ONLINE_PUBLIC_LOOKING);
+        h.Run(net, { &cloudflare, &google }, 2);
+        CHECK(cloudflare.requests == 6 && google.requests == 1);
+        CHECK(h.session.State().publicState == ONLINE_PUBLIC_FOUND);
+        CHECK(std::strcmp(h.session.State().publicAddress, "86.1.2.4:41210") == 0);
+    }
+
+    // Nothing answers.
+    {
+        SimNet net(17);
+        quiet(net);
+        PublicHost h(&net, true);
+        h.env.portMap = PORTMAP_FAILED;
+        CHECK(h.session.Host(ONLINE_DEFAULT_PORT, "Alice"));
+        h.Run(net, {}, 8);
+        CHECK(h.session.State().publicState == ONLINE_PUBLIC_FAILED);
+    }
+
+    // online_public = 0, and a guest: neither looks.
+    {
+        SimNet net(18);
+        quiet(net);
+        StunResponder cloudflare(&net, 0x08080801, 3478);
+        PublicHost h(&net, false);
+        CHECK(h.session.Host(ONLINE_DEFAULT_PORT, "Alice"));
+        h.Run(net, { &cloudflare }, 1);
+        CHECK(h.session.State().publicState == ONLINE_PUBLIC_NONE && cloudflare.requests == 0);
+        CHECK(h.env.portMapPort == 0);
+    }
+}
+
 void TestWelcomeFromElsewhere()
 {
     World w(27);
@@ -1821,6 +2102,7 @@ int main()
     run("early-vote", TestEarlyVote);
     run("barrier-presses", TestBarrierPresses);
     run("welcome-elsewhere", TestWelcomeFromElsewhere);
+    run("public-address", TestPublicAddress);
     run("frozen", TestFrozen);
     run("stopped", TestStopped);
     run("shared-skip", TestSharedSkip);
