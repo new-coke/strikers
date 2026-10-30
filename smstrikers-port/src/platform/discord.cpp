@@ -91,16 +91,15 @@ std::string round_name(int round) {
     return "";
 }
 
-// The settings window's spellings of on; anything else is off.
 bool enabled() {
     const char* v = std::getenv("STRIKERS_DISCORD");
     if (v == nullptr)
-        return false;
+        return true;
     std::string s;
     for (const char* p = v; *p != '\0'; ++p)
         if (*p != ' ' && *p != '\t')
             s += (char)std::tolower((unsigned char)*p);
-    return s == "1" || s == "true" || s == "yes" || s == "on";
+    return !(s == "0" || s == "false" || s == "no" || s == "off");
 }
 
 constexpr const char* kApplicationId = "1550132237826261123";
@@ -186,6 +185,23 @@ bool public_room_address(std::string_view s)
     return !(a == 0 || a == 10 || (a == 100 && b >= 64 && b < 128) || a == 127 ||
              (a == 169 && b == 254) || (a == 172 && b >= 16 && b < 32) || (a == 192 && b == 168) ||
              a >= 224);
+}
+
+// Online, every human in the room holds a pad slot; -2 offline, -1 no local human, 2 both sides.
+int online_side()
+{
+    const OnlineState& st = *PortOnlineGetState();
+    if (!PortOnlineInMatch() || st.self < 0 || st.self >= ONLINE_MAX_MACHINES)
+        return -2;
+    const OnlineMachine& m = st.machines[st.self];
+    bool home = false;
+    bool away = false;
+    for (int h = 0; h < m.humanCount && h < ONLINE_MAX_LOCAL_HUMANS; ++h)
+    {
+        home |= m.humans[h].side == 0;
+        away |= m.humans[h].side == 1;
+    }
+    return home && away ? 2 : home ? 0 : away ? 1 : -1;
 }
 
 // The online room as a Discord party; only a host the internet reaches offers Join.
@@ -320,12 +336,17 @@ void PortDiscordSetMatch(const PortDiscordMatch* match) {
     s_paused = false;
     s_lastMatch = Clock::now();
 
-    const int me = match->userSide == 1 ? 1 : 0;
+    const int online = online_side();
+    const int me = online == 0 || online == 1 ? online : match->userSide == 1 ? 1 : 0;
     const int them = 1 - me;
     const char* stadium = name_of(kStadiums, match->stadium);
 
     Presence p{};
-    p.details = std::string("Playing as ") + or_unknown(name_of(kCaptains, match->team[me]));
+    if (online == -1)
+        p.details = std::string("Watching ") + or_unknown(name_of(kCaptains, match->team[0])) +
+                    " vs " + or_unknown(name_of(kCaptains, match->team[1]));
+    else
+        p.details = std::string("Playing as ") + or_unknown(name_of(kCaptains, match->team[me]));
     if (stadium != nullptr)
         p.details += std::string(" at ") + stadium;
 
@@ -333,12 +354,13 @@ void PortDiscordSetMatch(const PortDiscordMatch* match) {
         p.state = "Strikers 101";
         p.startTimestamp = s_startTime;
     } else {
-        p.state = or_unknown(name_of(kModes, match->mode));
+        p.state = online != -2 ? "Online match" : or_unknown(name_of(kModes, match->mode));
         if (match->hasRound)
             p.state += round_name(match->round);
-        p.state += std::string(" vs ") + or_unknown(name_of(kCaptains, match->team[them])) +
-                   (match->finished ? ", final score " : ", ") + std::to_string(match->score[me]) +
-                   " - " + std::to_string(match->score[them]);
+        if (online != -1)
+            p.state += std::string(" vs ") + or_unknown(name_of(kCaptains, match->team[them]));
+        p.state += std::string(match->finished ? ", final score " : ", ") +
+                   std::to_string(match->score[me]) + " - " + std::to_string(match->score[them]);
         if (match->finished)
         {
             s_suddenDeathSince = 0;

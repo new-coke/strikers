@@ -185,10 +185,10 @@
 # unlock_all = 1
 
 [discord]
-# Your Discord status while the game runs: in the menus, or a match's mode, cup round, stadium,
-# captains, score and time left. Off by default; 1 turns it on while Discord's desktop app runs.
+# Your Discord status while Discord's desktop app runs: in the menus, or a match's mode, cup round,
+# stadium, captains, score and time left. On by default; 0 turns it off.
 # A room you host gets a Join button once the router opens its port; friends need the game open.
-# discord = 1
+# discord = 0
 
 [online]
 # Online play. The game writes these when you change them in the online panel (F5, or hold L+R+Z).

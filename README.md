@@ -28,7 +28,7 @@ Built on the community decompilation by the excellent [Yannick Suter](https://gi
 - Direct disc-image loading from ISO/GCM, CISO and GCZ files, alongside extracted game folders.
 - US, European and Japanese game support in one executable, with region-aware saves and language handling. The Japanese disc supports Japanese, English, German, French, Spanish and Italian.
 - A dedicated settings app for configuring graphics, controls, audio and game-data location. Some basic localisation included to help.
-- Discord Rich Presence support, disabled by default.
+- Discord Rich Presence, on by default.
 - [not released yet] Online play on a local network or over the internet. The host's router opens the room's port if it supports UPnP, and friends can join from the host's Discord profile. Where the port can't be opened, [Tailscale](https://tailscale.com) or [ZeroTier](https://www.zerotier.com) are good to still reach the room. 
 
 ## Installation
