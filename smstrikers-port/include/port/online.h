@@ -408,6 +408,9 @@ int PortOnlineAfterOpponentsLeft(int continueAgainstCpu);
 // Applies and saves settings; the nickname is cleaned and delayTicks clamped.
 int PortOnlineSetSettings(const OnlineSettings* settings);
 
+// First at boot, after strikers.ini loads: asks the router to forward online_port.
+void PortOnlineStartPortMap(void);
+
 // Once at boot, after the config is loaded: reads the online settings.
 void PortOnlineInit(void);
 

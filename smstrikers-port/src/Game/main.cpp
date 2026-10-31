@@ -29,6 +29,7 @@ extern "C" void PortDebugFrame(void);   // PORT: defined in Game.cpp
 #endif
 #include "port/benchmark.h"
 #include "port/lockstep.h"
+#include "port/online.h"
 #include "port/online_game.h"
 #include "port/audio.h"
 #include "port/determinism.h"
@@ -788,6 +789,8 @@ int main(int argc, char* argv[])
             OSReport("[port] %s: %d setting(s)\n",
                      PortConfigPath(), applied);
     }
+    // PORT: before the window, since a router can take seconds to answer and longer to forward.
+    PortOnlineStartPortMap();
 
 #if defined(PORT_USE_AURORA)
     {

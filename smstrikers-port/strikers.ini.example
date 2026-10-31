@@ -204,9 +204,9 @@
 # The UDP port a room you host listens on, 1025 to 49151. Guests joining by address need it open.
 # online_port = 41210
 
-# 1 finds a hosted room's internet address: the game asks a public STUN server (Cloudflare's, then
-# Google's) what address it sees, and asks your router over UPnP to forward online_port. 0 never
-# contacts either.
+# 1 asks your router over UPnP, from launch, to forward online_port, and finds a hosted room's
+# internet address by asking a public STUN server (Cloudflare's, then Google's) what address it
+# sees. 0 never contacts either.
 # online_public = 1
 
 [debug]

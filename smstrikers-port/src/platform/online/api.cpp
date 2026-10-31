@@ -100,20 +100,21 @@ struct ResolveJob
 class GameEnv : public online::SessionEnv
 {
   public:
-    GameEnv() : m_net(false) {}
+    GameEnv() : m_net(false)
+    {
+#if defined(STRIKERS_UPNP)
+        m_mapPort = 0;
+#endif
+    }
 
     uint64_t NowUs() override { return port_monotonic_ns() / 1000u; }
 
     NetPipe* OpenPipe(int purpose, uint16_t port, int* error) override
     {
-        if (!m_net)
+        if (!StartNet())
         {
-            if (!online::NetStartup())
-            {
-                *error = online::PIPE_ERR_NETWORK;
-                return NULL;
-            }
-            m_net = true;
+            *error = online::PIPE_ERR_NETWORK;
+            return NULL;
         }
         switch (purpose)
         {
@@ -176,9 +177,23 @@ class GameEnv : public online::SessionEnv
     }
 
 #if defined(STRIKERS_UPNP)
-    void StartPortMap(uint16_t port) override { m_portMap.Start(port); }
+    void StartPortMap(uint16_t port) override
+    {
+        char wan[16];
+        if (port == m_mapPort && m_portMap.Poll(wan, sizeof wan) != online::PORTMAP_FAILED)
+            return;
+        // miniupnpc needs Winsock, which no pipe has started yet at launch.
+        if (!StartNet())
+            return;
+        m_mapPort = port;
+        m_portMap.Start(port);
+    }
     int PollPortMap(char* wan, size_t size) override { return m_portMap.Poll(wan, size); }
-    void StopPortMap() override { m_portMap.Stop(); }
+    void StopPortMap() override
+    {
+        m_portMap.Stop();
+        m_mapPort = 0;
+    }
 #endif
 
     bool Random(void* buf, size_t size) override { return online::NetRandom(buf, size); }
@@ -223,10 +238,18 @@ class GameEnv : public online::SessionEnv
     bool NetStarted() const { return m_net; }
 
   private:
+    bool StartNet()
+    {
+        if (!m_net)
+            m_net = online::NetStartup();
+        return m_net;
+    }
+
     bool m_net;
     std::shared_ptr<ResolveJob> m_job;
 #if defined(STRIKERS_UPNP)
     online::PortMap m_portMap;
+    uint16_t m_mapPort;
 #endif
 };
 
@@ -461,21 +484,31 @@ OnlineState s_snapshot;
 PADStatus s_frame[4];
 char s_names[ONLINE_MAX_SLOTS][ONLINE_NAME_MAX + 1];
 
+bool can_host(void)
+{
+#if defined(ONLINE_UWP)
+    return false;
+#else
+    return true;
+#endif
+}
+
+bool find_public(void)
+{
+    const char* findPublic = std::getenv("STRIKERS_ONLINE_PUBLIC");
+    return can_host() && (findPublic == NULL || std::strtol(findPublic, NULL, 10) != 0);
+}
+
 void ensure_locked(void)
 {
     if (s_session != NULL)
         return;
-    s_env = new GameEnv;
+    if (s_env == NULL)
+        s_env = new GameEnv;
     online::SessionConfig config;
     config.discoveryPort = ONLINE_DISCOVERY_PORT;
-#if defined(ONLINE_UWP)
-    config.canHost = false;
-#else
-    config.canHost = true;
-#endif
-    const char* findPublic = std::getenv("STRIKERS_ONLINE_PUBLIC");
-    config.findPublic =
-        config.canHost && (findPublic == NULL || std::strtol(findPublic, NULL, 10) != 0);
+    config.canHost = can_host();
+    config.findPublic = find_public();
     s_session = new online::Session(s_env, make_identity(), config);
     s_session->SetSettings(load_settings());
     s_session->Update(1.0f);
@@ -709,6 +742,16 @@ int PortOnlineSetSettings(const OnlineSettings* settings)
     return 1;
 }
 
+void PortOnlineStartPortMap(void)
+{
+    std::lock_guard<std::mutex> g(s_lock);
+    if (s_session != NULL || !find_public())
+        return;
+    if (s_env == NULL)
+        s_env = new GameEnv;
+    s_env->StartPortMap(load_settings().hostPort);
+}
+
 void PortOnlineInit(void)
 {
     std::lock_guard<std::mutex> g(s_lock);
@@ -720,7 +763,15 @@ void PortOnlineShutdown(void)
     {
         std::lock_guard<std::mutex> g(s_lock);
         if (s_session == NULL)
+        {
+            // Quitting before the session exists still removes the launch's mapping.
+            const bool net = s_env != NULL && s_env->NetStarted();
+            delete s_env;
+            s_env = NULL;
+            if (net)
+                online::NetShutdown();
             return;
+        }
         s_stop = true;
         s_wake.notify_all();
     }

@@ -1189,6 +1189,17 @@ void online_tick_end(unsigned int k)
 }
 }   // namespace
 
+// The end cutscene can start in a frame with no tick due; a skip then never returns to play.
+extern "C" void PortSimOnlineEndCheck(void)
+{
+    if (s_online && s_begun && s_tick > 0 && g_pGame != NULL && online_end_due(s_tick - 1))
+    {
+        PortSimHashes h;
+        PortSimHash(&h);
+        online_end(s_tick - 1, h.all);
+    }
+}
+
 extern "C" void PortSimSetOnline(int online) { s_online = online != 0; }
 
 extern "C" int PortSimOnline(void) { return s_online; }

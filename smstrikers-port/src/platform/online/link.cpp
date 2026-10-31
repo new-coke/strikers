@@ -1092,10 +1092,19 @@ void Session::SettlePublic()
 
 void Session::StopPublic()
 {
-    if (m_public.mapStarted)
-        m_env->StopPortMap();
     std::memset(&m_public, 0, sizeof m_public);
     m_public.map = PORTMAP_NONE;
+}
+
+void Session::MapPort(uint16_t port)
+{
+    char wan[16];
+    // A refusal at launch may predate the network, so the next room asks again.
+    if (!m_config.findPublic ||
+        (port == m_mapPort && m_env->PollPortMap(wan, sizeof wan) != PORTMAP_FAILED))
+        return;
+    m_mapPort = port;
+    m_env->StartPortMap(port);
 }
 
 void Session::SearchTimers(uint64_t now)
@@ -1276,6 +1285,9 @@ uint64_t Session::NextWakeUs()
 void Session::Shutdown()
 {
     StopPublic();
+    if (m_mapPort != 0)
+        m_env->StopPortMap();
+    m_mapPort = 0;
     for (size_t i = 0; i < m_links.size(); i++)
         if (m_links[i]->used)
             CloseLink(*m_links[i], true, 0);

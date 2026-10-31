@@ -51,6 +51,7 @@ Session::Session(SessionEnv* env, const Identity& identity, const SessionConfig&
     m_lastError[0] = '\0';
     std::memset(&m_public, 0, sizeof m_public);
     m_public.map = PORTMAP_NONE;
+    m_mapPort = 0;
     Reset(false);
     FillState(m_env->NowUs());
 }
@@ -76,6 +77,8 @@ void Session::SetSettings(const OnlineSettings& settings)
     if (next.hostPort < 1025 || next.hostPort > 49151)
         next.hostPort = ONLINE_DEFAULT_PORT;
     m_settings = next;
+    if (!m_hosting)
+        MapPort(m_settings.hostPort);
 }
 
 void Session::Reset(bool keepNearby)
@@ -573,8 +576,7 @@ int Session::Host(uint16_t port, const char* nickname)
         m_public.active = true;
         m_public.state = ONLINE_PUBLIC_LOOKING;
         m_public.stunServer = -1;
-        m_public.mapStarted = true;
-        m_env->StartPortMap(m_roomPort);
+        MapPort(m_roomPort);
         m_public.map = m_env->PollPortMap(m_public.mapWan, sizeof m_public.mapWan);
         NextStunServer(now);
         PublicTimers(now);

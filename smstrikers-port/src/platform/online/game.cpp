@@ -455,6 +455,8 @@ extern "C" void PortOnlineGameFrame(void)
     refresh_language();
     PortOnlinePanelPrepare();
     sample_pads();
+    if (s_stage == STAGE_PLAY)
+        PortSimOnlineEndCheck();
     PortOnlineUpdate(FixedUpdateTask::mTimeScale);
     const OnlineState st = *PortOnlineGetState();
     selection_frame(st);

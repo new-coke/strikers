@@ -158,6 +158,9 @@ void PortSimSetOnline(int online);
 // Online: non-zero from the start of an online match's load until this machine leaves it.
 int PortSimOnline(void);
 
+// Online, each match frame: ends the match once its end freeze holds, in any task state.
+void PortSimOnlineEndCheck(void);
+
 #ifdef __cplusplus
 }
 

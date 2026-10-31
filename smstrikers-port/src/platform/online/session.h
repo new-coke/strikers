@@ -87,7 +87,7 @@ struct SessionConfig
 {
     uint16_t discoveryPort;
     bool canHost;      // false where the platform never waits for connections
-    bool findPublic;   // a host asks a STUN server and the router for its outside address
+    bool findPublic;   // the router forwards the host port from launch; a host also asks STUN
 };
 
 // A device port's sample, as the session keeps it.
@@ -345,6 +345,7 @@ class Session
     void NextStunServer(uint64_t now);
     void SettlePublic();
     void StopPublic();
+    void MapPort(uint16_t port);
     void BuildError(int error, const char* detail);
 
     Link* NewLink(uint64_t now);
@@ -468,7 +469,6 @@ class Session
     struct
     {
         bool active;
-        bool mapStarted;
         int map;   // PORTMAP_*
         char mapWan[16];
         int stunServer;   // into the server list; past its end once STUN is done
@@ -482,6 +482,7 @@ class Session
         int state;        // ONLINE_PUBLIC_*
         char address[ONLINE_ADDRESS_MAX];
     } m_public;
+    uint16_t m_mapPort;   // the port the router was asked to forward, 0 before that
 
     uint32_t m_nextSeed;   // a seed SetDesc carried, for the next Start only
 

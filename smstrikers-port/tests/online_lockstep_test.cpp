@@ -1528,7 +1528,38 @@ void TestPublicAddress()
         h.session.Leave();
         CHECK(h.session.State().publicState == ONLINE_PUBLIC_NONE);
         CHECK(h.session.State().publicAddress[0] == '\0' && h.session.State().roomId == 0);
+        // The mapping outlives the room; only the game's exit removes it.
+        CHECK(h.env.portMapStops == 0);
+        h.session.Shutdown();
         CHECK(h.env.portMapStops == 1);
+    }
+
+    // Settings ask the router at launch, and a room on that port doesn't ask again.
+    {
+        SimNet net(21);
+        quiet(net);
+        StunResponder cloudflare(&net, 0x08080801, 3478);
+        cloudflare.mapped = SimAddr(0x56010203, ONLINE_DEFAULT_PORT);
+        PublicHost h(&net, true);
+        h.env.portMap = PORTMAP_OPEN;
+        h.env.portMapWan = "86.1.2.3";
+        h.session.SetSettings(h.session.Settings());
+        CHECK(h.env.portMapPort == ONLINE_DEFAULT_PORT);
+        h.env.portMapPort = 0;
+        CHECK(h.session.Host(ONLINE_DEFAULT_PORT, "Alice"));
+        CHECK(h.env.portMapPort == 0);
+        h.Run(net, { &cloudflare }, 1);
+        CHECK(h.session.State().publicState == ONLINE_PUBLIC_OPEN);
+        h.session.Leave();
+        OnlineSettings s = h.session.Settings();
+        s.hostPort = 41300;
+        h.session.SetSettings(s);
+        CHECK(h.env.portMapPort == 41300);
+        // A refused mapping is asked for again by the next room.
+        h.env.portMap = PORTMAP_FAILED;
+        h.env.portMapPort = 0;
+        CHECK(h.session.Host(41300, "Alice"));
+        CHECK(h.env.portMapPort == 41300);
     }
 
     // Forged answers: the right transaction from elsewhere, and the wrong one from the server.
