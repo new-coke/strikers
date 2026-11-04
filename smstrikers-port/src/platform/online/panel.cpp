@@ -5,6 +5,7 @@
 #include "port/prompts.h"
 #include "port/online_game.h"
 #include "port/online.h"
+#include "port/overlay.h"
 #include "port/region.h"
 
 #include "panel_edit.h"
@@ -374,6 +375,10 @@ void poll_pads(float dt)
         if ((held & kChord) == kChord)
             chordHeld = true;
         if ((pressed & kBackButton) != 0 && PortOnlineGetState()->phase != ONLINE_PHASE_MATCH)
+            s_toggleRequest = true;
+        // The main menu reads no Z and a GameCube pad has no Back; Z with L or R held is the chord.
+        if ((pressed & PAD_TRIGGER_Z) != 0 && (held & (PAD_TRIGGER_L | PAD_TRIGGER_R)) == 0 &&
+            !PortOverlayMenuOpen() && PortOnlineGameAtMainMenu())
             s_toggleRequest = true;
         if ((pressed & PAD_BUTTON_START) != 0)
             s_startPressed = true;
@@ -1853,7 +1858,7 @@ void draw_match_settings(const OnlineState& st)
     }
     OnlineMatchDesc d = st.desc;
     bool changed = false;
-    begin_screen("##online.options", text(T_MATCH_SETTINGS), nullptr, false, 33.0f);
+    begin_screen("##online.options", text(T_MATCH_SETTINGS), nullptr, false, 42.0f);
     const int step =
         spin_row("length", text(T_MATCH_LENGTH), format(text(T_MINUTES), d.gameTime / 60), true);
     if (step != 0)
@@ -1864,6 +1869,23 @@ void draw_match_settings(const OnlineState& st)
     if (spin_row("pause", text(T_PAUSE_ALLOWED), text(d.pauseAllowed ? T_ON : T_OFF), true))
     {
         d.pauseAllowed = !d.pauseAllowed;
+        changed = true;
+    }
+    const int skill =
+        spin_row("skill", text(T_DIFFICULTY), text((Text)(T_SKILL_FIRST + d.skill)), true);
+    if (skill != 0)
+    {
+        d.skill = (uint8_t)((d.skill + skill + 5) % 5);
+        changed = true;
+    }
+    if (spin_row("sts", text(T_SUPER_STRIKES), text(d.shoot2Score ? T_ON : T_OFF), true))
+    {
+        d.shoot2Score = !d.shoot2Score;
+        changed = true;
+    }
+    if (spin_row("bowser", text(T_BOWSER_ATTACK), text(d.bowser ? T_ON : T_OFF), true))
+    {
+        d.bowser = !d.bowser;
         changed = true;
     }
     section(text(T_ITEMS));
@@ -1892,8 +1914,17 @@ void draw_match_settings(const OnlineState& st)
         }
         ImGui::PopID();
     }
-    if (changed)
-        PortOnlineSetDesc(&d);
+    if (changed && PortOnlineSetDesc(&d))
+    {
+        OnlineSettings next = st.settings;
+        next.gameTime = d.gameTime;
+        next.skill = d.skill;
+        next.powerupMask = d.powerupMask;
+        next.shoot2Score = d.shoot2Score;
+        next.bowser = d.bowser;
+        next.pauseAllowed = d.pauseAllowed;
+        PortOnlineSetSettings(&next);
+    }
     ImGui::Dummy(ImVec2(0.0f, px() * 0.2f));
     const bool done = row("done", text(T_DONE));
     const Hint hints[] = { { PAD_BUTTON_B, T_HINT_BACK } };
@@ -2382,9 +2413,7 @@ void draw_menu_prompt()
             x += gw;
         }
         else
-            for (unsigned bit :
-                 { (unsigned)PAD_TRIGGER_L, (unsigned)PAD_TRIGGER_R, (unsigned)PAD_TRIGGER_Z })
-                x += button_glyph(dl, ImVec2(x, a.y), h, bit) + p * 0.15f;
+            x += button_glyph(dl, ImVec2(x, a.y), h, PAD_TRIGGER_Z);
         x += p * 0.4f;
         const char* label = text(T_ONLINE);
         const ImVec2 ts = text_size(s_fonts->body, label);

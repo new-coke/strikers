@@ -62,33 +62,139 @@ struct FadeAudioData
 
 FadeAudioData* g_pFadeList;
 
-// PORT: a sound an undone tick started is stopped, since the rollback lost the handle to stop it.
-static unsigned int s_emitterTick[0x40];
+// PORT: the sounds recent ticks started; a replay keeps those it starts again and stops the rest.
+struct TickSound
+{
+    unsigned int match;
+    unsigned int tick;
+    const cGameSFX* owner;
+    unsigned long type;
+    unsigned int nth;        // which start of this owner and type within the tick
+    uintptr_t handle;        // what Play returned, so a kept sound returns it again
+    SFXEmitter* emitter;
+    unsigned long voice;
+    bool pending;            // started by a tick a rollback undid, not yet asked for again
+};
+static TickSound s_tickSounds[96];
+
+static TickSound* tick_sound(const cGameSFX* owner, unsigned long type, bool pendingOnly, unsigned int* nth)
+{
+    unsigned int n = 0;
+    for (TickSound& s : s_tickSounds)
+        if (s.owner == owner && s.type == type && s.tick == PortSimTick() && s.match == PortSimMatch() &&
+            !s.pending)
+            n++;
+    *nth = n;
+    if (!pendingOnly)
+        return NULL;
+    for (TickSound& s : s_tickSounds)
+        if (s.pending && s.owner == owner && s.type == type && s.tick == PortSimTick() && s.nth == n)
+            return &s;
+    return NULL;
+}
+
+static bool tick_sound_live(const TickSound& s)
+{
+    if (s.emitter != NULL)
+        return s.emitter->pOwner == s.owner && s.emitter->soundType == s.type &&
+               PlatAudio::IsEmitterActive(s.emitter);
+    return PlatAudio::IsSFXPlaying(s.voice);
+}
+
+// PORT: a replay's stop leaves an undone tick's sound; a claim, or the replay's end, decides it.
+extern "C" int PortSoundsPending(const SFXEmitter* emitter, unsigned long voice)
+{
+    if (!PortRollbackResimulating())
+        return 0;
+    for (const TickSound& s : s_tickSounds)
+        if (s.pending && (emitter != NULL ? s.emitter == emitter : s.emitter == NULL && s.voice == voice))
+            return 1;
+    return 0;
+}
+
+extern "C" int PortSoundsClaim(const cGameSFX* owner, Audio::SoundAttributes& attrs, uintptr_t* handle)
+{
+    unsigned int nth;
+    TickSound* s = tick_sound(owner, attrs.mu_Type, true, &nth);
+    if (s == NULL)
+        return 0;
+    // PORT: one that already finished stays finished, as it would have without the rollback.
+    s->pending = false;
+    if (s->emitter != NULL && tick_sound_live(*s))
+    {
+        // PORT: the replay's object may sit elsewhere in the restored heap.
+        s->emitter->posUpdateMethod = attrs.posUpdateMethod;
+        s->emitter->pPhysObj = attrs.mp_PhysObj;
+        memcpy(&s->emitter->pos, &attrs.pos, sizeof s->emitter->pos);
+        memcpy(&s->emitter->dir, &attrs.dir, sizeof s->emitter->dir);
+    }
+    *handle = s->handle;
+    return 1;
+}
+
+extern "C" void PortSoundsStarted(const cGameSFX* owner, const Audio::SoundAttributes& attrs, uintptr_t handle,
+                                  SFXEmitter* emitter, unsigned long voice)
+{
+    if (!PortSimInTick() || (emitter == NULL && voice == (unsigned long)Audio::GetSndIDError()))
+        return;
+    TickSound* slot = &s_tickSounds[0];
+    for (TickSound& s : s_tickSounds)
+        if (s.owner == NULL || s.match != PortSimMatch() || s.tick + PORT_ROLLBACK_TICKS < PortSimTick())
+        {
+            slot = &s;
+            break;
+        }
+        else if (s.tick < slot->tick)
+            slot = &s;
+    unsigned int nth;
+    tick_sound(owner, attrs.mu_Type, false, &nth);
+    *slot = TickSound{ PortSimMatch(), PortSimTick(), owner, attrs.mu_Type,
+                       nth, handle, emitter, voice, false };
+}
+
+// PORT: a replayed tick draws its random sound variants from where the first run did.
+static unsigned int s_tickCosmetic[PORT_ROLLBACK_TICKS];
+static unsigned int s_liveCosmetic;
 
 static void sounds_snapshot(void (*append)(const void*, size_t))
 {
     const unsigned int tick = PortSimTick();
     append(&tick, sizeof tick);
+    if (PortRollbackResimulating())
+        *PortRngCosmeticSeed() = s_tickCosmetic[tick % PORT_ROLLBACK_TICKS];
+    else
+        s_tickCosmetic[tick % PORT_ROLLBACK_TICKS] = *PortRngCosmeticSeed();
+}
+
+// PORT: a replay runs up to s_replayEnd; a sound more than kLateTicks before it is skipped.
+static unsigned int s_replayEnd;
+static const unsigned int kLateTicks = 10;
+
+extern "C" int PortSoundsTooLate(void)
+{
+    return PortSimTick() + kLateTicks < s_replayEnd;
 }
 
 static size_t sounds_unsnapshot(const unsigned char* in)
 {
     unsigned int tick;
     memcpy(&tick, in, sizeof tick);
-    for (unsigned long i = 0; i < 0x40; i++)
+    if (PortSimTick() > s_replayEnd)
     {
-        SFXEmitter* e = Audio::GetEmitter(i);
-        if (e == NULL || !e->bInUse || s_emitterTick[i] < tick)
+        s_replayEnd = PortSimTick();
+        s_liveCosmetic = *PortRngCosmeticSeed();
+    }
+    for (TickSound& s : s_tickSounds)
+    {
+        if (s.owner == NULL || s.match != PortSimMatch() || s.tick < tick)
             continue;
-        if (e->pOwner != NULL)
-        {
-            ((cGameSFX*)e->pOwner)->StopEmitter(e, 0);
-            continue;
-        }
-        const bool follows = (e->posUpdateMethod == PHYSOBJ && PortSimHeapOwns(e->pPhysObj)) ||
-                             (e->posUpdateMethod == PTRS_TO_VECTORS &&
-                              (PortSimHeapOwns(e->pos.pvPos) || PortSimHeapOwns(e->dir.pvDir)));
-        if (follows)
+        s.pending = true;
+        // PORT: the object it follows may be gone or moved after the load; a claim points it back.
+        SFXEmitter* e = s.emitter;
+        if (e != NULL && e->pOwner == s.owner &&
+            ((e->posUpdateMethod == PHYSOBJ && PortSimHeapOwns(e->pPhysObj)) ||
+             (e->posUpdateMethod == PTRS_TO_VECTORS &&
+              (PortSimHeapOwns(e->pos.pvPos) || PortSimHeapOwns(e->dir.pvDir)))))
         {
             e->posUpdateMethod = NONE;
             e->pPhysObj = NULL;
@@ -98,6 +204,26 @@ static size_t sounds_unsnapshot(const unsigned char* in)
 }
 
 static const bool s_soundsRollback = (PortSimStateHook(sounds_snapshot, sounds_unsnapshot), true);
+
+extern "C" void PortSoundsReplayDone(void)
+{
+    for (TickSound& s : s_tickSounds)
+    {
+        if (!s.pending)
+            continue;
+        if (tick_sound_live(s))
+        {
+            if (s.emitter != NULL)
+                ((cGameSFX*)s.owner)->StopEmitter(s.emitter, 0);
+            else
+                Audio::StopSFX(s.voice);
+        }
+        s = TickSound{};
+    }
+    if (s_replayEnd != 0)
+        *PortRngCosmeticSeed() = s_liveCosmetic;
+    s_replayEnd = 0;
+}
 
 // PORT: a sound can outlive the object it follows, and a replay loses the handle to stop it.
 extern "C" void PortSoundsForgetObject(const void* obj)
@@ -3120,11 +3246,7 @@ SFXEmitter* GetEmitter(unsigned long id)
  */
 SFXEmitter* GetFreeEmitter(unsigned long& id)
 {
-    SFXEmitter* e = PlatAudio::GetFreeEmitter(id);
-    // PORT: emitters made outside a tick count as made at its start, so a rollback leaves them.
-    if (e != NULL && id < 0x40)
-        s_emitterTick[id] = PortSimInTick() ? PortSimTick() : 0;
-    return e;
+    return PlatAudio::GetFreeEmitter(id);
 }
 
 /**

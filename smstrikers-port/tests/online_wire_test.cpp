@@ -48,6 +48,7 @@ std::vector<Message> SampleMessages()
     m.u.join.binaryFamily = FAMILY_LINUX_X64;
     m.u.join.build = 0xDEADBEEF;
     m.u.join.dataFamily = 0x01020304;
+    m.u.join.delayTicks = 3;
     std::snprintf(m.u.join.version, sizeof m.u.join.version, "1.6.0-3-gabcdef");
     std::snprintf(m.u.join.nickname, sizeof m.u.join.nickname, "Zoë");
     m.u.join.humanCount = 2;
@@ -96,6 +97,7 @@ std::vector<Message> SampleMessages()
         w.lossPercent = 3;
         w.pingMs = (uint16_t)(20 * i);
         w.jitterMs = (uint16_t)i;
+        w.delayTicks = (uint8_t)(2 * i);
         std::snprintf(w.nickname, sizeof w.nickname, "M%d", i);
         w.humanCount = 1;
         w.human[i == 2 ? 1 : 0].slot = (int8_t)i;
@@ -253,6 +255,10 @@ void TestMessages()
     CHECK(!DecodeMessageBody(MSG_JOIN, body, n, &out));
     n = EncodeMessageBody(m, body);
     body[32] = 0x07;   // a control character in the nickname
+    CHECK(!DecodeMessageBody(MSG_JOIN, body, n, &out));
+    n = EncodeMessageBody(m, body);
+    CHECK(DecodeMessageBody(MSG_JOIN, body, n, &out) && out.u.join.delayTicks == 3);
+    body[12] = ONLINE_MAX_DELAY_TICKS + 1;   // a delay no build asks for
     CHECK(!DecodeMessageBody(MSG_JOIN, body, n, &out));
 
     Message g;

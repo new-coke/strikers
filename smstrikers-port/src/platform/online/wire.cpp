@@ -82,6 +82,7 @@ void put_machine(uint8_t* p, const WireMachine& m)
     Put16(p + 8, m.jitterMs);
     PutName(p + 10, m.nickname);
     p[26] = m.humanCount;
+    p[27] = m.delayTicks;
     for (int h = 0; h < ONLINE_MAX_LOCAL_HUMANS; h++)
     {
         uint8_t* e = p + 28 + 18 * h;
@@ -109,7 +110,7 @@ bool get_machine(const uint8_t* p, WireMachine* m)
         return all_zero(p, 64);
     }
     if (p[0] != 1 || !is_platform(p[1]) || (p[2] & ~0x0F) != 0 || p[3] > ONLINE_LOAD_READY ||
-        p[4] > 100 || p[5] > 100 || p[26] > ONLINE_MAX_LOCAL_HUMANS || p[27] != 0)
+        p[4] > 100 || p[5] > 100 || p[26] > ONLINE_MAX_LOCAL_HUMANS || !is_delay(p[27]))
         return false;
     m->present = 1;
     m->platform = p[1];
@@ -122,6 +123,7 @@ bool get_machine(const uint8_t* p, WireMachine* m)
     if (!GetName(p + 10, m->nickname))
         return false;
     m->humanCount = p[26];
+    m->delayTicks = p[27];
     int used = 0;
     for (int h = 0; h < ONLINE_MAX_LOCAL_HUMANS; h++)
     {
@@ -417,6 +419,7 @@ size_t EncodeMessageBody(const Message& m, uint8_t out[kMaxMessageBody])
         out[3] = j.binaryFamily;
         Put32(out + 4, j.build);
         Put32(out + 8, j.dataFamily);
+        out[12] = j.delayTicks;
         PutVersion(out + 16, j.version);
         PutName(out + 32, j.nickname);
         out[48] = j.humanCount;
@@ -555,10 +558,12 @@ bool DecodeMessageBody(uint8_t kind, const uint8_t* p, size_t n, Message* out)
         j.binaryFamily = p[3];
         j.build = Get32(p + 4);
         j.dataFamily = Get32(p + 8);
+        j.delayTicks = p[12];
         j.humanCount = p[48];
         if (!is_platform(j.platform) || j.binaryFamily > FAMILY_OTHER ||
             !GetVersion(p + 16, j.version) || !GetName(p + 32, j.nickname) || j.humanCount < 1 ||
-            j.humanCount > ONLINE_MAX_LOCAL_HUMANS || p[49] != 0 || Get32(p + 12) != 0)
+            j.humanCount > ONLINE_MAX_LOCAL_HUMANS || p[49] != 0 || !is_delay(p[12]) ||
+            !all_zero(p + 13, 3))
             return false;
         for (int h = 0; h < ONLINE_MAX_LOCAL_HUMANS; h++)
         {

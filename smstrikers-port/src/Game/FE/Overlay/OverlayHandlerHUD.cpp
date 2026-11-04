@@ -8,6 +8,8 @@
 #include "Game/Game.h"
 #include "Game/GameInfo.h"
 #include "Game/Team.h"
+#include "port/lockstep.h"
+#include "port/rollback.h"
 #include "Game/Sys/eventman.h"
 #include "Game/FE/tlComponentInstance.h"
 #include "NL/nlLexicalCast.h"
@@ -115,12 +117,18 @@ static const char* LAYER_NAME = "Layer";
     InlineHasher(nlStringLowerHash(LAYER_NAME)),                                                                           \
     InlineHasher(nlStringLowerHash(name)))
 
+// PORT: a rollback restores bIsNew after the flare cleared it, so each award flares once.
+static int s_shownAward[2][2];
+static unsigned int s_emptySince[2][2];
+
 /**
  * Offset/Address/Size: 0x36B8 | 0x800F9998 | size: 0xB4
  */
 HUDOverlay::HUDOverlay()
     : BaseOverlayHandler(2)
 {
+    memset(s_shownAward, 0xFF, sizeof s_shownAward);
+    memset(s_emptySince, 0, sizeof s_emptySince);
     mSeconds = -1;
     mTenths = 0;
     mClockColourChanged = false;
@@ -665,8 +673,15 @@ void HUDOverlay::DisplayPowerUps()
                 break;
             }
 
+            const PowerUpTeamType slot = g_pTeams[homeAway]->GetPowerUpByIndex(i);
+            const int award = (slot.eType << 8) | slot.nnumOfPowerups;
             if (texture[i] == NULL)
             {
+                if (s_emptySince[homeAway][i] == 0)
+                    s_emptySince[homeAway][i] = PortSimTick();
+                const unsigned int confirmed = PortRollbackConfirmed();
+                if (confirmed == 0xFFFFFFFFu || confirmed + 1 >= s_emptySince[homeAway][i])
+                    s_shownAward[homeAway][i] = -1;
                 m_pImagePowerUps[0][homeAway][i]->m_bVisible = false;
                 m_pImagePowerUps[1][homeAway][i]->m_bVisible = false;
                 if (mNumFlareCycles[homeAway][i] >= 0)
@@ -679,8 +694,14 @@ void HUDOverlay::DisplayPowerUps()
             }
             else
             {
-                if (g_pTeams[homeAway]->GetPowerUpByIndex(i).bIsNew && mNumFlareCycles[homeAway][i] == -1)
+                s_emptySince[homeAway][i] = 0;
+                if (slot.bIsNew && mNumFlareCycles[homeAway][i] == -1 && s_shownAward[homeAway][i] == award)
                 {
+                    g_pTeams[homeAway]->SetIsPowerUpNew(i, false);
+                }
+                else if (slot.bIsNew && mNumFlareCycles[homeAway][i] == -1)
+                {
+                    s_shownAward[homeAway][i] = award;
                     m_pImageFlares[0][homeAway][i]->m_bVisible = true;
                     m_pComponentFlares[homeAway][i]->SetActiveSlide("Slide1");
                     m_pComponentFlares[homeAway][i]->Update(0.0f);

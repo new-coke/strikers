@@ -221,10 +221,10 @@ bool StartMatch(World& w, Machine* host, const std::vector<Machine*>& guests)
     return host->session.Start() != 0;
 }
 
-// The session's auto delay: only the part of the worst path past the guessing window.
+// The session's auto delay: the worst path less the two ticks Auto leaves to guessing.
 int ExpectedDelay(const NetParams& p)
 {
-    const double b = p.oneWayMs + 2 * p.jitterMs + 3 - 14 * 20.0;
+    const double b = p.oneWayMs + 2 * p.jitterMs + 3 - 2 * 20.0;
     int d = b > 0 ? (int)std::ceil(b / 20.0) : 0;
     return d > 8 ? 8 : d;
 }
@@ -2076,6 +2076,86 @@ void TestDropBehindGuess()
     CHECK(in[1].kind == ONLINE_SLOT_CPU);
 }
 
+// Both machines play one delay: the largest asked for, or Auto's when either asks for Auto.
+void TestAgreedDelay()
+{
+    struct Case
+    {
+        int host, guest;
+    };
+    const Case cases[] = { { 3, 0 }, { 0, 3 }, { 2, 5 }, { 0, 0 }, { 0, 8 } };
+    for (const Case& c : cases)
+    {
+        World w(39);
+        w.net.params.oneWayMs = 65;   // a 130 ms round trip, EU to NA
+        w.net.params.jitterMs = 8;
+        w.net.params.loss = 0;
+        w.net.params.duplicate = 0;
+        Identity id = TestIdentity();
+        Machine* a = w.Add(0x0A000001, 0, 60, 1, id, "agreed");
+        Machine* b = w.Add(0x0A000002, 0, 60, 1, id, "agreed");
+        for (Machine* m : { a, b })
+        {
+            m->game.matchTicks = 1500;
+            m->game.goalOdds = 0;
+        }
+        OnlineSettings s = a->session.Settings();
+        s.delayTicks = (uint8_t)c.host;
+        a->session.SetSettings(s);
+        s = b->session.Settings();
+        s.delayTicks = (uint8_t)c.guest;
+        b->session.SetSettings(s);
+        CHECK(Connect(w, a, b));
+        w.RunFor(5);
+        const int autoDelay = ExpectedDelay(w.net.params);
+        const bool anyAuto = c.host == 0 || c.guest == 0;
+        int want = c.host > c.guest ? c.host : c.guest;
+        if (anyAuto && autoDelay > want)
+            want = autoDelay;
+        CHECK(a->State().delayTicks == want && b->State().delayTicks == want);
+        CHECK(a->State().delayAuto == (int)anyAuto && b->State().delayAuto == (int)anyAuto);
+        CHECK(StartMatch(w, a, { b }));
+        CHECK(w.RunUntil([&] { return a->game.tick > 300 && b->game.tick > 300; }, 30));
+        std::printf("agreed delay: host %d guest %d -> %d and %d ticks (auto %d), deepest "
+                    "rollback %u and %u\n",
+                    c.host, c.guest, a->State().delayTicks, b->State().delayTicks, autoDelay,
+                    a->game.longestRollback, b->game.longestRollback);
+        CHECK(a->State().delayTicks == want && b->State().delayTicks == want);
+        CHECK(a->session.Engine().Delay() == want && b->session.Engine().Delay() == want);
+        if (anyAuto)
+            CHECK(a->game.longestRollback <= 6 && b->game.longestRollback <= 6);
+    }
+}
+
+// Auto grows on sustained deep guessing, not only on stalls.
+void TestAutoGrowsOnGuessing()
+{
+    World w(40);
+    QuietNet(w);
+    w.net.params.oneWayMs = 20;
+    Identity id = TestIdentity();
+    Machine* a = w.Add(0x0A000001, 0, 60, 1, id, "grow");
+    Machine* b = w.Add(0x0A000002, 0, 60, 1, id, "grow");
+    for (Machine* m : { a, b })
+    {
+        m->game.matchTicks = 3000;
+        m->game.goalOdds = 0;
+    }
+    CHECK(Connect(w, a, b));
+    w.RunFor(5);
+    CHECK(StartMatch(w, a, { b }));
+    CHECK(w.RunUntil([&] { return a->game.tick > 200; }, 30));
+    const int before = a->State().delayTicks;
+    // The route gets 100 ms longer each way mid-match.
+    w.net.params.oneWayMs = 120;
+    w.RunFor(25);
+    const int after = a->State().delayTicks;
+    std::printf("auto growth: %d ticks before, %d after a 120 ms route; stalls a %d b %d\n", before,
+                after, a->game.stallCount, b->game.stallCount);
+    CHECK(after > before);
+    CHECK(b->State().delayTicks == after);
+}
+
 // A Windows machine joins a Mac's room: every platform plays every other, with no check.
 void TestCrossPlatform()
 {
@@ -2142,6 +2222,8 @@ int main()
     run("drop-behind-guess", TestDropBehindGuess);
     run("seed-replay", TestSeedReplay);
     run("cross-platform", TestCrossPlatform);
+    run("agreed-delay", TestAgreedDelay);
+    run("auto-grows", TestAutoGrowsOnGuessing);
     run("many", TestManyMatches);
     if (g_failures != 0)
     {

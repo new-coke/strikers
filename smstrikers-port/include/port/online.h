@@ -11,7 +11,7 @@ extern "C" {
 
 struct PADStatus;
 
-#define ONLINE_PROTOCOL_VERSION 4
+#define ONLINE_PROTOCOL_VERSION 5
 
 #define ONLINE_MAX_MACHINES 4
 #define ONLINE_MAX_SLOTS 4
@@ -272,6 +272,13 @@ typedef struct OnlineSettings
     uint8_t  delayTicks;    // 0 for Auto, else 1-8
     uint8_t  showStats;     // the in-match stats line
     uint16_t hostPort;      // UDP port a hosted room listens on
+    // A room this machine hosts starts with these.
+    uint16_t gameTime;      // seconds, as OnlineMatchDesc
+    uint8_t  skill;         // GameplaySettings::eSkillLevel 0-4
+    uint8_t  powerupMask;   // ONLINE_POWERUP_* bits
+    uint8_t  shoot2Score;
+    uint8_t  bowser;
+    uint8_t  pauseAllowed;
 } OnlineSettings;
 
 enum

@@ -32,6 +32,14 @@ Session::Session(SessionEnv* env, const Identity& identity, const SessionConfig&
     std::memset(&m_settings, 0, sizeof m_settings);
     copy_name(m_settings.nickname, "Player");
     m_settings.hostPort = ONLINE_DEFAULT_PORT;
+    OnlineMatchDesc d;
+    PortOnlineDescDefault(&d);
+    m_settings.gameTime = d.gameTime;
+    m_settings.skill = d.skill;
+    m_settings.powerupMask = d.powerupMask;
+    m_settings.shoot2Score = d.shoot2Score;
+    m_settings.bowser = d.bowser;
+    m_settings.pauseAllowed = d.pauseAllowed;
     m_noticeSerial = 0;
     m_notice = ONLINE_NOTICE_NONE;
     m_noticeMachine = -1;
@@ -76,6 +84,12 @@ void Session::SetSettings(const OnlineSettings& settings)
     // Xbox reaches only 1025-49151, so a room there must be reachable from one.
     if (next.hostPort < 1025 || next.hostPort > 49151)
         next.hostPort = ONLINE_DEFAULT_PORT;
+    next.gameTime = PortOnlineGameTimeStep(next.gameTime, 0);
+    if (next.skill > 4)
+        next.skill = m_settings.skill;
+    next.shoot2Score = next.shoot2Score != 0;
+    next.bowser = next.bowser != 0;
+    next.pauseAllowed = next.pauseAllowed != 0;
     m_settings = next;
     if (!m_hosting)
         MapPort(m_settings.hostPort);
@@ -153,6 +167,7 @@ void Session::Reset(bool keepNearby)
     m_delay = ONLINE_MIN_DELAY_TICKS;
     m_delayAuto = m_settings.delayTicks == 0;
     m_delayGrewUs = 0;
+    m_guessDepth = 0;
     m_loopNext = 0;
     m_anchorPos = 0;
     m_anchorUs = 0;
@@ -396,6 +411,7 @@ void Session::SendRoomState()
         w.lossPercent = s.lossPercent;
         w.pingMs = s.pingMs;
         w.jitterMs = s.jitterMs;
+        w.delayTicks = DelayAsked(i);
         std::memcpy(w.nickname, s.nickname, sizeof w.nickname);
         int count = 0;
         for (int h = 0; h < ONLINE_MAX_LOCAL_HUMANS; h++)
@@ -440,11 +456,30 @@ uint32_t Session::WorstRttUs() const
     return worst;
 }
 
+uint8_t Session::DelayAsked(int machine) const
+{
+    return machine == m_self ? m_settings.delayTicks : m_room[machine].delayAsked;
+}
+
+bool Session::DelayAuto() const
+{
+    if (m_settings.delayTicks == 0)
+        return true;
+    for (int m = 0; m < ONLINE_MAX_MACHINES; m++)
+        if (m_room[m].present && DelayAsked(m) == 0)
+            return true;
+    return false;
+}
+
 uint8_t Session::ExpectedDelay(uint64_t now)
 {
-    if (m_settings.delayTicks != 0)
-        return m_settings.delayTicks;
-    // The worst path's input is guessed as far as snapshots reach; only the rest becomes delay.
+    // Every machine plays the same delay: the largest any player asked for, or Auto's if larger.
+    int asked = m_settings.delayTicks;
+    for (int m = 0; m < ONLINE_MAX_MACHINES; m++)
+        if (m_room[m].present && DelayAsked(m) > asked)
+            asked = DelayAsked(m);
+    if (!DelayAuto())
+        return (uint8_t)asked;
     double worstUs = 0;
     double rtt[ONLINE_MAX_MACHINES] = {};
     double sd[ONLINE_MAX_MACHINES] = {};
@@ -475,8 +510,10 @@ uint8_t Session::ExpectedDelay(uint64_t now)
                 worstUs = star;
         }
     }
-    const double guessedUs = (double)kMaxAhead * kTickUs;
+    const double guessedUs = (double)kAutoGuessTicks * kTickUs;
     int d = worstUs > guessedUs ? (int)((worstUs - guessedUs + kTickUs - 1) / kTickUs) : 0;
+    if (d < asked)
+        d = asked;
     if (d < ONLINE_MIN_DELAY_TICKS)
         d = ONLINE_MIN_DELAY_TICKS;
     if (d > ONLINE_MAX_DELAY_TICKS)
@@ -557,6 +594,12 @@ int Session::Host(uint16_t port, const char* nickname)
     std::memcpy(me.nickname, m_nickname, sizeof me.nickname);
 
     PortOnlineDescDefault(&m_desc);
+    m_desc.gameTime = m_settings.gameTime;
+    m_desc.skill = m_settings.skill;
+    m_desc.powerupMask = m_settings.powerupMask;
+    m_desc.shoot2Score = m_settings.shoot2Score;
+    m_desc.bowser = m_settings.bowser;
+    m_desc.pauseAllowed = m_settings.pauseAllowed;
     FillDescIdentity(&m_desc);
     m_local[0].used = true;
     m_local[0].localPort = 0;
@@ -1545,6 +1588,7 @@ void Session::HostJoin(Link& link, const MsgJoin& j)
     rm.present = true;
     rm.connected = true;
     rm.platform = j.platform;
+    rm.delayAsked = j.delayTicks;
     std::memcpy(rm.nickname, j.nickname, sizeof rm.nickname);
     for (size_t i = 0; i < m_links.size(); i++)
         if (m_links[i] == &link)
@@ -1597,6 +1641,7 @@ void Session::GuestRoomState(const MsgRoomState& r)
         rm.lossPercent = w.lossPercent;
         rm.pingMs = w.pingMs;
         rm.jitterMs = w.jitterMs;
+        rm.delayAsked = w.delayTicks;
         std::memcpy(rm.nickname, w.nickname, sizeof rm.nickname);
         if (!wasPresent && i != m_self && i != 0)
             Notice(ONLINE_NOTICE_JOINED, i);
@@ -1791,7 +1836,7 @@ void Session::FillState(uint64_t now)
     const bool playing = m_lock.Active();
     s.delayTicks = playing ? m_delay : m_expectedDelay;
     s.delayMs = s.delayTicks * ONLINE_TICK_MS;
-    s.delayAuto = m_settings.delayTicks == 0;
+    s.delayAuto = DelayAuto();
 
     s.tick = m_loopNext;
     const uint32_t confirmed = playing ? m_lock.Confirmed() : 0;

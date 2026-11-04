@@ -409,6 +409,7 @@ void Session::OnWelcome(const NetAddr& from, const Welcome& w, uint64_t now)
     j.binaryFamily = m_id.binaryFamily;
     j.build = m_id.build;
     j.dataFamily = m_id.dataFamily;
+    j.delayTicks = m_settings.delayTicks;
     std::memcpy(j.version, m_id.version, sizeof j.version);
     std::memcpy(j.nickname, m_nickname, sizeof j.nickname);
     int humans = 0;

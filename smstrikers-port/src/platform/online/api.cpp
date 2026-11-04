@@ -313,9 +313,11 @@ online::Identity make_identity(void)
     return id;
 }
 
-const int kSettingCount = 4;
-const char* const kSettingKeys[kSettingCount] = { "online_nickname", "online_delay", "online_stats",
-                                                  "online_port" };
+const int kSettingCount = 10;
+const char* const kSettingKeys[kSettingCount] = {
+    "online_nickname",   "online_delay", "online_stats",         "online_port",   "online_minutes",
+    "online_difficulty", "online_items", "online_super_strikes", "online_bowser", "online_pausing"
+};
 
 bool key_is(const char* line, const char* key)
 {
@@ -383,6 +385,13 @@ void save_settings(const OnlineSettings& s)
     std::snprintf(values[1], sizeof values[1], "online_delay = %u", (unsigned)s.delayTicks);
     std::snprintf(values[2], sizeof values[2], "online_stats = %u", (unsigned)s.showStats);
     std::snprintf(values[3], sizeof values[3], "online_port = %u", (unsigned)s.hostPort);
+    std::snprintf(values[4], sizeof values[4], "online_minutes = %u", (unsigned)s.gameTime / 60);
+    std::snprintf(values[5], sizeof values[5], "online_difficulty = %u", (unsigned)s.skill);
+    std::snprintf(values[6], sizeof values[6], "online_items = %u", (unsigned)s.powerupMask);
+    std::snprintf(values[7], sizeof values[7], "online_super_strikes = %u",
+                  (unsigned)s.shoot2Score);
+    std::snprintf(values[8], sizeof values[8], "online_bowser = %u", (unsigned)s.bowser);
+    std::snprintf(values[9], sizeof values[9], "online_pausing = %u", (unsigned)s.pauseAllowed);
     bool placed[kSettingCount] = {};
     for (size_t i = 0; i < lines.size(); i++)
         for (int k = 0; k < kSettingCount; k++)
@@ -449,6 +458,12 @@ void save_settings(const OnlineSettings& s)
     }
 }
 
+long env_long(const char* name, long fallback)
+{
+    const char* v = std::getenv(name);
+    return v != NULL && *v != '\0' ? std::strtol(v, NULL, 10) : fallback;
+}
+
 OnlineSettings load_settings(void)
 {
     OnlineSettings s;
@@ -469,6 +484,14 @@ OnlineSettings load_settings(void)
     const char* port = std::getenv("STRIKERS_ONLINE_PORT");
     const long p = port != NULL ? std::strtol(port, NULL, 10) : 0;
     s.hostPort = (uint16_t)(p >= 1025 && p <= 49151 ? p : ONLINE_DEFAULT_PORT);
+    OnlineMatchDesc d;
+    PortOnlineDescDefault(&d);
+    s.gameTime = (uint16_t)(env_long("STRIKERS_ONLINE_MINUTES", d.gameTime / 60) * 60);
+    s.skill = (uint8_t)env_long("STRIKERS_ONLINE_DIFFICULTY", d.skill);
+    s.powerupMask = (uint8_t)env_long("STRIKERS_ONLINE_ITEMS", d.powerupMask);
+    s.shoot2Score = env_long("STRIKERS_ONLINE_SUPER_STRIKES", d.shoot2Score) != 0;
+    s.bowser = env_long("STRIKERS_ONLINE_BOWSER", d.bowser) != 0;
+    s.pauseAllowed = env_long("STRIKERS_ONLINE_PAUSING", d.pauseAllowed) != 0;
     return s;
 }
 

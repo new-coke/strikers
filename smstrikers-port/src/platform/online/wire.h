@@ -287,6 +287,7 @@ struct WireMachine
     uint16_t jitterMs;
     char nickname[ONLINE_NAME_MAX + 1];
     uint8_t humanCount;
+    uint8_t delayTicks;                         // its setting: 0 Auto, else ticks
     WireHuman human[ONLINE_MAX_LOCAL_HUMANS];   // by the machine's own local index
 };
 
@@ -304,6 +305,7 @@ struct MsgJoin
     uint8_t binaryFamily;
     uint32_t build;
     uint32_t dataFamily;
+    uint8_t delayTicks;   // the joining machine's setting: 0 Auto, else ticks
     char version[17];
     char nickname[ONLINE_NAME_MAX + 1];
     uint8_t humanCount;

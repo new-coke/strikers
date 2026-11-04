@@ -141,6 +141,7 @@
 # data = C:/games/strikers/Super Mario Strikers.iso
 
 # Where the game's reports go: 1 for strikers-log.txt beside it, a file path, or console.
+# Started without a terminal, this build writes strikers-log.txt anyway; 0 turns that off.
 # log = 1
 # log = console
 
@@ -203,6 +204,18 @@
 
 # The UDP port a room you host listens on, 1025 to 49151. Guests joining by address need it open.
 # online_port = 41210
+
+# A room you host starts with these, and changing them in Match settings saves them here.
+# Minutes: 2, 3, 4, 5, 10, 15, 20, 30, 45 or 60.
+# online_minutes = 3
+# 0 Training, 1 Rookie, 2 Professional, 3 Superstar, 4 Legend.
+# online_difficulty = 2
+# Items allowed, a sum of: 33 red shells, 2 green shells, 4 freeze shells, 8 spiny shells, 16 stars,
+# 64 Bob-ombs, 128 bananas. 255 is every item.
+# online_items = 255
+# online_super_strikes = 1
+# online_bowser = 1
+# online_pausing = 0
 
 # 1 asks your router over UPnP, from launch, to forward online_port, and finds a hosted room's
 # internet address by asking a public STUN server (Cloudflare's, then Google's) what address it

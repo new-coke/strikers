@@ -62,6 +62,31 @@ static void ForgetBornBlur(BlurHandler* handler)
         }
 }
 
+// PORT: the deaths each tick deals, so a rollback revives the handlers its undone ticks killed.
+struct DiedBlur
+{
+    BlurHandler* handler;
+    unsigned int tick;
+    unsigned int born;   // its s_born tick, or 0xFFFFFFFF if made before any tick a rollback undoes
+    bool dying;
+    float dyingTimer;
+    float timeToDie;
+};
+static std::vector<DiedBlur> s_died;
+
+static void NoteBlurDeath(BlurHandler* handler)
+{
+    if (handler == NULL || !PortSimInTick() || PortRollbackConfirmed() == 0xFFFFFFFFu)
+        return;
+    unsigned int born = 0xFFFFFFFFu;
+    for (const BornBlur& b : s_born)
+        if (b.handler == handler)
+            born = b.tick;
+    PortSimHeapPauseScope presentation;
+    s_died.push_back(DiedBlur{ handler, PortSimTick(), born, handler->m_bDying, handler->m_fDyingTimer,
+                               handler->m_fTimeToDie });
+}
+
 static void ReleaseBlurHandler(BlurHandler* handler)
 {
     ForgetBornBlur(handler);
@@ -78,6 +103,11 @@ static void ReleaseBlurHandler(BlurHandler* handler)
 static void ReclaimBlurHandlers()
 {
     const unsigned int confirmed = PortRollbackConfirmed();
+    size_t live = 0;
+    for (size_t i = 0; i < s_died.size(); i++)
+        if (confirmed != 0xFFFFFFFFu && s_died[i].tick >= confirmed)
+            s_died[live++] = s_died[i];
+    s_died.resize(live);
     size_t kept = 0;
     for (size_t i = 0; i < s_released.size(); i++)
     {
@@ -99,6 +129,26 @@ static size_t blur_unsnapshot(const unsigned char* in)
 {
     unsigned int tick;
     memcpy(&tick, in, sizeof tick);
+    // PORT: the restored state names a handler an undone tick let die; newest death first.
+    while (!s_died.empty() && s_died.back().tick >= tick)
+    {
+        const DiedBlur d = s_died.back();
+        s_died.pop_back();
+        if (d.born != 0xFFFFFFFFu && d.born >= tick)
+            continue;
+        d.handler->m_bDying = d.dying;
+        d.handler->m_fDyingTimer = d.dyingTimer;
+        d.handler->m_fTimeToDie = d.timeToDie;
+        for (size_t i = 0; i < s_released.size(); i++)
+            if (s_released[i].handler == d.handler)
+            {
+                s_released.erase(s_released.begin() + (long)i);
+                nlDLRingAddEnd<BlurHandler>(&BlurManager::m_activeBlurHandler, d.handler);
+                if (d.born != 0xFFFFFFFFu)
+                    s_born.push_back(BornBlur{ d.handler, d.born });
+                break;
+            }
+    }
     for (size_t i = 0; i < s_born.size();)
     {
         if (s_born[i].tick < tick)
@@ -128,6 +178,7 @@ void BlurManager::Shutdown()
         FreeBlurHandler(r.handler);
     s_released.clear();
     s_born.clear();
+    s_died.clear();
     nlDeleteDLRing<BlurHandler>(&m_activeBlurHandler);
     m_activeBlurHandler = NULL;
     SlotPoolBase::BaseFreeBlocks(&BlurHandler::m_BlurHandlerSlotPool, sizeof(BlurHandler));
@@ -191,6 +242,7 @@ void BlurManager::DestroyHandler(BlurHandler* handler, float timeToDie)
     // PORT: a rollback can hand back a handler the screen has already let go.
     if (handler != NULL && BlurHandlerReleased(handler))
         return;
+    NoteBlurDeath(handler);
     if (timeToDie == 0.0f)
     {
         nlDLRingRemove<BlurHandler>(&m_activeBlurHandler, handler);
@@ -415,6 +467,7 @@ void BlurHandler::RenderMesh(unsigned long uTexID)
  */
 void BlurHandler::Die(float timeToDie)
 {
+    NoteBlurDeath(this);
     m_bDying = true;
     m_fDyingTimer = timeToDie;
     m_fTimeToDie = timeToDie;

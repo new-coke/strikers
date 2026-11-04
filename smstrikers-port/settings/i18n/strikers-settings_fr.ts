@@ -2235,6 +2235,21 @@ Le jeu utilise désormais ce dossier ; l&apos;image peut donc être déplacée o
         <translation>Bananes</translation>
     </message>
     <message>
+        <source>Difficulty</source>
+        <extracomment>T_DIFFICULTY; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Difficulté</translation>
+    </message>
+    <message>
+        <source>Super Strikes</source>
+        <extracomment>T_SUPER_STRIKES; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Super frappes</translation>
+    </message>
+    <message>
+        <source>Bowser attack</source>
+        <extracomment>T_BOWSER_ATTACK; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Attaque de Bowser</translation>
+    </message>
+    <message>
         <source>Share an address the other players can reach:</source>
         <extracomment>T_OTHER_ADDRESSES; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
         <translation>Partagez une adresse accessible aux autres joueurs :</translation>

@@ -16,6 +16,7 @@
 #define port_dup2 _dup2
 #define port_fileno _fileno
 #else
+#include <sys/stat.h>
 #include <unistd.h>
 #define port_dup2 dup2
 #define port_fileno fileno
@@ -205,11 +206,31 @@ static void attach_parent_console(void)
 int PortSwitchLogToFile(const char* path);
 #endif
 
+// Test builds log by default wherever stderr would be lost, so a tester's crash leaves a backtrace.
+#define PORT_LOG_BY_DEFAULT 1
+
+// Launchers give /dev/null or a journal socket, and a Windows GUI launch no descriptor at all.
+static int stderr_unseen(void)
+{
+#if defined(__SWITCH__)
+    return 0;
+#elif defined(_WIN32)
+    return port_fileno(stderr) < 0;
+#else
+    struct stat st;
+    if (fstat(STDERR_FILENO, &st) != 0)
+        return 1;
+    return !isatty(STDERR_FILENO) && (S_ISCHR(st.st_mode) || S_ISSOCK(st.st_mode));
+#endif
+}
+
 static void open_log(void)
 {
     const char* v = getenv("STRIKERS_LOG");
     char path[1024];
 
+    if ((v == NULL || *v == '\0') && PORT_LOG_BY_DEFAULT && stderr_unseen())
+        v = "1";
     if (v == NULL || *v == '\0' || strcmp(v, "0") == 0)
         return;
 
@@ -222,10 +243,14 @@ static void open_log(void)
     if (strcmp(v, "1") == 0)
     {
         char dir[1024];
-        if (port_executable_dir(dir, sizeof dir) == 0)
-            snprintf(path, sizeof path, "%s/strikers-log.txt", dir);
-        else
-            snprintf(path, sizeof path, "strikers-log.txt");
+        char previous[1100];
+        if (port_executable_dir(dir, sizeof dir) != 0)
+            snprintf(dir, sizeof dir, ".");
+        snprintf(path, sizeof path, "%s/strikers-log.txt", dir);
+        // A relaunch after a crash would otherwise overwrite the crash's log.
+        snprintf(previous, sizeof previous, "%s/strikers-log-previous.txt", dir);
+        remove(previous);
+        rename(path, previous);
     }
     else
     {

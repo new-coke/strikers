@@ -280,6 +280,7 @@ void PortRbProbeSpanHash(int pass, int j)
     if (pass != 1 || j + 1 != (int)P->span)
         return;
     PortRollbackSetResimulating(0);
+    PortSoundsReplayDone();
     PortRollbackSetConfirmed(0xFFFFFFFFu);
 
     P->runs++;

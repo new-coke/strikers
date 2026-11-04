@@ -967,7 +967,7 @@ extern "C" void PortRollbackDiff(unsigned int a, unsigned int b,
                                  void (*report)(const char*, size_t));
 extern "C" const void* PortRollbackRegion(size_t index, size_t* size);
 
-// Ticks that ran on a wrong guess run again from the first one's snapshot, without sound or rumble.
+// Ticks that ran on a wrong guess run again from the first one's snapshot, without rumble.
 void online_rollback(void)
 {
     const unsigned int confirmed = PortOnlineConfirmedTick();
@@ -1069,6 +1069,7 @@ void online_rollback(void)
         run_tick(k);
     }
     PortRollbackSetResimulating(0);
+    PortSoundsReplayDone();
     s_tick = k;
     if (k < now)
         PortOnlineRewind(k);

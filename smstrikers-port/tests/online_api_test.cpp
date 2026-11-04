@@ -244,8 +244,26 @@ void TestSettings()
     s = PortOnlineGetState();
     next = s->settings;
     next.delayTicks = 0;
+    CHECK(s->settings.gameTime == 180 && s->settings.skill == 2 && s->settings.bowser == 1);
+    next.gameTime = 299;
+    next.skill = 9;
+    next.powerupMask = ONLINE_POWERUP_BANANAS;
+    next.shoot2Score = 0;
+    next.bowser = 7;
+    CHECK(PortOnlineSetSettings(&next));
+    s = PortOnlineGetState();
+    CHECK(s->settings.gameTime == 120 && s->settings.skill == 2 &&
+          s->settings.powerupMask == ONLINE_POWERUP_BANANAS && s->settings.shoot2Score == 0 &&
+          s->settings.bowser == 1);
+    next = s->settings;
+    next.gameTime = 300;
+    next.skill = 4;
+    next.bowser = 0;
     CHECK(PortOnlineSetSettings(&next));
     const std::string text = ReadFile(g_ini);
+    CHECK(Count(text, "online_minutes = 5") == 1 && Count(text, "online_difficulty = 4") == 1);
+    CHECK(Count(text, "online_items = 128") == 1 && Count(text, "online_super_strikes = 0") == 1);
+    CHECK(Count(text, "online_bowser = 0") == 1 && Count(text, "online_pausing = 0") == 1);
     CHECK(Count(text, "online_nickname = \"Zed\"") == 1);
     CHECK(Count(text, "online_delay = 0") == 1);
     CHECK(Count(text, "ONLINE_DELAY") == 0);
@@ -361,6 +379,12 @@ int main()
     CHECK(port != 0);
     CHECK(PortOnlineGetState()->phase == ONLINE_PHASE_HOSTING && PortOnlineActive());
     CHECK(PortOnlineGetState()->roomPort == port);
+    // A hosted room starts from the saved match settings.
+    {
+        const OnlineMatchDesc& d = PortOnlineGetState()->desc;
+        CHECK(d.gameTime == 300 && d.skill == 4 && d.powerupMask == ONLINE_POWERUP_BANANAS);
+        CHECK(d.shoot2Score == 0 && d.bowser == 0 && d.pauseAllowed == 0);
+    }
     // An API room's identity comes from its DESC; the raw session takes the same values.
     Identity id;
     std::memset(&id, 0, sizeof id);

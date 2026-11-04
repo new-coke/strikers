@@ -20,6 +20,8 @@ const uint64_t kStallWindowUs = 5000000;
 const uint64_t kDelayGrowEveryUs = 10000000;
 const uint64_t kMaxTimingAgeUs = 250000;
 const uint64_t kStretchWithinUs = 60000;
+// Auto delay also grows when the worst machine guesses this far past its input, smoothed over 2 s.
+const double kGrowAtGuessTicks = kAutoGuessTicks + 2;
 const size_t kMaxEvents = 512;
 
 // A pause (barrier 4) resumes the match where it stopped, so it keeps the gameplay stream as it is.
@@ -72,8 +74,9 @@ void Session::BeginMatch(uint32_t startInUs, uint8_t delayTicks, uint64_t now)
     m_goReceived = true;
     m_startUs = now + startInUs;
     m_delay = delayTicks;
-    m_delayAuto = m_settings.delayTicks == 0;
+    m_delayAuto = DelayAuto();
     m_delayGrewUs = now;
+    m_guessDepth = 0;
     uint8_t mask = 0;
     for (int m = 0; m < ONLINE_MAX_MACHINES; m++)
         if (m_room[m].present)
@@ -805,6 +808,7 @@ void Session::ApplyResume(const MsgResume& r, uint64_t startUs)
         m_lock.SetDelay(m_delay);
     }
     m_delayGrewUs = m_env->NowUs();
+    m_guessDepth = 0;
     m_stallStarts.clear();
     Stamp(r.tick, r.actions, r.kind, r.seed, 0);
     for (int m = 0; m < ONLINE_MAX_MACHINES; m++)
@@ -981,6 +985,8 @@ void Session::MatchTimers(uint64_t now)
     // Advance against the slowest machine: this machine's tick less each peer's, projected to now.
     double worst = 0;
     int worstMachine = -1;
+    const uint32_t confirmed = ConfirmedTick();
+    double depth = m_loopNext > confirmed ? (double)(m_loopNext - confirmed) : 0.0;
     for (size_t i = 0; i < m_links.size(); i++)
     {
         const Link& l = *m_links[i];
@@ -989,6 +995,8 @@ void Session::MatchTimers(uint64_t now)
             continue;
         if (!m_lock.InMatch(l.machine) || m_lock.Dropped(l.machine))
             continue;
+        if (l.peerTick > l.peerConfirmed && (double)(l.peerTick - l.peerConfirmed) > depth)
+            depth = (double)(l.peerTick - l.peerConfirmed);
         const double oneWay = l.stats.HasRtt() ? l.stats.SrttUs() / 2.0 : 0.0;
         const double peer = (double)l.peerTick +
                             ((double)(Since(now, l.timingAtUs)) + oneWay) * m_timeScale / kTickUs;
@@ -1005,6 +1013,7 @@ void Session::MatchTimers(uint64_t now)
         if (a > 1)
             a = 1;
         m_advance += (worst - m_advance) * a;
+        m_guessDepth += (depth - m_guessDepth) * a * 0.5;
         if (m_advance > 1.0)
         {
             if (m_slowSinceUs == 0 || m_slowMachine != worstMachine)
@@ -1018,12 +1027,14 @@ void Session::MatchTimers(uint64_t now)
     }
     m_advanceUs = now;
 
-    // Auto delay grows by one tick after 2 stalls within 5 s, at most once every 10 s.
+    // Auto delay grows a tick after 2 stalls within 5 s or sustained deep guessing, once per 10 s.
     while (!m_stallStarts.empty() && Since(now, m_stallStarts.front()) > kStallWindowUs)
         m_stallStarts.erase(m_stallStarts.begin());
-    if (IsHost() && m_delayAuto && m_delay < ONLINE_MAX_DELAY_TICKS && m_stallStarts.size() >= 2 &&
+    if (IsHost() && m_delayAuto && m_delay < ONLINE_MAX_DELAY_TICKS &&
+        (m_stallStarts.size() >= 2 || m_guessDepth >= kGrowAtGuessTicks) &&
         Since(now, m_delayGrewUs) >= kDelayGrowEveryUs)
     {
+        m_guessDepth = 0;
         m_delay++;
         m_lock.SetDelay(m_delay);
         m_delayGrewUs = now;

@@ -51,8 +51,10 @@ void PortRollbackSetConfirmed(unsigned int tick);
 
 // A physics object is going away; sounds that follow it stay where it was.
 void PortSoundsForgetObject(const void* obj);
+// A replay is over: sounds the undone ticks started and the replay did not start again stop.
+void PortSoundsReplayDone(void);
 
-// Non-zero while ticks are being run again after a load; sounds, rumble and effects stay quiet.
+// Non-zero while ticks are being run again after a load; rumble, effects and fades stay quiet.
 int PortRollbackResimulating(void);
 void PortRollbackSetResimulating(int on);
 

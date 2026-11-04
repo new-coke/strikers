@@ -9,6 +9,12 @@
 #include "NL/nlTask.h"
 #include "types.h"
 
+extern "C" int PortSoundsClaim(const cGameSFX* owner, Audio::SoundAttributes& attrs, uintptr_t* handle);
+extern "C" void PortSoundsStarted(const cGameSFX* owner, const Audio::SoundAttributes& attrs, uintptr_t handle,
+                                  SFXEmitter* emitter, unsigned long voice);
+extern "C" int PortSoundsTooLate(void);
+extern "C" int PortSoundsPending(const SFXEmitter* emitter, unsigned long voice);
+
 SlotPool<SFXPlaySet> SFXPlaySet::m_TrackedSFXSlotPool(0x32, 0x10);
 
 static const nlVector3 kZeroVector = { 0.0f, 0.0f, 0.0f };
@@ -567,8 +573,15 @@ bool cGameSFX::KillLowerPrioritySFX(int priority)
  */
 uintptr_t cGameSFX::Play(Audio::SoundAttributes& sfxData)
 {
+    // PORT: a replay keeps the sound its undone run started; a new one starts late or not at all.
     if (PortRollbackResimulating())
-        return Audio::NothingPlayed(sfxData);
+    {
+        uintptr_t kept;
+        if (PortSoundsClaim(this, sfxData, &kept))
+            return kept;
+        if (sfxData.mf_DelayTime != -1.0f || PortSoundsTooLate())
+            return Audio::NothingPlayed(sfxData);
+    }
     // PORT: uintptr_t holds (uintptr_t)pSFXEmitter when mf_ReturnEmitterOnPlay is set, and unsigned long is four bytes on Windows.
     uintptr_t voiceID;
     SFXEmitter* pSFXEmitter;
@@ -693,6 +706,7 @@ uintptr_t cGameSFX::Play(Audio::SoundAttributes& sfxData)
     {
         voiceID = Audio::PlaySFXbyID(sfxData, sfxID, fVolume, fVolReverb, volGrp);
         this->mpSFX[sfxData.mu_Type].lastVoiceID = voiceID;
+        PortSoundsStarted(this, sfxData, voiceID, NULL, (unsigned long)voiceID);
         return voiceID;
     }
 
@@ -806,6 +820,8 @@ uintptr_t cGameSFX::Play(Audio::SoundAttributes& sfxData)
     }
 
     this->mpSFX[sfxData.mu_Type].pLastEmitter = pSFXEmitter;
+    // PORT: the voice, before mf_ReturnEmitterOnPlay swaps voiceID for the emitter.
+    const unsigned long startedVoice = (unsigned long)voiceID;
 
     if (sfxData.mf_ReturnEmitterOnPlay)
     {
@@ -817,6 +833,7 @@ uintptr_t cGameSFX::Play(Audio::SoundAttributes& sfxData)
         this->KeepTrack(pSFXEmitter, sfxData, voiceID);
     }
 
+    PortSoundsStarted(this, sfxData, voiceID, pSFXEmitter, startedVoice);
     return voiceID;
 }
 
@@ -915,7 +932,9 @@ void cGameSFX::Stop(unsigned long type, cGameSFX::StopFlag stopFlag)
         nlDLListIterator<SFXPlaySet*> iterToCurrentItem = iterator;
         iterator.next();
 
-        if (pTrackedSFX->type != type)
+        // PORT: a sound an undone tick started is not the one a replayed stop meant.
+        if (pTrackedSFX->type != type ||
+            PortSoundsPending(pTrackedSFX->bIs3D ? pTrackedSFX->emitter : NULL, pTrackedSFX->voiceID))
         {
             continue;
         }
@@ -950,7 +969,7 @@ void cGameSFX::Stop(unsigned long type, cGameSFX::StopFlag stopFlag)
  */
 void cGameSFX::StopEmitter(SFXEmitter* pSFXEmitter, unsigned long type)
 {
-    if (pSFXEmitter == NULL)
+    if (pSFXEmitter == NULL || PortSoundsPending(pSFXEmitter, 0))
     {
         return;
     }
@@ -1029,6 +1048,9 @@ bool cGameSFX::StopTrackedSFX(nlDLListIterator<SFXPlaySet*>* pIter)
 {
     SFXPlaySet* pTrackedSFX = **pIter;
     SFXEmitter* pSFXEmitter;
+
+    if (PortSoundsPending(pTrackedSFX->bIs3D ? pTrackedSFX->emitter : NULL, pTrackedSFX->voiceID))
+        return true;
 
     if (pTrackedSFX->delay >= 0.0f)
     {

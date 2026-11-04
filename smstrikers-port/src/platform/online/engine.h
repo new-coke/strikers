@@ -17,6 +17,9 @@ const uint32_t kNoTick = 0xFFFFFFFFu;
 // The furthest a machine runs past every machine's input; at most PORT_ROLLBACK_TICKS - 2.
 const uint32_t kMaxAhead = 14;
 
+// Auto delay leaves this much of the worst path to guessing and covers the rest with delay.
+const uint32_t kAutoGuessTicks = 2;
+
 // The ticks before the intro's freeze: neutral input on every machine, never guessed.
 const uint32_t kNeutralTicks = 3;
 

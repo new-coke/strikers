@@ -101,7 +101,11 @@ void UpdateEmissionControllerPosition(EmissionController& ec, ExplosionFragment*
  */
 void EmissionControllerFinished(EmissionController& ec, ExplosionFragment* p0)
 {
-    p0->mpSmokeEmissionController = NULL;
+    // PORT: the last explosion's smoke can finish after the next explosion made its own.
+    if (p0->mpSmokeEmissionController == &ec)
+        p0->mpSmokeEmissionController = NULL;
+    // PORT: a killed smoke updates until its particles die, after the fragment forgot it.
+    ec.mUpdateCallback = Function1<void, EmissionController&>();
 }
 
 /**

@@ -261,6 +261,7 @@ class Session
         uint16_t jitterMs;
         char nickname[ONLINE_NAME_MAX + 1];
         RoomHuman human[ONLINE_MAX_LOCAL_HUMANS];   // by the machine's own local index
+        uint8_t delayAsked;                         // its delay setting: 0 Auto, else ticks
         int link;                                   // host: its link; -1 for the host itself
     };
 
@@ -338,6 +339,8 @@ class Session
     void GuestDesc(Link& link, const MsgDesc& d);
     void RoomTimers(uint64_t now);
     uint8_t ExpectedDelay(uint64_t now);
+    uint8_t DelayAsked(int machine) const;
+    bool DelayAuto() const;
     uint32_t WorstRttUs() const;
     void LinkGone(int machine, int reason, bool bye);
     void FillState(uint64_t now);
@@ -510,6 +513,7 @@ class Session
     int m_delay;
     bool m_delayAuto;
     uint64_t m_delayGrewUs;
+    double m_guessDepth;   // host: the worst machine's ticks past its confirmed input, smoothed
     uint32_t m_loopNext;
 
     // Rollback: a tick's hashes count once its input is all in; a tick run again replaces them.

@@ -2233,6 +2233,21 @@ El juego usa ahora esa carpeta, así que la imagen se puede mover o borrar. El c
         <translation>Plátanos</translation>
     </message>
     <message>
+        <source>Difficulty</source>
+        <extracomment>T_DIFFICULTY; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Dificultad</translation>
+    </message>
+    <message>
+        <source>Super Strikes</source>
+        <extracomment>T_SUPER_STRIKES; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Supertiros</translation>
+    </message>
+    <message>
+        <source>Bowser attack</source>
+        <extracomment>T_BOWSER_ATTACK; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Ataque de Bowser</translation>
+    </message>
+    <message>
         <source>Share an address the other players can reach:</source>
         <extracomment>T_OTHER_ADDRESSES; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
         <translation>Comparte una dirección accesible para los demás jugadores:</translation>
