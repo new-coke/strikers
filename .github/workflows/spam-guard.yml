@@ -1,0 +1,44 @@
+name: Spam guard
+
+on:
+  issues:
+    types: [opened, edited, reopened]
+  issue_comment:
+    types: [created]
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Report only, don't block or delete"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Skip comments on PRs and anything posted by people with write access.
+    if: >-
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (!github.event.issue.pull_request &&
+       !contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'),
+                 github.event.comment.author_association || github.event.issue.author_association))
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run
+        env:
+          GH_TOKEN: ${{ secrets.SPAM_GUARD_TOKEN }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: >-
+          node .github/scripts/spam-guard.mjs
+          ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'sweep' || 'event' }}
