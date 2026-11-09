@@ -133,17 +133,21 @@ fi
 
 # The licence texts the program is redistributed under: ODE's BSD, the decompilation's CC0, the
 # eCos files' GPL, and the notices of MusyX, Aurora, borealis and the
-# libraries linked in, renamed so the archive's notices are one flat set.
-cp LICENSE-BSD.TXT LICENSE-CC0.txt LICENSE-GPL-2.0.txt "$OUT/"
-cp extern/musyx/LICENSE "$OUT/LICENSE-MUSYX.txt"
-cp extern/aurora/LICENSE "$OUT/LICENSE-AURORA.txt"
-cp extern/borealis/LICENSE "$OUT/LICENSE-BOREALIS.txt"
+# libraries linked in, renamed so the archive's notices are one flat set in licenses/.
+mkdir -p "$OUT/licenses"
+cp LICENSE-BSD.TXT LICENSE-CC0.txt LICENSE-GPL-2.0.txt "$OUT/licenses/"
+cp extern/musyx/LICENSE "$OUT/licenses/LICENSE-MUSYX.txt"
+cp extern/aurora/LICENSE "$OUT/licenses/LICENSE-AURORA.txt"
+cp extern/borealis/LICENSE "$OUT/licenses/LICENSE-BOREALIS.txt"
+LICENSES="LICENSE-BSD.TXT LICENSE-CC0.txt LICENSE-GPL-2.0.txt LICENSE-MUSYX.txt LICENSE-AURORA.txt
+          LICENSE-BOREALIS.txt"
 LINKED_LICENSES="LICENSE-APACHE-2.0.txt LICENSE-DAWN.txt LICENSE-FMT.txt LICENSE-FREETYPE.txt
                  LICENSE-IMGUI.txt LICENSE-MINIUPNPC.txt LICENSE-MONOCYPHER.txt
                  LICENSE-NLOHMANN-JSON.txt LICENSE-XXHASH.txt LICENSE-ZSTD.txt"
 for _l in $LINKED_LICENSES; do
-    cp "licenses/$_l" "$OUT/"
+    cp "licenses/$_l" "$OUT/licenses/"
 done
+LICENSES="$LICENSES $LINKED_LICENSES"
 
 # The pipeline cache seed is optional: a build without one pays more on its first run.
 if [ -f "$BUILD/initial_pipeline_cache.db" ]; then
@@ -191,8 +195,11 @@ if [ "$SETTINGS" = 1 ]; then
     if [ "$WINDOWS" = "1" ]; then
         SETTINGS_EXE=$(find "$SETTINGS_BUILD" -name 'strikers-settings.exe' | head -n 1)
         cp "$SETTINGS_EXE" "$OUT/"
-        # Qt's own deployment tool: the DLLs and the platform plugin.
+        # Qt's own deployment tool: the DLLs and the platform plugin. The app is plain widgets, so
+        # no network, SVG, image format, touch or software OpenGL, and Dawn's DXC must not be replaced.
         "$QT_PREFIX/bin/windeployqt" --release --no-translations --no-compiler-runtime \
+            --no-opengl-sw --no-system-d3d-compiler --no-system-dxc-compiler \
+            --skip-plugin-types generic,iconengines,imageformats,networkinformation,tls \
             "$OUT/strikers-settings.exe" >/dev/null
         SETTINGS_ARTEFACT="strikers-settings.exe"
     elif [ "$(uname -s)" = Darwin ]; then
@@ -212,8 +219,9 @@ if [ "$SETTINGS" = 1 ]; then
     # Qt's LGPL 3.0 incorporates the GPL 3.0, and every settings build carries code from Qt's headers.
     QT_LICENSES="LICENSE-LGPL-3.0.txt LICENSE-GPL-3.0.txt"
     for _l in $QT_LICENSES; do
-        cp "licenses/$_l" "$OUT/"
+        cp "licenses/$_l" "$OUT/licenses/"
     done
+    LICENSES="$LICENSES $QT_LICENSES"
     echo "==> settings app: bundled"
 else
     echo "==> settings app: SETTINGS=0, archive ships without strikers-settings"
@@ -228,9 +236,10 @@ if [ -n "$SETTINGS_ARTEFACT" ]; then
 fi
 
 # What the archive has to contain, by name, checked before it is made and again after.
-NEEDED_FILES="$(basename "$BIN") strikers.ini.example $BENCHMARK input-prompts/LICENSE-Kenney.txt
-              LICENSE-BSD.TXT LICENSE-CC0.txt LICENSE-GPL-2.0.txt LICENSE-MUSYX.txt
-              LICENSE-AURORA.txt LICENSE-BOREALIS.txt $LINKED_LICENSES $QT_LICENSES"
+NEEDED_FILES="$(basename "$BIN") strikers.ini.example $BENCHMARK input-prompts/LICENSE-Kenney.txt"
+for _l in $LICENSES; do
+    NEEDED_FILES="$NEEDED_FILES licenses/$_l"
+done
 if [ -n "$SETTINGS_ARTEFACT" ]; then
     NEEDED_FILES="$NEEDED_FILES $SETTINGS_ARTEFACT"
 fi

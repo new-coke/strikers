@@ -29,19 +29,20 @@ mkdir -p "$OUT"
 cp "$BUILD/strikers.nro" "$OUT/"
 cp strikers-switch.ini.example "$OUT/strikers.ini.example"
 # Aurora and the Vulkan driver are linked into the .nro, so their notices ship too.
-cp LICENSE-BSD.TXT LICENSE-CC0.txt LICENSE-GPL-2.0.txt "$OUT/"
-cp extern/musyx/LICENSE "$OUT/LICENSE-MUSYX.txt"
-cp extern/aurora/LICENSE "$OUT/LICENSE-AURORA.txt"
+mkdir -p "$OUT/licenses"
+cp LICENSE-BSD.TXT LICENSE-CC0.txt LICENSE-GPL-2.0.txt "$OUT/licenses/"
+cp extern/musyx/LICENSE "$OUT/licenses/LICENSE-MUSYX.txt"
+cp extern/aurora/LICENSE "$OUT/licenses/LICENSE-AURORA.txt"
 for _l in LICENSE-APACHE-2.0.txt LICENSE-DAWN.txt LICENSE-FMT.txt LICENSE-IMGUI.txt LICENSE-LIBNX.txt \
           LICENSE-MONOCYPHER.txt \
           LICENSE-XXHASH.txt LICENSE-ZSTD.txt; do
-    cp "licenses/$_l" "$OUT/"
+    cp "licenses/$_l" "$OUT/licenses/"
 done
 if [ ! -f "$NVK/NOTICE.md" ]; then
     echo "package.sh: no NOTICE.md beside the Vulkan driver in '$NVK'" >&2
     exit 1
 fi
-cp "$NVK/NOTICE.md" "$OUT/NOTICE-NVK.md"
+cp "$NVK/NOTICE.md" "$OUT/licenses/NOTICE-NVK.md"
 
 mkdir -p dist
 rm -f "dist/$NAME.zip"
