@@ -37,7 +37,7 @@ Download your platform's archive above or from [Releases](https://github.com/new
 
 - [Windows](https://github.com/new-coke/strikers/wiki/Windows)
 - [macOS](https://github.com/new-coke/strikers/wiki/macOS)
-- [Linux](https://github.com/new-coke/strikers/wiki/Linux)
+- [Linux](https://github.com/new-coke/strikers/wiki/Linux), as an archive or an AppImage
 - [Steam Deck](https://github.com/new-coke/strikers/wiki/Steam-Deck)
 - [Nintendo Switch](https://github.com/new-coke/strikers/wiki/Nintendo-Switch)
 

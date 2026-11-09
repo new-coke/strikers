@@ -147,10 +147,28 @@ jobs:
         shell: bash
         run: ./tools/package.sh build-aur "strikers-${{ matrix.name }}" "${{ matrix.archive }}"
 
+      # The same archive as an AppImage, with the settings app's Qt inside. Best effort: the archive
+      # is the download that matters, so a failure here only leaves the AppImage out.
+      - name: AppImage (Linux)
+        id: appimage
+        if: runner.os == 'Linux'
+        continue-on-error: true
+        working-directory: smstrikers-port
+        run: |
+          sudo apt-get install -y --no-install-recommends debian-archive-keyring
+          ./tools/appimage.sh "dist/strikers-${{ matrix.name }}.tar.gz" "dist/strikers-${{ matrix.name }}.AppImage"
+
       # Unarchived, so a downloaded artifact is the archive itself rather than a zip holding it.
       - uses: actions/upload-artifact@v7
         with:
           path: smstrikers-port/dist/strikers-${{ matrix.name }}.${{ matrix.archive }}
+          archive: false
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v7
+        if: steps.appimage.outcome == 'success'
+        with:
+          path: smstrikers-port/dist/strikers-${{ matrix.name }}.AppImage
           archive: false
           if-no-files-found: error
 
@@ -259,7 +277,8 @@ jobs:
           for archive in strikers-macos-arm64.tar.gz strikers-linux-x86_64.tar.gz strikers-linux-arm64.tar.gz strikers-windows-x86_64.zip strikers-switch.zip; do
             test -s "$archive"
           done
-          sha256sum *.tar.gz *.zip > SHA256SUMS
+          # The AppImages are best effort, so either may be missing.
+          sha256sum *.tar.gz *.zip $(ls *.AppImage 2>/dev/null) > SHA256SUMS
 
       - uses: softprops/action-gh-release@v3
         with:
@@ -281,6 +300,9 @@ jobs:
             homebrew menu in title mode (hold R while launching a game), not
             from the album.
             Linux builds need glibc 2.35 or newer: Ubuntu 22.04, Debian 12,
-            Fedora 36, current SteamOS, or anything later.
+            Fedora 36, current SteamOS, or anything later. The Linux
+            AppImages are the same builds in one file with Qt inside: make
+            one executable and run it for the settings app, or with --game
+            for the game. Their strikers.ini is in ~/.config/strikers.
             Verify downloads against SHA256SUMS. Test the packaged builds
             before publishing this draft.

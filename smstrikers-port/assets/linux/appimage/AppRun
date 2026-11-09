@@ -1,0 +1,29 @@
+#!/bin/sh
+# The AppImage's entry point.
+#
+#   Strikers.AppImage            the settings app: choose the disc image and press Play
+#   Strikers.AppImage --game     the game, straight away
+#   Strikers.AppImage --udev     the GameCube adapter udev rule, to install by hand
+#
+# The AppImage is mounted read-only, so strikers.ini lives in $XDG_CONFIG_HOME/strikers rather than
+# beside the game, and portable mode, which keeps saves beside the game, is off.
+HERE=$(dirname "$(readlink -f "$0")")
+GAME="$HERE/opt/strikers"
+
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/strikers"
+mkdir -p "$CONFIG_DIR"
+# The game refuses a STRIKERS_CONFIG that does not exist, so seed it from the example.
+[ -f "$CONFIG_DIR/strikers.ini" ] || cp "$GAME/strikers.ini.example" "$CONFIG_DIR/strikers.ini"
+export STRIKERS_CONFIG="${STRIKERS_CONFIG:-$CONFIG_DIR/strikers.ini}"
+export STRIKERS_PORTABLE=0
+
+case "$1" in
+    --game)
+        shift
+        exec "$GAME/strikers" "$@" ;;
+    --udev)
+        cat "$GAME/51-gamecube-adapter.rules"
+        echo "# install: $(basename "${APPIMAGE:-$0}") --udev | sudo tee /etc/udev/rules.d/51-gamecube-adapter.rules && sudo udevadm control --reload-rules" >&2
+        exit 0 ;;
+esac
+exec "$GAME/strikers-settings" "$STRIKERS_CONFIG" "$@"
