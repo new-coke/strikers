@@ -1,16 +1,6 @@
 #!/bin/sh
-# Turn a Linux archive from tools/package.sh into an AppImage: tools/appimage.sh <archive.tar.gz>
-# <out.AppImage>
-#
-# The archive goes into the AppImage unchanged. The game itself needs nothing more: it links only
-# libc, libm and libz and loads SDL's video and audio backends from the host. The settings app
-# links the Qt 6.4 it was built against, which the archive leaves to the distro; here that Qt
-# comes from Debian 12 (bookworm), whose libraries need no newer glibc than the 2.35 ceiling, and
-# travels inside the AppImage with the plugins it loads.
-#
-# Run it on the architecture it is for: the bundled patchelf and appimagetool run on the build
-# machine. Needs curl, apt-get, dpkg-deb, readelf, objdump and Debian's archive keyring
-# (debian-archive-keyring), but neither root nor FUSE.
+# Wrap a tools/package.sh Linux archive in an AppImage, with Debian 12's Qt for the settings app:
+# tools/appimage.sh <archive.tar.gz> <out.AppImage>. Runs on the target architecture, no root.
 
 set -e
 
@@ -34,8 +24,6 @@ if [ ! -f "$KEYRING" ]; then
     exit 1
 fi
 
-# Pinned releases and their checksums, not the AppImage project's moving continuous builds, so a
-# release build packs what the last one did.
 TOOL_VERSION=1.9.1
 RUNTIME_VERSION=20251108
 TOOL_URL="https://github.com/AppImage/appimagetool/releases/download/$TOOL_VERSION/appimagetool-$ARCH.AppImage"
@@ -55,8 +43,7 @@ SYSROOT="$WORK/sysroot"
 APPDIR="$WORK/AppDir"
 QTPLUG="$SYSROOT/usr/lib/$TRIPLET/qt6/plugins"
 
-# What the host provides: the AppImage project's excludelist, the GPU and audio stack, which has to
-# match the host's drivers, and udev and D-Bus, which have to match the host's daemons.
+# The AppImage excludelist, plus libraries that must match the host's drivers and daemons.
 EXCLUDE=" ld-linux-x86-64.so.2 ld-linux-aarch64.so.1 libanl.so.1 libBrokenLocale.so.1 libc.so.6
   libdl.so.2 libm.so.6 libmvec.so.1 libnss_compat.so.2 libnss_dns.so.2 libnss_files.so.2
   libpthread.so.0 libresolv.so.2 librt.so.1 libthread_db.so.1 libutil.so.1 libstdc++.so.6
@@ -69,19 +56,16 @@ EXCLUDE=" ld-linux-x86-64.so.2 ld-linux-aarch64.so.1 libanl.so.1 libBrokenLocale
   libudev.so.1 libdbus-1.so.3 "
 EXCLUDE=" $(echo $EXCLUDE) "
 
-# The plugins a widgets app loads on X11 and Wayland.
 QT_PLUGINS="platforms platformthemes platforminputcontexts imageformats iconengines
   xcbglintegrations wayland-decoration-client wayland-graphics-integration-client
   wayland-shell-integration"
 
-# APT_CONFIG, so the build machine's own apt.conf.d (a docker-clean hook, a proxy) stays out of it.
+# Its own APT_CONFIG, or the build machine's apt.conf.d (a docker-clean hook, a proxy) applies.
 apt_() {
     APT_CONFIG="$APTROOT/apt.conf" apt-get "$@"
 }
 
-# An unprivileged apt with a root of its own, so nothing is installed on the build machine; the
-# packages are only unpacked into the sysroot.
-if [ ! -d "$QTPLUG/platforms" ]; then
+if [ ! -f "$SYSROOT/owners" ]; then
     echo "==> appimage: Qt 6 from Debian 12 ($DEB_ARCH)"
     rm -rf "$APTROOT" "$SYSROOT"
     for _d in etc/apt/apt.conf.d etc/apt/preferences.d etc/apt/sources.list.d etc/apt/trusted.gpg.d \
@@ -105,13 +89,16 @@ EOF
         libqt6widgets6 qt6-qpa-plugins qt6-wayland qt6-gtk-platformtheme libqt6svg6 \
         qt6-image-formats-plugins patchelf >/dev/null
     mkdir -p "$SYSROOT"
+    : > "$WORK/owners"
     for _deb in "$APTROOT"/var/cache/apt/archives/*.deb; do
         dpkg-deb -x "$_deb" "$SYSROOT"
+        dpkg-deb -c "$_deb" | awk -v p="$(dpkg-deb -f "$_deb" Package)" '{ print $6, p }' \
+            >> "$WORK/owners"
     done
+    mv "$WORK/owners" "$SYSROOT/owners"
 fi
 PATCHELF="$SYSROOT/usr/bin/patchelf"
 
-# fetch <url> <sha256> <file>: GitHub's release downloads time out now and then, hence the retries.
 fetch() {
     if [ -f "$3" ] && echo "$2  $3" | sha256sum -c - >/dev/null 2>&1; then return 0; fi
     curl -fsSL --retry 8 --retry-all-errors --retry-delay 5 -o "$3" "$1"
@@ -143,7 +130,6 @@ for _p in $QT_PLUGINS; do
     if [ -d "$QTPLUG/$_p" ]; then cp -R "$QTPLUG/$_p" "$APPDIR/usr/plugins/"; fi
 done
 
-# The settings app's and the plugins' library closure, breadth first, out of the sysroot.
 needed() { readelf -d "$1" | sed -n 's/.*(NEEDED).*\[\(.*\)\]/\1/p'; }
 find_lib() {
     for _dir in "$SYSROOT/usr/lib/$TRIPLET" "$SYSROOT/lib/$TRIPLET"; do
@@ -176,14 +162,21 @@ if [ -n "$_missing" ]; then
 fi
 echo "==> appimage: bundled $(ls "$APPDIR/usr/lib" | wc -l | tr -d ' ') libraries"
 
-# RUNPATHs rather than LD_LIBRARY_PATH, so the game, which the settings app starts, does not
-# inherit the bundled libraries.
+# Debian's copyright file is the licence notice for each bundled package.
+{ ls "$APPDIR/usr/lib"; find "$APPDIR/usr/plugins" -name '*.so' -exec basename {} \;; } |
+    awk 'NR == FNR { want[$1]; next } { n = split($1, f, "/"); if (f[n] in want) print $2 }' \
+        - "$SYSROOT/owners" | sort -u |
+    while read -r _pkg; do
+        mkdir -p "$APPDIR/usr/share/doc/$_pkg"
+        cp -L "$SYSROOT/usr/share/doc/$_pkg/copyright" "$APPDIR/usr/share/doc/$_pkg/"
+    done
+
+# RUNPATH, because LD_LIBRARY_PATH would pass the bundled Qt on to the game it starts.
 for _lib in "$APPDIR"/usr/lib/*.so*; do "$PATCHELF" --set-rpath '$ORIGIN' "$_lib"; done
 find "$APPDIR/usr/plugins" -name '*.so' -exec "$PATCHELF" --set-rpath '$ORIGIN/../../lib' {} \;
 "$PATCHELF" --set-rpath '$ORIGIN/../../usr/lib' "$GAME/strikers-settings"
 printf '[Paths]\nPrefix = ../../usr\nPlugins = plugins\n' > "$GAME/qt.conf"
 
-# The glibc ceiling the archive keeps holds for what the AppImage adds.
 _glibc=$(find "$APPDIR/usr" -name '*.so*' -type f -exec objdump -T {} + 2>/dev/null |
     sed -n 's/.*GLIBC_\(2\.[0-9]*\).*/\1/p' | sort -t. -k2 -n | tail -n 1)
 _ceiling="${STRIKERS_MAX_GLIBC:-2.35}"
@@ -196,8 +189,8 @@ cp assets/linux/appimage/AppRun "$APPDIR/AppRun"
 chmod +x "$APPDIR/AppRun"
 cp assets/linux/appimage/strikers.desktop "$APPDIR/strikers.desktop"
 cp assets/linux/appimage/strikers.desktop "$APPDIR/usr/share/applications/strikers.desktop"
-cp assets/linux/appimage/strikers.png "$APPDIR/strikers.png"
-cp assets/linux/appimage/strikers.png "$APPDIR/usr/share/icons/hicolor/256x256/apps/strikers.png"
+cp assets/icon/strikers.png "$APPDIR/strikers.png"
+cp assets/icon/strikers.png "$APPDIR/usr/share/icons/hicolor/256x256/apps/strikers.png"
 ln -s strikers.png "$APPDIR/.DirIcon"
 
 echo "==> appimage: packing $OUT"

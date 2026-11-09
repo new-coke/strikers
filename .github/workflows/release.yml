@@ -147,8 +147,6 @@ jobs:
         shell: bash
         run: ./tools/package.sh build-aur "strikers-${{ matrix.name }}" "${{ matrix.archive }}"
 
-      # The same archive as an AppImage, with the settings app's Qt inside. Best effort: the archive
-      # is the download that matters, so a failure here only leaves the AppImage out.
       - name: AppImage (Linux)
         id: appimage
         if: runner.os == 'Linux'
@@ -277,7 +275,7 @@ jobs:
           for archive in strikers-macos-arm64.tar.gz strikers-linux-x86_64.tar.gz strikers-linux-arm64.tar.gz strikers-windows-x86_64.zip strikers-switch.zip; do
             test -s "$archive"
           done
-          # The AppImages are best effort, so either may be missing.
+          # Either AppImage may be missing, since that step can fail.
           sha256sum *.tar.gz *.zip $(ls *.AppImage 2>/dev/null) > SHA256SUMS
 
       - uses: softprops/action-gh-release@v3
@@ -286,23 +284,3 @@ jobs:
           fail_on_unmatched_files: true
           draft: true
           generate_release_notes: true
-          body: |
-            Built from ${{ github.sha }}.
-
-            Disc data is not bundled. Unpack an archive, put the extracted
-            disc's `files/` directory beside the executable, and run it.
-            The README and the wiki have the full instructions.
-
-            These are experimental builds for macOS arm64, Linux x86-64,
-            Linux arm64, Windows x86-64 and the Nintendo Switch.
-            The Switch zip unpacks onto the root of the SD card; put the disc
-            image beside switch/strikers/strikers.nro and start it from the
-            homebrew menu in title mode (hold R while launching a game), not
-            from the album.
-            Linux builds need glibc 2.35 or newer: Ubuntu 22.04, Debian 12,
-            Fedora 36, current SteamOS, or anything later. The Linux
-            AppImages are the same builds in one file with Qt inside: make
-            one executable and run it for the settings app, or with --game
-            for the game. Their strikers.ini is in ~/.config/strikers.
-            Verify downloads against SHA256SUMS. Test the packaged builds
-            before publishing this draft.
