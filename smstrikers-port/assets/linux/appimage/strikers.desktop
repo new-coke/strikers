@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Super Mario Strikers
+Comment=PC port of Super Mario Strikers; needs your own disc image
+Exec=AppRun
+Icon=strikers
+Categories=Game;SportsGame;
+Terminal=false
+Actions=Play;
+
+[Desktop Action Play]
+Name=Play
+Exec=AppRun --game
