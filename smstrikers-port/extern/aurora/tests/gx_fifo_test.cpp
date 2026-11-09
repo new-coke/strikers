@@ -2699,6 +2699,48 @@ TEST_F(GXFifoTest, Scissor_EncodesBpAndDecodesLogicalState) {
   EXPECT_EQ(g_gxState.logicalScissor.height, 240);
 }
 
+// smstrikers-port: 2560 (48:9) and 5760 (12:1) are past an 11-bit scissor edge.
+TEST_F(GXFifoTest, Scissor_WiderThanHardwareRoundTrips) {
+  for (const u32 frameWidth : {2560u, 5760u}) {
+    GXSetScissor(0, 0, frameWidth, 448);
+    GXSetScissorBoxOffset(0, 0);
+
+    u32 left = 1, top = 1, width = 0, height = 0;
+    GXGetScissor(&left, &top, &width, &height);
+    EXPECT_EQ(left, 0u);
+    EXPECT_EQ(top, 0u);
+    EXPECT_EQ(width, frameWidth);
+    EXPECT_EQ(height, 448u);
+
+    auto bytes = capture_fifo();
+    EXPECT_TRUE(has_aurora_cmd(bytes, GX_AURORA_LOAD_SCISSOR_LOGICAL));
+    reset_gx_state();
+    decode_fifo(bytes);
+
+    EXPECT_EQ(g_gxState.logicalScissor.x, 0);
+    EXPECT_EQ(g_gxState.logicalScissor.y, 0);
+    EXPECT_EQ(g_gxState.logicalScissor.width, static_cast<s32>(frameWidth));
+    EXPECT_EQ(g_gxState.logicalScissor.height, 448);
+  }
+}
+
+TEST_F(GXFifoTest, Scissor_BoxOffsetKeepsFullPrecisionScissor) {
+  GXSetScissor(0, 0, 5760, 448);
+  GXSetScissorBoxOffset(0, 0);
+  auto bytes = capture_fifo();
+  reset_gx_state();
+  decode_fifo(bytes);
+
+  GXSetScissorBoxOffset(4, 2);
+  auto offsetBytes = capture_fifo();
+  decode_fifo(offsetBytes);
+
+  EXPECT_EQ(g_gxState.logicalScissor.x, 4);
+  EXPECT_EQ(g_gxState.logicalScissor.y, 2);
+  EXPECT_EQ(g_gxState.logicalScissor.width, 5760);
+  EXPECT_EQ(g_gxState.logicalScissor.height, 448);
+}
+
 TEST_F(GXFifoTest, GetViewportShadowState) {
   f32 vp[6]{};
 
@@ -3405,6 +3447,30 @@ TEST_F(GXFifoTest, FogRangeAdj_DecodesCenterAndCoefficientTable) {
   EXPECT_FALSE(g_gxState.fog.rangeEnabled);
   EXPECT_EQ(g_gxState.dirty, aurora::gx::DirtyPipeline | aurora::gx::DirtyUniform);
   EXPECT_EQ(g_gxState.fog.rangeCenter, 123);
+}
+
+// smstrikers-port: 1280 and 2880 centre 48:9 and 12:1 frames, past the 10-bit field's 681.
+TEST_F(GXFifoTest, FogRangeAdj_CenterWiderThanHardware) {
+  GXFogAdjTable table{};
+  GXSetFogRangeAdj(GX_ENABLE, 1280, &table);
+  auto bytes = capture_fifo();
+
+  reset_gx_state();
+  decode_fifo(bytes);
+  EXPECT_TRUE(g_gxState.fog.rangeEnabled);
+  EXPECT_EQ(g_gxState.fog.rangeCenter, 1280);
+
+  GXSetFogRangeAdj(GX_ENABLE, 2880, &table);
+  auto wideBytes = capture_fifo();
+  decode_fifo(wideBytes);
+  EXPECT_TRUE(g_gxState.fog.rangeEnabled);
+  EXPECT_EQ(g_gxState.fog.rangeCenter, 2880);
+
+  GXSetFogRangeAdj(GX_DISABLE, 1877, nullptr);
+  auto disableBytes = capture_fifo();
+  decode_fifo(disableBytes);
+  EXPECT_FALSE(g_gxState.fog.rangeEnabled);
+  EXPECT_EQ(g_gxState.fog.rangeCenter, 1877);
 }
 
 // ============================================================================

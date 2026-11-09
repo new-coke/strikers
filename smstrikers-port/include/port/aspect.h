@@ -7,6 +7,11 @@ extern "C" {
 #endif
 float PortTargetAspect(void);
 
+// "16:9", "16/9" or "1.85" to its ratio; 0 for anything else.
+float PortParseAspect(const char* s);
+
+float PortClampAspect(float a);
+
 // The width of the logical framebuffer, in the coordinate space the game's GXSetViewport,
 // GXSetScissor and 2D orthographic projections all use. 640 at 4:3, 854 at 16:9.
 unsigned int PortLogicalFrameWidth(void);

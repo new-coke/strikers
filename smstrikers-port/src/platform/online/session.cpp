@@ -81,6 +81,7 @@ void Session::SetSettings(const OnlineSettings& settings)
     if (next.delayTicks > ONLINE_MAX_DELAY_TICKS)
         next.delayTicks = ONLINE_MAX_DELAY_TICKS;
     next.showStats = next.showStats != 0;
+    next.showAddresses = next.showAddresses != 0;
     // Xbox reaches only 1025-49151, so a room there must be reachable from one.
     if (next.hostPort < 1025 || next.hostPort > 49151)
         next.hostPort = ONLINE_DEFAULT_PORT;

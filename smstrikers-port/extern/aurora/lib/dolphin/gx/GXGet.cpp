@@ -237,15 +237,10 @@ void GXGetProjectionv(f32* p) {
 void GXGetScissor(u32* left, u32* top, u32* wd, u32* ht) {
   CHECK(left != nullptr && top != nullptr && wd != nullptr && ht != nullptr, "null scissor output");
 
-  const u32 tp = GET_REG_FIELD(__gx->suScis0, 11, 0);
-  const u32 lf = GET_REG_FIELD(__gx->suScis0, 11, 12);
-  const u32 bm = GET_REG_FIELD(__gx->suScis1, 11, 0);
-  const u32 rt = GET_REG_FIELD(__gx->suScis1, 11, 12);
-
-  *left = lf - 342;
-  *top = tp - 342;
-  *wd = rt - lf + 1;
-  *ht = bm - tp + 1;
+  *left = __gx->scisLogical[0];
+  *top = __gx->scisLogical[1];
+  *wd = __gx->scisLogical[2];
+  *ht = __gx->scisLogical[3];
 }
 
 void GXGetCullMode(GXCullMode* mode) {

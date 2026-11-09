@@ -571,6 +571,9 @@ static void AudioScriptEventHandler(Event* pEvent, void*)
         AudioScriptEventMgr::FireEvent(AudioScriptEventMgr::AE_GenericS2SEnd, AudioScriptEventMgr::AET_Neutral);
         return;
     case 68:
+        // PORT: the shooter can lose the ball between the event and its dispatch a frame later.
+        if (g_pBall->m_pOwner == NULL)
+            return;
         AudioScriptEventMgr::FireEvent(AudioScriptEventMgr::AE_SuperStrikeFloat,
             (unsigned int)g_pBall->m_pOwner->m_pTeam->m_nSide != 0 ? AudioScriptEventMgr::AET_Away : AudioScriptEventMgr::AET_Home);
         return;

@@ -18,4 +18,6 @@ void handle_xf(u16 addr, std::span<const u8> data) noexcept;
 
 bool copy_xf_data(u32 addr, const u8* data, u32 len, std::endian e) noexcept;
 
+void apply_scissor_base() noexcept;
+
 } // namespace aurora::gx::fifo

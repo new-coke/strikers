@@ -405,6 +405,8 @@ struct GXState {
   gfx::Viewport logicalViewport{0.f, 0.f, 640.f, 480.f, 0.f, 1.f};
   gfx::Viewport renderViewport{0.f, 0.f, 640.f, 480.f, 0.f, 1.f};
   gfx::ClipRect logicalScissor{0, 0, 640, 480};
+  // smstrikers-port: before the box offset, in register space (+342).
+  gfx::ClipRect scissorBase{342, 342, 640, 480};
   gfx::ClipRect renderScissor{0, 0, 640, 480};
 
   // EFB copy state

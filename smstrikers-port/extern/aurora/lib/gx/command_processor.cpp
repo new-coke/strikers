@@ -864,6 +864,13 @@ void handle_aurora(ByteReader& reader) noexcept {
     const s32 width = reader.read<s32>();
     const s32 height = reader.read<s32>();
     set_render_scissor({left, top, width, height});
+  } else if (subCmd == GX_AURORA_LOAD_SCISSOR_LOGICAL) {
+    const s32 left = reader.read<s32>();
+    const s32 top = reader.read<s32>();
+    const s32 width = reader.read<s32>();
+    const s32 height = reader.read<s32>();
+    g_gxState.scissorBase = {left + 342, top + 342, width, height};
+    apply_scissor_base();
   } else if (subCmd == GX_AURORA_LOAD_PROJECTION_FULL) {
     auto& proj = g_gxState.proj;
     for (int r = 0; r < 4; ++r) {

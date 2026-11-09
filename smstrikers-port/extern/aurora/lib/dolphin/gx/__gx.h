@@ -110,6 +110,7 @@ struct __GXData_struct {
   u8 tcsManEnab;    // bitmask: manual tex coord scale enabled per coord
   u32 suScis0;      // scissor top-left
   u32 suScis1;      // scissor bottom-right
+  u32 scisLogical[4]; // smstrikers-port: left, top, width, height
 
   u32 tref[8];      // TEV texture/color reference (2 stages per register)
   u32 iref;         // indirect texture reference

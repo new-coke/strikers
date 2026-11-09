@@ -31,6 +31,12 @@ extern "C" {
 #define GX_AURORA_LOAD_PROJECTION_FULL 0x0003
 
 /**
+ * smstrikers-port: sets the logical scissor to GXSetScissor's exact rectangle, replacing what the registers decode to.
+ * Must be followed by four u32 values: left, top, width, height.
+ */
+#define GX_AURORA_LOAD_SCISSOR_LOGICAL 0x0004
+
+/**
  * Aurora equivalent of CP_REG_ARRAYBASE_ID: sets the base address and size of a vertex array.
  * This command must be followed by a 64-bit memory address, 32-bit size, and 1-byte little-endian flag.
  * The index of the vertex array is given by the lowest 4 bits of the command ID,

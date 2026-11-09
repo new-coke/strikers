@@ -110,8 +110,7 @@ bool KeyCaptureButton::event(QEvent* e)
         if (name.isEmpty())
         {
             QToolTip::showText(mapToGlobal(rect().bottomLeft()),
-                               tr("No SDL scancode for that key. Try another."),
-                               this);
+                               tr("This key has no SDL scancode. Press another key."), this);
             return true;
         }
 

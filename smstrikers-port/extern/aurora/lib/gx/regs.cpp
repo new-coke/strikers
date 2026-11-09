@@ -130,22 +130,18 @@ void bp_tev_ind(u8 reg, u32 value) noexcept {
 }
 
 // Scissor (0x20/0x21)
-void bp_scissor(u8, u32) noexcept {
-  const u32 scis0 = g_gxState.bpRegCache[0x20];
-  const u32 scis1 = g_gxState.bpRegCache[0x21];
-
-  const u32 boxOffset = g_gxState.bpRegCache[0x59];
-  // The box offset fields are signed 9-bit values and also halved, like the viewport registers. Sign extend.
-  const s32 offsX = static_cast<s32>(reg_get(boxOffset, 10, 0)) << 23 >> 22;
-  const s32 offsY = static_cast<s32>(reg_get(boxOffset, 10, 10)) << 23 >> 22;
-
-  const s32 tp = static_cast<s32>(reg_get(scis0, 11, 0)) + offsY;
-  const s32 lf = static_cast<s32>(reg_get(scis0, 11, 12)) + offsX;
-  const s32 bm = static_cast<s32>(reg_get(scis1, 11, 0)) + offsY;
-  const s32 rt = static_cast<s32>(reg_get(scis1, 11, 12)) + offsX;
-  const s32 wd = std::max(rt - lf + 1, 0);
-  const s32 ht = std::max(bm - tp + 1, 0);
-  set_logical_scissor({lf, tp, wd, ht});
+void bp_scissor(u8 reg, u32) noexcept {
+  // smstrikers-port: a box offset write (0x59) keeps the base, which may be wider than the registers hold.
+  if (reg == 0x20 || reg == 0x21) {
+    const u32 scis0 = g_gxState.bpRegCache[0x20];
+    const u32 scis1 = g_gxState.bpRegCache[0x21];
+    const s32 tp = static_cast<s32>(reg_get(scis0, 11, 0));
+    const s32 lf = static_cast<s32>(reg_get(scis0, 11, 12));
+    const s32 bm = static_cast<s32>(reg_get(scis1, 11, 0));
+    const s32 rt = static_cast<s32>(reg_get(scis1, 11, 12));
+    g_gxState.scissorBase = {lf, tp, std::max(rt - lf + 1, 0), std::max(bm - tp + 1, 0)};
+  }
+  apply_scissor_base();
 }
 
 // Line/point size (0x22)
@@ -379,7 +375,8 @@ void bp_tev_reg(u8 reg, u32 value) noexcept {
 
 // Fog range adjustment (0xE8-0xED)
 void bp_fog_range_base(u8, u32 value) noexcept {
-  g_gxState.fog.rangeCenter = static_cast<s16>(reg_get(value, 10, 0)) - 342;
+  const u32 center = reg_get(value, 10, 0) | (reg_get(value, 13, 11) << 10);
+  g_gxState.fog.rangeCenter = static_cast<s16>(static_cast<s32>(center) - 342);
   const bool rangeEnabled = reg_get(value, 1, 10) != 0;
   if (g_gxState.fog.rangeEnabled != rangeEnabled) {
     g_gxState.dirty |= DirtyPipeline;
@@ -955,6 +952,15 @@ bool store_xf_f32(f32& dst, u32 bits) noexcept {
 }
 
 } // namespace
+
+void apply_scissor_base() noexcept {
+  const u32 boxOffset = g_gxState.bpRegCache[0x59];
+  // The box offset fields are signed 9-bit values and also halved, like the viewport registers. Sign extend.
+  const s32 offsX = static_cast<s32>(reg_get(boxOffset, 10, 0)) << 23 >> 22;
+  const s32 offsY = static_cast<s32>(reg_get(boxOffset, 10, 10)) << 23 >> 22;
+  const gfx::ClipRect& base = g_gxState.scissorBase;
+  set_logical_scissor({base.x + offsX, base.y + offsY, base.width, base.height});
+}
 
 // Dispatch
 

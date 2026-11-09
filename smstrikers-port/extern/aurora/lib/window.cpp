@@ -523,6 +523,17 @@ AuroraWindowSize get_window_size() {
       fb_h = fitH;
     }
   }
+  // smstrikers-port: a wide aspect at a high render scale outgrows the device's largest texture.
+  if (webgpu::g_device) {
+    wgpu::Limits limits{};
+    webgpu::g_device.GetLimits(&limits);
+    const int maxDim = static_cast<int>(limits.maxTextureDimension2D);
+    if (maxDim > 0 && std::max(fb_w, fb_h) > maxDim) {
+      const float shrink = static_cast<float>(maxDim) / static_cast<float>(std::max(fb_w, fb_h));
+      fb_w = std::min(maxDim, std::max(1, static_cast<int>(static_cast<float>(fb_w) * shrink)));
+      fb_h = std::min(maxDim, std::max(1, static_cast<int>(static_cast<float>(fb_h) * shrink)));
+    }
+  }
 
   const float scale = SDL_GetWindowDisplayScale(g_window);
   return {

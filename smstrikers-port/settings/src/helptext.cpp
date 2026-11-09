@@ -79,9 +79,7 @@ QString HelpText::popover(const Setting& s, bool technical)
             if (s.helpIsVerbatim)
             {
                 html += QStringLiteral("<p style='margin:0 0 8px 0'><i>%1</i></p>")
-                            .arg(Text::tr("The setting's own documentation, as shipped "
-                                          "with the game:")
-                                     .toHtmlEscaped());
+                            .arg(Text::tr("Documentation shipped with the game:").toHtmlEscaped());
             }
             html += paragraphs(s.help);
         }

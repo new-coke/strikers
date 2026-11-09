@@ -7,6 +7,8 @@
 #include "keynames.h"
 #include "schema.h"
 
+#include "port/aspect.h"
+
 #include <QByteArray>
 #include <QCoreApplication>
 #include <QDir>
@@ -231,6 +233,21 @@ int main(int argc, char** argv)
         ini.set(QStringLiteral("data"), QStringLiteral("C:/games/x "), QStringLiteral("paths"));
         check(QString::fromUtf8(ini.render()).contains(QLatin1String("data = \"C:/games/x \"")),
               QStringLiteral("a trailing space is quoted"));
+    }
+
+    {
+        check(PortParseAspect("21:9") > 2.33f && PortParseAspect("21:9") < 2.34f,
+              QStringLiteral("21:9 parses"));
+        check(PortParseAspect("16 / 10") == 1.6f, QStringLiteral("spaces around the slash"));
+        check(PortParseAspect("1.85") == 1.85f, QStringLiteral("a decimal parses"));
+        check(PortParseAspect("21x9") == 0.0f && PortParseAspect("auto") == 0.0f &&
+                  PortParseAspect("16:0") == 0.0f,
+              QStringLiteral("x, auto and a zero height are not ratios"));
+        check(PortClampAspect(PortParseAspect("48:9")) == PortParseAspect("48:9"),
+              QStringLiteral("48:9 is inside the range"));
+        check(PortClampAspect(PortParseAspect("2:3")) == 1.0f &&
+                  PortClampAspect(PortParseAspect("20:1")) == 12.0f,
+              QStringLiteral("portrait and past 12:1 clamp"));
     }
 
     {

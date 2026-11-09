@@ -18,6 +18,17 @@ void GXSetScissor(u32 left, u32 top, u32 width, u32 height) {
 
   GX_WRITE_RAS_REG(__gx->suScis0);
   GX_WRITE_RAS_REG(__gx->suScis1);
+
+  // smstrikers-port: the exact rectangle as well; with the 342 offset an 11-bit edge stops at x = 1705.
+  __gx->scisLogical[0] = left;
+  __gx->scisLogical[1] = top;
+  __gx->scisLogical[2] = width;
+  __gx->scisLogical[3] = height;
+  GX_WRITE_AURORA(GX_AURORA_LOAD_SCISSOR_LOGICAL);
+  GX_WRITE_U32(left);
+  GX_WRITE_U32(top);
+  GX_WRITE_U32(width);
+  GX_WRITE_U32(height);
   __gx->bpSent = 1;
 }
 

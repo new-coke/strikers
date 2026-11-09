@@ -271,6 +271,7 @@ typedef struct OnlineSettings
     char     nickname[ONLINE_NAME_MAX + 1];
     uint8_t  delayTicks;    // 0 for Auto, else 1-8
     uint8_t  showStats;     // the in-match stats line
+    uint8_t  showAddresses; // 0 masks them on screen
     uint16_t hostPort;      // UDP port a hosted room listens on
     // A room this machine hosts starts with these.
     uint16_t gameTime;      // seconds, as OnlineMatchDesc

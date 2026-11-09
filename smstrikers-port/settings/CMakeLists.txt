@@ -51,11 +51,12 @@ target_link_libraries(strikers-settings-core PUBLIC Qt6::Core)
 
 # Only these port headers go on the include path: ../include's malloc.h and types.h would shadow the system's.
 set(STRIKERS_PORT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/..")
-foreach(header disc.h disc_reader.h host.h steamdeck.h)
+foreach(header aspect.h disc.h disc_reader.h host.h steamdeck.h)
   configure_file("${STRIKERS_PORT_DIR}/include/port/${header}"
                  "${CMAKE_CURRENT_BINARY_DIR}/portinc/port/${header}" COPYONLY)
 endforeach()
 target_sources(strikers-settings-core PRIVATE
+  "${STRIKERS_PORT_DIR}/src/platform/aspect.c"
   "${STRIKERS_PORT_DIR}/src/platform/disc.c"
   "${STRIKERS_PORT_DIR}/src/platform/disc_reader.cpp"
   "${STRIKERS_PORT_DIR}/src/platform/steamdeck.c")

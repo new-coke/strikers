@@ -55,6 +55,7 @@
 #include <QVBoxLayout>
 #include <QVariant>
 
+#include "port/aspect.h"
 #include "port/steamdeck.h"
 
 namespace {
@@ -368,7 +369,7 @@ QComboBox* MainWindow::addChoice(SettingsPage* page, const Setting& s)
                 i = combo->count();
                 while (i > 0 && isGlBackend(combo->itemData(i - 1).toString()))
                     --i;
-                combo->insertItem(i, MainWindow::tr("%1 (from the file)").arg(v), v);
+                combo->insertItem(i, MainWindow::tr("%1 (from file)").arg(v), v);
             }
             combo->setCurrentIndex(i);
         });
@@ -429,9 +430,8 @@ QWidget* MainWindow::buildDisplayTab()
         };
         auto showRows = [combo, spin, rowsNote, isCustom] {
             const bool automatic = combo->currentIndex() <= 0;
-            rowsNote->setText(isCustom()
-                                  ? tr("Renders %1 rows.").arg(qRound(spin->value() * 448.0))
-                                  : tr("The height is exact. The width follows the aspect ratio."));
+            rowsNote->setText(isCustom() ? tr("Renders %1 rows.").arg(qRound(spin->value() * 448.0))
+                                         : tr("Height is exact; width follows the aspect ratio."));
             rowsNote->setVisible(!automatic);
         };
         connect(combo, &QComboBox::currentIndexChanged, this, [this, spin, isCustom, showRows] {
@@ -480,7 +480,7 @@ QWidget* MainWindow::buildDisplayTab()
     // is the game's own spelling of unlimited, so it is a value here and not a third checkbox.
     {
         const Setting& s = byKey(group, "fps_limit");
-        auto* monitorBox = new QCheckBox(tr("Follow my display"));
+        auto* monitorBox = new QCheckBox(tr("Match display"));
         auto* spin = new QDoubleSpinBox;
         spin->setRange(0.0, 1000.0);
         spin->setDecimals(2);
@@ -520,7 +520,7 @@ QWidget* MainWindow::buildDisplayTab()
         const Setting& s = byKey(group, "aspect");
         auto* combo = new QComboBox;
         combo->addItem(tr("Match the window"), QString());
-        for (const char* a : { "16:9", "4:3", "21:9", "32:9" })
+        for (const char* a : { "16:9", "4:3", "21:9", "32:9", "48:9" })
             combo->addItem(QString::fromLatin1(a), QString::fromLatin1(a));
         combo->addItem(tr("Custom…"), kCustomChoice);
         auto* custom = new QLineEdit;
@@ -528,21 +528,48 @@ QWidget* MainWindow::buildDisplayTab()
         custom->setEnabled(false);
         custom->setMaximumWidth(140);
 
+        auto* aspectNote = SettingsPage::note(QString());
+
         auto isCustom = [combo] {
             return combo->currentData().toString() == kCustomChoice;
         };
-        connect(combo, &QComboBox::currentIndexChanged, this, [this, custom, isCustom] {
+        auto showAspect = [custom, aspectNote, isCustom] {
+            const QString text = custom->text().trimmed();
+            aspectNote->setVisible(isCustom() && !text.isEmpty());
+            const float asked = PortParseAspect(text.toUtf8().constData());
+            const float used = PortClampAspect(asked);
+            const QString ratio =
+                trimScale(qRound(double(used) * 100.0) / 100.0) + QStringLiteral(":1");
+            aspectNote->setStyleSheet(QString());
+            if (text.compare(QLatin1String("auto"), Qt::CaseInsensitive) == 0)
+                aspectNote->setText(tr("Same as Match the window."));
+            else if (asked <= 0.0f)
+                setBad(aspectNote, tr("✗ Invalid aspect ratio. Use width:height (such as 21:9) "
+                                      "or a decimal."));
+            else if (used != asked)
+                setBad(aspectNote,
+                       tr("✗ Must be between 1:1 and 12:1. %1 will be used.").arg(ratio));
+            else
+                aspectNote->setText(tr("Reads as %1.").arg(ratio));
+        };
+        connect(combo, &QComboBox::currentIndexChanged, this, [this, custom, isCustom, showAspect] {
             custom->setEnabled(isCustom());
+            showAspect();
             markDirty();
         });
-        connect(custom, &QLineEdit::textChanged, this, &MainWindow::markDirty);
+        connect(custom, &QLineEdit::textChanged, this, [this, showAspect] {
+            showAspect();
+            markDirty();
+        });
         page->addSetting(s.label, pair(combo, custom), infoFor(s));
+        page->addFieldNote(aspectNote);
+        aspectNote->setVisible(false);
         registerControl(
             s,
             [combo, custom, isCustom] {
                 return isCustom() ? custom->text().trimmed() : combo->currentData().toString();
             },
-            [combo, custom](const QString& v) {
+            [combo, custom, showAspect](const QString& v) {
                 const int i = v.isEmpty() ? 0 : combo->findData(v);
                 if (i >= 0)
                 {
@@ -556,6 +583,7 @@ QWidget* MainWindow::buildDisplayTab()
                     custom->setEnabled(true);
                     custom->setText(v);
                 }
+                showAspect();
             });
     }
 
@@ -574,7 +602,7 @@ QWidget* MainWindow::buildDisplayTab()
                 continue;
             }
             combo->setItemData(i, QVariant(0), Qt::UserRole - 1); // disable the item
-            combo->setItemText(i, tr("%1 (not on this computer)").arg(combo->itemText(i)));
+            combo->setItemText(i, tr("%1 (not available)").arg(combo->itemText(i)));
         }
     }
 
@@ -595,9 +623,8 @@ QWidget* MainWindow::buildAudioTab()
     addSwitch(page, Schema::get(QStringLiteral("audio")));
     // Under the control it is about, not at the left margin: this is a note about the switch above
     // it.
-    page->addFieldNote(SettingsPage::note(tr(
-        "Music, effects and commentary volumes are the game's own settings, and "
-        "live in its options screen rather than here.")));
+    page->addFieldNote(SettingsPage::note(
+        tr("Music, effects and commentary volume are set in the game's Options screen.")));
 
     page->beginSection(tr("Troubleshooting"));
     addSwitch(page, Schema::get(QStringLiteral("log_audio")));
@@ -657,16 +684,12 @@ QWidget* MainWindow::buildKeyboardPage()
         // front of everyone.
         Setting s;
         s.key = QStringLiteral("key_a");
-        s.detail = tr("Click a binding and press the key you want. Escape cancels.");
-        s.help = tr(
-            "Bindings are stored as SDL scancode names, which are physical key\n"
-            "positions rather than letters. On a US or UK layout what you press is\n"
-            "what is stored. On AZERTY or Dvorak the position and the letter differ,\n"
-            "and it is the letter that gets written, Qt cannot see the position.\n"
-            "\n"
-            "Keys with no name, the Command and Menu keys, media keys, and anything\n"
-            "your layout only produces with a modifier, are refused rather than\n"
-            "guessed at.");
+        s.detail = tr("Click a binding, then press a key. Escape cancels.");
+        s.help =
+            tr("Bindings are stored as SDL scancodes (physical key positions). On US and UK\n"
+               "layouts, the key pressed is the key stored. On AZERTY or Dvorak, the letter\nis "
+               "stored instead.\n\nUnnamed keys, Command, Menu, media keys and keys that need a "
+               "modifier\nare not accepted.");
         auto* row = new QWidget;
         auto* h = new QHBoxLayout(row);
         h->setContentsMargins(0, 0, 0, 0);
@@ -758,16 +781,11 @@ QWidget* MainWindow::buildGamepadPage()
     {
         Setting s;
         s.key = QStringLiteral("pad_a");
-        s.detail = tr("Choose which button on your controller each GameCube "
-                      "button should come from.");
-        s.help = tr(
-            "The names are SDL's, and they are positions on SDL's idea of a\n"
-            "controller rather than whatever your own controller prints on itself:\n"
-            "`a` is the bottom face button on every pad, wherever its label sits.\n"
-            "\n"
-            "There is nothing here to press because Qt has no controller API. Run the\n"
-            "game with the pad probe switched on to see the bindings that are actually\n"
-            "in force, which is also the answer to \"what are my controls\".");
+        s.detail = tr("Select the controller button for each GameCube button.");
+        s.help =
+            tr("Names are SDL controller positions: `a` is the bottom face button on every\n"
+               "controller, whatever its label.\n\nButtons cannot be captured here. To see the "
+               "bindings in effect, run the\ngame with the pad probe on.");
         auto* row = new QWidget;
         auto* h = new QHBoxLayout(row);
         h->setContentsMargins(0, 0, 0, 0);
@@ -816,7 +834,7 @@ QWidget* MainWindow::buildGamepadPage()
                 int i = combo->findData(val);
                 if (i < 0)
                 {
-                    combo->addItem(tr("%1 (from the file)").arg(val), val);
+                    combo->addItem(tr("%1 (from file)").arg(val), val);
                     i = combo->count() - 1;
                 }
                 combo->setCurrentIndex(i);
@@ -904,9 +922,9 @@ QWidget* MainWindow::buildGameTab()
         m_dataEdit->setPlaceholderText(tr("Found automatically"));
         m_dataEdit->setMinimumWidth(200);
         auto* chooseImage = new QPushButton(tr("Disc Image…"));
-        chooseImage->setToolTip(tr("Play straight from your disc image."));
+        chooseImage->setToolTip(tr("Play directly from a disc image."));
         auto* chooseFolder = new QPushButton(tr("Folder…"));
-        chooseFolder->setToolTip(tr("Use a folder of files already extracted from the disc."));
+        chooseFolder->setToolTip(tr("Use files already extracted from the disc."));
         m_dataState = SettingsPage::note(QString());
 
         connect(chooseImage, &QPushButton::clicked, this, &MainWindow::onChooseImage);
@@ -935,9 +953,9 @@ QWidget* MainWindow::buildGameTab()
         m_extractButton->setObjectName(QStringLiteral("extractFiles"));
         connect(m_extractButton, &QPushButton::clicked, this, &MainWindow::onExtract);
         er->addWidget(m_extractButton, 0, Qt::AlignTop);
-        er->addWidget(SettingsPage::note(tr(
-            "Optional. The game plays from the image as it is; extracting copies "
-            "its files into a folder, so the image can be put away.")), 1);
+        er->addWidget(SettingsPage::note(tr("Optional. Copies the image's files to a folder so the "
+                                            "image is no longer needed.")),
+                      1);
         m_extractRow->setVisible(false);
         page->addFieldNote(m_extractRow);
 
@@ -1067,8 +1085,7 @@ QWidget* MainWindow::buildGameTab()
     {
         Setting s;
         s.label = tr("Window language");
-        s.detail = tr("The language this window is written in. The game's own is the Language "
-                      "setting above.");
+        s.detail = tr("Language of this window. The game language is set under Language above.");
         auto* combo = new QComboBox;
         combo->addItem(
             tr("Automatic (%1)").arg(WindowLanguage::name(WindowLanguage::resolve(QString()))),
@@ -1106,9 +1123,8 @@ QWidget* MainWindow::buildGameTab()
             });
         // Under the control, not behind the info button: a menu that opens by itself and cannot be
         // dismissed is a bug report, and the key that dismisses it is not one anybody guesses.
-        page->addFieldNote(SettingsPage::note(tr(
-            "The menu opens as soon as the game starts. F1 opens and closes it "
-            "while you play.")));
+        page->addFieldNote(
+            SettingsPage::note(tr("The menu opens when the game starts. F1 opens and closes it.")));
     }
 
     page->addBlock(buildAdvancedBox());
@@ -1153,10 +1169,9 @@ QWidget* MainWindow::buildAdvancedBox()
     auto* bv = new QVBoxLayout(body);
     bv->setContentsMargins(0, 4, 0, 0);
     bv->setSpacing(6);
-    bv->addWidget(SettingsPage::note(tr(
-        "Everything else the file says, so editing it here loses nothing. A row that "
-        "is switched off in the file starts empty; give it a value and saving turns "
-        "it on, clear the value and saving comments it out again.")));
+    bv->addWidget(SettingsPage::note(
+        tr("Other settings in the file, kept as written. An empty row is off in the file; enter a "
+           "value and save to turn it on, or clear it to turn it off.")));
 
     m_advanced = new QTableWidget(0, 3);
     m_advanced->setHorizontalHeaderLabels({ tr("Setting"), tr("Value"), tr("State") });
@@ -1245,11 +1260,10 @@ void MainWindow::openFile(const QString& path)
     if (exists)
         showPath(QDir::toNativeSeparators(path));
     else if (!seeded.isEmpty())
-        showPath(tr("%1 (new, from %2 when you save)")
+        showPath(tr("%1 (new; created from %2 on save)")
                      .arg(QDir::toNativeSeparators(path), QFileInfo(seeded).fileName()));
     else
-        showPath(tr("%1 (new, created when you save)")
-                     .arg(QDir::toNativeSeparators(path)));
+        showPath(tr("%1 (new; created on save)").arg(QDir::toNativeSeparators(path)));
 }
 
 MainWindow::Snapshot MainWindow::snapshot()
@@ -1396,6 +1410,13 @@ bool MainWindow::saveTo(const QString& path, QString* error)
 {
     const bool wasPortable = AppPaths::iniIsPortable(path);
     collectFromUi();
+    const QString aspect = m_ini.value(QStringLiteral("aspect")).trimmed();
+    if (!aspect.isEmpty() && aspect.compare(QLatin1String("auto"), Qt::CaseInsensitive) != 0 &&
+        PortParseAspect(aspect.toUtf8().constData()) <= 0.0f)
+    {
+        *error = tr("invalid aspect ratio \"%1\".").arg(aspect);
+        return false;
+    }
     if (!m_ini.save(path, error))
         return false;
     const bool portable = m_portableBox != nullptr && m_portableBox->isChecked();
@@ -1418,10 +1439,10 @@ bool MainWindow::offerPortableMove()
         AppPaths::movedPath(AppPaths::archiveRoot(), from) != AppPaths::archiveRoot())
         return false;
 
-    const auto answer = QMessageBox::question(
-        this, tr("Portable"),
-        tr("Move your saves, controls and shader cache into the game folder?\n\n%1")
-            .arg(QDir::toNativeSeparators(from)));
+    const auto answer =
+        QMessageBox::question(this, tr("Portable"),
+                              tr("Move saves, controls and shader cache to the game folder?\n\n%1")
+                                  .arg(QDir::toNativeSeparators(from)));
     if (answer != QMessageBox::Yes)
         return false;
 
@@ -1437,8 +1458,8 @@ bool MainWindow::offerPortableMove()
     if (!AppPaths::moveToPortable(from, AppPaths::archiveRoot(), &failed))
     {
         QMessageBox::warning(this, tr("Portable"),
-                             tr("Could not move %1. Whatever moved is in the game folder, and the "
-                                "rest is where it was.")
+                             tr("Could not move %1. Items already moved remain in the game "
+                                "folder.")
                                  .arg(failed));
     }
 
@@ -1484,9 +1505,8 @@ void MainWindow::onResetAll()
 {
     const auto answer = QMessageBox::question(
         this, tr("Reset to Defaults"),
-        tr("Put every setting in this window back to the way it came?\n\n"
-           "Anything under Advanced is left alone: those are not this window's to "
-           "reset. Nothing is written until you press Save."));
+        tr("Reset all settings to their defaults?\n\nSettings under Advanced are not changed. "
+           "Nothing is saved until you click Save."));
     if (answer != QMessageBox::Yes)
         return;
 
@@ -1520,8 +1540,7 @@ void MainWindow::onPlay()
     QString error;
     if (!saveTo(m_path, &error))
     {
-        QMessageBox::critical(this, tr("Play"),
-                              tr("Could not save the settings first: %1").arg(error));
+        QMessageBox::critical(this, tr("Play"), tr("Could not save settings: %1").arg(error));
         return;
     }
     setDirty(false);
@@ -1542,24 +1561,23 @@ void MainWindow::onChooseImage()
                                             : QFileInfo(current).absolutePath();
 
     const QStringList filters = {
-        tr("GameCube disc images (%1)")
-            .arg(DiscImage::nameFilters().join(QLatin1Char(' '))),
-        tr("ISO or GCM image, NKit included (*.iso *.gcm)"),
+        tr("GameCube disc images (%1)").arg(DiscImage::nameFilters().join(QLatin1Char(' '))),
+        tr("ISO or GCM images, including NKit (*.iso *.gcm)"),
         tr("Compressed ISO (*.ciso)"),
         tr("Dolphin GCZ (*.gcz)"),
         tr("All files (*)"),
     };
-    const QString file = QFileDialog::getOpenFileName(
-        this, tr("Choose your Super Mario Strikers disc image"), start,
-        filters.join(QStringLiteral(";;")));
+    const QString file =
+        QFileDialog::getOpenFileName(this, tr("Select the Super Mario Strikers disc image"), start,
+                                     filters.join(QStringLiteral(";;")));
     if (!file.isEmpty())
         m_dataEdit->setText(file);
 }
 
 void MainWindow::onChooseFolder()
 {
-    const QString dir = QFileDialog::getExistingDirectory(
-        this, tr("Choose the folder holding the game's files"), m_dataEdit->text().trimmed());
+    const QString dir = QFileDialog::getExistingDirectory(this, tr("Select the game files folder"),
+                                                          m_dataEdit->text().trimmed());
     if (dir.isEmpty())
         return;
     const QDir chosen(dir);
@@ -1588,7 +1606,7 @@ QString MainWindow::extractTarget(const QString& gameId, qint64 bytes)
             && DiscImage::extractedGameId(files) == gameId)
         {
             box.setIcon(QMessageBox::Question);
-            box.setText(tr("This disc has already been extracted to:\n\n%1\n\nUse that folder?")
+            box.setText(tr("This disc is already extracted to:\n\n%1\n\nUse this folder?")
                             .arg(QDir::toNativeSeparators(target)));
             use = box.addButton(tr("Use It"), QMessageBox::AcceptRole);
             box.setDefaultButton(static_cast<QPushButton*>(use));
@@ -1596,15 +1614,14 @@ QString MainWindow::extractTarget(const QString& gameId, qint64 bytes)
         else if (QFileInfo::exists(target))
         {
             box.setIcon(QMessageBox::Warning);
-            box.setText(tr("%1 already exists, and it is not an extraction of this disc. "
-                           "Extracting only ever makes a new folder, so choose another place.")
+            box.setText(tr("%1 already exists and is not from this disc. Select a new folder.")
                             .arg(QDir::toNativeSeparators(target)));
         }
         else
         {
             box.setIcon(QMessageBox::Question);
-            box.setText(tr("Copy the game's files out of the disc image into this folder?"
-                           "\n\n%1\n\nThey take %2 MB. The image itself is not changed.")
+            box.setText(tr("Extract the game files to this folder?\n\n%1\n\nRequires %2 MB. "
+                           "The disc image is not changed.")
                             .arg(QDir::toNativeSeparators(target))
                             .arg((bytes + (1 << 20) - 1) >> 20));
             go = box.addButton(tr("Extract"), QMessageBox::AcceptRole);
@@ -1627,7 +1644,7 @@ QString MainWindow::extractTarget(const QString& gameId, qint64 bytes)
             return QString();
 
         const QString dir = QFileDialog::getExistingDirectory(
-            this, tr("Choose where to put the game's files"), QFileInfo(target).absolutePath());
+            this, tr("Select a destination for the game files"), QFileInfo(target).absolutePath());
         if (dir.isEmpty())
             return QString();
         target = QDir(dir).filePath(gameId);
@@ -1665,7 +1682,7 @@ void MainWindow::onExtract()
             m_extractCancel, &error);
     });
 
-    QProgressDialog progress(tr("Extracting the game's files…"), tr("Cancel"), 0, 1000, this);
+    QProgressDialog progress(tr("Extracting game files…"), tr("Cancel"), 0, 1000, this);
     progress.setWindowTitle(tr("Extract Files"));
     progress.setWindowModality(Qt::WindowModal);
     progress.setMinimumDuration(0);
@@ -1683,9 +1700,7 @@ void MainWindow::onExtract()
         if (t <= 0 || m_extractCancel)
             return;
         progress.setValue(int(d * 1000 / t));
-        progress.setLabelText(tr("Extracting the game's files… %1 of %2 MB")
-                                  .arg(d >> 20)
-                                  .arg(t >> 20));
+        progress.setLabelText(tr("Extracting game files… %1 of %2 MB").arg(d >> 20).arg(t >> 20));
     });
 
     QEventLoop loop;
@@ -1708,16 +1723,17 @@ void MainWindow::onExtract()
     if (result == DiscImage::Result::Failed)
     {
         QMessageBox::critical(this, tr("Extract Files"),
-                              tr("The game's files could not be extracted, and nothing was "
-                                 "left behind.\n\n%1").arg(error));
+                              tr("Could not extract the game files. No files were left "
+                                 "behind.\n\n%1")
+                                  .arg(error));
         return;
     }
 
     m_dataEdit->setText(QDir(target).filePath(QStringLiteral("files")));
     QMessageBox::information(
         this, tr("Extract Files"),
-        tr("The game's files are in:\n\n%1\n\nThe game now uses that folder, so the image "
-           "can be moved or deleted. The change is kept when you save.")
+        tr("The game files are in:\n\n%1\n\nThe game now uses this folder. The disc image can "
+           "be moved or deleted. Click Save to keep this change.")
             .arg(QDir::toNativeSeparators(target)));
 }
 
@@ -1743,8 +1759,7 @@ void MainWindow::updateConflicts()
         m_conflictLabel->setText(
             clashes.isEmpty()
                 ? QString()
-                : tr("%1 is used by more than one control. The game takes the first "
-                     "one it reads, so the others will not work.")
+                : tr("%1 is assigned to more than one control. Only the first assignment works.")
                       .arg(clashes.join(QStringLiteral(", "))));
     }
 }
@@ -1762,13 +1777,12 @@ void MainWindow::updateDataState()
         const QString found = AppPaths::findDataBesideGame(AppPaths::archiveRoot());
         if (found.isEmpty())
         {
-            setBad(m_dataState, tr("✗ There is no game disc beside the game, and it cannot "
-                                   "start without one. Choose your disc image."));
+            setBad(m_dataState, tr("✗ No game disc found beside the game. Select a disc image."));
             updateLanguageState(QString());
             return;
         }
-        m_dataState->setText(tr("The game will use %1, which is beside it.")
-                                 .arg(QFileInfo(found).fileName()));
+        m_dataState->setText(
+            tr("Using %1, found beside the game.").arg(QFileInfo(found).fileName()));
         m_dataState->setStyleSheet(QString());
         const QFileInfo fi(found);
         updateLanguageState(fi.isFile() ? DiscImage::inspect(found).gameId
@@ -1813,13 +1827,13 @@ void MainWindow::updateDataState()
     {
         updateLanguageState(QString());
         if (!dir.exists())
-            setBad(m_dataState, tr("✗ There is no such file or folder."));
+            setBad(m_dataState, tr("✗ File or folder not found."));
         else if (dir.exists(QStringLiteral("files/common.ini")))
-            setBad(m_dataState, tr("✗ One level too high: the files folder inside this one "
-                                   "is the one to choose."));
+            setBad(m_dataState, tr("✗ Folder is one level too high. Select the files folder "
+                                   "inside it."));
         else
-            setBad(m_dataState, tr("✗ No game files here. Look for the folder with "
-                                   "common.ini in it."));
+            setBad(m_dataState, tr("✗ No game files found. Select the folder that contains "
+                                   "common.ini."));
     }
 }
 
@@ -1884,7 +1898,7 @@ void MainWindow::updateTexturePacks()
         }
     }
     m_packList->setText(lines.isEmpty()
-                            ? tr("No packs yet. Each pack goes in a folder of its own in the "
+                            ? tr("No packs found. Put each pack in its own folder inside the "
                                  "textures folder.")
                             : lines.join(QLatin1Char('\n')));
 
@@ -1925,14 +1939,14 @@ void MainWindow::updateLanguageState(const QString& gameId)
     }
 
     if (!known)
-        m_languageState->setText(tr("Read by the European and Japanese releases."));
+        m_languageState->setText(tr("Applies to the European and Japanese releases only."));
     else if (european)
-        m_languageState->setText(tr("This copy is the European release, so this applies."));
+        m_languageState->setText(tr("Applies to this copy (European release)."));
     else if (japanese)
-        m_languageState->setText(tr("This copy is the Japanese release, so this applies."));
+        m_languageState->setText(tr("Applies to this copy (Japanese release)."));
     else
         m_languageState->setText(
-            tr("This copy is the %1 release, which has one language of its own.").arg(tr("American")));
+            tr("Does not apply. The %1 release has one language.").arg(tr("American")));
 }
 
 void MainWindow::setDirty(bool dirty)

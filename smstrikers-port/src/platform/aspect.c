@@ -13,9 +13,10 @@
 #define PORT_CONSOLE_ASPECT (4.0f / 3.0f)
 
 // The range the port will present. Below 4:3 the shadow atlas stops fitting (its 4-across grid of
-// 160-wide tiles needs a 640-wide frame), which is the hard end; 1.0 leaves room above it.
+// 160-wide tiles needs a 640-wide frame), which is the hard end; 1.0 leaves room above it. Past
+// 12:1 the widened view shows the ground outside the stadium.
 #define PORT_ASPECT_MIN 1.0f
-#define PORT_ASPECT_MAX 3.6f
+#define PORT_ASPECT_MAX 12.0f
 
 static float s_windowAspect;   // 0 until main() reports one
 static float s_aspect;         // 0 until resolved
@@ -23,7 +24,7 @@ static int   s_resolved;
 static int   s_follows;        // 1 when the aspect is the window's own
 static unsigned int s_generation;
 
-static float ClampAspect(float a)
+float PortClampAspect(float a)
 {
     if (a < PORT_ASPECT_MIN)
         return PORT_ASPECT_MIN;
@@ -46,7 +47,7 @@ void PortSetWindowAspect(unsigned int width, unsigned int height)
     if (!s_resolved || !s_follows)
         return;
 
-    a = ClampAspect(s_windowAspect);
+    a = PortClampAspect(s_windowAspect);
     if (a == s_aspect)
         return;
 
@@ -65,9 +66,7 @@ unsigned int PortAspectGeneration(void)
     return s_generation;
 }
 
-// "16:9" and "16/9" and "1.7777". Returns 0 on anything else, including "auto", which the caller
-// handles, because it is not a value but a promise to keep following the window.
-static float ParseAspect(const char* s)
+float PortParseAspect(const char* s)
 {
     double num = 0.0;
     double den = 0.0;
@@ -117,11 +116,11 @@ float PortTargetAspect(void)
         // 16:9 if main() reported nothing, which is also the default window.
         s_follows = 1;
         if (s_windowAspect > 0.0f)
-            s_aspect = ClampAspect(s_windowAspect);
+            s_aspect = PortClampAspect(s_windowAspect);
         return s_aspect;
     }
 
-    a = ParseAspect(env);
+    a = PortParseAspect(env);
     if (a > PORT_ASPECT_MAX || (a > 0.0f && a < PORT_ASPECT_MIN))
     {
         // Say so. A silently clamped aspect is a picture that letterboxes for no visible reason, so
@@ -130,7 +129,7 @@ float PortTargetAspect(void)
                 "[aspect] STRIKERS_ASPECT=%.4f is outside [%.2f, %.2f]; "
                 "using %.4f.\n",
                 (double)a, (double)PORT_ASPECT_MIN, (double)PORT_ASPECT_MAX,
-                (double)ClampAspect(a));
+                (double)PortClampAspect(a));
     }
     if (a <= 0.0f)
     {
@@ -143,7 +142,7 @@ float PortTargetAspect(void)
         return s_aspect;
     }
 
-    s_aspect = ClampAspect(a);
+    s_aspect = PortClampAspect(a);
     return s_aspect;
 }
 

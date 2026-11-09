@@ -141,7 +141,6 @@
 # data = C:/games/strikers/Super Mario Strikers.iso
 
 # Where the game's reports go: 1 for strikers-log.txt beside it, a file path, or console.
-# Started without a terminal, this build writes strikers-log.txt anyway; 0 turns that off.
 # log = 1
 # log = console
 
@@ -201,6 +200,9 @@
 
 # 1 shows the connection line during online matches.
 # online_stats = 0
+
+# 1 shows IP addresses in the online menus. At 0 they are masked; hold R or F6 to see them.
+# online_show_addresses = 0
 
 # The UDP port a room you host listens on, 1025 to 49151. Guests joining by address need it open.
 # online_port = 41210

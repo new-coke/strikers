@@ -18,8 +18,8 @@
     <name>DiscImage</name>
     <message>
         <location filename="../src/discimage.cpp" line="126"/>
-        <source>There is no such file.</source>
-        <translation>Diese Datei gibt es nicht.</translation>
+        <source>File not found.</source>
+        <translation>Datei nicht gefunden.</translation>
     </message>
     <message>
         <location filename="../src/discimage.cpp" line="131"/>
@@ -30,28 +30,28 @@
         <location filename="../src/discimage.cpp" line="143"/>
         <location filename="../src/discimage.cpp" line="236"/>
         <location filename="../src/discimage.cpp" line="245"/>
-        <source>The image could not be read past its header.</source>
-        <translation>Das Abbild ließ sich nicht über seinen Header hinaus lesen.</translation>
+        <source>Could not read the image past its header.</source>
+        <translation>Das Abbild ließ sich über den Header hinaus nicht lesen.</translation>
     </message>
     <message>
         <location filename="../src/discimage.cpp" line="170"/>
-        <source>This is a readable disc image, but of another game (%1).</source>
-        <translation>Das ist ein lesbares Disc-Abbild, aber von einem anderen Spiel (%1).</translation>
+        <source>This disc image is for another game (%1).</source>
+        <translation>Dieses Disc-Abbild gehört zu einem anderen Spiel (%1).</translation>
     </message>
     <message>
         <location filename="../src/discimage.cpp" line="220"/>
-        <source>%1 already exists. Extracting only ever writes a new folder.</source>
-        <translation>%1 existiert bereits. Beim Entpacken wird immer ein neuer Ordner angelegt.</translation>
+        <source>%1 already exists. Extraction requires a new folder.</source>
+        <translation>%1 existiert bereits. Zum Entpacken ist ein neuer Ordner erforderlich.</translation>
     </message>
     <message>
         <location filename="../src/discimage.cpp" line="258"/>
-        <source>The image&apos;s header describes a program far larger than this game&apos;s. It is damaged.</source>
-        <translation>Der Header des Abbilds beschreibt ein Programm, das weit größer ist als das dieses Spiels. Das Abbild ist beschädigt.</translation>
+        <source>The image is damaged. Its header describes a program too large for this game.</source>
+        <translation>Das Abbild ist beschädigt. Sein Header beschreibt ein Programm, das für dieses Spiel zu groß ist.</translation>
     </message>
     <message>
         <location filename="../src/discimage.cpp" line="270"/>
-        <source>The image names a file &quot;%1&quot;, which cannot be written safely. No copy of this game has one; the image is damaged or has been altered.</source>
-        <translation>Das Abbild enthält eine Datei „%1“, die sich nicht sicher schreiben lässt. Keine Kopie dieses Spiels hat eine solche Datei; das Abbild ist beschädigt oder wurde verändert.</translation>
+        <source>The image contains an unsafe file name, &quot;%1&quot;. The image is damaged or has been modified.</source>
+        <translation>Das Abbild enthält einen unsicheren Dateinamen, „%1“. Das Abbild ist beschädigt oder wurde verändert.</translation>
     </message>
     <message>
         <location filename="../src/discimage.cpp" line="300"/>
@@ -62,8 +62,8 @@
     </message>
     <message>
         <location filename="../src/discimage.cpp" line="306"/>
-        <source>There is not enough free space there: the game&apos;s files need %1 MB and the drive has %2 MB free.</source>
-        <translation>Dort ist nicht genug Platz frei: Die Spieldateien brauchen %1 MB, auf dem Laufwerk sind %2 MB frei.</translation>
+        <source>Not enough free space. The game files need %1 MB; the drive has %2 MB free.</source>
+        <translation>Nicht genügend Speicherplatz. Die Spieldateien benötigen %1 MB, auf dem Laufwerk sind %2 MB frei.</translation>
     </message>
     <message>
         <location filename="../src/discimage.cpp" line="340"/>
@@ -74,7 +74,7 @@
     </message>
     <message>
         <location filename="../src/discimage.cpp" line="353"/>
-        <source>The image ends before the end of %1. It is truncated or damaged.</source>
+        <source>The image ends before the end of %1. The image is incomplete or damaged.</source>
         <translation>Das Abbild endet vor dem Ende von %1. Es ist unvollständig oder beschädigt.</translation>
     </message>
     <message>
@@ -87,8 +87,8 @@
     <name>HelpText</name>
     <message>
         <location filename="../src/helptext.cpp" line="82"/>
-        <source>The setting&apos;s own documentation, as shipped with the game:</source>
-        <translation>Die Originaldokumentation der Einstellung, auf Englisch, wie mit dem Spiel ausgeliefert:</translation>
+        <source>Documentation shipped with the game:</source>
+        <translation>Mit dem Spiel ausgelieferte Dokumentation:</translation>
     </message>
     <message>
         <location filename="../src/helptext.cpp" line="92"/>
@@ -123,8 +123,8 @@
     </message>
     <message>
         <location filename="../src/keycapturebutton.cpp" line="113"/>
-        <source>No SDL scancode for that key. Try another.</source>
-        <translation>Für diese Taste gibt es keinen SDL-Scancode. Bitte eine andere.</translation>
+        <source>This key has no SDL scancode. Press another key.</source>
+        <translation>Diese Taste hat keinen SDL-Scancode. Drücken Sie eine andere Taste.</translation>
     </message>
 </context>
 <context>
@@ -200,7 +200,7 @@
     <message>
         <location filename="../src/mainwindow.cpp" line="367"/>
         <location filename="../src/mainwindow.cpp" line="812"/>
-        <source>%1 (from the file)</source>
+        <source>%1 (from file)</source>
         <translation>%1 (aus der Datei)</translation>
     </message>
     <message>
@@ -224,8 +224,8 @@
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="479"/>
-        <source>Follow my display</source>
-        <translation>Wie mein Bildschirm</translation>
+        <source>Match display</source>
+        <translation>Wie der Bildschirm</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="485"/>
@@ -273,8 +273,8 @@
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="430"/>
-        <source>The height is exact. The width follows the aspect ratio.</source>
-        <translation>Die Höhe ist exakt. Die Breite folgt dem Seitenverhältnis.</translation>
+        <source>Height is exact; width follows the aspect ratio.</source>
+        <translation>Die Höhe ist exakt, die Breite folgt dem Seitenverhältnis.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="385"/>
@@ -287,19 +287,39 @@
         <translation>Breite : Höhe</translation>
     </message>
     <message>
+        <location filename="../src/mainwindow.cpp" line="546"/>
+        <source>Same as Match the window.</source>
+        <translation>Wie „Wie das Fenster“.</translation>
+    </message>
+    <message>
+        <location filename="../src/mainwindow.cpp" line="548"/>
+        <source>✗ Invalid aspect ratio. Use width:height (such as 21:9) or a decimal.</source>
+        <translation>✗ Ungültiges Seitenverhältnis. Breite:Höhe (etwa 21:9) oder eine Dezimalzahl verwenden.</translation>
+    </message>
+    <message>
+        <location filename="../src/mainwindow.cpp" line="551"/>
+        <source>✗ Must be between 1:1 and 12:1. %1 will be used.</source>
+        <translation>✗ Muss zwischen 1:1 und 12:1 liegen. %1 wird verwendet.</translation>
+    </message>
+    <message>
+        <location filename="../src/mainwindow.cpp" line="553"/>
+        <source>Reads as %1.</source>
+        <translation>Gelesen als %1.</translation>
+    </message>
+    <message>
         <location filename="../src/mainwindow.cpp" line="566"/>
         <source>%1 (experimental)</source>
         <translation>%1 (experimentell)</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="570"/>
-        <source>%1 (not on this computer)</source>
-        <translation>%1 (auf diesem Rechner nicht verfügbar)</translation>
+        <source>%1 (not available)</source>
+        <translation>%1 (nicht verfügbar)</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="591"/>
-        <source>Music, effects and commentary volumes are the game&apos;s own settings, and live in its options screen rather than here.</source>
-        <translation>Die Lautstärken für Musik, Effekte und Kommentar sind Einstellungen des Spiels und stehen in dessen Optionsbildschirm, nicht hier.</translation>
+        <source>Music, effects and commentary volume are set in the game&apos;s Options screen.</source>
+        <translation>Die Lautstärke von Musik, Effekten und Kommentar wird im Bildschirm „Optionen“ des Spiels eingestellt.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="595"/>
@@ -318,27 +338,23 @@
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="653"/>
-        <source>Click a binding and press the key you want. Escape cancels.</source>
-        <translation>Auf eine Belegung klicken und die gewünschte Taste drücken. Esc bricht ab.</translation>
+        <source>Click a binding, then press a key. Escape cancels.</source>
+        <translation>Auf eine Belegung klicken, dann eine Taste drücken. Esc bricht ab.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="654"/>
-        <source>Bindings are stored as SDL scancode names, which are physical key
-positions rather than letters. On a US or UK layout what you press is
-what is stored. On AZERTY or Dvorak the position and the letter differ,
-and it is the letter that gets written, Qt cannot see the position.
+        <source>Bindings are stored as SDL scancodes (physical key positions). On US and UK
+layouts, the key pressed is the key stored. On AZERTY or Dvorak, the letter
+is stored instead.
 
-Keys with no name, the Command and Menu keys, media keys, and anything
-your layout only produces with a modifier, are refused rather than
-guessed at.</source>
-        <translation>Belegungen werden als SDL-Scancode-Namen gespeichert, also als physische
-Tastenpositionen und nicht als Buchstaben. Auf einem US- oder UK-Layout ist das
-Gedrückte auch das Gespeicherte. Auf AZERTY oder Dvorak weichen Position und
-Buchstabe voneinander ab, und geschrieben wird der Buchstabe, denn Qt sieht die
-Position nicht.
+Unnamed keys, Command, Menu, media keys and keys that need a modifier
+are not accepted.</source>
+        <translation>Belegungen werden als SDL-Scancodes gespeichert (physische Tastenpositionen).
+Auf US- und UK-Layouts wird die gedrückte Taste gespeichert. Auf AZERTY oder
+Dvorak wird stattdessen der Buchstabe gespeichert.
 
-Tasten ohne Namen, die Befehls- und die Menütaste, Medientasten und alles, was
-Ihr Layout nur mit einem Modifikator erzeugt, werden abgelehnt statt geraten.</translation>
+Tasten ohne Namen, Befehls- und Menütaste, Medientasten und Tasten, die einen
+Modifikator erfordern, werden nicht angenommen.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="697"/>
@@ -364,25 +380,21 @@ Ihr Layout nur mit einem Modifikator erzeugt, werden abgelehnt statt geraten.</t
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="754"/>
-        <source>Choose which button on your controller each GameCube button should come from.</source>
-        <translation>Legen Sie fest, welche Taste Ihres Controllers für welche GameCube-Taste steht.</translation>
+        <source>Select the controller button for each GameCube button.</source>
+        <translation>Wählen Sie für jede GameCube-Taste die passende Controller-Taste.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="756"/>
-        <source>The names are SDL&apos;s, and they are positions on SDL&apos;s idea of a
-controller rather than whatever your own controller prints on itself:
-`a` is the bottom face button on every pad, wherever its label sits.
+        <source>Names are SDL controller positions: `a` is the bottom face button on every
+controller, whatever its label.
 
-There is nothing here to press because Qt has no controller API. Run the
-game with the pad probe switched on to see the bindings that are actually
-in force, which is also the answer to &quot;what are my controls&quot;.</source>
-        <translation>Die Namen stammen von SDL: es sind Positionen auf dem Controller, wie SDL ihn
-sich vorstellt, und nicht das, was auf Ihrem eigenen Controller steht. „a“ ist
-auf jedem Pad die untere Aktionstaste, ganz gleich wie sie beschriftet ist.
+Buttons cannot be captured here. To see the bindings in effect, run the
+game with the pad probe on.</source>
+        <translation>Die Namen sind SDL-Controllerpositionen: `a` ist auf jedem Controller die untere
+Aktionstaste, unabhängig von der Beschriftung.
 
-Hier gibt es nichts zu drücken, weil Qt keine Controller-API hat. Starten Sie das
-Spiel mit eingeschalteter Pad-Sonde, um die tatsächlich geltenden Belegungen zu
-sehen; das ist zugleich die Antwort auf „Wie ist meine Steuerung belegt?“.</translation>
+Tasten lassen sich hier nicht erfassen. Um die geltenden Belegungen zu sehen,
+starten Sie das Spiel mit eingeschalteter Pad-Sonde.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="819"/>
@@ -411,8 +423,8 @@ sehen; das ist zugleich die Antwort auf „Wie ist meine Steuerung belegt?“.</
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="895"/>
-        <source>Play straight from your disc image.</source>
-        <translation>Direkt aus Ihrem Disc-Abbild spielen.</translation>
+        <source>Play directly from a disc image.</source>
+        <translation>Direkt aus einem Disc-Abbild spielen.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="896"/>
@@ -421,8 +433,8 @@ sehen; das ist zugleich die Antwort auf „Wie ist meine Steuerung belegt?“.</
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="897"/>
-        <source>Use a folder of files already extracted from the disc.</source>
-        <translation>Einen Ordner mit bereits von der Disc entpackten Dateien verwenden.</translation>
+        <source>Use files already extracted from the disc.</source>
+        <translation>Bereits von der Disc entpackte Dateien verwenden.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="922"/>
@@ -431,8 +443,8 @@ sehen; das ist zugleich die Antwort auf „Wie ist meine Steuerung belegt?“.</
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="926"/>
-        <source>Optional. The game plays from the image as it is; extracting copies its files into a folder, so the image can be put away.</source>
-        <translation>Optional. Das Spiel läuft direkt aus dem Abbild; das Entpacken kopiert seine Dateien in einen Ordner, damit das Abbild weggeräumt werden kann.</translation>
+        <source>Optional. Copies the image&apos;s files to a folder so the image is no longer needed.</source>
+        <translation>Optional. Kopiert die Dateien des Abbilds in einen Ordner, damit das Abbild nicht mehr benötigt wird.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="937"/>
@@ -448,13 +460,13 @@ sehen; das ist zugleich die Antwort auf „Wie ist meine Steuerung belegt?“.</
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1609"/>
-        <source>✗ There is no game disc beside the game, and it cannot start without one. Choose your disc image.</source>
-        <translation>✗ Neben dem Spiel liegt keine Spiel-Disc, und ohne sie startet es nicht. Wählen Sie Ihr Disc-Abbild.</translation>
+        <source>✗ No game disc found beside the game. Select a disc image.</source>
+        <translation>✗ Neben dem Spiel wurde keine Spiel-Disc gefunden. Wählen Sie ein Disc-Abbild.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1614"/>
-        <source>The game will use %1, which is beside it.</source>
-        <translation>Das Spiel verwendet %1, das neben ihm liegt.</translation>
+        <source>Using %1, found beside the game.</source>
+        <translation>%1 wird verwendet (neben dem Spiel gefunden).</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1636"/>
@@ -467,7 +479,7 @@ sehen; das ist zugleich die Antwort auf „Wie ist meine Steuerung belegt?“.</
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1407"/>
-        <source>Choose the folder holding the game&apos;s files</source>
+        <source>Select the game files folder</source>
         <translation>Ordner mit den Spieldateien auswählen</translation>
     </message>
     <message>
@@ -486,8 +498,8 @@ sehen; das ist zugleich die Antwort auf „Wie ist meine Steuerung belegt?“.</
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1052"/>
-        <source>The menu opens as soon as the game starts. F1 opens and closes it while you play.</source>
-        <translation>Das Menü öffnet sich direkt beim Spielstart. F1 öffnet und schließt es während des Spiels.</translation>
+        <source>The menu opens when the game starts. F1 opens and closes it.</source>
+        <translation>Das Menü öffnet sich beim Spielstart. F1 öffnet und schließt es.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1081"/>
@@ -496,8 +508,8 @@ sehen; das ist zugleich die Antwort auf „Wie ist meine Steuerung belegt?“.</
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1099"/>
-        <source>Everything else the file says, so editing it here loses nothing. A row that is switched off in the file starts empty; give it a value and saving turns it on, clear the value and saving comments it out again.</source>
-        <translation>Alles Übrige, was in der Datei steht, damit das Bearbeiten hier nichts verliert. Eine in der Datei abgeschaltete Zeile beginnt leer; geben Sie ihr einen Wert, schaltet das Speichern sie ein, löschen Sie den Wert, kommentiert das Speichern sie wieder aus.</translation>
+        <source>Other settings in the file, kept as written. An empty row is off in the file; enter a value and save to turn it on, or clear it to turn it off.</source>
+        <translation>Weitere Einstellungen aus der Datei, unverändert beibehalten. Eine leere Zeile ist in der Datei deaktiviert; geben Sie einen Wert ein und speichern Sie, um sie zu aktivieren, oder löschen Sie den Wert, um sie zu deaktivieren.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1105"/>
@@ -531,12 +543,12 @@ sehen; das ist zugleich die Antwort auf „Wie ist meine Steuerung belegt?“.</
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1191"/>
-        <source>%1 (new, from %2 when you save)</source>
+        <source>%1 (new; created from %2 on save)</source>
         <translation>%1 (neu, wird beim Speichern aus %2 angelegt)</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1194"/>
-        <source>%1 (new, created when you save)</source>
+        <source>%1 (new; created on save)</source>
         <translation>%1 (neu, wird beim Speichern angelegt)</translation>
     </message>
     <message>
@@ -560,18 +572,23 @@ sehen; das ist zugleich die Antwort auf „Wie ist meine Steuerung belegt?“.</
         <translation>Speichern fehlgeschlagen: %1</translation>
     </message>
     <message>
+        <location filename="../src/mainwindow.cpp" line="150"/>
+        <source>invalid aspect ratio &quot;%1&quot;.</source>
+        <translation>ungültiges Seitenverhältnis „%1“.</translation>
+    </message>
+    <message>
         <location filename="../src/mainwindow.cpp" line="1319"/>
         <source>Saved to %1</source>
         <translation>Gespeichert in %1</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1332"/>
-        <source>Put every setting in this window back to the way it came?
+        <source>Reset all settings to their defaults?
 
-Anything under Advanced is left alone: those are not this window&apos;s to reset. Nothing is written until you press Save.</source>
-        <translation>Alle Einstellungen in diesem Fenster in den Auslieferungszustand zurücksetzen?
+Settings under Advanced are not changed. Nothing is saved until you click Save.</source>
+        <translation>Alle Einstellungen auf die Standardwerte zurücksetzen?
 
-Alles unter „Erweitert“ bleibt unberührt: dafür ist dieses Fenster nicht zuständig. Geschrieben wird erst, wenn Sie auf Speichern drücken.</translation>
+Einstellungen unter „Erweitert“ werden nicht geändert. Gespeichert wird erst, wenn Sie auf „Speichern“ klicken.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1351"/>
@@ -580,8 +597,8 @@ Alles unter „Erweitert“ bleibt unberührt: dafür ist dieses Fenster nicht z
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1369"/>
-        <source>Could not save the settings first: %1</source>
-        <translation>Die Einstellungen ließen sich vorher nicht speichern: %1</translation>
+        <source>Could not save settings: %1</source>
+        <translation>Einstellungen konnten nicht gespeichert werden: %1</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1377"/>
@@ -595,8 +612,8 @@ Alles unter „Erweitert“ bleibt unberührt: dafür ist dieses Fenster nicht z
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1392"/>
-        <source>ISO or GCM image, NKit included (*.iso *.gcm)</source>
-        <translation>ISO- oder GCM-Abbild, auch NKit (*.iso *.gcm)</translation>
+        <source>ISO or GCM images, including NKit (*.iso *.gcm)</source>
+        <translation>ISO- oder GCM-Abbilder, auch NKit (*.iso *.gcm)</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1393"/>
@@ -615,8 +632,8 @@ Alles unter „Erweitert“ bleibt unberührt: dafür ist dieses Fenster nicht z
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1398"/>
-        <source>Choose your Super Mario Strikers disc image</source>
-        <translation>Ihr Super Mario Strikers-Disc-Abbild auswählen</translation>
+        <source>Select the Super Mario Strikers disc image</source>
+        <translation>Disc-Abbild von Super Mario Strikers auswählen</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1427"/>
@@ -629,11 +646,11 @@ Alles unter „Erweitert“ bleibt unberührt: dafür ist dieses Fenster nicht z
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1435"/>
-        <source>This disc has already been extracted to:
+        <source>This disc is already extracted to:
 
 %1
 
-Use that folder?</source>
+Use this folder?</source>
         <translation>Diese Disc wurde bereits entpackt nach:
 
 %1
@@ -647,21 +664,21 @@ Diesen Ordner verwenden?</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1443"/>
-        <source>%1 already exists, and it is not an extraction of this disc. Extracting only ever makes a new folder, so choose another place.</source>
-        <translation>%1 existiert bereits und ist keine entpackte Kopie dieser Disc. Beim Entpacken wird immer ein neuer Ordner angelegt, wählen Sie also einen anderen Ort.</translation>
+        <source>%1 already exists and is not from this disc. Select a new folder.</source>
+        <translation>%1 existiert bereits und stammt nicht von dieser Disc. Wählen Sie einen neuen Ordner.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1450"/>
-        <source>Copy the game&apos;s files out of the disc image into this folder?
+        <source>Extract the game files to this folder?
 
 %1
 
-They take %2 MB. The image itself is not changed.</source>
-        <translation>Die Spieldateien aus dem Disc-Abbild in diesen Ordner kopieren?
+Requires %2 MB. The disc image is not changed.</source>
+        <translation>Die Spieldateien in diesen Ordner entpacken?
 
 %1
 
-Sie belegen %2 MB. Das Abbild selbst wird nicht verändert.</translation>
+Benötigt %2 MB. Das Disc-Abbild wird nicht verändert.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1454"/>
@@ -675,12 +692,12 @@ Sie belegen %2 MB. Das Abbild selbst wird nicht verändert.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1474"/>
-        <source>Choose where to put the game&apos;s files</source>
-        <translation>Wählen Sie, wohin die Spieldateien sollen</translation>
+        <source>Select a destination for the game files</source>
+        <translation>Zielordner für die Spieldateien auswählen</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1512"/>
-        <source>Extracting the game&apos;s files…</source>
+        <source>Extracting game files…</source>
         <translation>Spieldateien werden entpackt…</translation>
     </message>
     <message>
@@ -690,35 +707,35 @@ Sie belegen %2 MB. Das Abbild selbst wird nicht verändert.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1530"/>
-        <source>Extracting the game&apos;s files… %1 of %2 MB</source>
+        <source>Extracting game files… %1 of %2 MB</source>
         <translation>Spieldateien werden entpackt… %1 von %2 MB</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1555"/>
-        <source>The game&apos;s files could not be extracted, and nothing was left behind.
+        <source>Could not extract the game files. No files were left behind.
 
 %1</source>
-        <translation>Die Spieldateien ließen sich nicht entpacken; es wurde nichts zurückgelassen.
+        <translation>Die Spieldateien konnten nicht entpackt werden. Es wurden keine Dateien zurückgelassen.
 
 %1</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1563"/>
-        <source>The game&apos;s files are in:
+        <source>The game files are in:
 
 %1
 
-The game now uses that folder, so the image can be moved or deleted. The change is kept when you save.</source>
-        <translation>Die Spieldateien liegen in:
+The game now uses this folder. The disc image can be moved or deleted. Click Save to keep this change.</source>
+        <translation>Die Spieldateien befinden sich in:
 
 %1
 
-Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder gelöscht werden. Die Änderung bleibt erhalten, wenn Sie speichern.</translation>
+Das Spiel verwendet jetzt diesen Ordner. Das Disc-Abbild kann verschoben oder gelöscht werden. Klicken Sie auf „Speichern“, um diese Änderung zu übernehmen.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1590"/>
-        <source>%1 is used by more than one control. The game takes the first one it reads, so the others will not work.</source>
-        <translation>%1 ist mehrfach belegt. Das Spiel nimmt die erste Belegung, die es liest; die übrigen bleiben wirkungslos.</translation>
+        <source>%1 is assigned to more than one control. Only the first assignment works.</source>
+        <translation>%1 ist mehrfach belegt. Nur die erste Belegung ist wirksam.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1683"/>
@@ -737,7 +754,7 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1415"/>
-        <source>Move your saves, controls and shader cache into the game folder?
+        <source>Move saves, controls and shader cache to the game folder?
 
 %1</source>
         <translation>Spielstände, Steuerung und Shader-Cache in den Spielordner verschieben?
@@ -746,8 +763,8 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1432"/>
-        <source>Could not move %1. Whatever moved is in the game folder, and the rest is where it was.</source>
-        <translation>%1 ließ sich nicht verschieben. Was verschoben wurde, liegt im Spielordner, der Rest ist noch am alten Ort.</translation>
+        <source>Could not move %1. Items already moved remain in the game folder.</source>
+        <translation>%1 konnte nicht verschoben werden. Bereits verschobene Elemente bleiben im Spielordner.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1701"/>
@@ -761,8 +778,8 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1716"/>
-        <source>No packs yet. Each pack goes in a folder of its own in the textures folder.</source>
-        <translation>Noch keine Pakete. Jedes Paket kommt in einen eigenen Ordner im Texturordner.</translation>
+        <source>No packs found. Put each pack in its own folder inside the textures folder.</source>
+        <translation>Keine Pakete gefunden. Legen Sie jedes Paket in einen eigenen Ordner im Texturordner.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1727"/>
@@ -776,8 +793,8 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1757"/>
-        <source>Read by the European and Japanese releases.</source>
-        <translation>Wird von der europäischen und der japanischen Fassung gelesen.</translation>
+        <source>Applies to the European and Japanese releases only.</source>
+        <translation>Gilt nur für die europäische und die japanische Fassung.</translation>
     </message>
     <message>
         <source>The game will look for a &quot;files&quot; folder beside itself.</source>
@@ -795,18 +812,18 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1660"/>
-        <source>✗ There is no such file or folder.</source>
-        <translation>✗ Diese Datei oder diesen Ordner gibt es nicht.</translation>
+        <source>✗ File or folder not found.</source>
+        <translation>✗ Datei oder Ordner nicht gefunden.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1662"/>
-        <source>✗ One level too high: the files folder inside this one is the one to choose.</source>
-        <translation>✗ Eine Ebene zu hoch: Wählen Sie den Ordner files darin.</translation>
+        <source>✗ Folder is one level too high. Select the files folder inside it.</source>
+        <translation>✗ Der Ordner liegt eine Ebene zu hoch. Wählen Sie den Ordner files darin.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1665"/>
-        <source>✗ No game files here. Look for the folder with common.ini in it.</source>
-        <translation>✗ Hier liegen keine Spieldateien. Suchen Sie den Ordner mit common.ini.</translation>
+        <source>✗ No game files found. Select the folder that contains common.ini.</source>
+        <translation>✗ Keine Spieldateien gefunden. Wählen Sie den Ordner mit common.ini.</translation>
     </message>
     <message>
         <source>✗ There is no such folder.</source>
@@ -818,18 +835,18 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1759"/>
-        <source>This copy is the European release, so this applies.</source>
-        <translation>Diese Fassung ist die europäische, also greift die Einstellung.</translation>
+        <source>Applies to this copy (European release).</source>
+        <translation>Gilt für diese Kopie (europäische Fassung).</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1761"/>
-        <source>This copy is the Japanese release, so this applies.</source>
-        <translation>Diese Fassung ist die japanische, also greift die Einstellung.</translation>
+        <source>Applies to this copy (Japanese release).</source>
+        <translation>Gilt für diese Kopie (japanische Fassung).</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1764"/>
-        <source>This copy is the %1 release, which has one language of its own.</source>
-        <translation>Diese Fassung ist die %1, die nur eine eigene Sprache hat.</translation>
+        <source>Does not apply. The %1 release has one language.</source>
+        <translation>Gilt hier nicht. Die %1 Fassung hat nur eine Sprache.</translation>
     </message>
     <message>
         <source>Japanese</source>
@@ -852,8 +869,8 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1048"/>
-        <source>The language this window is written in. The game&apos;s own is the Language setting above.</source>
-        <translation>Die Sprache dieses Fensters. Die Sprache des Spiels ist die Einstellung „Sprache“ darüber.</translation>
+        <source>Language of this window. The game language is set under Language above.</source>
+        <translation>Sprache dieses Fensters. Die Spielsprache wird oben unter „Sprache“ eingestellt.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1052"/>
@@ -870,8 +887,8 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/schema.cpp" line="74"/>
-        <source>The resolution the game renders at, independent of your window size. Higher is sharper and costs graphics performance.</source>
-        <translation>Die Auflösung, in der das Spiel rechnet, unabhängig von der Fenstergröße. Höher ist schärfer und kostet Grafikleistung.</translation>
+        <source>Resolution the game renders at, independent of window size. Higher values are sharper but slower.</source>
+        <translation>Auflösung, mit der das Spiel rendert, unabhängig von der Fenstergröße. Höhere Werte sind schärfer, aber langsamer.</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="83"/>
@@ -880,8 +897,8 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/schema.cpp" line="84"/>
-        <source>Multisampling, which smooths the stepped edges on high-contrast lines like the goal net. Costs some graphics performance.</source>
-        <translation>Multisampling: glättet Treppchen an kontrastreichen Kanten wie dem Tornetz. Kostet etwas Grafikleistung.</translation>
+        <source>Smooths jagged edges, such as on the goal net. Reduces graphics performance.</source>
+        <translation>Glättet gezackte Kanten, etwa am Tornetz. Kostet Grafikleistung.</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="90"/>
@@ -901,12 +918,12 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/schema.cpp" line="93"/>
-        <source>Anisotropic filtering, which keeps textures sharp at grazing angles, so the far half of the pitch keeps its grain. Nearly free.</source>
-        <translation>Anisotrope Filterung: hält Texturen in flachem Blickwinkel scharf, sodass die ferne Spielfeldhälfte ihre Struktur behält. Fast gratis.</translation>
+        <source>Keeps distant textures sharp. Little performance cost.</source>
+        <translation>Hält entfernte Texturen scharf. Kostet kaum Leistung.</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="100"/>
-        <source>Off (as the console)</source>
+        <source>Off (console default)</source>
         <translation>Aus (wie auf der Konsole)</translation>
     </message>
     <message>
@@ -936,8 +953,8 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/schema.cpp" line="104"/>
-        <source>Caps the frame rate. Lower it to reduce heat, fan noise and power draw on a laptop.</source>
-        <translation>Begrenzt die Bildrate. Senken Sie sie, um Hitze, Lüfterlärm und Stromverbrauch im Notebook zu drücken.</translation>
+        <source>Limits the frame rate. Lower values reduce heat, fan noise and power use.</source>
+        <translation>Begrenzt die Bildrate. Niedrigere Werte verringern Wärme, Lüftergeräusch und Stromverbrauch.</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="110"/>
@@ -946,8 +963,8 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/schema.cpp" line="111"/>
-        <source>Synchronises each frame with your display&apos;s refresh, so the image cannot tear into two mismatched halves as the camera pans.</source>
-        <translation>Synchronisiert jedes Bild mit dem Bildschirmtakt, damit das Bild beim Kameraschwenk nicht in zwei versetzte Hälften zerreißt.</translation>
+        <source>Synchronises frames with the display refresh rate to prevent tearing.</source>
+        <translation>Synchronisiert die Bilder mit der Bildwiederholrate des Bildschirms, um Tearing zu vermeiden.</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="119"/>
@@ -965,8 +982,8 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/schema.cpp" line="123"/>
-        <source>The aspect ratio the game renders for. Leave it following the window unless the image looks stretched.</source>
-        <translation>Das Seitenverhältnis, für das das Spiel rendert. Lassen Sie es dem Fenster folgen, außer das Bild wirkt verzerrt.</translation>
+        <source>Aspect ratio the game renders for. Use Match the window unless the image looks stretched.</source>
+        <translation>Seitenverhältnis, für das das Spiel rendert. Verwenden Sie „Wie das Fenster“, es sei denn, das Bild wirkt verzerrt.</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="129"/>
@@ -975,8 +992,8 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/schema.cpp" line="130"/>
-        <source>Which graphics API the game renders through. Automatic picks the right one for your system; change it only to work around a driver problem.</source>
-        <translation>Über welche Grafik-API das Spiel rendert. Automatisch wählt die passende für Ihr System; ändern Sie das nur, um ein Treiberproblem zu umgehen.</translation>
+        <source>Graphics API the game renders with. Change it only to work around a driver problem.</source>
+        <translation>Grafik-API, mit der das Spiel rendert. Ändern Sie sie nur, um ein Treiberproblem zu umgehen.</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="138"/>
@@ -1015,8 +1032,8 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/schema.cpp" line="143"/>
-        <source>Whether the game starts fullscreen. F11 toggles it at any time, so this only sets the initial state.</source>
-        <translation>Ob das Spiel im Vollbild startet. F11 schaltet jederzeit um; dies legt nur den Anfangszustand fest.</translation>
+        <source>Starts the game in fullscreen. F11 switches between fullscreen and windowed.</source>
+        <translation>Startet das Spiel im Vollbild. F11 wechselt zwischen Vollbild und Fenster.</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="152"/>
@@ -1025,13 +1042,13 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/schema.cpp" line="153"/>
-        <source>Pause when you click away from the game</source>
-        <translation>Pausieren, wenn Sie aus dem Spiel klicken</translation>
+        <source>Pause when the window is inactive</source>
+        <translation>Pausieren, wenn das Fenster inaktiv ist</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="154"/>
-        <source>Suspends the game when the window loses focus, rather than letting it run in the background.</source>
-        <translation>Hält das Spiel an, wenn das Fenster den Fokus verliert, statt es im Hintergrund weiterlaufen zu lassen.</translation>
+        <source>Pauses the game when its window loses focus.</source>
+        <translation>Hält das Spiel an, wenn das Fenster den Fokus verliert.</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="169"/>
@@ -1054,13 +1071,13 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/schema.cpp" line="177"/>
-        <source>Write a sound report when the game quits</source>
+        <source>Write a sound report on exit</source>
         <translation>Beim Beenden einen Tonbericht schreiben</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="178"/>
-        <source>Writes a diagnostic report on the mixer when the game exits, to attach to a bug report.</source>
-        <translation>Schreibt beim Beenden einen Diagnosebericht über den Mixer, den Sie einem Fehlerbericht beilegen können.</translation>
+        <source>Writes a mixer diagnostic report on exit, for bug reports.</source>
+        <translation>Schreibt beim Beenden einen Diagnosebericht über den Mixer, für Fehlerberichte.</translation>
     </message>
     <message>
         <source>Game files</source>
@@ -1072,8 +1089,8 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/schema.cpp" line="171"/>
-        <source>Music and sound effects. On by default.</source>
-        <translation>Musik und Soundeffekte. Standardmäßig an.</translation>
+        <source>Plays music and sound effects.</source>
+        <translation>Spielt Musik und Soundeffekte ab.</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="192"/>
@@ -1082,8 +1099,8 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/schema.cpp" line="193"/>
-        <source>Your own copy of the game: a disc image, or a folder extracted from one. Leave it empty to use whichever is beside the game.</source>
-        <translation>Ihre eigene Kopie des Spiels: ein Disc-Abbild oder ein daraus entpackter Ordner. Leer lassen, um zu verwenden, was neben dem Spiel liegt.</translation>
+        <source>A disc image, or a folder extracted from one. Leave empty to use the one beside the game.</source>
+        <translation>Ein Disc-Abbild oder ein daraus entpackter Ordner. Leer lassen, um das zu verwenden, was neben dem Spiel liegt.</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="223"/>
@@ -1111,8 +1128,8 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/schema.cpp" line="224"/>
-        <source>The language of menus and on-screen text. The American release is English only, and Japanese needs the Japanese release.</source>
-        <translation>Die Sprache der Menüs und Bildschirmtexte. Die amerikanische Fassung gibt es nur auf Englisch, und Japanisch braucht die japanische Fassung.</translation>
+        <source>Language of menus and on-screen text. The American release is English only; Japanese requires the Japanese release.</source>
+        <translation>Sprache der Menüs und Bildschirmtexte. Die amerikanische Fassung gibt es nur auf Englisch; Japanisch erfordert die japanische Fassung.</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="120"/>
@@ -1141,8 +1158,8 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/schema.cpp" line="202"/>
-        <source>Replacement textures, including packs made for Dolphin.</source>
-        <translation>Ersatztexturen, auch Pakete für Dolphin.</translation>
+        <source>Replaces game textures. Dolphin packs are supported.</source>
+        <translation>Ersetzt Spieltexturen. Dolphin-Pakete werden unterstützt.</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="207"/>
@@ -1151,8 +1168,8 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/schema.cpp" line="208"/>
-        <source>Loads one pack when the textures folders hold several.</source>
-        <translation>Lädt nur ein Paket, wenn die Texturordner mehrere enthalten.</translation>
+        <source>Loads one pack when several are installed.</source>
+        <translation>Lädt nur ein Paket, wenn mehrere installiert sind.</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="212"/>
@@ -1161,13 +1178,13 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/schema.cpp" line="213"/>
-        <source>Save the game&apos;s textures as it loads them</source>
-        <translation>Texturen des Spiels beim Laden speichern</translation>
+        <source>Save textures as they load</source>
+        <translation>Texturen beim Laden speichern</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="214"/>
-        <source>Saves each texture as a picture. An edited copy that keeps its file name and proportions replaces the original when put in a pack.</source>
-        <translation>Speichert jede Textur als Bild. Eine bearbeitete Kopie, die Dateinamen und Seitenverhältnis behält, ersetzt in einem Paket das Original.</translation>
+        <source>Saves each texture as an image file. An edited copy with the same name and proportions can replace the original in a pack.</source>
+        <translation>Speichert jede Textur als Bilddatei. Eine bearbeitete Kopie mit gleichem Namen und Seitenverhältnis kann das Original in einem Paket ersetzen.</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="235"/>
@@ -1201,8 +1218,8 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/schema.cpp" line="240"/>
-        <source>Saves, controls and the shader cache stay in the game folder instead of your user profile, so the folder can be moved or copied whole.</source>
-        <translation>Spielstände, Steuerung und Shader-Cache bleiben im Spielordner statt in deinem Benutzerprofil, sodass sich der Ordner als Ganzes verschieben oder kopieren lässt.</translation>
+        <source>Stores saves, controls and the shader cache in the game folder. The folder can then be moved or copied whole.</source>
+        <translation>Speichert Spielstände, Steuerung und Shader-Cache im Spielordner. Der Ordner lässt sich dann als Ganzes verschieben oder kopieren.</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="238"/>
@@ -1216,8 +1233,8 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/schema.cpp" line="240"/>
-        <source>Makes every stadium, team and cup mode available without earning them first.</source>
-        <translation>Macht alle Stadien, Teams und Pokalmodi verfügbar, ohne sie erst erspielen zu müssen.</translation>
+        <source>Makes all stadiums, teams and cup modes available without earning them.</source>
+        <translation>Schaltet alle Stadien, Teams und Pokalmodi frei, ohne dass sie erspielt werden müssen.</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="246"/>
@@ -1226,13 +1243,13 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/schema.cpp" line="247"/>
-        <source>Show what you&apos;re playing on Discord</source>
-        <translation>Auf Discord zeigen, was Sie spielen</translation>
+        <source>Show game activity on Discord</source>
+        <translation>Spielaktivität auf Discord anzeigen</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="248"/>
-        <source>Your Discord profile shows the mode, the captains and the score while you play. Discord has to be open on this computer.</source>
-        <translation>Ihr Discord-Profil zeigt beim Spielen den Modus, die Kapitäne und den Spielstand. Discord muss auf diesem Computer geöffnet sein.</translation>
+        <source>Shows the mode, captains and score on your Discord profile. Requires Discord running on this computer.</source>
+        <translation>Zeigt Modus, Kapitäne und Spielstand in Ihrem Discord-Profil. Discord muss auf diesem Computer laufen.</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="249"/>
@@ -1246,8 +1263,8 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/schema.cpp" line="251"/>
-        <source>The developer menu: frame timings, cheats, camera and render controls. F1 opens and closes it.</source>
-        <translation>Das Entwicklermenü: Bildzeiten, Cheats, Kamera- und Render-Regler. F1 öffnet und schließt es.</translation>
+        <source>Developer menu with frame timings, cheats, camera and render controls. F1 opens and closes it.</source>
+        <translation>Entwicklermenü mit Bildzeiten, Cheats, Kamera- und Render-Reglern. F1 öffnet und schließt es.</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="264"/>
@@ -1262,8 +1279,8 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/schema.cpp" line="266"/>
-        <source>Installs the keyboard as a controller. Turn it off to free the keys if you only play on a pad.</source>
-        <translation>Richtet die Tastatur als Controller ein. Ausschalten gibt die Tasten frei, wenn Sie nur am Pad spielen.</translation>
+        <source>Uses the keyboard as a controller. Turn off to free the keys when using a controller.</source>
+        <translation>Verwendet die Tastatur als Controller. Ausschalten, um die Tasten bei Verwendung eines Controllers freizugeben.</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="273"/>
@@ -1272,8 +1289,8 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/schema.cpp" line="274"/>
-        <source>Show the controls bound on the active device, or choose a controller style.</source>
-        <translation>Zeigt die Belegung des aktiven Geräts an, oder wählen Sie einen Controller-Stil.</translation>
+        <source>Shows buttons for the active device, or for the selected controller style.</source>
+        <translation>Zeigt Tastensymbole für das aktive Gerät oder den gewählten Controller-Stil.</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="281"/>
@@ -1332,8 +1349,8 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/schema.cpp" line="294"/>
-        <source>How far a stick must travel before input registers. Raise it if a worn stick drifts at rest.</source>
-        <translation>Wie weit ein Stick sich bewegen muss, bevor die Eingabe zählt. Erhöhen Sie sie, wenn ein ausgeleierter Stick in Ruhe driftet.</translation>
+        <source>How far a stick moves before input registers. Raise it if a stick drifts at rest.</source>
+        <translation>Wie weit sich ein Stick bewegen muss, bevor die Eingabe zählt. Erhöhen Sie den Wert, wenn ein Stick in Ruhe driftet.</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="301"/>
@@ -1342,8 +1359,8 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/schema.cpp" line="302"/>
-        <source>How far a trigger must travel to register as a press.</source>
-        <translation>Wie weit ein Trigger gezogen sein muss, damit er als Druck zählt.</translation>
+        <source>How far a trigger moves to register a press.</source>
+        <translation>Wie weit ein Trigger gezogen werden muss, damit ein Druck zählt.</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="309"/>
@@ -1367,8 +1384,8 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
     </message>
     <message>
         <location filename="../src/schema.cpp" line="318"/>
-        <source>Force feedback intensity, from a faint buzz to the full motor.</source>
-        <translation>Stärke des Force Feedback, vom leisen Brummen bis zum vollen Motor.</translation>
+        <source>Force feedback strength.</source>
+        <translation>Stärke des Force Feedback.</translation>
     </message>
     <message>
         <location filename="../src/schema.cpp" line="474"/>
@@ -1478,12 +1495,12 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
         <translation>Mitspieler auswählen</translation>
     </message>
     <message>
-        <source>The host hasn't unlocked this stadium. Choose another.</source>
+        <source>Host has not unlocked this stadium. Choose another.</source>
         <extracomment>T_STADIUM_LOCKED; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Der Host hat dieses Stadion noch nicht freigeschaltet. Wähle ein anderes.</translation>
+        <translation>Der Host hat dieses Stadion nicht freigeschaltet. Wähle ein anderes.</translation>
     </message>
     <message>
-        <source>The host chooses the stadium</source>
+        <source>Host chooses the stadium</source>
         <extracomment>T_STAGE_STADIUM; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
         <translation>Der Host wählt das Stadion</translation>
     </message>
@@ -1513,7 +1530,7 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
         <translation>Adresse kopiert</translation>
     </message>
     <message>
-        <source>Enter the host's address. Include the port if supplied.</source>
+        <source>Enter the host address. Include the port if supplied.</source>
         <extracomment>T_JOIN_HELP; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
         <translation>Gib die Adresse des Hosts ein. Füge den Port hinzu, falls angegeben.</translation>
     </message>
@@ -1538,9 +1555,9 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
         <translation>Raum erstellen</translation>
     </message>
     <message>
-        <source>Invite players by address or on this network</source>
+        <source>Invite by address or on this network</source>
         <extracomment>T_CREATE_ROOM_SUB; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Spieler über eine Adresse oder in diesem Netzwerk einladen</translation>
+        <translation>Per Adresse oder in diesem Netzwerk einladen</translation>
     </message>
     <message>
         <source>Nearby rooms</source>
@@ -1558,7 +1575,7 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
         <translation>Per Adresse beitreten</translation>
     </message>
     <message>
-        <source>The host's IP address or Tailscale device name</source>
+        <source>Host IP address or Tailscale device name</source>
         <extracomment>T_JOIN_ADDRESS_SUB; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
         <translation>IP-Adresse oder Tailscale-Gerätename des Hosts</translation>
     </message>
@@ -1648,9 +1665,9 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
         <translation>Verlassen</translation>
     </message>
     <message>
-        <source>Up and down change a character, left and right move.</source>
+        <source>Up/Down: change character. Left/Right: move.</source>
         <extracomment>T_WHEEL_HELP; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Oben und unten ändern das Zeichen, links und rechts bewegen den Cursor.</translation>
+        <translation>Oben/Unten: Zeichen ändern. Links/Rechts: bewegen.</translation>
     </message>
     <message>
         <source>Type or paste the address</source>
@@ -1668,7 +1685,7 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
         <translation>Einfügen</translation>
     </message>
     <message>
-        <source>Looking for rooms on this network...</source>
+        <source>Searching this network for rooms...</source>
         <extracomment>T_SEARCHING; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
         <translation>Räume in diesem Netzwerk werden gesucht...</translation>
     </message>
@@ -1713,7 +1730,7 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
         <translation>%s wird gesucht...</translation>
     </message>
     <message>
-        <source>Contacting the room...</source>
+        <source>Contacting room...</source>
         <extracomment>T_STAGE_CONTACTING; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
         <translation>Raum wird kontaktiert...</translation>
     </message>
@@ -1723,7 +1740,7 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
         <translation>Versionen werden geprüft...</translation>
     </message>
     <message>
-        <source>Joining the room...</source>
+        <source>Joining room...</source>
         <extracomment>T_STAGE_ADMITTED; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
         <translation>Raum wird betreten...</translation>
     </message>
@@ -1848,7 +1865,7 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
         <translation>Raum schließen? Alle Spieler werden getrennt.</translation>
     </message>
     <message>
-        <source>Leave the match? You can't rejoin it.</source>
+        <source>Leave the match? You cannot rejoin.</source>
         <extracomment>T_LEAVE_MATCH_Q; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
         <translation>Spiel verlassen? Du kannst nicht wieder beitreten.</translation>
     </message>
@@ -1858,9 +1875,9 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
         <translation>Bleiben</translation>
     </message>
     <message>
-        <source>For players on this network. For remote play, share a reachable VPN address or forward the port and share your public address.</source>
+        <source>For this network only. For remote play, share a VPN address, or forward the port and share the public address.</source>
         <extracomment>T_ADDRESS_BIG_HINT; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Für Spieler in diesem Netzwerk. Für andere Spieler: eine erreichbare VPN-Adresse teilen oder den Port weiterleiten und die öffentliche Adresse teilen.</translation>
+        <translation>Nur für dieses Netzwerk. Für Spieler von außerhalb: eine VPN-Adresse teilen oder den Port weiterleiten und die öffentliche Adresse teilen.</translation>
     </message>
     <message>
         <source>%d min</source>
@@ -1918,7 +1935,7 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
         <translation>Grafik vorbereiten: %d%%</translation>
     </message>
     <message>
-        <source>Checking the match setup...</source>
+        <source>Checking match settings...</source>
         <extracomment>T_CHECKING_SETUP; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
         <translation>Spieleinstellungen werden geprüft...</translation>
     </message>
@@ -1973,9 +1990,9 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
         <translation>Abgestimmt</translation>
     </message>
     <message>
-        <source>Your opponents left</source>
+        <source>Opponents left</source>
         <extracomment>T_OPPONENTS_LEFT; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Deine Gegner haben das Spiel verlassen</translation>
+        <translation>Gegner haben das Spiel verlassen</translation>
     </message>
     <message>
         <source>Continue against CPU</source>
@@ -1998,9 +2015,9 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
         <translation>Online-Spiel fehlgeschlagen.</translation>
     </message>
     <message>
-        <source>Online play isn't in this build.</source>
+        <source>This build has no online play.</source>
         <extracomment>T_ERR_UNAVAILABLE; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Online-Spiel ist in dieser Version nicht verfügbar.</translation>
+        <translation>Diese Version hat kein Online-Spiel.</translation>
     </message>
     <message>
         <source>No network connection.</source>
@@ -2008,9 +2025,9 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
         <translation>Keine Netzwerkverbindung.</translation>
     </message>
     <message>
-        <source>Enter a valid address.</source>
+        <source>Invalid address.</source>
         <extracomment>T_ERR_BAD_ADDRESS; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Gib eine gültige Adresse ein.</translation>
+        <translation>Ungültige Adresse.</translation>
     </message>
     <message>
         <source>Port %u is in use by another program.</source>
@@ -2018,54 +2035,54 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
         <translation>Port %u wird von einem anderen Programm verwendet.</translation>
     </message>
     <message>
-        <source>This system can join rooms but not host them.</source>
+        <source>Cannot host on this system. Join instead.</source>
         <extracomment>T_ERR_CANT_HOST; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Dieses System kann Räumen beitreten, aber keine hosten.</translation>
+        <translation>Dieses System kann nicht hosten, nur beitreten.</translation>
     </message>
     <message>
-        <source>Couldn't reach the room. Check the address and ask the host if the room is open.</source>
+        <source>Could not reach the room. Check the address and that the room is open.</source>
         <extracomment>T_ERR_UNREACHABLE; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Der Raum ist nicht erreichbar. Prüfe die Adresse und frage den Host, ob der Raum geöffnet ist.</translation>
+        <translation>Raum nicht erreichbar. Prüfe die Adresse und ob der Raum geöffnet ist.</translation>
     </message>
     <message>
-        <source>That room is full.</source>
+        <source>Room is full.</source>
         <extracomment>T_ERR_ROOM_FULL; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Dieser Raum ist voll.</translation>
+        <translation>Raum ist voll.</translation>
     </message>
     <message>
-        <source>A match is already in progress.</source>
+        <source>Match already in progress.</source>
         <extracomment>T_ERR_IN_MATCH; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
         <translation>Ein Spiel läuft bereits.</translation>
     </message>
     <message>
-        <source>That room runs a different version.</source>
+        <source>Room uses a different version.</source>
         <extracomment>T_ERR_VERSION; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Dieser Raum verwendet eine andere Version.</translation>
+        <translation>Der Raum verwendet eine andere Version.</translation>
     </message>
     <message>
-        <source>That room uses different game data.</source>
+        <source>Room uses different game data.</source>
         <extracomment>T_ERR_DATA_FAMILY; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Dieser Raum verwendet andere Spieldaten.</translation>
+        <translation>Der Raum verwendet andere Spieldaten.</translation>
     </message>
     <message>
-        <source>The host closed the room.</source>
+        <source>Host closed the room.</source>
         <extracomment>T_ERR_HOST_LEFT; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
         <translation>Der Host hat den Raum geschlossen.</translation>
     </message>
     <message>
-        <source>The connection was lost.</source>
+        <source>Connection lost.</source>
         <extracomment>T_ERR_CONNECTION_LOST; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Die Verbindung wurde getrennt.</translation>
+        <translation>Verbindung getrennt.</translation>
     </message>
     <message>
-        <source>The room sent data this version can't read.</source>
+        <source>Room sent data this version cannot read.</source>
         <extracomment>T_ERR_PROTOCOL; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
         <translation>Der Raum hat Daten gesendet, die diese Version nicht lesen kann.</translation>
     </message>
     <message>
-        <source>The players' match settings don't match.</source>
+        <source>Match settings differ between players.</source>
         <extracomment>T_ERR_SETUP_MISMATCH; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Die Spieleinstellungen der Spieler stimmen nicht überein.</translation>
+        <translation>Die Spieleinstellungen der Spieler weichen ab.</translation>
     </message>
     <message>
         <source>Waiting for %s... %d</source>
@@ -2118,19 +2135,19 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
         <translation>%s hat das Spiel verlassen. Die CPU übernimmt.</translation>
     </message>
     <message>
-        <source>Match settings differ. Returning to the room.</source>
+        <source>Match settings differ. Returning to room.</source>
         <extracomment>T_NOTICE_SETUP_MISMATCH; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Die Spieleinstellungen stimmen nicht überein. Zurück zum Raum.</translation>
+        <translation>Spieleinstellungen weichen ab. Zurück zum Raum.</translation>
     </message>
     <message>
-        <source>Rematch!</source>
+        <source>Rematch</source>
         <extracomment>T_NOTICE_REMATCH; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Revanche!</translation>
+        <translation>Revanche</translation>
     </message>
     <message>
-        <source>The match ended because the games went out of sync.</source>
+        <source>Match ended. The games went out of sync.</source>
         <extracomment>T_DESYNC_ENDED; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Das Spiel wurde wegen fehlender Synchronisation beendet.</translation>
+        <translation>Spiel beendet. Die Spiele liefen nicht mehr synchron.</translation>
     </message>
     <message>
         <source>Report saved to %s</source>
@@ -2168,9 +2185,9 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
         <translation>%d ms</translation>
     </message>
     <message>
-        <source>Use a port from 1025 to 49151.</source>
+        <source>Must be from 1025 to 49151.</source>
         <extracomment>T_PORT_RANGE; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Verwende einen Port zwischen 1025 und 49151.</translation>
+        <translation>Muss zwischen 1025 und 49151 liegen.</translation>
     </message>
     <message>
         <source>%s paused the match</source>
@@ -2248,9 +2265,9 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
         <translation>Bowser-Angriff</translation>
     </message>
     <message>
-        <source>Share an address the other players can reach:</source>
+        <source>Share an address other players can reach:</source>
         <extracomment>T_OTHER_ADDRESSES; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Teile eine Adresse, die die anderen Spieler erreichen können:</translation>
+        <translation>Teile eine Adresse, die andere Spieler erreichen können:</translation>
     </message>
     <message>
         <source>Save</source>
@@ -2278,9 +2295,9 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
         <translation>Spieler in diesem Netzwerk</translation>
     </message>
     <message>
-        <source>Finding your internet address...</source>
+        <source>Finding internet address...</source>
         <extracomment>T_PUBLIC_LOOKING; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Deine Internetadresse wird ermittelt...</translation>
+        <translation>Internetadresse wird ermittelt...</translation>
     </message>
     <message>
         <source>Share this address with players anywhere.</source>
@@ -2288,29 +2305,49 @@ Das Spiel verwendet jetzt diesen Ordner, das Abbild kann also verschoben oder ge
         <translation>Teile diese Adresse mit Spielern, egal wo sie sind.</translation>
     </message>
     <message>
-        <source>Players elsewhere may not be able to join. If they can't, use Tailscale or ZeroTier.</source>
+        <source>Players elsewhere may not be able to join. If so, use Tailscale or ZeroTier.</source>
         <extracomment>T_PUBLIC_FOUND; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Spieler von außerhalb kommen vielleicht nicht rein. Falls nicht, nutze Tailscale oder ZeroTier.</translation>
+        <translation>Spieler von außerhalb können evtl. nicht beitreten. Dann nutze Tailscale oder ZeroTier.</translation>
     </message>
     <message>
-        <source>Your connection doesn't let players elsewhere join. Use Tailscale or ZeroTier instead.</source>
+        <source>This connection blocks players elsewhere. Use Tailscale or ZeroTier.</source>
         <extracomment>T_PUBLIC_SHARED; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Über deine Verbindung können Spieler von außerhalb nicht beitreten. Nutze stattdessen Tailscale oder ZeroTier.</translation>
+        <translation>Diese Verbindung sperrt Spieler von außerhalb. Nutze Tailscale oder ZeroTier.</translation>
     </message>
     <message>
-        <source>Couldn't find your internet address. Players elsewhere can join over Tailscale or ZeroTier.</source>
+        <source>Could not find internet address. Players elsewhere can use Tailscale or ZeroTier.</source>
         <extracomment>T_PUBLIC_FAILED; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Deine Internetadresse wurde nicht gefunden. Spieler von außerhalb können über Tailscale oder ZeroTier beitreten.</translation>
+        <translation>Internetadresse nicht gefunden. Spieler von außerhalb können Tailscale oder ZeroTier nutzen.</translation>
     </message>
     <message>
-        <source>Share it only with people you're playing with.</source>
+        <source>Share only with players you invite.</source>
         <extracomment>T_SHARE_PRIVATELY; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Teile sie nur mit Leuten, mit denen du spielst.</translation>
+        <translation>Teile sie nur mit Spielern, die du einlädst.</translation>
     </message>
     <message>
-        <source>That address only works on the host's own network. Ask them for their internet address.</source>
+        <source>This is a local network address. Ask the host for the internet address.</source>
         <extracomment>T_ERR_HOME_ADDRESS; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Diese Adresse funktioniert nur im Netzwerk des Hosts. Frag den Host nach der Internetadresse.</translation>
+        <translation>Das ist eine lokale Netzwerkadresse. Frag den Host nach der Internetadresse.</translation>
+    </message>
+    <message>
+        <source>Show IP addresses</source>
+        <extracomment>T_SHOW_ADDRESSES; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>IP-Adressen anzeigen</translation>
+    </message>
+    <message>
+        <source>Show</source>
+        <extracomment>T_HINT_SHOW; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Anzeigen</translation>
+    </message>
+    <message>
+        <source>Hide</source>
+        <extracomment>T_HINT_HIDE; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Verbergen</translation>
+    </message>
+    <message>
+        <source>Invite</source>
+        <extracomment>T_HINT_INVITE; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Einladen</translation>
     </message>
 </context>
 </TS>

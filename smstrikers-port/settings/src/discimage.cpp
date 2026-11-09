@@ -123,7 +123,7 @@ Info inspect(const QString& path)
     const QFileInfo fi(path);
     if (!fi.exists())
     {
-        info.error = Text::tr("There is no such file.");
+        info.error = Text::tr("File not found.");
         return info;
     }
     if (!fi.isFile())
@@ -140,7 +140,7 @@ Info inspect(const QString& path)
     unsigned char head[0x220];
     if (port_disc_read(d, head, sizeof head, 0) != long(sizeof head))
     {
-        info.error = Text::tr("The image could not be read past its header.");
+        info.error = Text::tr("Could not read the image past its header.");
         return info;
     }
     info.format = QString::fromLatin1(port_disc_format(d));
@@ -167,7 +167,7 @@ Info inspect(const QString& path)
     if (!info.gameId.startsWith(QLatin1String("G4Q")) || !sentinel)
     {
         info.notThisGame = true;
-        info.error = Text::tr("This is a readable disc image, but of another game (%1).")
+        info.error = Text::tr("This disc image is for another game (%1).")
                          .arg(info.title.isEmpty() ? info.gameId : info.title);
         return info;
     }
@@ -219,7 +219,7 @@ Result extract(const QString& image, const QString& outDir, const Progress& prog
     const QString target = QDir::cleanPath(QFileInfo(outDir).absoluteFilePath());
     if (QFileInfo::exists(target))
     {
-        why = Text::tr("%1 already exists. Extracting only ever writes a new folder.")
+        why = Text::tr("%1 already exists. Extraction requires a new folder.")
                   .arg(QDir::toNativeSeparators(target));
         return Result::Failed;
     }
@@ -235,7 +235,7 @@ Result extract(const QString& image, const QString& outDir, const Progress& prog
     if (port_disc_read(d, head, sizeof head, 0) != long(sizeof head)
         || port_disc_read(d, appHead, sizeof appHead, 0x2440) != long(sizeof appHead))
     {
-        why = Text::tr("The image could not be read past its header.");
+        why = Text::tr("Could not read the image past its header.");
         return Result::Failed;
     }
     const quint32 dolOff = be32(head + 0x420);
@@ -244,7 +244,7 @@ Result extract(const QString& image, const QString& outDir, const Progress& prog
     const quint64 appSize = 0x20ull + be32(appHead + 0x14) + be32(appHead + 0x18);
     if (port_disc_read(d, dolHead, sizeof dolHead, dolOff) != long(sizeof dolHead))
     {
-        why = Text::tr("The image could not be read past its header.");
+        why = Text::tr("Could not read the image past its header.");
         return Result::Failed;
     }
     quint64 dolSize = 0x100;
@@ -257,8 +257,8 @@ Result extract(const QString& image, const QString& outDir, const Progress& prog
     }
     if (appSize > (16u << 20) || dolSize > (64u << 20))
     {
-        why = Text::tr("The image's header describes a program far larger than this game's. "
-                       "It is damaged.");
+        why = Text::tr("The image is damaged. Its header describes a program too large for "
+                       "this game.");
         return Result::Failed;
     }
 
@@ -269,9 +269,8 @@ Result extract(const QString& image, const QString& outDir, const Progress& prog
     {
         if (!safeRelative(e.path))
         {
-            why = Text::tr("The image names a file \"%1\", which cannot be written safely. "
-                           "No copy of this game has one; the image is damaged or has been "
-                           "altered.")
+            why = Text::tr("The image contains an unsafe file name, \"%1\". The image is "
+                           "damaged or has been modified.")
                       .arg(QString::fromLatin1(e.path));
             return Result::Failed;
         }
@@ -305,8 +304,8 @@ Result extract(const QString& image, const QString& outDir, const Progress& prog
     const QStorageInfo volume(parent);
     if (volume.isValid() && volume.bytesAvailable() >= 0 && volume.bytesAvailable() < total)
     {
-        why = Text::tr("There is not enough free space there: the game's files need %1 MB "
-                       "and the drive has %2 MB free.")
+        why = Text::tr("Not enough free space. The game files need %1 MB; the drive has %2 MB "
+                       "free.")
                   .arg((total + (1 << 20) - 1) >> 20)
                   .arg(volume.bytesAvailable() >> 20);
         return Result::Failed;
@@ -352,8 +351,8 @@ Result extract(const QString& image, const QString& outDir, const Progress& prog
             const long got = port_disc_read(d, buffer.data(), want, offset + (length - left));
             if (got <= 0)
             {
-                why = Text::tr("The image ends before the end of %1. It is truncated or "
-                               "damaged.")
+                why = Text::tr("The image ends before the end of %1. The image is incomplete "
+                               "or damaged.")
                           .arg(rel);
                 return Result::Failed;
             }

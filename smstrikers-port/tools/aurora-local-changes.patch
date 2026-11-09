@@ -216,6 +216,23 @@ index 52975e7..0a4b6dc 100644
  u32 AIGetDMALength(void);
  BOOL AICheckInit(void);
  AISCallback AIRegisterStreamCallback(AISCallback callback);
+diff --git a/include/dolphin/gx/GXAurora.h b/include/dolphin/gx/GXAurora.h
+index 46f6ede..397b760 100644
+--- a/include/dolphin/gx/GXAurora.h
++++ b/include/dolphin/gx/GXAurora.h
+@@ -30,6 +30,12 @@ extern "C" {
+  */
+ #define GX_AURORA_LOAD_PROJECTION_FULL 0x0003
+ 
++/**
++ * smstrikers-port: sets the logical scissor to GXSetScissor's exact rectangle, replacing what the registers decode to.
++ * Must be followed by four u32 values: left, top, width, height.
++ */
++#define GX_AURORA_LOAD_SCISSOR_LOGICAL 0x0004
++
+ /**
+  * Aurora equivalent of CP_REG_ARRAYBASE_ID: sets the base address and size of a vertex array.
+  * This command must be followed by a 64-bit memory address, 32-bit size, and 1-byte little-endian flag.
 diff --git a/include/dolphin/gx/GXCpu2Efb.h b/include/dolphin/gx/GXCpu2Efb.h
 index 11fa99a..1ddafb0 100644
 --- a/include/dolphin/gx/GXCpu2Efb.h
@@ -685,6 +702,28 @@ index 24b537e..e71c7c0 100644
    return res;
  }
  }
+diff --git a/lib/dolphin/gx/GXCull.cpp b/lib/dolphin/gx/GXCull.cpp
+index e884c51..ec2883c 100644
+--- a/lib/dolphin/gx/GXCull.cpp
++++ b/lib/dolphin/gx/GXCull.cpp
+@@ -18,6 +18,17 @@ void GXSetScissor(u32 left, u32 top, u32 width, u32 height) {
+ 
+   GX_WRITE_RAS_REG(__gx->suScis0);
+   GX_WRITE_RAS_REG(__gx->suScis1);
++
++  // smstrikers-port: the exact rectangle as well; with the 342 offset an 11-bit edge stops at x = 1705.
++  __gx->scisLogical[0] = left;
++  __gx->scisLogical[1] = top;
++  __gx->scisLogical[2] = width;
++  __gx->scisLogical[3] = height;
++  GX_WRITE_AURORA(GX_AURORA_LOAD_SCISSOR_LOGICAL);
++  GX_WRITE_U32(left);
++  GX_WRITE_U32(top);
++  GX_WRITE_U32(width);
++  GX_WRITE_U32(height);
+   __gx->bpSent = 1;
+ }
+ 
 diff --git a/lib/dolphin/gx/GXDispList.cpp b/lib/dolphin/gx/GXDispList.cpp
 index 5bf9460..7ddb476 100644
 --- a/lib/dolphin/gx/GXDispList.cpp
@@ -744,6 +783,30 @@ index 3460090..b5179a3 100644
  }
  
  void GXSetDispCopySrc(u16 left, u16 top, u16 wd, u16 ht) {}
+diff --git a/lib/dolphin/gx/GXGet.cpp b/lib/dolphin/gx/GXGet.cpp
+index ac05eb0..69edded 100644
+--- a/lib/dolphin/gx/GXGet.cpp
++++ b/lib/dolphin/gx/GXGet.cpp
+@@ -237,15 +237,10 @@ void GXGetProjectionv(f32* p) {
+ void GXGetScissor(u32* left, u32* top, u32* wd, u32* ht) {
+   CHECK(left != nullptr && top != nullptr && wd != nullptr && ht != nullptr, "null scissor output");
+ 
+-  const u32 tp = GET_REG_FIELD(__gx->suScis0, 11, 0);
+-  const u32 lf = GET_REG_FIELD(__gx->suScis0, 11, 12);
+-  const u32 bm = GET_REG_FIELD(__gx->suScis1, 11, 0);
+-  const u32 rt = GET_REG_FIELD(__gx->suScis1, 11, 12);
+-
+-  *left = lf - 342;
+-  *top = tp - 342;
+-  *wd = rt - lf + 1;
+-  *ht = bm - tp + 1;
++  *left = __gx->scisLogical[0];
++  *top = __gx->scisLogical[1];
++  *wd = __gx->scisLogical[2];
++  *ht = __gx->scisLogical[3];
+ }
+ 
+ void GXGetCullMode(GXCullMode* mode) {
 diff --git a/lib/dolphin/gx/GXManage.cpp b/lib/dolphin/gx/GXManage.cpp
 index 0bb5465..a0a8538 100644
 --- a/lib/dolphin/gx/GXManage.cpp
@@ -759,6 +822,21 @@ index 0bb5465..a0a8538 100644
    GXColor black = {0, 0, 0, 0};
    GXColor white = {255, 255, 255, 255};
    u32 i;
+diff --git a/lib/dolphin/gx/GXPixel.cpp b/lib/dolphin/gx/GXPixel.cpp
+index 952c56b..f62d078 100644
+--- a/lib/dolphin/gx/GXPixel.cpp
++++ b/lib/dolphin/gx/GXPixel.cpp
+@@ -123,8 +123,10 @@ void GXSetFogRangeAdj(GXBool enable, u16 center, GXFogAdjTable* table) {
+     }
+   }
+   range_c = 0;
++  // smstrikers-port: the 10-bit centre wraps for a frame wider than 1362; spare bits 11-23 hold the rest.
+   SET_REG_FIELD(0x115, range_c, 10, 0, center + 342);
+   SET_REG_FIELD(0x116, range_c, 1, 10, enable);
++  SET_REG_FIELD(0, range_c, 13, 11, (center + 342) >> 10);
+   SET_REG_FIELD(0x117, range_c, 8, 24, 0xE8);
+   GX_WRITE_RAS_REG(range_c);
+   __gx->bpSent = 1;
 diff --git a/lib/dolphin/gx/GXTexture.cpp b/lib/dolphin/gx/GXTexture.cpp
 index 7e31004..888fa5c 100644
 --- a/lib/dolphin/gx/GXTexture.cpp
@@ -805,6 +883,18 @@ index 7c1c80c..53e7925 100644
    const auto* mtx = reinterpret_cast<const f32*>(mtx_);
  
    GX_WRITE_U8(0x10);
+diff --git a/lib/dolphin/gx/__gx.h b/lib/dolphin/gx/__gx.h
+index c8eb1cc..5d46899 100644
+--- a/lib/dolphin/gx/__gx.h
++++ b/lib/dolphin/gx/__gx.h
+@@ -110,6 +110,7 @@ struct __GXData_struct {
+   u8 tcsManEnab;    // bitmask: manual tex coord scale enabled per coord
+   u32 suScis0;      // scissor top-left
+   u32 suScis1;      // scissor bottom-right
++  u32 scisLogical[4]; // smstrikers-port: left, top, width, height
+ 
+   u32 tref[8];      // TEV texture/color reference (2 stages per register)
+   u32 iref;         // indirect texture reference
 diff --git a/lib/dolphin/pad/adapter.cpp b/lib/dolphin/pad/adapter.cpp
 index 011f593..b51f206 100644
 --- a/lib/dolphin/pad/adapter.cpp
@@ -2843,7 +2933,7 @@ index 03dda46..c2ba2da 100644
  
  bool should_build_source_key() noexcept {
 diff --git a/lib/gx/command_processor.cpp b/lib/gx/command_processor.cpp
-index be59752..e42bafc 100644
+index be59752..fb6cb4a 100644
 --- a/lib/gx/command_processor.cpp
 +++ b/lib/gx/command_processor.cpp
 @@ -2,6 +2,7 @@
@@ -3334,7 +3424,21 @@ index be59752..e42bafc 100644
    gfx::Range vertRange = gfx::push_verts(vertexData.data(), vertexData.size(), canMerge ? 0 : 4);
  
    // Try to merge with previous draw call
-@@ -755,6 +1038,7 @@ void handle_aurora(ByteReader& reader) noexcept {
+@@ -581,6 +864,13 @@ void handle_aurora(ByteReader& reader) noexcept {
+     const s32 width = reader.read<s32>();
+     const s32 height = reader.read<s32>();
+     set_render_scissor({left, top, width, height});
++  } else if (subCmd == GX_AURORA_LOAD_SCISSOR_LOGICAL) {
++    const s32 left = reader.read<s32>();
++    const s32 top = reader.read<s32>();
++    const s32 width = reader.read<s32>();
++    const s32 height = reader.read<s32>();
++    g_gxState.scissorBase = {left + 342, top + 342, width, height};
++    apply_scissor_base();
+   } else if (subCmd == GX_AURORA_LOAD_PROJECTION_FULL) {
+     auto& proj = g_gxState.proj;
+     for (int r = 0; r < 4; ++r) {
+@@ -755,6 +1045,7 @@ void handle_aurora(ByteReader& reader) noexcept {
      }
      const u32 totalVtxBytes = vtxCount * vtxSize;
      const auto vertexData = reader.take(totalVtxBytes);
@@ -3342,7 +3446,7 @@ index be59752..e42bafc 100644
      const gfx::Range vertRange = gfx::push_verts(vertexData.data(), vertexData.size(), 4);
      if (indexCount != 0) {
        push_gx_draw(prim, fmt, vtxCount, vertRange, idxRange, indexCount);
-@@ -775,6 +1059,10 @@ void handle_aurora(ByteReader& reader) noexcept {
+@@ -775,6 +1066,10 @@ void handle_aurora(ByteReader& reader) noexcept {
  }
  
  void clear_draw_cache() noexcept {
@@ -3516,7 +3620,7 @@ index 490de4c..7cce6f4 100644
    for (auto& item : g_gxState.textures) {
      item.ref.reset();
 diff --git a/lib/gx/gx.hpp b/lib/gx/gx.hpp
-index 77a821d..9157abb 100644
+index 77a821d..cd8fc72 100644
 --- a/lib/gx/gx.hpp
 +++ b/lib/gx/gx.hpp
 @@ -63,7 +63,11 @@ constexpr u32 MaxTevSwap = GX_MAX_TEVSWAP;
@@ -3532,11 +3636,81 @@ index 77a821d..9157abb 100644
  constexpr u32 MaxIndexAttr = 12; // VA_POS -> VA_TEX7
  constexpr u32 MaxUniformSize = 3840;
  constexpr u32 XfRegCount = 0x58; // 0x1000-0x1057
+@@ -401,6 +405,8 @@ struct GXState {
+   gfx::Viewport logicalViewport{0.f, 0.f, 640.f, 480.f, 0.f, 1.f};
+   gfx::Viewport renderViewport{0.f, 0.f, 640.f, 480.f, 0.f, 1.f};
+   gfx::ClipRect logicalScissor{0, 0, 640, 480};
++  // smstrikers-port: before the box offset, in register space (+342).
++  gfx::ClipRect scissorBase{342, 342, 640, 480};
+   gfx::ClipRect renderScissor{0, 0, 640, 480};
+ 
+   // EFB copy state
 diff --git a/lib/gx/regs.cpp b/lib/gx/regs.cpp
-index a059918..f973ac5 100644
+index a059918..aec292f 100644
 --- a/lib/gx/regs.cpp
 +++ b/lib/gx/regs.cpp
-@@ -1029,6 +1029,15 @@ bool copy_xf_data(u32 addr, const u8* data, u32 len, std::endian e) noexcept {
+@@ -130,22 +130,18 @@ void bp_tev_ind(u8 reg, u32 value) noexcept {
+ }
+ 
+ // Scissor (0x20/0x21)
+-void bp_scissor(u8, u32) noexcept {
+-  const u32 scis0 = g_gxState.bpRegCache[0x20];
+-  const u32 scis1 = g_gxState.bpRegCache[0x21];
+-
+-  const u32 boxOffset = g_gxState.bpRegCache[0x59];
+-  // The box offset fields are signed 9-bit values and also halved, like the viewport registers. Sign extend.
+-  const s32 offsX = static_cast<s32>(reg_get(boxOffset, 10, 0)) << 23 >> 22;
+-  const s32 offsY = static_cast<s32>(reg_get(boxOffset, 10, 10)) << 23 >> 22;
+-
+-  const s32 tp = static_cast<s32>(reg_get(scis0, 11, 0)) + offsY;
+-  const s32 lf = static_cast<s32>(reg_get(scis0, 11, 12)) + offsX;
+-  const s32 bm = static_cast<s32>(reg_get(scis1, 11, 0)) + offsY;
+-  const s32 rt = static_cast<s32>(reg_get(scis1, 11, 12)) + offsX;
+-  const s32 wd = std::max(rt - lf + 1, 0);
+-  const s32 ht = std::max(bm - tp + 1, 0);
+-  set_logical_scissor({lf, tp, wd, ht});
++void bp_scissor(u8 reg, u32) noexcept {
++  // smstrikers-port: a box offset write (0x59) keeps the base, which may be wider than the registers hold.
++  if (reg == 0x20 || reg == 0x21) {
++    const u32 scis0 = g_gxState.bpRegCache[0x20];
++    const u32 scis1 = g_gxState.bpRegCache[0x21];
++    const s32 tp = static_cast<s32>(reg_get(scis0, 11, 0));
++    const s32 lf = static_cast<s32>(reg_get(scis0, 11, 12));
++    const s32 bm = static_cast<s32>(reg_get(scis1, 11, 0));
++    const s32 rt = static_cast<s32>(reg_get(scis1, 11, 12));
++    g_gxState.scissorBase = {lf, tp, std::max(rt - lf + 1, 0), std::max(bm - tp + 1, 0)};
++  }
++  apply_scissor_base();
+ }
+ 
+ // Line/point size (0x22)
+@@ -379,7 +375,8 @@ void bp_tev_reg(u8 reg, u32 value) noexcept {
+ 
+ // Fog range adjustment (0xE8-0xED)
+ void bp_fog_range_base(u8, u32 value) noexcept {
+-  g_gxState.fog.rangeCenter = static_cast<s16>(reg_get(value, 10, 0)) - 342;
++  const u32 center = reg_get(value, 10, 0) | (reg_get(value, 13, 11) << 10);
++  g_gxState.fog.rangeCenter = static_cast<s16>(static_cast<s32>(center) - 342);
+   const bool rangeEnabled = reg_get(value, 1, 10) != 0;
+   if (g_gxState.fog.rangeEnabled != rangeEnabled) {
+     g_gxState.dirty |= DirtyPipeline;
+@@ -956,6 +953,15 @@ bool store_xf_f32(f32& dst, u32 bits) noexcept {
+ 
+ } // namespace
+ 
++void apply_scissor_base() noexcept {
++  const u32 boxOffset = g_gxState.bpRegCache[0x59];
++  // The box offset fields are signed 9-bit values and also halved, like the viewport registers. Sign extend.
++  const s32 offsX = static_cast<s32>(reg_get(boxOffset, 10, 0)) << 23 >> 22;
++  const s32 offsY = static_cast<s32>(reg_get(boxOffset, 10, 10)) << 23 >> 22;
++  const gfx::ClipRect& base = g_gxState.scissorBase;
++  set_logical_scissor({base.x + offsX, base.y + offsY, base.width, base.height});
++}
++
+ // Dispatch
+ 
+ void handle_bp(u32 value) noexcept {
+@@ -1029,6 +1035,15 @@ bool copy_xf_data(u32 addr, const u8* data, u32 len, std::endian e) noexcept {
      for (u32 i = 0; i < len; i++) {
        changed |= store_xf_f32(flat[i], read_bits<u32>(data + i * 4, e));
      }
@@ -3552,7 +3726,7 @@ index a059918..f973ac5 100644
      if (changed) {
        g_gxState.dirty |= DirtyUniform;
      }
-@@ -1044,7 +1053,7 @@ bool copy_xf_data(u32 addr, const u8* data, u32 len, std::endian e) noexcept {
+@@ -1044,7 +1059,7 @@ bool copy_xf_data(u32 addr, const u8* data, u32 len, std::endian e) noexcept {
      }
      return true;
    }
@@ -3561,6 +3735,17 @@ index a059918..f973ac5 100644
      // Normal matrices (0x400-0x459)
      u32 nrmBase = addr - 0x400;
      u32 mtxIdx = nrmBase / 9;
+diff --git a/lib/gx/regs.hpp b/lib/gx/regs.hpp
+index ccdff0a..30753e7 100644
+--- a/lib/gx/regs.hpp
++++ b/lib/gx/regs.hpp
+@@ -18,4 +18,6 @@ void handle_xf(u16 addr, std::span<const u8> data) noexcept;
+ 
+ bool copy_xf_data(u32 addr, const u8* data, u32 len, std::endian e) noexcept;
+ 
++void apply_scissor_base() noexcept;
++
+ } // namespace aurora::gx::fifo
 diff --git a/lib/gx/shader.cpp b/lib/gx/shader.cpp
 index 2d10095..7201c83 100644
 --- a/lib/gx/shader.cpp
@@ -4787,7 +4972,7 @@ index c8c9549..55fdd6c 100644
 -
 -#endif
 diff --git a/lib/window.cpp b/lib/window.cpp
-index cf84de3..2b24ed1 100644
+index cf84de3..3a484dc 100644
 --- a/lib/window.cpp
 +++ b/lib/window.cpp
 @@ -336,6 +336,21 @@ const AuroraEvent* poll_events() {
@@ -4823,7 +5008,7 @@ index cf84de3..2b24ed1 100644
  #endif
    auto width = static_cast<Sint32>(g_config.windowWidth);
    auto height = static_cast<Sint32>(g_config.windowHeight);
-@@ -488,10 +507,18 @@ AuroraWindowSize get_window_size() {
+@@ -488,14 +507,33 @@ AuroraWindowSize get_window_size() {
      fb_h = scaledH;
    }
    if (g_frameBufferAspectFit) {
@@ -4846,7 +5031,22 @@ index cf84de3..2b24ed1 100644
        fb_w = fitW;
        fb_h = fitH;
      }
-@@ -592,6 +619,13 @@ void request_frame_buffer_resize() {
+   }
++  // smstrikers-port: a wide aspect at a high render scale outgrows the device's largest texture.
++  if (webgpu::g_device) {
++    wgpu::Limits limits{};
++    webgpu::g_device.GetLimits(&limits);
++    const int maxDim = static_cast<int>(limits.maxTextureDimension2D);
++    if (maxDim > 0 && std::max(fb_w, fb_h) > maxDim) {
++      const float shrink = static_cast<float>(maxDim) / static_cast<float>(std::max(fb_w, fb_h));
++      fb_w = std::min(maxDim, std::max(1, static_cast<int>(static_cast<float>(fb_w) * shrink)));
++      fb_h = std::min(maxDim, std::max(1, static_cast<int>(static_cast<float>(fb_h) * shrink)));
++    }
++  }
+ 
+   const float scale = SDL_GetWindowDisplayScale(g_window);
+   return {
+@@ -592,6 +630,13 @@ void request_frame_buffer_resize() {
    }
  }
  
@@ -4902,7 +5102,7 @@ index 0a9c58a..786275b 100644
    target_include_directories(gx_texture_cache_tests PRIVATE
      ../include
 diff --git a/tests/gx_fifo_test.cpp b/tests/gx_fifo_test.cpp
-index f897896..1bf63d0 100644
+index f897896..f2e8bf3 100644
 --- a/tests/gx_fifo_test.cpp
 +++ b/tests/gx_fifo_test.cpp
 @@ -7,17 +7,21 @@
@@ -4964,6 +5164,86 @@ index f897896..1bf63d0 100644
  TEST_F(GXFifoTest, CommandsAfterFinalDrawRemainPendingUntilDrain) {
    aurora::gx::fifo::init();
    aurora::gx::fifo::begin_frame();
+@@ -2665,6 +2699,48 @@ TEST_F(GXFifoTest, Scissor_EncodesBpAndDecodesLogicalState) {
+   EXPECT_EQ(g_gxState.logicalScissor.height, 240);
+ }
+ 
++// smstrikers-port: 2560 (48:9) and 5760 (12:1) are past an 11-bit scissor edge.
++TEST_F(GXFifoTest, Scissor_WiderThanHardwareRoundTrips) {
++  for (const u32 frameWidth : {2560u, 5760u}) {
++    GXSetScissor(0, 0, frameWidth, 448);
++    GXSetScissorBoxOffset(0, 0);
++
++    u32 left = 1, top = 1, width = 0, height = 0;
++    GXGetScissor(&left, &top, &width, &height);
++    EXPECT_EQ(left, 0u);
++    EXPECT_EQ(top, 0u);
++    EXPECT_EQ(width, frameWidth);
++    EXPECT_EQ(height, 448u);
++
++    auto bytes = capture_fifo();
++    EXPECT_TRUE(has_aurora_cmd(bytes, GX_AURORA_LOAD_SCISSOR_LOGICAL));
++    reset_gx_state();
++    decode_fifo(bytes);
++
++    EXPECT_EQ(g_gxState.logicalScissor.x, 0);
++    EXPECT_EQ(g_gxState.logicalScissor.y, 0);
++    EXPECT_EQ(g_gxState.logicalScissor.width, static_cast<s32>(frameWidth));
++    EXPECT_EQ(g_gxState.logicalScissor.height, 448);
++  }
++}
++
++TEST_F(GXFifoTest, Scissor_BoxOffsetKeepsFullPrecisionScissor) {
++  GXSetScissor(0, 0, 5760, 448);
++  GXSetScissorBoxOffset(0, 0);
++  auto bytes = capture_fifo();
++  reset_gx_state();
++  decode_fifo(bytes);
++
++  GXSetScissorBoxOffset(4, 2);
++  auto offsetBytes = capture_fifo();
++  decode_fifo(offsetBytes);
++
++  EXPECT_EQ(g_gxState.logicalScissor.x, 4);
++  EXPECT_EQ(g_gxState.logicalScissor.y, 2);
++  EXPECT_EQ(g_gxState.logicalScissor.width, 5760);
++  EXPECT_EQ(g_gxState.logicalScissor.height, 448);
++}
++
+ TEST_F(GXFifoTest, GetViewportShadowState) {
+   f32 vp[6]{};
+ 
+@@ -3373,6 +3449,30 @@ TEST_F(GXFifoTest, FogRangeAdj_DecodesCenterAndCoefficientTable) {
+   EXPECT_EQ(g_gxState.fog.rangeCenter, 123);
+ }
+ 
++// smstrikers-port: 1280 and 2880 centre 48:9 and 12:1 frames, past the 10-bit field's 681.
++TEST_F(GXFifoTest, FogRangeAdj_CenterWiderThanHardware) {
++  GXFogAdjTable table{};
++  GXSetFogRangeAdj(GX_ENABLE, 1280, &table);
++  auto bytes = capture_fifo();
++
++  reset_gx_state();
++  decode_fifo(bytes);
++  EXPECT_TRUE(g_gxState.fog.rangeEnabled);
++  EXPECT_EQ(g_gxState.fog.rangeCenter, 1280);
++
++  GXSetFogRangeAdj(GX_ENABLE, 2880, &table);
++  auto wideBytes = capture_fifo();
++  decode_fifo(wideBytes);
++  EXPECT_TRUE(g_gxState.fog.rangeEnabled);
++  EXPECT_EQ(g_gxState.fog.rangeCenter, 2880);
++
++  GXSetFogRangeAdj(GX_DISABLE, 1877, nullptr);
++  auto disableBytes = capture_fifo();
++  decode_fifo(disableBytes);
++  EXPECT_FALSE(g_gxState.fog.rangeEnabled);
++  EXPECT_EQ(g_gxState.fog.rangeCenter, 1877);
++}
++
+ // ============================================================================
+ // GXSetIndTexMtx (BP 0x06-0x0E) - Indirect texture matrix parameters
+ // ============================================================================
 diff --git a/tests/gx_overscan_test.cpp b/tests/gx_overscan_test.cpp
 new file mode 100644
 index 0000000..821a601
