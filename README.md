@@ -17,7 +17,7 @@ Built on the community decompilation by the excellent [Yannick Suter](https://gi
 ## Features
 
 - High framerate support with configurable frame limits and VSync.
-- Online play on a local network or over the internet. The host's router opens the room's port if it supports UPnP, and friends can join from the host's Discord profile. Where the port can't be opened, [Tailscale](https://tailscale.com) or [ZeroTier](https://www.zerotier.com) are good to still reach the room. 
+- Online play on a local network or over the internet, with rollback netcode ([guide](https://github.com/new-coke/strikers/wiki/Online)). The host's router opens the room's port if it supports UPnP, and friends can join from the host's Discord profile. Where the port can't be opened, [Tailscale](https://tailscale.com) or [ZeroTier](https://www.zerotier.com) are good to still reach the room. 
 - Widescreen and ultrawide support, with an expanded view of the pitch and corrected aspect ratios.
 - Higher-resolution rendering with adjustable internal resolution, 4x MSAA and up to 16x anisotropic filtering.
 - Texture packs ([guide](https://github.com/new-coke/strikers/wiki/Texture-packs)).
