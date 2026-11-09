@@ -35,6 +35,7 @@ const LURE_REPO = /fix|install|crack|patch|loader|unlock|setup|repair/i;
 const PLATFORM =
   /\b(windows|win\s?1[01]|mac|macos|macbook|os\s?x|linux|ubuntu|fedora|debian|arch|mint|bazzite|appimage|steam\s?deck|steamos|switch)\b/i;
 const VERSION = /\bv?\d+\.\d+\.\d+\b/;
+const NOT_A_BUG = /\b(request|idea)s?\b/i;
 const ASK_PLATFORM = "which platform (Windows, macOS, Linux, Steam Deck or Nintendo Switch)";
 const ASK_VERSION = "which version (the release you downloaded, such as v2.0.0)";
 
@@ -160,6 +161,8 @@ function report(issue, verdict) {
 }
 
 async function askDetails(issue) {
+  const labels = (issue.labels ?? []).map((l) => l.name);
+  if ([issue.title, ...labels].some((s) => NOT_A_BUG.test(s))) return;
   const text = `${issue.title}\n${issue.body ?? ""}`;
   const asks = [!PLATFORM.test(text) && ASK_PLATFORM, !VERSION.test(text) && ASK_VERSION].filter(Boolean);
   if (!asks.length) return;
