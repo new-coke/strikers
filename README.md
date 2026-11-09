@@ -10,7 +10,7 @@
 
 *Requires game data from your own copy of Super Mario Strikers. No game assets are included.*
 
-Super Mario Strikers, rebuilt to run natively on Windows, Linux, macOS and Nintendo Switch, with modern display support, configurable controls and a focus on performance across both powerful and low-power hardware.
+Super Mario Strikers, rebuilt to run natively on Windows, Linux, macOS and Nintendo Switch, with modern display support, online multiplayer and a focus on performance across both powerful and low-power hardware.
 
 Built on the community decompilation by the excellent [Yannick Suter](https://github.com/yannicksuter), this project brings the original game to modern systems while preserving the original gameplay and visual style.
 
