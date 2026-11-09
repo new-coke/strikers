@@ -1252,6 +1252,21 @@ Das Spiel verwendet jetzt diesen Ordner. Das Disc-Abbild kann verschoben oder ge
         <translation>Zeigt Modus, Kapitäne und Spielstand in Ihrem Discord-Profil. Discord muss auf diesem Computer laufen.</translation>
     </message>
     <message>
+        <location filename="../src/schema.cpp" line="258"/>
+        <source>Online</source>
+        <translation>Online</translation>
+    </message>
+    <message>
+        <location filename="../src/schema.cpp" line="259"/>
+        <source>Streamer Mode (Hide IP addresses)</source>
+        <translation>Streamer-Modus (IP-Adressen ausblenden)</translation>
+    </message>
+    <message>
+        <location filename="../src/schema.cpp" line="260"/>
+        <source>Hides the IP addresses of rooms you join or have joined. Your own address on the Invite player screen stays visible.</source>
+        <translation>Blendet die IP-Adressen von Räumen aus, denen Sie beitreten oder beigetreten sind. Ihre eigene Adresse auf dem Bildschirm „Spieler einladen“ bleibt sichtbar.</translation>
+    </message>
+    <message>
         <location filename="../src/schema.cpp" line="249"/>
         <source>Debug mode</source>
         <translation>Debug-Modus</translation>
@@ -2060,6 +2075,11 @@ Das Spiel verwendet jetzt diesen Ordner. Das Disc-Abbild kann verschoben oder ge
         <translation>Der Raum verwendet eine andere Version.</translation>
     </message>
     <message>
+        <source>A Switch plays online only with other Switches.</source>
+        <extracomment>T_ERR_SWITCH_ONLY; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Eine Switch spielt online nur mit anderen Switch-Konsolen.</translation>
+    </message>
+    <message>
         <source>Room uses different game data.</source>
         <extracomment>T_ERR_DATA_FAMILY; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
         <translation>Der Raum verwendet andere Spieldaten.</translation>
@@ -2330,9 +2350,9 @@ Das Spiel verwendet jetzt diesen Ordner. Das Disc-Abbild kann verschoben oder ge
         <translation>Das ist eine lokale Netzwerkadresse. Frag den Host nach der Internetadresse.</translation>
     </message>
     <message>
-        <source>Show IP addresses</source>
-        <extracomment>T_SHOW_ADDRESSES; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>IP-Adressen anzeigen</translation>
+        <source>Streamer Mode (Hide IP addresses)</source>
+        <extracomment>T_STREAMER_MODE; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Streamer-Modus (IP-Adressen ausblenden)</translation>
     </message>
     <message>
         <source>Show</source>

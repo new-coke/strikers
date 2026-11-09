@@ -56,6 +56,7 @@ Session::Session(SessionEnv* env, const Identity& identity, const SessionConfig&
     m_discoverCount = 0;
     m_timeScale = 1.0f;
     m_error = ONLINE_ERR_NONE;
+    m_errorPlatform = false;
     m_lastError[0] = '\0';
     std::memset(&m_public, 0, sizeof m_public);
     m_public.map = PORTMAP_NONE;
@@ -81,7 +82,7 @@ void Session::SetSettings(const OnlineSettings& settings)
     if (next.delayTicks > ONLINE_MAX_DELAY_TICKS)
         next.delayTicks = ONLINE_MAX_DELAY_TICKS;
     next.showStats = next.showStats != 0;
-    next.showAddresses = next.showAddresses != 0;
+    next.streamerMode = next.streamerMode != 0;
     // Xbox reaches only 1025-49151, so a room there must be reachable from one.
     if (next.hostPort < 1025 || next.hostPort > 49151)
         next.hostPort = ONLINE_DEFAULT_PORT;
@@ -228,6 +229,7 @@ void Session::Fail(int error, const char* sentence)
     Reset(true);
     m_phase = ONLINE_PHASE_ERROR;
     m_error = keepError;
+    m_errorPlatform = false;
     std::snprintf(m_lastError, sizeof m_lastError, "%s", keep);
     char line[ONLINE_ERROR_MAX + 32];
     std::snprintf(line, sizeof line, "error %d: %s", keepError, keep);
@@ -1315,6 +1317,12 @@ void Session::HandleMessage(Link& link, const Message& m, uint64_t now, uint64_t
         switch (r.reason)
         {
         case ONLINE_ERR_VERSION:
+            if (!PortOnlinePlatformsPlay(r.hostPlatform, m_id.platform))
+            {
+                Fail(r.reason, "A Switch plays online only with other Switches.");
+                m_errorPlatform = true;
+                return;
+            }
             std::snprintf(text, sizeof text,
                           "That room runs version %s. Both machines need the same version.",
                           r.hostVersion);
@@ -1556,7 +1564,8 @@ void Session::HostJoin(Link& link, const MsgJoin& j)
         reason = ONLINE_ERR_IN_MATCH;
     else if (m_starting)
         reason = ONLINE_ERR_IN_MATCH;
-    else if (std::strcmp(j.version, m_id.version) != 0)
+    else if (std::strcmp(j.version, m_id.version) != 0 ||
+             !PortOnlinePlatformsPlay(j.platform, m_id.platform))
         reason = ONLINE_ERR_VERSION;
     else if (j.dataFamily != m_id.dataFamily)
         reason = ONLINE_ERR_DATA_FAMILY;
@@ -1894,6 +1903,7 @@ void Session::FillState(uint64_t now)
     s.noticeMachine = m_noticeMachine;
     std::memcpy(s.noticeName, m_noticeName, sizeof s.noticeName);
     s.error = m_error;
+    s.errorPlatform = m_errorPlatform ? 1 : 0;
     std::memcpy(s.lastError, m_lastError, sizeof s.lastError);
     s.settings = m_settings;
 }

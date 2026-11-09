@@ -284,3 +284,9 @@ extern "C" const char* PortOnlinePlatformName(int platform)
     };
     return platform >= 0 && platform < ONLINE_PLATFORM_COUNT ? kNames[platform] : kNames[0];
 }
+
+extern "C" int PortOnlinePlatformsPlay(int a, int b)
+{
+    // WILL HOPEFULLY FIX: A match between a Switch and a PC drifts out of sync.
+    return (a == ONLINE_PLATFORM_SWITCH) == (b == ONLINE_PLATFORM_SWITCH);
+}

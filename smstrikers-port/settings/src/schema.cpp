@@ -254,6 +254,15 @@ QVector<Setting> makeGame()
                        "A room you host gets a Join button once the router opens its port; friends "
                        "need the game open.")));
 
+    v.push_back(toggle(
+        "online_streamer_mode", "online", Text::tr("Online"), "1",
+        Text::tr("Streamer Mode (Hide IP addresses)"),
+        Text::tr("Hides the IP addresses of rooms you join or have joined. Your own address on the "
+                 "Invite player screen stays visible."),
+        QStringLiteral("1 masks IP addresses in the online menus: recent rooms, nearby rooms, the "
+                       "address you type and the joining screen. Hold R or F6 to see them. Invite "
+                       "player always shows yours. On by default.")));
+
     // The default is off and the on value is `menu`, not `1`, because `1` is the compact heads-up
     // form and a player who turns "debug mode" on and sees a frame counter has not been given the
     // thing the switch names.

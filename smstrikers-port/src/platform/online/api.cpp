@@ -315,9 +315,9 @@ online::Identity make_identity(void)
 
 const int kSettingCount = 11;
 const char* const kSettingKeys[kSettingCount] = {
-    "online_nickname", "online_delay",      "online_stats",         "online_port",
-    "online_minutes",  "online_difficulty", "online_items",         "online_super_strikes",
-    "online_bowser",   "online_pausing",    "online_show_addresses"
+    "online_nickname", "online_delay",      "online_stats",        "online_port",
+    "online_minutes",  "online_difficulty", "online_items",        "online_super_strikes",
+    "online_bowser",   "online_pausing",    "online_streamer_mode"
 };
 
 bool key_is(const char* line, const char* key)
@@ -393,8 +393,8 @@ void save_settings(const OnlineSettings& s)
                   (unsigned)s.shoot2Score);
     std::snprintf(values[8], sizeof values[8], "online_bowser = %u", (unsigned)s.bowser);
     std::snprintf(values[9], sizeof values[9], "online_pausing = %u", (unsigned)s.pauseAllowed);
-    std::snprintf(values[10], sizeof values[10], "online_show_addresses = %u",
-                  (unsigned)s.showAddresses);
+    std::snprintf(values[10], sizeof values[10], "online_streamer_mode = %u",
+                  (unsigned)s.streamerMode);
     bool placed[kSettingCount] = {};
     for (size_t i = 0; i < lines.size(); i++)
         for (int k = 0; k < kSettingCount; k++)
@@ -495,7 +495,7 @@ OnlineSettings load_settings(void)
     s.shoot2Score = env_long("STRIKERS_ONLINE_SUPER_STRIKES", d.shoot2Score) != 0;
     s.bowser = env_long("STRIKERS_ONLINE_BOWSER", d.bowser) != 0;
     s.pauseAllowed = env_long("STRIKERS_ONLINE_PAUSING", d.pauseAllowed) != 0;
-    s.showAddresses = env_long("STRIKERS_ONLINE_SHOW_ADDRESSES", 0) != 0;
+    s.streamerMode = env_long("STRIKERS_ONLINE_STREAMER_MODE", 1) != 0;
     return s;
 }
 

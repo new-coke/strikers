@@ -91,7 +91,7 @@ int PortOverlayEnabled(void) { return 0; }
 namespace
 {
 
-// The game has no use for Minus, except as Start on a single left Joy-Con.
+// Minus alone opens the online panel; the game reads neither stick click.
 bool toggle_pressed()
 {
     static bool held = false;
@@ -99,7 +99,9 @@ bool toggle_pressed()
     bool down = false;
     for (u32 i = 0; i < PADCount(); i++)
         if (SDL_Gamepad* pad = PADGetSDLGamepadForIndex(i))
-            down = down || SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_BACK);
+            down = down || (SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_BACK) &&
+                            (SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_LEFT_STICK) ||
+                             SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_RIGHT_STICK)));
 
     const bool pressed = down && !held;
     held = down;

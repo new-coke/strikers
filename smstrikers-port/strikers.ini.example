@@ -201,8 +201,9 @@
 # 1 shows the connection line during online matches.
 # online_stats = 0
 
-# 1 shows IP addresses in the online menus. At 0 they are masked; hold R or F6 to see them.
-# online_show_addresses = 0
+# 1 masks IP addresses in the online menus: recent rooms, nearby rooms, the address you type and
+# the joining screen. Hold R or F6 to see them. Invite player always shows yours. On by default.
+# online_streamer_mode = 1
 
 # The UDP port a room you host listens on, 1025 to 49151. Guests joining by address need it open.
 # online_port = 41210

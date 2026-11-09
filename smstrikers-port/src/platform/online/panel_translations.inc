@@ -127,6 +127,7 @@ const Translation kTranslations[] = {
     {T_ERR_ROOM_FULL, {"Raum ist voll.", "Le salon est complet.", "La sala está llena."}},
     {T_ERR_IN_MATCH, {"Ein Spiel läuft bereits.", "Match déjà en cours.", "Ya hay un partido en curso."}},
     {T_ERR_VERSION, {"Der Raum verwendet eine andere Version.", "Le salon utilise une autre version.", "La sala usa una versión diferente."}},
+    {T_ERR_SWITCH_ONLY, {"Eine Switch spielt online nur mit anderen Switch-Konsolen.", "Une Switch ne joue en ligne qu'avec d'autres Switch.", "Una Switch solo juega en línea con otras Switch."}},
     {T_ERR_DATA_FAMILY, {"Der Raum verwendet andere Spieldaten.", "Le salon utilise d'autres données de jeu.", "La sala usa datos de juego diferentes."}},
     {T_ERR_HOST_LEFT, {"Der Host hat den Raum geschlossen.", "L'hôte a fermé le salon.", "El anfitrión ha cerrado la sala."}},
     {T_ERR_CONNECTION_LOST, {"Verbindung getrennt.", "Connexion perdue.", "Se ha perdido la conexión."}},
@@ -181,9 +182,8 @@ const Translation kTranslations[] = {
     {T_PUBLIC_FAILED, {"Internetadresse nicht gefunden. Spieler von außerhalb können Tailscale oder ZeroTier nutzen.", "Adresse Internet introuvable. Les joueurs extérieurs peuvent utiliser Tailscale ou ZeroTier.", "No se encontró la dirección de internet. Los jugadores de fuera pueden usar Tailscale o ZeroTier."}},
     {T_SHARE_PRIVATELY, {"Teile sie nur mit Spielern, die du einlädst.", "Ne la partagez qu'avec les joueurs invités.", "Compártela solo con los jugadores que invites."}},
     {T_ERR_HOME_ADDRESS, {"Das ist eine lokale Netzwerkadresse. Frag den Host nach der Internetadresse.", "Adresse de réseau local. Demandez à l'hôte son adresse Internet.", "Es una dirección de red local. Pide al anfitrión su dirección de internet."}},
-    {T_SHOW_ADDRESSES, {"IP-Adressen anzeigen", "Afficher les adresses IP", "Mostrar direcciones IP"}},
+    {T_STREAMER_MODE, {"Streamer-Modus (IP-Adressen ausblenden)", "Mode streamer (masquer les adresses IP)", "Modo streamer (ocultar direcciones IP)"}},
     {T_HINT_SHOW, {"Anzeigen", "Afficher", "Mostrar"}},
-    {T_HINT_HIDE, {"Verbergen", "Masquer", "Ocultar"}},
     {T_HINT_INVITE, {"Einladen", "Inviter", "Invitar"}},
     {T_HINT_ADD_PLAYER, {"Spieler hinzufügen", "Ajouter un joueur", "Añadir jugador"}},
 };

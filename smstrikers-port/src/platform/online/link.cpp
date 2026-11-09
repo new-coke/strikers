@@ -499,7 +499,8 @@ void Session::OnAnnounce(const NetAddr& from, const Announce& a, uint64_t now)
     entry->room.machines = a.machines;
     entry->room.humans = a.humans;
     entry->room.inMatch = (a.flags & 1) != 0;
-    entry->room.compatible = a.build == m_id.build && a.dataFamily == m_id.dataFamily;
+    entry->room.compatible = a.build == m_id.build && a.dataFamily == m_id.dataFamily &&
+                             PortOnlinePlatformsPlay(a.platform, m_id.platform);
     entry->from = game;
     entry->heardUs = now;
 }

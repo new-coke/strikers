@@ -1107,6 +1107,7 @@ QWidget* MainWindow::buildGameTab()
 
     addSwitch(page, Schema::get(QStringLiteral("unlock_all")));
     addSwitch(page, Schema::get(QStringLiteral("discord")));
+    addSwitch(page, Schema::get(QStringLiteral("online_streamer_mode")));
 
     // A switch whose value is not "1": the menu opens on `menu` and the compact overlay on `1`, and
     // turning this on is meant to show the menu.

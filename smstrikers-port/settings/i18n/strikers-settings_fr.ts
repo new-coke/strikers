@@ -1252,6 +1252,21 @@ Le jeu utilise désormais ce dossier. L&apos;image disque peut être déplacée 
         <translation>Affiche le mode, les capitaines et le score sur votre profil Discord. Discord doit être ouvert sur cet ordinateur.</translation>
     </message>
     <message>
+        <location filename="../src/schema.cpp" line="258"/>
+        <source>Online</source>
+        <translation>En ligne</translation>
+    </message>
+    <message>
+        <location filename="../src/schema.cpp" line="259"/>
+        <source>Streamer Mode (Hide IP addresses)</source>
+        <translation>Mode streamer (masquer les adresses IP)</translation>
+    </message>
+    <message>
+        <location filename="../src/schema.cpp" line="260"/>
+        <source>Hides the IP addresses of rooms you join or have joined. Your own address on the Invite player screen stays visible.</source>
+        <translation>Masque les adresses IP des salons que vous rejoignez ou avez rejoints. Votre propre adresse sur l'écran Inviter un joueur reste visible.</translation>
+    </message>
+    <message>
         <location filename="../src/schema.cpp" line="249"/>
         <source>Debug mode</source>
         <translation>Mode débogage</translation>
@@ -2060,6 +2075,11 @@ Le jeu utilise désormais ce dossier. L&apos;image disque peut être déplacée 
         <translation>Le salon utilise une autre version.</translation>
     </message>
     <message>
+        <source>A Switch plays online only with other Switches.</source>
+        <extracomment>T_ERR_SWITCH_ONLY; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Une Switch ne joue en ligne qu'avec d'autres Switch.</translation>
+    </message>
+    <message>
         <source>Room uses different game data.</source>
         <extracomment>T_ERR_DATA_FAMILY; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
         <translation>Le salon utilise d&apos;autres données de jeu.</translation>
@@ -2330,9 +2350,9 @@ Le jeu utilise désormais ce dossier. L&apos;image disque peut être déplacée 
         <translation>Adresse de réseau local. Demandez à l'hôte son adresse Internet.</translation>
     </message>
     <message>
-        <source>Show IP addresses</source>
-        <extracomment>T_SHOW_ADDRESSES; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
-        <translation>Afficher les adresses IP</translation>
+        <source>Streamer Mode (Hide IP addresses)</source>
+        <extracomment>T_STREAMER_MODE; printf arguments: none. Keep their order. Native game names come from the disc.</extracomment>
+        <translation>Mode streamer (masquer les adresses IP)</translation>
     </message>
     <message>
         <source>Show</source>

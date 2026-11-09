@@ -433,6 +433,7 @@ class Session
     LocalHuman m_local[ONLINE_MAX_LOCAL_HUMANS];
     char m_nickname[ONLINE_NAME_MAX + 1];
     int m_error;
+    bool m_errorPlatform;
     char m_lastError[ONLINE_ERROR_MAX];
     uint32_t m_noticeSerial;
     int m_notice;

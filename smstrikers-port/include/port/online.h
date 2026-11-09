@@ -160,6 +160,9 @@ enum
 // Display name of an ONLINE_PLATFORM_* value; never NULL.
 const char* PortOnlinePlatformName(int platform);
 
+// Nonzero if machines on these two ONLINE_PLATFORM_* values may share a room.
+int PortOnlinePlatformsPlay(int a, int b);
+
 enum
 {
     ONLINE_LOAD_IDLE = 0,
@@ -271,7 +274,7 @@ typedef struct OnlineSettings
     char     nickname[ONLINE_NAME_MAX + 1];
     uint8_t  delayTicks;    // 0 for Auto, else 1-8
     uint8_t  showStats;     // the in-match stats line
-    uint8_t  showAddresses; // 0 masks them on screen
+    uint8_t  streamerMode;  // masks IP addresses on screen
     uint16_t hostPort;      // UDP port a hosted room listens on
     // A room this machine hosts starts with these.
     uint16_t gameTime;      // seconds, as OnlineMatchDesc
@@ -369,6 +372,7 @@ typedef struct OnlineState
     char noticeName[ONLINE_NAME_MAX + 1];
 
     int error;                  // ONLINE_ERR_*
+    int errorPlatform;          // ONLINE_ERR_VERSION came from the Switch-only rule
     char lastError[ONLINE_ERROR_MAX];   // one sentence, empty when error is ONLINE_ERR_NONE
 
     OnlineSettings settings;

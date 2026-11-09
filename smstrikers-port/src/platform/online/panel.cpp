@@ -240,13 +240,14 @@ void update_fonts()
     s_pendingPx = 0;
 }
 
-// The main stick's directions and the Back button, beside the PAD_* bits.
+// The main stick's directions, the Back button and the stick clicks, beside the PAD_* bits.
 const unsigned kStickLeft = 1u << 16;
 const unsigned kStickRight = 1u << 17;
 const unsigned kStickDown = 1u << 18;
 const unsigned kStickUp = 1u << 19;
 const unsigned kBackButton = 1u << 20;
-const int kPadBits = 21;
+const unsigned kStickClick = 1u << 21;
+const int kPadBits = 22;
 
 const unsigned kLeft = PAD_BUTTON_LEFT | kStickLeft;
 const unsigned kRight = PAD_BUTTON_RIGHT | kStickRight;
@@ -270,6 +271,8 @@ unsigned s_pressed[PAD_CHANMAX];
 float s_heldFor[PAD_CHANMAX][kPadBits];
 float s_chordFor;
 bool s_chordFired;
+// Back has been held with a stick click at some point since it went down.
+bool s_backChorded[PAD_CHANMAX];
 
 // Device ports that drive the panel, and what they pressed this frame while it had the pads.
 unsigned s_navPorts = 0xF;
@@ -335,12 +338,14 @@ Device read_device(u32 port)
         d.held |= kStickDown;
     if (d.y > 0.5f)
         d.held |= kStickUp;
-#if !defined(__SWITCH__)
-    // Unless a game button has it, as the NSO GameCube pad's Z does; Minus is the Switch's stats.
+    // Unless a game button has it, as the NSO GameCube pad's Z does.
     if (!backMapped && SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_BACK))
         d.held |= kBackButton;
-#else
-    (void)backMapped;
+#if defined(__SWITCH__)
+    // Minus with a stick click is the stats overlay.
+    if (SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_LEFT_STICK) ||
+        SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_RIGHT_STICK))
+        d.held |= kStickClick;
 #endif
     return d;
 }
@@ -357,6 +362,9 @@ void poll_pads(float dt)
         s_dev[p] = read_device(p);
         const unsigned held = s_dev[p].held;
         unsigned pressed = held & ~s_prevHeld[p];
+#if defined(__SWITCH__)
+        const unsigned released = s_prevHeld[p] & ~held;
+#endif
         for (int b = 0; b < kPadBits; b++)
         {
             const unsigned bit = 1u << b;
@@ -376,8 +384,19 @@ void poll_pads(float dt)
         s_prevHeld[p] = held;
         if ((held & kChord) == kChord)
             chordHeld = true;
+#if defined(__SWITCH__)
+        // On release, so Minus held for the stats overlay does not open the panel too.
+        if ((held & kBackButton) != 0 && (held & kStickClick) != 0)
+            s_backChorded[p] = true;
+        if ((released & kBackButton) != 0 && !s_backChorded[p] &&
+            PortOnlineGetState()->phase != ONLINE_PHASE_MATCH)
+            s_toggleRequest = true;
+        if ((held & kBackButton) == 0)
+            s_backChorded[p] = false;
+#else
         if ((pressed & kBackButton) != 0 && PortOnlineGetState()->phase != ONLINE_PHASE_MATCH)
             s_toggleRequest = true;
+#endif
         // The main menu reads no Z and a GameCube pad has no Back; Z with L or R held is the chord.
         if ((pressed & PAD_TRIGGER_Z) != 0 && (held & (PAD_TRIGGER_L | PAD_TRIGGER_R)) == 0 &&
             !PortOverlayMenuOpen() && PortOnlineGameAtMainMenu())
@@ -570,7 +589,7 @@ const char* error_sentence(const OnlineState& st)
     case ONLINE_ERR_UNREACHABLE:     return text(T_ERR_UNREACHABLE);
     case ONLINE_ERR_ROOM_FULL:       return text(T_ERR_ROOM_FULL);
     case ONLINE_ERR_IN_MATCH:        return text(T_ERR_IN_MATCH);
-    case ONLINE_ERR_VERSION:         return text(T_ERR_VERSION);
+    case ONLINE_ERR_VERSION:         return text(st.errorPlatform ? T_ERR_SWITCH_ONLY : T_ERR_VERSION);
     case ONLINE_ERR_DATA_FAMILY:     return text(T_ERR_DATA_FAMILY);
     case ONLINE_ERR_HOST_LEFT:       return text(T_ERR_HOST_LEFT);
     case ONLINE_ERR_CONNECTION_LOST: return text(T_ERR_CONNECTION_LOST);
@@ -1492,10 +1511,10 @@ void draw_settings(const OnlineState& st)
         s_focusText = !s_lastInputPad;
         s_idleScreen = SCR_EDIT_NAME;
     }
-    if (spin_row("addresses", text(T_SHOW_ADDRESSES),
-                 text(st.settings.showAddresses ? T_ON : T_OFF), true) != 0)
+    if (spin_row("streamer", text(T_STREAMER_MODE), text(st.settings.streamerMode ? T_ON : T_OFF),
+                 true) != 0)
     {
-        next.showAddresses = st.settings.showAddresses ? 0 : 1;
+        next.streamerMode = st.settings.streamerMode ? 0 : 1;
         changed = true;
     }
     if (row("advanced", text(T_ADVANCED), nullptr, true, advanced ? "-" : "+"))
@@ -2101,7 +2120,7 @@ void draw_address(const OnlineState& st)
     if (pub == ONLINE_PUBLIC_NONE)
     {
         ImGui::Dummy(ImVec2(0.0f, px() * 0.8f));
-        big_address(masked(lan));
+        big_address(lan);
         copy_row("copy", lan);
         if (host)
             muted_text(text(T_ADDRESS_BIG_HINT));
@@ -2109,20 +2128,20 @@ void draw_address(const OnlineState& st)
     else if (havePublic)
     {
         section(text(T_FOR_INTERNET));
-        big_address(masked(st.publicAddress));
+        big_address(st.publicAddress);
         copy_row("copy", st.publicAddress);
         public_status(pub);
         muted_text(text(T_SHARE_PRIVATELY));
         section(text(T_FOR_THIS_NETWORK));
         ImGui::PushFont(s_fonts->head);
-        ImGui::TextUnformatted(masked(lan));
+        ImGui::TextUnformatted(lan);
         ImGui::PopFont();
         copy_row("copy.lan", lan);
     }
     else
     {
         section(text(T_FOR_THIS_NETWORK));
-        big_address(masked(lan));
+        big_address(lan);
         copy_row("copy", lan);
         section(text(T_FOR_INTERNET));
         public_status(pub);
@@ -2136,12 +2155,11 @@ void draw_address(const OnlineState& st)
         {
             muted_text(text(T_OTHER_ADDRESSES));
             for (int i = 0; i < st.roomOtherAddressCount; i++)
-                ImGui::TextUnformatted(masked(st.roomOtherAddresses[i]));
+                ImGui::TextUnformatted(st.roomOtherAddresses[i]);
         }
     }
-    const Hint hints[] = { { kPeek, addresses_shown() ? T_HINT_HIDE : T_HINT_SHOW },
-                           { PAD_BUTTON_B, T_HINT_BACK } };
-    end_screen(hints, 2, s_showAddresses ? kPeek : 0u);
+    const Hint hints[] = { { PAD_BUTTON_B, T_HINT_BACK } };
+    end_screen(hints, 1);
     if (back_pressed() || pad_pressed(PAD_BUTTON_Y))
     {
         s_roomScreen = SCR_ROOM;
@@ -2736,7 +2754,7 @@ void draw_panel(const OnlineState& st)
 {
     s_padOwned = false;
     s_textActive = false;
-    s_showAddresses = st.settings.showAddresses != 0;
+    s_showAddresses = st.settings.streamerMode == 0;
 
     // In a room the first player's pad drives the panel, or any other pad while that one is absent.
     s_navPorts = 0xF;

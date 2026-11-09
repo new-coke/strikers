@@ -161,6 +161,7 @@ const Entry kEnglish[] = {
     { T_ERR_ROOM_FULL, "", QT_TRANSLATE_NOOP("Online", "Room is full.") },
     { T_ERR_IN_MATCH, "", QT_TRANSLATE_NOOP("Online", "Match already in progress.") },
     { T_ERR_VERSION, "", QT_TRANSLATE_NOOP("Online", "Room uses a different version.") },
+    { T_ERR_SWITCH_ONLY, "", QT_TRANSLATE_NOOP("Online", "A Switch plays online only with other Switches.") },
     { T_ERR_DATA_FAMILY, "", QT_TRANSLATE_NOOP("Online", "Room uses different game data.") },
     { T_ERR_HOST_LEFT, "", QT_TRANSLATE_NOOP("Online", "Host closed the room.") },
     { T_ERR_CONNECTION_LOST, "", QT_TRANSLATE_NOOP("Online", "Connection lost.") },
@@ -219,9 +220,8 @@ const Entry kEnglish[] = {
     { T_PUBLIC_FAILED, "", QT_TRANSLATE_NOOP("Online", "Could not find internet address. Players elsewhere can use Tailscale or ZeroTier.") },
     { T_SHARE_PRIVATELY, "", QT_TRANSLATE_NOOP("Online", "Share only with players you invite.") },
     { T_ERR_HOME_ADDRESS, "", QT_TRANSLATE_NOOP("Online", "This is a local network address. Ask the host for the internet address.") },
-    { T_SHOW_ADDRESSES, "", QT_TRANSLATE_NOOP("Online", "Show IP addresses") },
+    { T_STREAMER_MODE, "", QT_TRANSLATE_NOOP("Online", "Streamer Mode (Hide IP addresses)") },
     { T_HINT_SHOW, "", QT_TRANSLATE_NOOP("Online", "Show") },
-    { T_HINT_HIDE, "", QT_TRANSLATE_NOOP("Online", "Hide") },
     { T_HINT_INVITE, "", QT_TRANSLATE_NOOP("Online", "Invite") },
     { T_HINT_ADD_PLAYER, "", QT_TRANSLATE_NOOP("Online", "Add player") },
 

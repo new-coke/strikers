@@ -39,6 +39,10 @@ extern "C" uintptr_t PortPromptsPadTexture(const void*) { return 0; }
 #include <aurora/aurora.h>
 #include <dolphin/pad.h>
 
+#if defined(__SWITCH__)
+#include <switch.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -792,6 +796,21 @@ extern "C" void PortPromptsLegendsLoaded()
 namespace
 {
 
+// SDL reports attached and gripped Joy-Cons alike; libnx tells them apart.
+bool handheldPad(int port)
+{
+#if defined(__SWITCH__)
+    // sdl3on2 reads the console's Joy-Cons as player one when no controller is on No1.
+    SDL_Gamepad* pad = padForPort(port);
+    return pad != nullptr && SDL_GetGamepadPlayerIndex(pad) == 0 &&
+           hidGetNpadStyleSet(HidNpadIdType_No1) == 0 &&
+           (hidGetNpadStyleSet(HidNpadIdType_Handheld) & HidNpadStyleTag_NpadHandheld) != 0;
+#else
+    (void)port;
+    return false;
+#endif
+}
+
 // The art for the pad on one port, or nullptr for the disc's GameCube pad.
 const char* padFile(int port)
 {
@@ -810,7 +829,8 @@ const char* padFile(int port)
     case Nintendo:
         switch (s_override == Auto ? PADGetControllerType(port) : PAD_TYPE_SWITCH_PROCON)
         {
-        case PAD_TYPE_JOYCON_PAIR:  return "joycon_grip.png";
+        case PAD_TYPE_JOYCON_PAIR:
+            return handheldPad(port) ? "joycon_handheld.png" : "joycon_grip.png";
         case PAD_TYPE_JOYCON_LEFT:  return "joycon_left.png";
         case PAD_TYPE_JOYCON_RIGHT: return "joycon_right.png";
         default:                    return "switchpro.png";
