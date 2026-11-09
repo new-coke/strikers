@@ -32,6 +32,11 @@ const PHRASES = [
   /just\s+open\s+the\s+repo\s+and\s+run/i,
 ];
 const LURE_REPO = /fix|install|crack|patch|loader|unlock|setup|repair/i;
+const PLATFORM =
+  /\b(windows|win\s?1[01]|mac|macos|macbook|os\s?x|linux|ubuntu|fedora|debian|arch|mint|bazzite|appimage|steam\s?deck|steamos|switch)\b/i;
+const VERSION = /\bv?\d+\.\d+\.\d+\b/;
+const ASK_PLATFORM = "which platform (Windows, macOS, Linux, Steam Deck or Nintendo Switch)";
+const ASK_VERSION = "which version (the release you downloaded, such as v2.0.0)";
 
 async function gh(path, { method = "GET", body } = {}) {
   const res = await fetch(API + path, {
@@ -154,11 +159,24 @@ function report(issue, verdict) {
   if (verdict.spam) for (const r of verdict.reasons) console.log(`    - ${r}`);
 }
 
+async function askDetails(issue) {
+  const text = `${issue.title}\n${issue.body ?? ""}`;
+  const asks = [!PLATFORM.test(text) && ASK_PLATFORM, !VERSION.test(text) && ASK_VERSION].filter(Boolean);
+  if (!asks.length) return;
+  const body = `Thanks for the report. Could you say ${asks.join(" and ")} you're running?`;
+  if (DRY_RUN) return console.log(`  [dry run] would ask #${issue.number}: ${body}`);
+  await gh(`/repos/${OWNER}/${REPO}/issues/${issue.number}/comments`, { method: "POST", body: { body } });
+  console.log(`  asked #${issue.number}: ${body}`);
+}
+
 async function runEvent() {
-  const { issue, comment } = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, "utf8"));
+  const { action, issue, comment } = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, "utf8"));
   const verdict = await judge(issue);
   report(issue, verdict);
-  if (!verdict.spam) return;
+  if (!verdict.spam) {
+    if (action === "opened" && !comment) await askDetails(issue);
+    return;
+  }
   // The issue run deletes after the settle window; a comment run blocks a commenter who posts after it.
   if (comment) await block(comment.user.login);
   else await purge(issue, true);
