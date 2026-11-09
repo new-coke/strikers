@@ -140,7 +140,7 @@
 # data = C:/games/strikers/files
 # data = C:/games/strikers/Super Mario Strikers.iso
 
-# Where the game's reports go: 1 for strikers-log.txt beside it, a file path, or console.
+# Where the game's reports go: 1 for strikers-log.txt beside this file, a file path, or console.
 # log = 1
 # log = console
 

@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#include "port/host.h"
+#include "port/config.h"
 #include "strikers_version.h"
 
 #if defined(_WIN32)
@@ -35,7 +35,7 @@ static void crash_log_path(char* buf, size_t size)
     if (local != NULL)
         strftime(stamp, sizeof stamp, "-%Y-%m-%d_%H-%M-%S", local);
 
-    if (port_executable_dir(dir, sizeof dir) == 0)
+    if (PortConfigDir(dir, sizeof dir) == 0)
         snprintf(buf, size, "%s/strikers-crash-log%s.txt", dir, stamp);
     else
         snprintf(buf, size, "strikers-crash-log%s.txt", stamp);

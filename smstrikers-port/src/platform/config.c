@@ -33,6 +33,22 @@ static int s_applied;
 
 const char* PortConfigPath(void) { return s_path[0] != '\0' ? s_path : NULL; }
 
+int PortConfigDir(char* buf, size_t size)
+{
+    const char* slash = strrchr(s_path, '/');
+#ifdef _WIN32
+    const char* back = strrchr(s_path, '\\');
+    if (back != NULL && (slash == NULL || back > slash))
+        slash = back;
+#endif
+    if (slash == NULL)
+        return port_executable_dir(buf, size);
+    if ((size_t)(slash - s_path) >= size)
+        return -1;
+    snprintf(buf, size, "%.*s", (int)(slash - s_path), s_path);
+    return 0;
+}
+
 static int exists(const char* path)
 {
     FILE* f = fopen(path, "rb");
@@ -223,7 +239,7 @@ static void open_log(void)
     {
         char dir[1024];
         char previous[1100];
-        if (port_executable_dir(dir, sizeof dir) != 0)
+        if (PortConfigDir(dir, sizeof dir) != 0)
             snprintf(dir, sizeof dir, ".");
         snprintf(path, sizeof path, "%s/strikers-log.txt", dir);
         // A relaunch after a crash would otherwise overwrite the crash's log.
