@@ -449,14 +449,15 @@ add_library(strikers_monocypher OBJECT "${MONOCYPHER_SRC}/monocypher.c")
 
 # miniupnpc opens a hosted room's port; its own CMakeLists would also build tests and a DLL.
 if(NOT NX AND NOT WINDOWS_STORE)
+    # No miniupnpc release yet carries the fixes for CVE-2026-110655 and CVE-2026-110656.
     FetchContent_Declare(miniupnpc
-        URL https://miniupnp.tuxfamily.org/files/miniupnpc-2.3.3.tar.gz
-        URL_HASH SHA256=d52a0afa614ad6c088cc9ddff1ae7d29c8c595ac5fdd321170a05f41e634bd1a
+        URL https://github.com/miniupnp/miniupnp/archive/5da7cdd1c30139f5b7a22648b414f8c5668aaa9e.tar.gz
+        URL_HASH SHA256=8011c122046b1cdc27982f040a9522c760617b4c49c2a2a29fa3477850723a6d
         DOWNLOAD_EXTRACT_TIMESTAMP FALSE
         SOURCE_SUBDIR no-cmake
     )
     FetchContent_MakeAvailable(miniupnpc)
-    set(_upnp "${miniupnpc_SOURCE_DIR}")
+    set(_upnp "${miniupnpc_SOURCE_DIR}/miniupnpc")
     set(_upnp_gen "${CMAKE_CURRENT_BINARY_DIR}/miniupnpc")
     file(WRITE "${_upnp_gen}/miniupnpcstrings.h.new"
         "#ifndef MINIUPNPCSTRINGS_H_INCLUDED\n#define MINIUPNPCSTRINGS_H_INCLUDED\n"
