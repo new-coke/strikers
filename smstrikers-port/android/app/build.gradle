@@ -1,0 +1,126 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Set by tools/build-android.sh, overridable in gradle.properties.
+def nativeBuildDir = providers.gradleProperty('strikers.nativeBuildDir').get()
+def sdlJavaDir = providers.gradleProperty('strikers.sdlJavaDir').get()
+def auroraJavaDir = providers.gradleProperty('strikers.auroraJavaDir').get()
+
+android {
+    namespace 'io.github.newcoke.strikers'
+    compileSdk 35
+    buildToolsVersion "35.0.1"
+    ndkVersion '29.0.14206865'
+
+    defaultConfig {
+        // The settings preview can coexist with earlier APKs.
+        applicationId 'io.github.newcoke.strikers.settingspreview'
+        // 28, because that is what Aurora's prebuilt Dawn is compiled against; the game itself
+        // asks for nothing newer.
+        minSdk 28
+        targetSdk 35
+        versionCode 4
+        versionName '2.0.0'
+        ndk {
+            // The only ABI the prebuilt Dawn package exists for, and the only one worth shipping:
+            // a 32-bit build would not address the game's heap comfortably, and x86 Android is
+            // emulators.
+            abiFilters 'arm64-v8a'
+        }
+    }
+
+    sourceSets {
+        main {
+            // SDL's Java has to be the Java of the SDL this was linked against, so it comes out of
+            // the native build directory rather than being vendored here and going stale.
+            java.srcDirs += [sdlJavaDir, auroraJavaDir]
+            jniLibs.srcDirs = ["${nativeBuildDir}/jniLibs"]
+            // Staged rather than pointed at ../../assets directly: that directory also holds the
+            // Windows icon resources and the Linux and macOS packaging bits, and an APK should
+            // carry only what the game reads at runtime.
+            assets.srcDirs += ["${layout.buildDirectory.get().asFile}/strikers-assets"]
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            // The game is all native code; there is no Java worth shrinking, and R8 would only put
+            // SDLActivity's reflected entry points at risk.
+            signingConfig signingConfigs.debug
+        }
+        debug {
+            // No applicationIdSuffix on purpose. The suffix would move the app's own folder on
+            // shared storage, and that folder is where the player put a 1.4 GB disc image: a debug
+            // build that cannot see it is not a debug build of the same game.
+        }
+    }
+
+    packaging {
+        jniLibs {
+            // TRUE, e nao o padrao. Mapear os .so direto do APK e melhor -- poupa desempacotar
+            // dezenas de MB na instalacao -- mas o libadrenotools, que e como um driver Turnip
+            // escolhido pelo jogador entra, instala o gancho dele em nativeLibraryDir, e essa
+            // pasta so existe de verdade quando as bibliotecas sao extraidas. Sem isto o
+            // carregamento do driver devolve um ponteiro valido e depois nao enumera nenhuma GPU.
+            useLegacyPackaging true
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    androidResources {
+        // The disc image is data, not a resource, but the input prompt artwork under assets/ must
+        // not be compressed either: SDL reads it through the asset manager and a compressed asset
+        // cannot be mapped.
+        noCompress += ['png', 'txt']
+    }
+}
+
+// The button prompt artwork, the one thing under assets/ the game reads at runtime. It is staged
+// into the build directory so the APK does not also carry the icons and the desktop packaging.
+def stageAssets = tasks.register('stageStrikersAssets', Sync) {
+    from('../../assets/input-prompts') {
+        into 'input-prompts'
+    }
+    into layout.buildDirectory.dir('strikers-assets')
+}
+
+// QUEM LÊ A PASTA DEPENDE DE QUEM A ESCREVE, e não só quem a empacota.
+//
+// Era só merge*Assets, e isso bastava para o debug. O release trouxe o lint
+// "vital", que monta um modelo do projeto e, para isso, percorre os diretórios
+// de assets -- sem passar pelo merge. O Gradle vê uma tarefa lendo a saída de
+// outra sem dependência declarada e recusa a build, com razão: a ordem entre as
+// duas não estaria garantida.
+//
+// A lista é por nome porque o diretório entra na source set como texto, e um
+// caminho em texto não carrega consigo quem o produziu. Se aparecer mais uma
+// tarefa que leia assets, é aqui que ela entra.
+tasks.configureEach { task ->
+    final boolean empacota = task.name.startsWith('merge') && task.name.endsWith('Assets')
+    final boolean analisa = task.name.toLowerCase().contains('lint')
+    if (empacota || analisa) {
+        task.dependsOn stageAssets
+    }
+}
+
+// A build that packages stale shared objects is worse than one that fails: the APK installs, runs,
+// and is a version nobody can account for.
+tasks.configureEach { task ->
+    if (task.name.startsWith('merge') && task.name.endsWith('JniLibFolders')) {
+        task.doFirst {
+            def lib = file("${nativeBuildDir}/jniLibs/arm64-v8a/libmain.so")
+            if (!lib.exists()) {
+                throw new GradleException(
+                    "No native build at ${lib}.\n" +
+                    "Run tools/build-android.sh first; it configures, builds and stages the " +
+                    "shared objects this project packages.")
+            }
+        }
+    }
+}

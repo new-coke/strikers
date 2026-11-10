@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The platform's own dark theme, not AppCompat's: this app has exactly one screen of widgets
+         and adding a support library for it would be the largest dependency in the project. -->
+    <style name="Theme.Strikers" parent="@android:style/Theme.DeviceDefault">
+        <item name="android:colorBackground">@color/pitch</item>
+        <item name="android:windowBackground">@color/pitch</item>
+        <item name="android:colorAccent">@color/accent</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+    <style name="Theme.Strikers.Setup" parent="@android:style/Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Strikers.Settings" parent="@android:style/Theme.Material.Light" />
+</resources>

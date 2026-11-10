@@ -289,6 +289,56 @@ void PortPerspective(float consoleFov, float consoleRatio,
     }
 }
 
+// STRIKERS_WIDEN: what happens to a front-end element authored to fill the 640-wide design frame
+// when the frame is wider than 640.
+//
+//   stretch - scale it horizontally until it fills the frame. The DEFAULT.
+//   fit     - leave it at its authored size, centred, and carry its own edge colour out to the
+//             sides.
+//
+// STRETCH IS THE DEFAULT AGAIN, and the note saying otherwise was wrong. It claimed that
+// stretching pulled the main menu's background streaks out from under the rows of the menu.
+// Measured on the device, that claim does not survive: the streaks are 0.008 px/px off horizontal,
+// and stretching a horizontal line horizontally cannot move it vertically. The rows and the
+// streaks really are misaligned -- by 44 px, at 1080 lines -- but the offset is the SAME at every
+// one of the seven rows, and a constant offset is a translation, not a distortion. Whatever causes
+// it, this setting is not it.
+//
+// What the setting does decide is honest and small: whether the extra width shows more of the
+// picture stretched, or the picture at its drawn size with its edge colour carried outward.
+static int s_widenStretch = -1;
+
+int PortWidenStretch(void)
+{
+    const char* env;
+
+    if (s_widenStretch >= 0)
+        return s_widenStretch;
+
+    env = getenv("STRIKERS_WIDEN");
+    if (env == NULL || *env == '\0')
+    {
+        s_widenStretch = 1;
+        return s_widenStretch;
+    }
+
+    if (strcmp(env, "stretch") == 0 || strcmp(env, "1") == 0)
+        s_widenStretch = 1;
+    else if (strcmp(env, "fit") == 0 || strcmp(env, "0") == 0)
+        s_widenStretch = 0;
+    else
+    {
+        // Say so. A typo here is a picture that looks subtly wrong with nothing on screen to
+        // suggest that a setting was involved.
+        fprintf(stderr,
+                "[aspect] STRIKERS_WIDEN=\"%s\" not understood; using stretch.\n"
+                "         Expected \"fit\" or \"stretch\".\n",
+                env);
+        s_widenStretch = 1;
+    }
+    return s_widenStretch;
+}
+
 // The aspect at which the frame stops needing help to look cinematic.
 #define PORT_CINEMATIC_ASPECT 1.5f
 

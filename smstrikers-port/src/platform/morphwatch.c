@@ -9,7 +9,11 @@
 #if defined(__SWITCH__)
 // Horizon has no signals and no mprotect, so only the snapshot watch below runs there.
 #elif !defined(_WIN32)
+#if !defined(__ANDROID__)
+// bionic has no <execinfo.h>. Nothing here needs it except the symbolising print at the end of the
+// report, which has its own spelling below.
 #include <execinfo.h>
+#endif
 #include <pthread.h>
 #include <signal.h>
 #include <sys/mman.h>
@@ -438,7 +442,22 @@ static void prot_handler(int sig, siginfo_t* si, void* ucv)
 
         void* frames[32];
         int n = prot_walk(frames, 32, pc, lr, fp);
+#if defined(__ANDROID__)
+        // The addresses raw, since there is nothing here to symbolise them with. No loss: the walk
+        // is this file's own, and the slide printed just above is what turns these back into
+        // something addr2line can take against libmain.so.
+        {
+            int f;
+            for (f = 0; f < n; f++)
+            {
+                prot_puts("  ");
+                prot_puthex((uintptr_t)frames[f]);
+                prot_puts("\n");
+            }
+        }
+#else
         backtrace_symbols_fd(frames, n, 2);
+#endif
         prot_puts("[morphprot] end of report\n");
     }
 

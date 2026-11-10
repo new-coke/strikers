@@ -1,6 +1,7 @@
 #include "port/prompts.h"
 #include "Game/FE/feRender.h"
 #include "NL/glx/glxTexture.h"   // PORT: glx_GetTex
+#include "port/aspect.h"         // PORT: PortWidenStretch
 #include <stdlib.h>              // PORT: getenv, for the probes
 #include "NL/vmath.h"
 #include "Game/FE/tlInstance.h"
@@ -387,8 +388,13 @@ unsigned char FERender::RenderImageInstance(const TLImageInstance* pTLImageInsta
                 // ... and only when there is nothing left in the texture to distort.
                 const PlatTexture* pTex = glx_GetTex(textureHandle, false, false);
                 const float texWidth = (pTex != NULL) ? (float)pTex->m_Width : 0.0f;
+                // Blown up far enough past its own texture that stretching it further shows
+                // nothing new -- and STRIKERS_WIDEN=stretch asked for the stretch at all. The
+                // default is fit, because a stretched background stops lining up with the text
+                // drawn on it; see PortWidenStretch.
                 const bool alreadyMagnified =
-                    texWidth <= 0.0f || 100.0f * xScale > 2.0f * texWidth;
+                    (texWidth <= 0.0f || 100.0f * xScale > 2.0f * texWidth)
+                    && PortWidenStretch() != 0;
 
 
                 // STRIKERS_PROBE_WIDEN names every instance this rule judges and which way it went.

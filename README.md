@@ -56,6 +56,7 @@ The [roadmap board](https://miro.com/app/board/uXjVEelphdQ=/?share_link_id=27505
 - [Linux](https://github.com/new-coke/strikers/wiki/Development#linux-and-steam-deck)
 - [Steam Deck](https://github.com/new-coke/strikers/wiki/Development#linux-and-steam-deck)
 - [Nintendo Switch](https://github.com/new-coke/strikers/wiki/Development#nintendo-switch)
+- [Android](smstrikers-port/README-android.md)
 
 
 ## Notes

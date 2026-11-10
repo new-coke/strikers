@@ -1,0 +1,8 @@
+// The Android application that wraps the port. It compiles no native code of its own: the game is
+// built by tools/build-android.sh, which is CMake and the NDK exactly as on every other platform,
+// and this project packages the shared objects that build produced. Keeping the two apart means the
+// native build is the same one a developer runs by hand, and that Gradle's version of CMake and the
+// NDK never gets a vote.
+plugins {
+    id 'com.android.application' version '8.7.3' apply false
+}

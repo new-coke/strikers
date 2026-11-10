@@ -45,8 +45,8 @@ void synchronize();
 #include <backends/imgui_impl_sdl3.h>
 #endif
 
-#if defined(__SWITCH__)
-// No platform backend feeds ImGui typed text on the Switch, so the wheel is the only entry there.
+#if defined(__SWITCH__) || defined(__ANDROID__)
+// The controller wheel works on Switch and with Android's virtual gamepad.
 #define PANEL_HAS_TYPING 0
 #else
 #define PANEL_HAS_TYPING 1

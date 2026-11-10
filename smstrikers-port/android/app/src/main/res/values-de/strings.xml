@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="disc_image">Disc-Image…</string>
+    <string name="no_disc_selected">Kein Disc-Image ausgewählt</string>
+    <string name="disc_open_failed">Das Disc-Image konnte nicht geöffnet werden. Wähle es erneut aus.</string>
+    <string name="disc_requires_seek">Dieses Image kann nicht direkt gelesen werden. Lade eine lokale Kopie herunter und wähle sie aus.</string>
+    <string name="disc_format_unsupported">Wähle ein Disc-Image von Super Mario Strikers (.iso, .gcm, .ciso oder .gcz).</string>
+    <string name="play">Spielen</string>
+
+    <string name="settings">Einstellungen</string>
+    <string name="video_driver">Grafiktreiber</string>
+    <string name="language">Sprache</string>
+    <string name="language_system">Dem System folgen</string>
+
+    <string name="done">Fertig</string>
+    <string name="sec_controls">Steuerung</string>
+    <string name="sec_video">Video</string>
+    <string name="sec_game">Spiel</string>
+    <string name="sec_about">Über</string>
+    <string name="ini_write_failed">strikers.ini konnte nicht geschrieben werden</string>
+
+    <string name="opacity">Deckkraft</string>
+    <string name="size">Größe</string>
+    <string name="deadzone">Totzone</string>
+    <string name="deadzone_help">Wie weit der Daumen rutschen darf, bevor das Spiel eine Bewegung sieht.</string>
+    <string name="dpad">Steuerkreuz</string>
+    <string name="right_stick">Rechter Stick</string>
+    <string name="controls_note">Die Belegung ist die des Xbox 360 und das Spiel ist ein GameCube-Spiel: LT wird zu L, RT wird zu R, LB und RB werden zu Z. L3, R3 und BACK gibt es am Controller der Konsole nicht und sie tun nichts.</string>
+
+    <string name="res_internal">Interne Auflösung</string>
+    <string name="res_follow">Dem Bildschirm folgen</string>
+    <string name="res_original">448 (Original)</string>
+    <string name="res_help">Über der Bildschirmauflösung ist es Supersampling: Es glättet Kanten und kostet GPU.</string>
+    <string name="fps_limit">Bildratenlimit</string>
+    <string name="fps_follow_display">Bildschirmfrequenz</string>
+    <string name="fps_help">Standardmäßig folgt das Bildratenlimit der Bildschirmfrequenz. Ein niedrigeres Limit kann Akku sparen.</string>
+    <string name="fps_unlimited">Ohne Limit</string>
+    <string name="vsync">Mit dem Bildschirm synchronisieren</string>
+    <string name="vsync_help">Aus lässt die Bilder frei laufen. An wartet die Ausgabe auf das Panel — und dann spielt das Limit oben keine Rolle mehr, das Panel bestimmt.</string>
+    <string name="msaa">Kantenglättung</string>
+    <string name="off">Aus</string>
+    <string name="aniso">Anisotroper Filter</string>
+    <string name="aniso_help">Schärfe von Texturen, die man flach sieht, wie den Rasen.</string>
+    <string name="widen">Breiter Hintergrund</string>
+    <string name="widen_fit">Seitenverhältnis wahren</string>
+    <string name="widen_stretch">Strecken</string>
+    <string name="widen_help">Was mit der Menügrafik auf einem Bildschirm breiter als 4:3 geschieht. Strecken füllt die Breite; Seitenverhältnis wahren lässt sie in der gezeichneten Größe und zieht ihre Randfarbe zu den Seiten hinaus.</string>
+    <string name="aspect">Seitenverhältnis</string>
+    <string name="aspect_help">Dem Bildschirm folgen nutzt die ganze Breite des Geräts. 4:3 ist das Format des GameCube selbst, mit Balken an den Seiten — der ursprüngliche Bildausschnitt und der Vergleichsmaßstab, wenn etwas verrutscht aussieht.</string>
+    <string name="video_note">Das Spiel liest diese beim Start. Schließe und öffne das Spiel neu, damit sie gelten.</string>
+
+    <string name="unlock_all">Alles freischalten</string>
+    <string name="unlock_all_help">Alle Stadien, Teams und Pokale.</string>
+    <string name="hud">Leistungsanzeige</string>
+    <string name="hud_help">FPS, Bildkosten, GPU, RAM und Temperatur, oben am Bildschirm.</string>
+    <string name="game_note">Alles freischalten liest das Spiel beim Start. Die Anzeige gilt sofort.</string>
+
+    <string name="driver_system">Der des Systems</string>
+    <string name="game_folder">Spielordner</string>
+    <string name="about_note">Auf dem nativen Port von Yannick Suter und Mitwirkenden, mit Aurora für GX/VI/PAD/CARD über WebGPU und SDL3.\n\nEin inoffizielles Projekt, ohne Verbindung zu Nintendo oder Next Level Games. Dieser App liegen keine Spieldateien bei.</string>
+
+    <string name="drivers_intro">Turnip ist Mesas offener Vulkan-Treiber für Adreno-GPUs. Auf einem Gerät mit altem Werkstreiber ist er meist schneller; auf einem neuen Gerät ändert er meist nichts. Den Treiber zu wechseln betrifft den Rest des Systems nicht — es gilt nur für diese App.</string>
+    <string name="sec_inuse">In Benutzung</string>
+    <string name="driver_system_sub">Der, den der Gerätehersteller installiert hat.</string>
+    <string name="drivers_restart_note">Der Wechsel gilt beim nächsten Start des Spiels.</string>
+    <string name="sec_add">Hinzufügen</string>
+    <string name="import_zip">Eine .zip-Datei importieren</string>
+    <string name="import_zip_sub">Ein Treiberpaket im Format von libadrenotools.</string>
+    <string name="drivers_download_note">Herunterladen holt fremden Code, der im Spiel läuft. Die Adressen stehen absichtlich offen da. Antwortet eine nicht mehr, lade sie von Hand herunter und benutze Importieren.</string>
+    <string name="driver_removed">Treiber entfernt</string>
+    <string name="no_file_picker">Keine Dateiauswahl auf dem Gerät</string>
+    <string name="installing">Wird installiert…</string>
+    <string name="downloading">%1$s wird heruntergeladen…</string>
+    <string name="driver_failed">Nichts zu machen. Die Datei ist kein Treiberpaket, oder der Download ist fehlgeschlagen.</string>
+    <string name="driver_installed">%1$s installiert und ausgewählt</string>
+
+    <string name="drv_a8xx_desc">Der Build für die 8xx-Familie, also die des Snapdragon 8 Elite.</string>
+    <string name="drv_general_desc">Der Build für die übrigen Adrenos.</string>
+    <string name="drv_qualcomm_desc">Ein Treiber von Qualcomm selbst, neuer als der des Geräts.</string>
+</resources>

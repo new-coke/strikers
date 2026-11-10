@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="disc_image">Imagem de disco…</string>
+    <string name="no_disc_selected">Nenhuma imagem de disco selecionada</string>
+    <string name="disc_open_failed">Não foi possível abrir a imagem de disco. Selecione-a novamente.</string>
+    <string name="disc_requires_seek">Não é possível ler esta imagem diretamente. Baixe uma cópia local e selecione-a.</string>
+    <string name="disc_format_unsupported">Selecione uma imagem de disco de Super Mario Strikers (.iso, .gcm, .ciso ou .gcz).</string>
+    <string name="play">Jogar</string>
+
+    <string name="settings">Configurações</string>
+    <string name="video_driver">Driver de vídeo</string>
+    <string name="language">Idioma</string>
+    <string name="language_system">Seguir o sistema</string>
+
+    <string name="done">Concluído</string>
+    <string name="sec_controls">Controles</string>
+    <string name="sec_video">Vídeo</string>
+    <string name="sec_game">Jogo</string>
+    <string name="sec_about">Sobre</string>
+    <string name="ini_write_failed">Não deu para gravar o strikers.ini</string>
+
+    <string name="opacity">Opacidade</string>
+    <string name="size">Tamanho</string>
+    <string name="deadzone">Zona morta</string>
+    <string name="deadzone_help">Quanto o polegar pode escorregar antes de o jogo ver movimento.</string>
+    <string name="dpad">Direcional</string>
+    <string name="right_stick">Manche direito</string>
+    <string name="controls_note">O conjunto é o do Xbox 360 e o jogo é de GameCube: LT vira o L, RT vira o R, LB e RB viram o Z. L3, R3 e BACK não existem no controle do console e não fazem nada.</string>
+
+    <string name="res_internal">Resolução interna</string>
+    <string name="res_follow">Seguir a tela</string>
+    <string name="res_original">448 (original)</string>
+    <string name="res_help">Acima da tela é supersampling: suaviza as bordas e custa GPU.</string>
+    <string name="fps_limit">Limite de quadros</string>
+    <string name="fps_follow_display">Seguir a tela</string>
+    <string name="fps_help">Por padrão, o limite segue a taxa de atualização da tela. Um limite menor pode poupar bateria.</string>
+    <string name="fps_unlimited">Sem limite</string>
+    <string name="vsync">Sincronizar com a tela</string>
+    <string name="vsync_help">Desligado deixa os quadros livres. Ligado, a apresentação espera o painel — e aí o limite acima não importa, o painel manda.</string>
+    <string name="msaa">Suavização</string>
+    <string name="off">Desligada</string>
+    <string name="aniso">Filtro anisotrópico</string>
+    <string name="aniso_help">Nitidez das texturas vistas de lado, como o gramado.</string>
+    <string name="widen">Fundo largo</string>
+    <string name="widen_fit">Manter proporção</string>
+    <string name="widen_stretch">Esticar</string>
+    <string name="widen_help">O que fazer com a arte dos menus numa tela mais larga que 4:3. Esticar preenche a largura; Manter proporção deixa a arte no tamanho em que foi desenhada e leva a cor da borda até os lados.</string>
+    <string name="aspect">Proporção</string>
+    <string name="aspect_help">Seguir a tela usa a largura toda do aparelho. 4:3 é o formato do próprio GameCube, com tarjas nos lados — é o enquadramento original, e a referência para comparar quando algo parece fora do lugar.</string>
+    <string name="video_note">O jogo lê estes ao abrir. Feche e abra o jogo para valerem.</string>
+
+    <string name="unlock_all">Desbloquear tudo</string>
+    <string name="unlock_all_help">Todos os estádios, times e copas.</string>
+    <string name="hud">Painel de desempenho</string>
+    <string name="hud_help">FPS, custo do quadro, GPU, RAM e temperatura, no topo da tela.</string>
+    <string name="game_note">Desbloquear tudo o jogo lê ao abrir. O painel vale na hora.</string>
+
+    <string name="driver_system">O do sistema</string>
+    <string name="game_folder">Pasta do jogo</string>
+    <string name="about_note">Sobre o porte nativo de Yannick Suter e colaboradores, com Aurora para GX/VI/PAD/CARD sobre WebGPU e SDL3.\n\nProjeto não oficial, sem vínculo com a Nintendo ou a Next Level Games. Nenhum arquivo do jogo acompanha este aplicativo.</string>
+
+    <string name="drivers_intro">O Turnip é o driver Vulkan aberto do Mesa para GPUs Adreno. Em aparelho com driver de fábrica antigo ele costuma render mais; em aparelho novo costuma não mudar nada. Trocar o driver não afeta o resto do sistema — vale só para este aplicativo.</string>
+    <string name="sec_inuse">Em uso</string>
+    <string name="driver_system_sub">O que o fabricante do aparelho instalou.</string>
+    <string name="drivers_restart_note">A troca vale na próxima vez que o jogo abrir.</string>
+    <string name="sec_add">Adicionar</string>
+    <string name="import_zip">Importar um arquivo .zip</string>
+    <string name="import_zip_sub">Um pacote de driver do padrão do libadrenotools.</string>
+    <string name="drivers_download_note">Baixar traz código de terceiros que roda dentro do jogo. Os endereços estão à vista de propósito. Se um deles parar de responder, baixe à mão e use Importar.</string>
+    <string name="driver_removed">Driver removido</string>
+    <string name="no_file_picker">Nenhum seletor de arquivos no aparelho</string>
+    <string name="installing">Instalando…</string>
+    <string name="downloading">Baixando %1$s…</string>
+    <string name="driver_failed">Não deu. O arquivo não é um pacote de driver, ou o download falhou.</string>
+    <string name="driver_installed">%1$s instalado e selecionado</string>
+
+    <string name="drv_a8xx_desc">A compilação para a família 8xx, que é a do Snapdragon 8 Elite.</string>
+    <string name="drv_general_desc">A compilação para as demais Adreno.</string>
+    <string name="drv_qualcomm_desc">Um driver da própria Qualcomm, mais novo do que o do aparelho.</string>
+</resources>

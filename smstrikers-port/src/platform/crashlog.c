@@ -13,6 +13,12 @@
 #if defined(__SWITCH__)
 
 // Horizon has no signals and newlib no execinfo; Atmosphere writes the crash report instead.
+#elif defined(__ANDROID__)
+
+// Nothing to install. Android already catches every one of these signals in debuggerd and writes a
+// tombstone with symbolised frames, the registers, the memory around the fault and the other
+// threads -- strictly more than the handler below prints. Taking the signal first would only get in
+// its way, and bionic has no <execinfo.h> to print with anyway.
 
 #elif !defined(_WIN32)
 
