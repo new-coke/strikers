@@ -37,6 +37,11 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          log-accepted-android-sdk-licenses: false
+
       - name: Install Android SDK packages
         run: |
           sdkmanager --install \
