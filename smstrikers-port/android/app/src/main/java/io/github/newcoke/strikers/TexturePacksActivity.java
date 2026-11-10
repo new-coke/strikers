@@ -31,7 +31,7 @@ public class TexturePacksActivity extends NativeSettingsActivity {
     private void refresh() {
         PreferenceScreen screen = page();
         PreferenceGroup packs = section(screen, R.string.texture_packs);
-        String selected = prefs.texto(Preferencias.TEXTURE_PACK);
+        String selected = prefs.getString(GamePreferences.TEXTURE_PACK);
         pack(packs, getString(R.string.off), TexturePacks.OFF, selected, false);
         pack(packs, getString(R.string.texture_packs_all), "", selected, false);
         for (String name : TexturePacks.list(folder())) {
@@ -60,7 +60,7 @@ public class TexturePacksActivity extends NativeSettingsActivity {
     }
 
     private void select(String name) {
-        if (Configuracao.gravarTexturas(this, name)) prefs.definirTexto(Preferencias.TEXTURE_PACK, name);
+        if (GameConfig.writeTexturePack(this, name)) prefs.setString(GamePreferences.TEXTURE_PACK, name);
         else toast(R.string.ini_write_failed);
         refresh();
     }
@@ -71,7 +71,7 @@ public class TexturePacksActivity extends NativeSettingsActivity {
                 .setPositiveButton(android.R.string.ok, (dialog, which) -> {
                     try {
                         TexturePacks.remove(folder(), name);
-                        if (name.equals(prefs.texto(Preferencias.TEXTURE_PACK))) select("");
+                        if (name.equals(prefs.getString(GamePreferences.TEXTURE_PACK))) select("");
                         else refresh();
                     } catch (IOException error) {
                         Log.w("strikers", "Could not remove texture pack", error);

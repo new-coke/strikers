@@ -10,7 +10,7 @@ import android.preference.PreferenceScreen;
 import android.widget.Toast;
 
 @SuppressWarnings("deprecation")
-public class TelaDrivers extends NativeSettingsActivity {
+public class DriverSettingsActivity extends NativeSettingsActivity {
     private static final int PICK_ZIP = 4001;
     private boolean installing;
 
@@ -23,16 +23,16 @@ public class TelaDrivers extends NativeSettingsActivity {
     private void refresh() {
         PreferenceScreen screen = page();
         PreferenceGroup installed = section(screen, R.string.sec_inuse);
-        String selected = prefs.texto(Preferencias.DRIVER);
+        String selected = prefs.getString(GamePreferences.DRIVER);
         driver(installed, getString(R.string.driver_system), getString(R.string.driver_system_sub),
                 "", selected, null);
-        for (Drivers.Driver driver : Drivers.lista(this)) {
-            driver(installed, driver.nome, driver.descricao, driver.id, selected, driver);
+        for (Drivers.Driver driver : Drivers.list(this)) {
+            driver(installed, driver.name, driver.description, driver.id, selected, driver);
         }
         PreferenceGroup add = section(screen, R.string.sec_add);
         row(add, R.string.import_zip, R.string.import_zip_sub, installing ? null : this::pickZip);
-        for (Drivers.Fonte source : Drivers.fontes(this)) {
-            row(add, source.nome, source.descricao + "\n" + source.url,
+        for (Drivers.Download source : Drivers.downloads(this)) {
+            row(add, source.name, source.description + "\n" + source.url,
                     installing ? null : () -> install(null, source));
         }
         row(screen, R.string.video_driver, R.string.drivers_download_note, null);
@@ -58,17 +58,17 @@ public class TelaDrivers extends NativeSettingsActivity {
     }
 
     private void select(String id) {
-        prefs.definirTexto(Preferencias.DRIVER, id);
+        prefs.setString(GamePreferences.DRIVER, id);
         refresh();
     }
 
     private void confirmRemove(Drivers.Driver driver) {
-        new AlertDialog.Builder(this).setTitle(R.string.remove_item).setMessage(driver.nome)
+        new AlertDialog.Builder(this).setTitle(R.string.remove_item).setMessage(driver.name)
                 .setNegativeButton(android.R.string.cancel, null)
                 .setPositiveButton(android.R.string.ok, (dialog, which) -> {
-                    Drivers.remover(this, driver);
-                    if (driver.id.equals(prefs.texto(Preferencias.DRIVER))) {
-                        prefs.definirTexto(Preferencias.DRIVER, "");
+                    Drivers.remove(this, driver);
+                    if (driver.id.equals(prefs.getString(GamePreferences.DRIVER))) {
+                        prefs.setString(GamePreferences.DRIVER, "");
                     }
                     toast(R.string.driver_removed);
                     refresh();
@@ -92,20 +92,20 @@ public class TelaDrivers extends NativeSettingsActivity {
         }
     }
 
-    private void install(Uri uri, Drivers.Fonte source) {
+    private void install(Uri uri, Drivers.Download source) {
         if (installing) return;
         installing = true;
         Toast.makeText(this, source == null ? getString(R.string.installing)
-                : getString(R.string.downloading, source.nome), Toast.LENGTH_SHORT).show();
+                : getString(R.string.downloading, source.name), Toast.LENGTH_SHORT).show();
         refresh();
         new Thread(() -> {
-            Drivers.Driver driver = uri == null ? Drivers.baixar(this, source) : Drivers.importar(this, uri);
-            if (driver != null) prefs.definirTexto(Preferencias.DRIVER, driver.id);
+            Drivers.Driver driver = uri == null ? Drivers.download(this, source) : Drivers.importZip(this, uri);
+            if (driver != null) prefs.setString(GamePreferences.DRIVER, driver.id);
             runOnUiThread(() -> {
                 if (isDestroyed() || isFinishing()) return;
                 installing = false;
                 if (driver == null) toast(R.string.driver_failed);
-                else Toast.makeText(this, getString(R.string.driver_installed, driver.nome),
+                else Toast.makeText(this, getString(R.string.driver_installed, driver.name),
                         Toast.LENGTH_LONG).show();
                 refresh();
             });

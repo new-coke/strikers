@@ -26,13 +26,13 @@ public class SetupActivity extends Activity {
 
     @Override
     protected void attachBaseContext(Context base) {
-        super.attachBaseContext(Idiomas.envolver(base));
+        super.attachBaseContext(AppLocale.wrap(base));
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        appLanguage = new Preferencias(this).texto(Preferencias.IDIOMA_APP);
+        appLanguage = new GamePreferences(this).getString(GamePreferences.APP_LANGUAGE);
         setContentView(R.layout.setup);
 
         discName = findViewById(R.id.disc_name);
@@ -50,7 +50,7 @@ public class SetupActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (!appLanguage.equals(new Preferencias(this).texto(Preferencias.IDIOMA_APP))) {
+        if (!appLanguage.equals(new GamePreferences(this).getString(GamePreferences.APP_LANGUAGE))) {
             recreate();
             return;
         }

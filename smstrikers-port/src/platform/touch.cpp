@@ -31,7 +31,7 @@ std::atomic<int> s_stickY{0};
 std::atomic<int> s_cstickX{0};
 std::atomic<int> s_cstickY{0};
 
-// The bits Toque.java sends. They are ours, not anyone's hardware: the overlay
+// The bits TouchGamepad.java sends. They are ours, not anyone's hardware: the overlay
 // speaks GameCube and the mapping to SDL happens here, once.
 enum
 {
@@ -166,9 +166,7 @@ void push_state()
     SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_WEST, (b & TOUCH_X) != 0);
     SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_NORTH, (b & TOUCH_Y) != 0);
     SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_START, (b & TOUCH_START) != 0);
-    // Z sai de qualquer um dos dois ombros. O conjunto desenhado e o do Xbox
-    // 360, que tem LB e RB; o GameCube tem um Z so, e nao ha razao para o
-    // jogador ter de descobrir qual dos dois e o de verdade.
+    // Map either bumper to GameCube Z.
     SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER,
                                  (b & (TOUCH_Z | TOUCH_LB)) != 0);
     SDL_SetJoystickVirtualButton(s_virtual, SDL_GAMEPAD_BUTTON_BACK, (b & TOUCH_BACK) != 0);
@@ -253,21 +251,14 @@ extern "C" int PortTouchActive(void)
     return s_showing.load(std::memory_order_acquire) ? 1 : 0;
 }
 
-// ---------------------------------------------------------------------------
-// The bridge from Toque.java.
-//
-// The names are the contract: the virtual machine finds these by their full
-// spelling, so renaming the class or moving it to another package compiles on
-// both sides and breaks at the first touch with UnsatisfiedLinkError.
-// ---------------------------------------------------------------------------
-
+// JNI entry points for TouchGamepad.java.
 extern "C" JNIEXPORT void JNICALL
-Java_io_github_newcoke_strikers_Toque_enviar(JNIEnv*, jclass, jint botoes, jint gatilhoEsq,
-                                             jint gatilhoDir, jint lx, jint ly, jint cx, jint cy)
+Java_io_github_newcoke_strikers_TouchGamepad_sendNative(JNIEnv*, jclass, jint buttons, jint leftTrigger,
+    jint rightTrigger, jint lx, jint ly, jint cx, jint cy)
 {
-    s_buttons.store((int)botoes, std::memory_order_relaxed);
-    s_triggerL.store((int)gatilhoEsq, std::memory_order_relaxed);
-    s_triggerR.store((int)gatilhoDir, std::memory_order_relaxed);
+    s_buttons.store((int)buttons, std::memory_order_relaxed);
+    s_triggerL.store((int)leftTrigger, std::memory_order_relaxed);
+    s_triggerR.store((int)rightTrigger, std::memory_order_relaxed);
     s_stickX.store((int)lx, std::memory_order_relaxed);
     s_stickY.store((int)ly, std::memory_order_relaxed);
     s_cstickX.store((int)cx, std::memory_order_relaxed);
@@ -275,12 +266,8 @@ Java_io_github_newcoke_strikers_Toque_enviar(JNIEnv*, jclass, jint botoes, jint 
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
-Java_io_github_newcoke_strikers_Toque_pronto(JNIEnv*, jclass)
+Java_io_github_newcoke_strikers_TouchGamepad_nativeIsActive(JNIEnv*, jclass)
 {
-    // True once there is somewhere for the state to go. Asked rather than
-    // assumed: SDLActivity loads the library inside onCreate, and anything of
-    // ours that arrives before that finds a native method with no
-    // implementation.
     return s_showing.load(std::memory_order_acquire) ? JNI_TRUE : JNI_FALSE;
 }
 

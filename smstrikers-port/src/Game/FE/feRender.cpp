@@ -388,10 +388,7 @@ unsigned char FERender::RenderImageInstance(const TLImageInstance* pTLImageInsta
                 // ... and only when there is nothing left in the texture to distort.
                 const PlatTexture* pTex = glx_GetTex(textureHandle, false, false);
                 const float texWidth = (pTex != NULL) ? (float)pTex->m_Width : 0.0f;
-                // Blown up far enough past its own texture that stretching it further shows
-                // nothing new -- and STRIKERS_WIDEN=stretch asked for the stretch at all. The
-                // default is fit, because a stretched background stops lining up with the text
-                // drawn on it; see PortWidenStretch.
+                // Stretch already-magnified backgrounds only when the widen setting allows it.
                 const bool alreadyMagnified =
                     (texWidth <= 0.0f || 100.0f * xScale > 2.0f * texWidth)
                     && PortWidenStretch() != 0;

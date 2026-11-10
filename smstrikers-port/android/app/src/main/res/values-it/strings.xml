@@ -78,4 +78,5 @@
     <string name="drv_a8xx_desc">La build per la famiglia 8xx, che è quella dello Snapdragon 8 Elite.</string>
     <string name="drv_general_desc">La build per le altre Adreno.</string>
     <string name="drv_qualcomm_desc">Un driver di Qualcomm stessa, più nuovo di quello del dispositivo.</string>
+    <string name="hud_frame">FRAME</string>
 </resources>

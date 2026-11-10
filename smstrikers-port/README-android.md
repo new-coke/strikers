@@ -1,59 +1,45 @@
 # Android
 
-Super Mario Strikers v2.0.0, natively, on an arm64 Android device. This preview combines the
-upstream v2.0.0 game and rollback multiplayer with Luis Santos's Android platform code.
+This fork runs Strikers natively on ARM64 Android. The Android code builds on
+[Luis Santos's port](https://github.com/luisxl15/Strikers-Android-Port). The game
+and rollback code come from [Strikers upstream](https://github.com/new-coke/strikers).
 
-Requires game data from your own copy of Super Mario Strikers. No game assets are included.
+## Install
 
-The APK installs as **Strikers 2.0 Settings Preview** alongside the earlier builds. It has
-its own preferences and app-specific data directory.
+- Use an ARM64 device running Android 9 or later with Vulkan support.
+- Use data from your own US, European, or Japanese copy of Super Mario Strikers.
+  The APK contains no game assets.
+- Download `strikers.apk` from a successful [Android APK workflow run](https://github.com/keeganwhitacre/strikers-droid/actions?query=branch%3Aandroid-port)
+  or build it below. CI artifacts require a signed-in GitHub account.
 
-## What it needs
+The app appears as **Strikers**. It retains the settings preview's package ID and
+storage location. Android requires the same signing key for an in-place update.
+CI builds use a debug key and are intended for testing. Back up the app's game
+directory before removing an existing installation.
 
-- **A 64-bit ARM device on Android 9 (API 28) or later, with Vulkan.** Dawn has exactly one backend
-  on Android and it is Vulkan; there is no GL fallback worth having. 32-bit and x86 Android are not
-  built: the prebuilt Dawn package exists for `android-aarch64` alone, and a 32-bit address space is
-  not a comfortable place for this game's heap.
-- **Your own disc.** A disc image (`.iso`, `.gcm`, `.ciso` or `.gcz`) or the extracted disc's
-  `files` folder, US, European or Japanese.
+## Build from source
 
-## Building
+Install JDK 21, CMake, Ninja, Python 3, and the Android SDK command-line tools.
+Set `ANDROID_HOME` to the SDK directory. Use NDK 29.0.14206865 to match Aurora's
+prebuilt Dawn library.
 
-The **Android APK** workflow builds the ARM64 test APK from source and uploads it as
-`strikers.apk`. The CI APK uses debug signing. Android requires the same signing key
-to update an existing installation with the same package ID.
-
-
-Two steps, deliberately separate. The native build is CMake and the NDK, the same build every other
-platform gets; Gradle only packages what it produced, so Gradle's own idea of which CMake and which
-NDK to use never gets a vote.
-
-```sh
-# 1. the game
-tools/build-android.sh                  # -> build-android/jniLibs/arm64-v8a/
-
-# 2. the app
-cd android && ./gradlew assembleRelease # -> app/build/outputs/apk/release/
-```
-
-The Android build defaults to native version `2.0.0` so its multiplayer handshake matches the
-upstream release even when the port is built from a local commit.
-
-The first one wants `ANDROID_SDK_ROOT` (or `ANDROID_HOME`) pointing at an SDK with NDK
-**29.0.14206865** installed, which is the NDK Aurora's prebuilt Dawn was compiled with. A different
-NDK is a different libc++, and `libwebgpu_dawn.a` is a static archive that has to meet the one it
-was built against.
+From `smstrikers-port/`:
 
 ```sh
 sdkmanager "ndk;29.0.14206865" "platforms;android-35" "build-tools;35.0.1"
+./tools/build-android.sh
+./android/gradlew -p android assembleRelease
 ```
 
-`tools/build-android.sh` runs the same three steps as `tools/rebuild.sh` -- compile, generate stubs,
-link -- because the stub set cannot be known until every translation unit has compiled, and then
-stages `libmain.so` and `libc++_shared.so` where the Gradle project expects them. It rewrites
-`src/platform/stubs_generated.c`, which is generated output that happens to be checked in and is
-per-object-format: the copy in the tree carries Mach-O's leading underscore on every symbol and
-satisfies nothing on ELF.
+The native script builds the game, generates platform stubs, and stages ARM64
+libraries in `build-android/jniLibs/arm64-v8a/`. Gradle packages them at
+`android/app/build/outputs/apk/release/app-release.apk`. The native build
+regenerates the tracked `src/platform/stubs_generated.c` locally. Keep that
+generated change out of Android maintenance commits.
+
+The game reports version `2.0.0` by default to match the upstream multiplayer
+handshake. When updating the fork, check the target upstream version and network
+compatibility before changing the native version or Android package metadata.
 
 ## Game files
 
@@ -92,24 +78,33 @@ edits addresses in the character wheel. Use **Nearby rooms** on the same network
 address** for a direct connection.
 
 Peers need the same upstream version and a compatible disc region. US and European copies can play
-together. Japanese copies match other Japanese copies. Android-to-Android and Android-to-PC matches
-still need device testing.
+together. Japanese copies match other Japanese copies.
 
 ## What is missing
 
 - **Discord Rich Presence and Discord invites.** The upstream integration uses desktop IPC.
 - **The desktop settings app.** Android has its own launcher settings.
 
-## Reading a crash
+## Device testing
 
-The port installs no signal handler on Android: `debuggerd` already writes a tombstone with
-symbolised frames, the registers and the other threads, which is strictly more than the desktop
-handler prints.
+Run this checklist on an ARM64 Android device after syncing with upstream and
+before distributing a new APK. Record the commit, device model, Android version,
+GPU and driver, disc region, and results in the release notes or test issue.
+
+| Area | Checks |
+| --- | --- |
+| Install and launch | Install the APK. Pick a local disc image, launch a match, and relaunch the app to check that the selection persists. Try upgrading from a build signed with the same key and verify that settings and saves survive. |
+| Native settings | Change resolution, frame limit, and touch settings. Restart the game to check that settings applied. Open Settings from the touch overlay and return to the match. |
+| Input and lifecycle | Play with touch, connect and disconnect a physical controller, then background and resume the game. Verify that the overlay returns when the controller disconnects and that inputs release on focus loss. |
+| Graphics and textures | Play with the system Vulkan driver. If supported, test a custom driver and return to the system driver. Import a known texture pack, confirm a visible replacement, disable the pack, and confirm the original texture returns. |
+| Online | Play Android-to-Android and Android-to-desktop using builds of the same upstream version. Test discovery and direct connection, then complete a match and rematch. |
+
+For crashes or input problems, capture Android's log and the native game log:
 
 ```sh
 adb logcat -s strikers SDL DEBUG AndroidRuntime
 adb pull /sdcard/Android/data/io.github.newcoke.strikers.settingspreview/files/strikers-log.txt
 ```
 
-The second is the port's own log: `STRIKERS_LOG` is pointed at it before the game starts, because
-stderr on Android goes nowhere anyone can read.
+Use the [fork's issue tracker](https://github.com/keeganwhitacre/strikers-droid/issues)
+for Android reports. Include the APK build, device details, and steps to reproduce.

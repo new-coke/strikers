@@ -1,8 +1,13 @@
 name: Android APK
 
 on:
+  push:
+    branches: [android-port]
+    paths:
+      - '.github/workflows/android.yml'
+      - 'smstrikers-port/**'
   pull_request:
-    branches: [main]
+    branches: [main, android-port]
     paths:
       - '.github/workflows/android.yml'
       - 'smstrikers-port/**'

@@ -15,99 +15,78 @@ import android.view.WindowInsets;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * O overlay de toque, desenhado à mão.
- *
- * <p>POR QUE DESENHADO E NÃO EXTRAÍDO: os controles são círculos e pastilhas
- * translúcidos com um rótulo por cima — geometria, não arte. Desenhá-los aqui dá
- * o mesmo aspecto, fica vetorial (nítido em qualquer densidade de tela) e evita
- * empacotar os arquivos de outro aplicativo dentro deste APK.
- *
- * <p>O CONJUNTO É O DO XBOX 360 — LT/LB/L3 e RT/RB/R3 empilhados nos cantos de
- * cima, A B X Y em losango, dois manches, BACK e START. O jogo é de GameCube, e
- * a tradução acontece do outro lado da ponte, em touch.cpp: LT vira o L, RT vira
- * o R, LB e RB viram o Z. L3, R3 e BACK não têm equivalente no controle do
- * console e não fazem nada aqui — dito no menu, que é melhor do que um botão que
- * some ou um que engana.
- */
+/** Draws the touch gamepad and converts pointer input to virtual controller state. */
 public class OverlayView extends View {
 
-    /** O que um controle FAZ quando é tocado. */
-    private enum Papel { BOTAO, GATILHO_ESQ, GATILHO_DIR, ANALOGICO, C_STICK, MENU }
+    private enum Role { BUTTON, LEFT_TRIGGER, RIGHT_TRIGGER, STICK, C_STICK, MENU }
 
-    private enum Forma { CIRCULO, RECTANGULO, ANALOGICO }
+    private enum Shape { CIRCLE, RECTANGLE, STICK }
 
-    /** Um controle: forma, rótulo, papel e onde está. */
-    private static final class Controlo {
-        final String rotulo;
-        final Forma forma;
-        Papel papel = Papel.BOTAO;
-        int mascara;            // bit do Toque, para os de papel BOTAO
-        float cx, cy, raio;     // círculo
-        final RectF caixa = new RectF();   // retângulo
-        int dedo = -1;          // id do toque que o está segurando, ou -1
-        float carga;            // 0..1, para a animação de pressão
+    private static final class Control {
+        final String label;
+        final Shape shape;
+        Role role = Role.BUTTON;
+        int buttonMask;
+        float cx, cy, radius;
+        final RectF bounds = new RectF();
+        int pointerId = -1;  // Active Android pointer ID, or -1.
+        float pressure;  // Animated press, from 0 to 1.
 
-        Controlo(String rotulo, Forma forma) {
-            this.rotulo = rotulo;
-            this.forma = forma;
+        Control(String label, Shape shape) {
+            this.label = label;
+            this.shape = shape;
         }
 
-        boolean contem(float x, float y) {
-            if (forma == Forma.CIRCULO || forma == Forma.ANALOGICO) {
+        boolean contains(float x, float y) {
+            if (shape == Shape.CIRCLE || shape == Shape.STICK) {
                 final float dx = x - cx, dy = y - cy;
-                // Uma margem generosa: o dedo é gordo, e errar um botão numa
-                // área de toque irrita muito mais do que encostar de raspão no
-                // vizinho.
-                final float alcance = raio * 1.25f;
-                return dx * dx + dy * dy <= alcance * alcance;
+                // Allow touches just outside the visible circle.
+                final float hitRadius = radius * 1.25f;
+                return dx * dx + dy * dy <= hitRadius * hitRadius;
             }
-            return caixa.contains(x, y);
+            return bounds.contains(x, y);
         }
     }
 
-    private final List<Controlo> controlos = new ArrayList<>();
-    private final Paint tinta = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint texto = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Path caminho = new Path();
+    private final List<Control> controls = new ArrayList<>();
+    private final Paint controlPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint labelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Path path = new Path();
 
-    private float mancheDx, mancheDy, cDx, cDy;
-    private Controlo manche, mancheC;
+    private float leftStickDx, leftStickDy, cStickDx, cStickDy;
+    private Control leftStick, cStick;
 
-    // Ajustes, lidos das preferências. Ver recarregar().
-    private float opacidade = 1f;
-    private float escala = 1f;
-    private float zonaMorta = 0.08f;
-    private boolean mostrarDirecional;
-    private boolean mostrarCStick;
+    private float opacity = 1f;
+    private float scale = 1f;
+    private float deadzone = 0.08f;
+    private boolean showDpad;
+    private boolean showCStick;
 
-    // As barras do sistema, medidas e não adivinhadas. Sem isto o botão da
-    // direita fica debaixo da barra de navegação, e o toque vai para o sistema
-    // em vez de ir para o jogo.
-    private int recuoEsq, recuoDir, recuoCima, recuoBaixo;
+    // Keep controls clear of system bars and cutouts.
+    private int leftInset, rightInset, topInset, bottomInset;
 
-    /** Chamado quando o botão de ajustes é solto. */
-    interface AoPedirMenu { void pediu(); }
-    private AoPedirMenu aoPedirMenu;
+    interface SettingsListener { void openSettings(); }
+    private SettingsListener settingsListener;
 
     public OverlayView(Context ctx) {
         super(ctx);
         setFocusable(false);
-        texto.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        texto.setTextAlign(Paint.Align.CENTER);
+        labelPaint.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        labelPaint.setTextAlign(Paint.Align.CENTER);
     }
 
-    void aoPedirMenu(AoPedirMenu o) { aoPedirMenu = o; }
+    void setSettingsListener(SettingsListener listener) {
+        settingsListener = listener;
+    }
 
-    /** Relê os ajustes e refaz o traçado. */
-    void recarregar(Preferencias prefs) {
-        opacidade = prefs.numero(Preferencias.OPACIDADE) / 100f;
-        escala = prefs.numero(Preferencias.TAMANHO) / 100f;
-        zonaMorta = prefs.numero(Preferencias.ZONA_MORTA) / 100f;
-        mostrarDirecional = prefs.ligado(Preferencias.DIRECIONAL);
-        mostrarCStick = prefs.ligado(Preferencias.CSTICK);
+    void applyPreferences(GamePreferences prefs) {
+        opacity = prefs.getInt(GamePreferences.TOUCH_OPACITY) / 100f;
+        scale = prefs.getInt(GamePreferences.TOUCH_SIZE) / 100f;
+        deadzone = prefs.getInt(GamePreferences.TOUCH_DEADZONE) / 100f;
+        showDpad = prefs.getBoolean(GamePreferences.SHOW_DPAD);
+        showCStick = prefs.getBoolean(GamePreferences.CSTICK);
         if (getWidth() > 0) {
-            montar(getWidth(), getHeight());
+            layoutControls(getWidth(), getHeight());
         }
         invalidate();
     }
@@ -117,15 +96,15 @@ public class OverlayView extends View {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             android.graphics.Insets b = insets.getInsets(
                     WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
-            recuoEsq = b.left; recuoDir = b.right; recuoCima = b.top; recuoBaixo = b.bottom;
+            leftInset = b.left; rightInset = b.right; topInset = b.top; bottomInset = b.bottom;
         } else {
-            recuoEsq = insets.getSystemWindowInsetLeft();
-            recuoDir = insets.getSystemWindowInsetRight();
-            recuoCima = insets.getSystemWindowInsetTop();
-            recuoBaixo = insets.getSystemWindowInsetBottom();
+            leftInset = insets.getSystemWindowInsetLeft();
+            rightInset = insets.getSystemWindowInsetRight();
+            topInset = insets.getSystemWindowInsetTop();
+            bottomInset = insets.getSystemWindowInsetBottom();
         }
         if (getWidth() > 0) {
-            montar(getWidth(), getHeight());
+            layoutControls(getWidth(), getHeight());
             invalidate();
         }
         return insets;
@@ -133,406 +112,337 @@ public class OverlayView extends View {
 
     @Override
     protected void onSizeChanged(int w, int h, int ow, int oh) {
-        montar(w, h);
+        layoutControls(w, h);
     }
 
-    // -----------------------------------------------------------------------
-    // Traçado
-    //
-    // Tudo em fração da tela e não em dp: o alvo é um celular em paisagem, e o
-    // que precisa ficar constante é a posição relativa aos cantos — é lá que o
-    // polegar alcança.
-    // -----------------------------------------------------------------------
-    private void montar(int w, int h) {
-        controlos.clear();
-        manche = mancheC = null;
+    // Scale positions against the landscape bounds to keep controls within thumb reach.
+    private void layoutControls(int w, int h) {
+        controls.clear();
+        leftStick = cStick = null;
         if (w == 0 || h == 0) return;
 
-        final float u = Math.min(w, h);          // unidade: o lado menor
-        final float r = u * 0.062f * escala;     // raio dos botões de face
-        final float margem = u * 0.055f;
+        final float u = Math.min(w, h);
+        final float r = u * 0.062f * scale;
+        final float margin = u * 0.055f;
 
-        // As bordas úteis, já descontadas as barras do sistema.
-        final float esq = margem + recuoEsq;
-        final float dir = w - margem - recuoDir;
-        final float cima = margem + recuoCima;
-        final float baixo = h - margem - recuoBaixo;
+        final float left = margin + leftInset;
+        final float right = w - margin - rightInset;
+        final float top = margin + topInset;
+        final float bottom = h - margin - bottomInset;
 
-        // --- os gatilhos e os cliques dos manches, nos dois cantos de cima --
-        //
-        // Tres pastilhas de cada lado, que e o conjunto do Xbox 360. Nem todas
-        // tem para onde ir num jogo de GameCube, e isso esta dito no menu em vez
-        // de resolvido escondendo botao: LT vira o L, RT vira o R, LB e RB viram
-        // o Z (ha um Z so, e nao ha porque o jogador descobrir qual ombro e o de
-        // verdade), e L3, R3 e BACK nao tem equivalente no controle do console.
-        final float lg = u * 0.155f * escala, ag = u * 0.085f * escala;
+        // LT and RT map to GameCube L and R. Either bumper maps to Z.
+        final float shoulderWidth = u * 0.155f * scale, shoulderHeight = u * 0.085f * scale;
 
-        float y = cima;
-        final Papel[] papelEsq = {Papel.GATILHO_ESQ, Papel.BOTAO, Papel.BOTAO};
-        final int[] mascaraEsq = {0, Toque.LB, Toque.L3};
-        final String[] nomesEsq = {"LT", "LB", "L3"};
+        float y = top;
+        final Role[] leftRoles = {Role.LEFT_TRIGGER, Role.BUTTON, Role.BUTTON};
+        final int[] leftMasks = {0, TouchGamepad.LB, TouchGamepad.L3};
+        final String[] leftLabels = {"LT", "LB", "L3"};
         for (int i = 0; i < 3; i++) {
-            Controlo c = new Controlo(nomesEsq[i], Forma.RECTANGULO);
-            c.papel = papelEsq[i];
-            c.mascara = mascaraEsq[i];
-            c.caixa.set(esq, y, esq + lg, y + ag);
-            controlos.add(c);
-            y += ag * 1.18f;
+            Control c = new Control(leftLabels[i], Shape.RECTANGLE);
+            c.role = leftRoles[i];
+            c.buttonMask = leftMasks[i];
+            c.bounds.set(left, y, left + shoulderWidth, y + shoulderHeight);
+            controls.add(c);
+            y += shoulderHeight * 1.18f;
         }
 
-        y = cima;
-        final Papel[] papelDir = {Papel.GATILHO_DIR, Papel.BOTAO, Papel.BOTAO};
-        final int[] mascaraDir = {0, Toque.Z, Toque.R3};
-        final String[] nomesDir = {"RT", "RB", "R3"};
+        y = top;
+        final Role[] rightRoles = {Role.RIGHT_TRIGGER, Role.BUTTON, Role.BUTTON};
+        final int[] rightMasks = {0, TouchGamepad.Z, TouchGamepad.R3};
+        final String[] rightLabels = {"RT", "RB", "R3"};
         for (int i = 0; i < 3; i++) {
-            Controlo c = new Controlo(nomesDir[i], Forma.RECTANGULO);
-            c.papel = papelDir[i];
-            c.mascara = mascaraDir[i];
-            c.caixa.set(dir - lg, y, dir, y + ag);
-            controlos.add(c);
-            y += ag * 1.18f;
+            Control c = new Control(rightLabels[i], Shape.RECTANGLE);
+            c.role = rightRoles[i];
+            c.buttonMask = rightMasks[i];
+            c.bounds.set(right - shoulderWidth, y, right, y + shoulderHeight);
+            controls.add(c);
+            y += shoulderHeight * 1.18f;
         }
 
-        // --- A B X Y em losango, no desenho do Xbox: Y em cima, X a esquerda,
-        //     B a direita, A embaixo ------------------------------------------
-        final float fx = dir - r * 2.4f;
-        final float fy = baixo - r * 2.4f;
+        final float fx = right - r * 2.4f;
+        final float fy = bottom - r * 2.4f;
         final float d = r * 1.55f;
-        controlos.add(face("Y", fx, fy - d, r, Toque.Y));
-        controlos.add(face("X", fx - d, fy, r, Toque.X));
-        controlos.add(face("B", fx + d, fy, r, Toque.B));
-        controlos.add(face("A", fx, fy + d, r, Toque.A));
+        controls.add(face("Y", fx, fy - d, r, TouchGamepad.Y));
+        controls.add(face("X", fx - d, fy, r, TouchGamepad.X));
+        controls.add(face("B", fx + d, fy, r, TouchGamepad.B));
+        controls.add(face("A", fx, fy + d, r, TouchGamepad.A));
 
-        // --- os dois manches -------------------------------------------------
-        final float rm = u * 0.115f * escala;
-        manche = new Controlo("", Forma.ANALOGICO);
-        manche.papel = Papel.ANALOGICO;
-        manche.cx = esq + rm * 1.15f;
-        manche.cy = baixo - rm * 1.25f;
-        manche.raio = rm;
-        controlos.add(manche);
+        final float rm = u * 0.115f * scale;
+        leftStick = new Control("", Shape.STICK);
+        leftStick.role = Role.STICK;
+        leftStick.cx = left + rm * 1.15f;
+        leftStick.cy = bottom - rm * 1.25f;
+        leftStick.radius = rm;
+        controls.add(leftStick);
 
-        // O da direita e o manche C do GameCube. Ligavel e nao obrigatorio
-        // porque Strikers quase nao o usa e um segundo anel rouba tela.
-        if (mostrarCStick) {
-            mancheC = new Controlo("", Forma.ANALOGICO);
-            mancheC.papel = Papel.C_STICK;
-            mancheC.cx = w * 0.665f;
-            mancheC.cy = baixo - rm * 1.55f;
-            mancheC.raio = rm * 0.86f;
-            controlos.add(mancheC);
+        if (showCStick) {
+            cStick = new Control("", Shape.STICK);
+            cStick.role = Role.C_STICK;
+            cStick.cx = w * 0.665f;
+            cStick.cy = bottom - rm * 1.55f;
+            cStick.radius = rm * 0.86f;
+            controls.add(cStick);
         }
 
-        // --- O DIRECIONAL, opcional ------------------------------------------
-        if (mostrarDirecional) {
-            final float rd = u * 0.045f * escala;
-            final float dcx = esq + rm * 1.15f;
+        if (showDpad) {
+            final float rd = u * 0.045f * scale;
+            final float dcx = left + rm * 1.15f;
             final float dcy = h * 0.50f;
-            final float passo = rd * 1.95f;
-            controlos.add(face("▲", dcx, dcy - passo, rd, Toque.CIMA));
-            controlos.add(face("▼", dcx, dcy + passo, rd, Toque.BAIXO));
-            controlos.add(face("◀", dcx - passo, dcy, rd, Toque.ESQ));
-            controlos.add(face("▶", dcx + passo, dcy, rd, Toque.DIR));
+            final float spacing = rd * 1.95f;
+            controls.add(face("▲", dcx, dcy - spacing, rd, TouchGamepad.UP));
+            controls.add(face("▼", dcx, dcy + spacing, rd, TouchGamepad.DOWN));
+            controls.add(face("◀", dcx - spacing, dcy, rd, TouchGamepad.LEFT));
+            controls.add(face("▶", dcx + spacing, dcy, rd, TouchGamepad.RIGHT));
         }
 
-        // --- a fila do centro, embaixo: BACK, ajustes, START ------------------
-        final float lp = u * 0.115f * escala, ap = u * 0.052f * escala;
-        final float rg = u * 0.036f * escala;
-        final float folga = u * 0.028f;
+        final float centerButtonWidth = u * 0.115f * scale, centerButtonHeight = u * 0.052f * scale;
+        final float settingsRadius = u * 0.036f * scale;
+        final float centerGap = u * 0.028f;
 
-        Controlo back = new Controlo("BACK", Forma.RECTANGULO);
-        back.mascara = Toque.BACK;
-        back.caixa.set(w * 0.5f - rg - folga - lp, baixo - ap,
-                       w * 0.5f - rg - folga, baixo);
-        controlos.add(back);
+        Control back = new Control("BACK", Shape.RECTANGLE);
+        back.buttonMask = TouchGamepad.BACK;
+        back.bounds.set(w * 0.5f - settingsRadius - centerGap - centerButtonWidth, bottom - centerButtonHeight,
+                       w * 0.5f - settingsRadius - centerGap, bottom);
+        controls.add(back);
 
-        Controlo comeco = new Controlo("START", Forma.RECTANGULO);
-        comeco.mascara = Toque.START;
-        comeco.caixa.set(w * 0.5f + rg + folga, baixo - ap,
-                         w * 0.5f + rg + folga + lp, baixo);
-        controlos.add(comeco);
+        Control start = new Control("START", Shape.RECTANGLE);
+        start.buttonMask = TouchGamepad.START;
+        start.bounds.set(w * 0.5f + settingsRadius + centerGap, bottom - centerButtonHeight,
+                         w * 0.5f + settingsRadius + centerGap + centerButtonWidth, bottom);
+        controls.add(start);
 
-        Controlo menu = new Controlo("", Forma.CIRCULO);
-        menu.papel = Papel.MENU;
+        Control menu = new Control("", Shape.CIRCLE);
+        menu.role = Role.MENU;
         menu.cx = w * 0.5f;
-        menu.cy = baixo - ap / 2f;
-        menu.raio = rg;
-        controlos.add(menu);
-
-
+        menu.cy = bottom - centerButtonHeight / 2f;
+        menu.radius = settingsRadius;
+        controls.add(menu);
     }
 
-    private Controlo face(String rotulo, float cx, float cy, float raio, int mascara) {
-        Controlo c = new Controlo(rotulo, Forma.CIRCULO);
-        c.cx = cx; c.cy = cy; c.raio = raio; c.mascara = mascara;
+    private Control face(String label, float cx, float cy, float radius, int buttonMask) {
+        Control c = new Control(label, Shape.CIRCLE);
+        c.cx = cx; c.cy = cy; c.radius = radius; c.buttonMask = buttonMask;
         return c;
     }
 
-    // -----------------------------------------------------------------------
-    // Desenho
-    // -----------------------------------------------------------------------
     @Override
     protected void onDraw(Canvas canvas) {
-        for (Controlo c : controlos) {
-            // A pressão se aproxima do alvo em vez de saltar: é a diferença
-            // entre parecer um botão e parecer uma luz piscando.
-            final float alvo = c.dedo >= 0 ? 1f : 0f;
-            c.carga += (alvo - c.carga) * 0.35f;
-            if (Math.abs(alvo - c.carga) > 0.003f) postInvalidateOnAnimation();
-            else c.carga = alvo;
+        for (Control c : controls) {
+            final float targetPressure = c.pointerId >= 0 ? 1f : 0f;
+            c.pressure += (targetPressure - c.pressure) * 0.35f;
+            if (Math.abs(targetPressure - c.pressure) > 0.003f) postInvalidateOnAnimation();
+            else c.pressure = targetPressure;
 
-            switch (c.forma) {
-                case RECTANGULO: desenharRectangulo(canvas, c); break;
-                case CIRCULO:    desenharCirculo(canvas, c);    break;
-                case ANALOGICO:  desenharAnalogico(canvas, c);  break;
+            switch (c.shape) {
+                case RECTANGLE: drawRectangle(canvas, c); break;
+                case CIRCLE:    drawCircle(canvas, c);    break;
+                case STICK:  drawStick(canvas, c);  break;
             }
         }
     }
 
-    /** Aplica a opacidade escolhida nos ajustes a um alfa de 0..255. */
-    private int alfa(float valor) {
-        return Math.max(0, Math.min(255, Math.round(valor * opacidade)));
+    private int alpha(float value) {
+        return Math.max(0, Math.min(255, Math.round(value * opacity)));
     }
 
     private void paintControl(Canvas canvas, Path shape, float pressure) {
-        tinta.setColor(Color.BLACK);
-        tinta.setAlpha(alfa(105));
-        canvas.drawPath(shape, tinta);
-        tinta.setColor(Color.WHITE);
-        tinta.setAlpha(alfa(38 + 52 * pressure));
-        canvas.drawPath(shape, tinta);
+        controlPaint.setColor(Color.BLACK);
+        controlPaint.setAlpha(alpha(105));
+        canvas.drawPath(shape, controlPaint);
+        controlPaint.setColor(Color.WHITE);
+        controlPaint.setAlpha(alpha(38 + 52 * pressure));
+        canvas.drawPath(shape, controlPaint);
 
         final float d = Math.max(1f, getResources().getDisplayMetrics().density);
-        tinta.setStyle(Paint.Style.STROKE);
-        tinta.setStrokeWidth(d * 2f);
-        tinta.setColor(Color.BLACK);
-        tinta.setAlpha(alfa(46));
-        canvas.drawPath(shape, tinta);
-        tinta.setStrokeWidth(d);
-        tinta.setColor(Color.WHITE);
-        tinta.setAlpha(alfa(110 + 90 * pressure));
-        canvas.drawPath(shape, tinta);
-        tinta.setStyle(Paint.Style.FILL);
+        controlPaint.setStyle(Paint.Style.STROKE);
+        controlPaint.setStrokeWidth(d * 2f);
+        controlPaint.setColor(Color.BLACK);
+        controlPaint.setAlpha(alpha(46));
+        canvas.drawPath(shape, controlPaint);
+        controlPaint.setStrokeWidth(d);
+        controlPaint.setColor(Color.WHITE);
+        controlPaint.setAlpha(alpha(110 + 90 * pressure));
+        canvas.drawPath(shape, controlPaint);
+        controlPaint.setStyle(Paint.Style.FILL);
     }
 
-    private void desenharRectangulo(Canvas canvas, Controlo c) {
-        final float raio = c.caixa.height() * 0.42f;
-        caminho.reset();
-        caminho.addRoundRect(c.caixa, raio, raio, Path.Direction.CW);
-        paintControl(canvas, caminho, c.carga);
-        // Os rótulos longos (START) pedem letra menor do que L ou Z, ou
-        // transbordam a pastilha.
-        final float tamanho = c.caixa.height() * (c.rotulo.length() > 2 ? 0.30f : 0.42f);
-        escrever(canvas, c.rotulo, c.caixa.centerX(), c.caixa.centerY(), tamanho, c.carga);
+    private void drawRectangle(Canvas canvas, Control c) {
+        final float radius = c.bounds.height() * 0.42f;
+        path.reset();
+        path.addRoundRect(c.bounds, radius, radius, Path.Direction.CW);
+        paintControl(canvas, path, c.pressure);
+        final float textSize = c.bounds.height() * (c.label.length() > 2 ? 0.30f : 0.42f);
+        drawLabel(canvas, c.label, c.bounds.centerX(), c.bounds.centerY(), textSize, c.pressure);
     }
 
-    private void desenharCirculo(Canvas canvas, Controlo c) {
-        caminho.reset();
-        caminho.addCircle(c.cx, c.cy, c.raio, Path.Direction.CW);
-        paintControl(canvas, caminho, c.carga);
-        if (c.papel == Papel.MENU) {
-            desenharIconeAjustes(canvas, c);
+    private void drawCircle(Canvas canvas, Control c) {
+        path.reset();
+        path.addCircle(c.cx, c.cy, c.radius, Path.Direction.CW);
+        paintControl(canvas, path, c.pressure);
+        if (c.role == Role.MENU) {
+            drawSettingsIcon(canvas, c);
         } else {
-            escrever(canvas, c.rotulo, c.cx, c.cy, c.raio * 0.78f, c.carga);
+            drawLabel(canvas, c.label, c.cx, c.cy, c.radius * 0.78f, c.pressure);
         }
     }
 
-    /**
-     * O ícone de ajustes: três riscos com um botão em cada, em alturas
-     * diferentes.
-     *
-     * <p>Não é uma engrenagem de propósito — uma engrenagem desenhada pequena
-     * vira uma mancha com serrilha, e a esta escala (poucos milímetros) o ícone
-     * de réguas continua legível porque é feito só de linhas retas.
-     */
-    private void desenharIconeAjustes(Canvas canvas, Controlo c) {
-        final float lado = c.raio * 0.98f;
+    private void drawSettingsIcon(Canvas canvas, Control c) {
+        final float halfWidth = c.radius * 0.98f;
         final float d = Math.max(1f, getResources().getDisplayMetrics().density);
-        final float[] posicoes = {-0.22f, 0.55f, -0.55f};   // botão em cada risco
+        final float[] knobOffsets = {-0.22f, 0.55f, -0.55f};
 
-        tinta.setStrokeCap(Paint.Cap.ROUND);
+        controlPaint.setStrokeCap(Paint.Cap.ROUND);
         for (int i = 0; i < 3; i++) {
-            final float y = c.cy + (i - 1) * lado * 0.62f;
-            tinta.setStyle(Paint.Style.STROKE);
-            tinta.setStrokeWidth(d * 1.6f);
-            tinta.setColor(Color.WHITE);
-            tinta.setAlpha(alfa(228 + 27 * c.carga));
-            canvas.drawLine(c.cx - lado, y, c.cx + lado, y, tinta);
-            tinta.setStyle(Paint.Style.FILL);
-            canvas.drawCircle(c.cx + posicoes[i] * lado, y, d * 2.6f, tinta);
+            final float y = c.cy + (i - 1) * halfWidth * 0.62f;
+            controlPaint.setStyle(Paint.Style.STROKE);
+            controlPaint.setStrokeWidth(d * 1.6f);
+            controlPaint.setColor(Color.WHITE);
+            controlPaint.setAlpha(alpha(228 + 27 * c.pressure));
+            canvas.drawLine(c.cx - halfWidth, y, c.cx + halfWidth, y, controlPaint);
+            controlPaint.setStyle(Paint.Style.FILL);
+            canvas.drawCircle(c.cx + knobOffsets[i] * halfWidth, y, d * 2.6f, controlPaint);
         }
-        tinta.setStrokeCap(Paint.Cap.BUTT);
+        controlPaint.setStrokeCap(Paint.Cap.BUTT);
     }
 
-    private void desenharAnalogico(Canvas canvas, Controlo c) {
-        final boolean principal = c == manche;
-        final float dx = principal ? mancheDx : cDx;
-        final float dy = principal ? mancheDy : cDy;
+    private void drawStick(Canvas canvas, Control c) {
+        final boolean isLeftStick = c == leftStick;
+        final float dx = isLeftStick ? leftStickDx : cStickDx;
+        final float dy = isLeftStick ? leftStickDy : cStickDy;
 
-        // O ANEL EXTERIOR, EM DUAS PASSAGENS.
-        //
-        // Um risco branco com alfa baixo desaparece sobre fundo claro, e um
-        // manche que não se vê é pior do que nenhum, porque o polegar perde a
-        // referência do centro. Um risco escuro por baixo, um pouco mais grosso,
-        // resolve sem escurecer nada: é a mesma ideia da sombra do texto.
+        // Draw a dark outline so the stick remains visible over bright scenes.
         final float d1 = getResources().getDisplayMetrics().density;
-        tinta.setStyle(Paint.Style.STROKE);
-        tinta.setStrokeWidth(d1 * 2.2f);
-        tinta.setColor(Color.BLACK);
-        tinta.setAlpha(alfa(58));
-        canvas.drawCircle(c.cx, c.cy, c.raio, tinta);
-        tinta.setStrokeWidth(d1 * 1.2f);
-        tinta.setColor(Color.WHITE);
-        tinta.setAlpha(alfa(120));
-        canvas.drawCircle(c.cx, c.cy, c.raio, tinta);
-        tinta.setStyle(Paint.Style.FILL);
+        controlPaint.setStyle(Paint.Style.STROKE);
+        controlPaint.setStrokeWidth(d1 * 2.2f);
+        controlPaint.setColor(Color.BLACK);
+        controlPaint.setAlpha(alpha(58));
+        canvas.drawCircle(c.cx, c.cy, c.radius, controlPaint);
+        controlPaint.setStrokeWidth(d1 * 1.2f);
+        controlPaint.setColor(Color.WHITE);
+        controlPaint.setAlpha(alpha(120));
+        canvas.drawCircle(c.cx, c.cy, c.radius, controlPaint);
+        controlPaint.setStyle(Paint.Style.FILL);
 
-        // O puck segue o polegar, limitado ao anel.
-        final float limite = c.raio * 0.52f;
+        final float maxTravel = c.radius * 0.52f;
         final float dist = (float) Math.hypot(dx, dy);
-        final float k = dist > limite ? limite / dist : 1f;
-        caminho.reset();
-        caminho.addCircle(c.cx + dx * k, c.cy + dy * k, c.raio * 0.56f, Path.Direction.CW);
-        paintControl(canvas, caminho, c.carga);
+        final float k = dist > maxTravel ? maxTravel / dist : 1f;
+        path.reset();
+        path.addCircle(c.cx + dx * k, c.cy + dy * k, c.radius * 0.56f, Path.Direction.CW);
+        paintControl(canvas, path, c.pressure);
     }
 
-    private void escrever(Canvas canvas, String s, float cx, float cy,
-                          float tamanho, float carga) {
+    private void drawLabel(Canvas canvas, String s, float cx, float cy,
+                          float textSize, float pressure) {
         if (s == null || s.isEmpty()) return;
-        texto.setTextSize(tamanho);
-        texto.setColor(Color.WHITE);
-        texto.setAlpha(alfa(216 + 39 * carga));
-        // Uma sombra curta por baixo do texto: sobre uma imagem clara o branco
-        // puro desaparece.
-        texto.setShadowLayer(tamanho * 0.18f, 0, tamanho * 0.04f, 0x66000000);
-        final Paint.FontMetrics fm = texto.getFontMetrics();
-        canvas.drawText(s, cx, cy - (fm.ascent + fm.descent) / 2f, texto);
-        texto.clearShadowLayer();
+        labelPaint.setTextSize(textSize);
+        labelPaint.setColor(Color.WHITE);
+        labelPaint.setAlpha(alpha(216 + 39 * pressure));
+        labelPaint.setShadowLayer(textSize * 0.18f, 0, textSize * 0.04f, 0x66000000);
+        final Paint.FontMetrics fm = labelPaint.getFontMetrics();
+        canvas.drawText(s, cx, cy - (fm.ascent + fm.descent) / 2f, labelPaint);
+        labelPaint.clearShadowLayer();
     }
 
-    // -----------------------------------------------------------------------
-    // TOQUE
-    //
-    // Multitoque de verdade: cada dedo fica preso ao controle onde pousou até
-    // levantar. Sem isso, arrastar o polegar do manche para cima de um botão
-    // dispara o botão — que é exatamente o que não se quer num jogo.
-    // -----------------------------------------------------------------------
+    // A pointer stays with the control it pressed until release or cancellation.
     @Override
     public boolean onTouchEvent(MotionEvent e) {
-        final int accao = e.getActionMasked();
-        switch (accao) {
+        final int action = e.getActionMasked();
+        switch (action) {
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_POINTER_DOWN: {
                 final int i = e.getActionIndex();
-                pousar(e.getPointerId(i), e.getX(i), e.getY(i));
+                press(e.getPointerId(i), e.getX(i), e.getY(i));
                 break;
             }
             case MotionEvent.ACTION_MOVE: {
                 for (int i = 0; i < e.getPointerCount(); i++) {
-                    arrastar(e.getPointerId(i), e.getX(i), e.getY(i));
+                    move(e.getPointerId(i), e.getX(i), e.getY(i));
                 }
                 break;
             }
             case MotionEvent.ACTION_UP:
-            case MotionEvent.ACTION_POINTER_UP:
-            case MotionEvent.ACTION_CANCEL: {
-                final int id = accao == MotionEvent.ACTION_CANCEL
-                        ? -2 : e.getPointerId(e.getActionIndex());
-                levantar(id);
+            case MotionEvent.ACTION_POINTER_UP: {
+                final int index = e.getActionIndex();
+                release(e.getPointerId(index), e.getX(index), e.getY(index));
                 break;
             }
+            case MotionEvent.ACTION_CANCEL:
+                releaseAll();
+                return true;
         }
-        enviarEstado();
+        sendState();
         invalidate();
         return true;
     }
 
-    private void pousar(int dedo, float x, float y) {
-        for (Controlo c : controlos) {
-            if (c.dedo < 0 && c.contem(x, y)) {
-                c.dedo = dedo;
-                if (c.forma == Forma.ANALOGICO) arrastar(dedo, x, y);
+    private void press(int pointerId, float x, float y) {
+        for (Control c : controls) {
+            if (c.pointerId < 0 && c.contains(x, y)) {
+                c.pointerId = pointerId;
+                if (c.shape == Shape.STICK) move(pointerId, x, y);
                 return;
             }
         }
     }
 
-    private void arrastar(int dedo, float x, float y) {
-        for (Controlo c : controlos) {
-            if (c.dedo == dedo && c.forma == Forma.ANALOGICO) {
-                if (c == manche) { mancheDx = x - c.cx; mancheDy = y - c.cy; }
-                else             { cDx = x - c.cx; cDy = y - c.cy; }
+    private void move(int pointerId, float x, float y) {
+        for (Control c : controls) {
+            if (c.pointerId == pointerId && c.shape == Shape.STICK) {
+                if (c == leftStick) { leftStickDx = x - c.cx; leftStickDy = y - c.cy; }
+                else             { cStickDx = x - c.cx; cStickDy = y - c.cy; }
             }
         }
     }
 
-    private void levantar(int dedo) {
-        for (Controlo c : controlos) {
-            if (c.dedo == dedo || dedo == -2) {
-                final boolean eraMenu = c.papel == Papel.MENU && c.dedo >= 0;
-                c.dedo = -1;
-                if (c == manche) { mancheDx = mancheDy = 0; }
-                if (c == mancheC) { cDx = cDy = 0; }
-                // O menu abre AO SOLTAR, e não ao encostar: assim dá para
-                // deslizar o dedo para fora e desistir, como em qualquer botão
-                // de sistema.
-                if (eraMenu && aoPedirMenu != null) aoPedirMenu.pediu();
+    private void release(int pointerId, float x, float y) {
+        for (Control control : controls) {
+            if (control.pointerId != pointerId) continue;
+            control.pointerId = -1;
+            if (control == leftStick) leftStickDx = leftStickDy = 0;
+            if (control == cStick) cStickDx = cStickDy = 0;
+            if (control.role == Role.MENU && control.contains(x, y) && settingsListener != null) {
+                settingsListener.openSettings();
             }
+            return;
         }
     }
 
-    /** Solta tudo. A Activity chama isto ao abrir o menu ou ao perder o foco. */
-    void soltarTudo() {
-        levantar(-2);
-        enviarEstado();
+    void releaseAll() {
+        for (Control control : controls) {
+            control.pointerId = -1;
+        }
+        leftStickDx = leftStickDy = cStickDx = cStickDy = 0;
+        sendState();
         invalidate();
     }
 
-    // -----------------------------------------------------------------------
-    // O estado que atravessa para o jogo
-    // -----------------------------------------------------------------------
-    private void enviarEstado() {
-        int botoes = 0;
-        int gatilhoEsq = 0, gatilhoDir = 0;
-        for (Controlo c : controlos) {
-            if (c.dedo < 0) continue;
-            switch (c.papel) {
-                case BOTAO:       botoes |= c.mascara; break;
-                case GATILHO_ESQ: gatilhoEsq = 255;    break;
-                case GATILHO_DIR: gatilhoDir = 255;    break;
-                default: break;   // ANALOGICO, C_STICK e MENU não são botões
+    private void sendState() {
+        int buttons = 0;
+        int leftTrigger = 0, rightTrigger = 0;
+        for (Control c : controls) {
+            if (c.pointerId < 0) continue;
+            switch (c.role) {
+                case BUTTON:       buttons |= c.buttonMask; break;
+                case LEFT_TRIGGER: leftTrigger = 255;    break;
+                case RIGHT_TRIGGER: rightTrigger = 255;    break;
+                default: break;
             }
         }
-        final int[] m = eixo(manche, mancheDx, mancheDy);
-        final int[] c = eixo(mancheC, cDx, cDy);
-        Toque.estado(botoes, gatilhoEsq, gatilhoDir, m[0], m[1], c[0], c[1]);
+        final int[] m = stickAxes(leftStick, leftStickDx, leftStickDy);
+        final int[] c = stickAxes(cStick, cStickDx, cStickDy);
+        TouchGamepad.sendState(buttons, leftTrigger, rightTrigger, m[0], m[1], c[0], c[1]);
     }
 
-    /**
-     * Converte o deslocamento do polegar num par de eixos de -32767 a 32767.
-     *
-     * <p>TRÊS DETALHES QUE NÃO SÃO ÓBVIOS:
-     *
-     * <ul>
-     *   <li>o Y da tela cresce para BAIXO e o do SDL também, então aqui NÃO se
-     *       inverte o sinal. É o contrário do que a intuição pede, e é por isso
-     *       que está escrito: o eixo Y do SDL_GAMEPAD é positivo para baixo;
-     *   <li>a zona morta é aplicada ao MÓDULO e depois o resto é reesticado para
-     *       0..1. Cortar cada eixo em separado deixaria o manche com quatro
-     *       cantos vivos e o centro morto em cruz;
-     *   <li>o curso cheio é 85% do raio do anel, e não o raio: chegar ao máximo
-     *       exatamente na borda exigiria precisão que o polegar não tem.
-     * </ul>
-     */
-    private int[] eixo(Controlo anel, float dx, float dy) {
-        if (anel == null || anel.raio <= 0) return new int[]{0, 0};
-        final float curso = anel.raio * 0.85f;
-        float x = dx / curso, y = dy / curso;
-        float modulo = (float) Math.hypot(x, y);
-        if (modulo <= zonaMorta) return new int[]{0, 0};
-        if (modulo > 1f) { x /= modulo; y /= modulo; modulo = 1f; }
-        final float escalado = (modulo - zonaMorta) / (1f - zonaMorta);
-        final float k = escalado / modulo;
+    // SDL stick Y increases downward. Apply the deadzone radially, then rescale the remaining travel.
+    private int[] stickAxes(Control stick, float dx, float dy) {
+        if (stick == null || stick.radius <= 0) return new int[]{0, 0};
+        final float travel = stick.radius * 0.85f;
+        float x = dx / travel, y = dy / travel;
+        float magnitude = (float) Math.hypot(x, y);
+        if (magnitude <= deadzone) return new int[]{0, 0};
+        if (magnitude > 1f) { x /= magnitude; y /= magnitude; magnitude = 1f; }
+        final float scaledMagnitude = (magnitude - deadzone) / (1f - deadzone);
+        final float k = scaledMagnitude / magnitude;
         return new int[]{
             Math.round(Math.max(-1f, Math.min(1f, x * k)) * 32767f),
             Math.round(Math.max(-1f, Math.min(1f, y * k)) * 32767f)

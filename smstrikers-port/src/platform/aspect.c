@@ -289,23 +289,7 @@ void PortPerspective(float consoleFov, float consoleRatio,
     }
 }
 
-// STRIKERS_WIDEN: what happens to a front-end element authored to fill the 640-wide design frame
-// when the frame is wider than 640.
-//
-//   stretch - scale it horizontally until it fills the frame. The DEFAULT.
-//   fit     - leave it at its authored size, centred, and carry its own edge colour out to the
-//             sides.
-//
-// STRETCH IS THE DEFAULT AGAIN, and the note saying otherwise was wrong. It claimed that
-// stretching pulled the main menu's background streaks out from under the rows of the menu.
-// Measured on the device, that claim does not survive: the streaks are 0.008 px/px off horizontal,
-// and stretching a horizontal line horizontally cannot move it vertically. The rows and the
-// streaks really are misaligned -- by 44 px, at 1080 lines -- but the offset is the SAME at every
-// one of the seven rows, and a constant offset is a translation, not a distortion. Whatever causes
-// it, this setting is not it.
-//
-// What the setting does decide is honest and small: whether the extra width shows more of the
-// picture stretched, or the picture at its drawn size with its edge colour carried outward.
+// Stretch menu backgrounds by default. Fit keeps their scale and extends the edge color.
 static int s_widenStretch = -1;
 
 int PortWidenStretch(void)
@@ -328,8 +312,6 @@ int PortWidenStretch(void)
         s_widenStretch = 0;
     else
     {
-        // Say so. A typo here is a picture that looks subtly wrong with nothing on screen to
-        // suggest that a setting was involved.
         fprintf(stderr,
                 "[aspect] STRIKERS_WIDEN=\"%s\" not understood; using stretch.\n"
                 "         Expected \"fit\" or \"stretch\".\n",

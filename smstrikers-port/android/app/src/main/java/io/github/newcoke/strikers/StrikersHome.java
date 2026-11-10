@@ -43,37 +43,20 @@ final class StrikersHome {
         // at a file in the home directory instead, where `adb pull` can reach it.
         setenv("STRIKERS_LOG", new File(home, "strikers-log.txt").getAbsolutePath());
 
-        prepararDriver(context);
+        prepareDriver(context);
     }
 
-    /**
-     * O driver de vídeo que o jogador escolheu, para o src/platform/vulkan_shim.c.
-     *
-     * <p>Três caminhos, e nenhum deles é adivinhável do lado nativo:
-     *
-     * <ul>
-     *   <li>o diretório de bibliotecas do aplicativo, que é onde o libadrenotools
-     *       procura os ganchos com que foi compilado. Tem de ser exatamente esse,
-     *       e não uma cópia;
-     *   <li>a pasta do driver, que tem de estar no armazenamento PRIVADO — o
-     *       {@code dlopen} recusa uma biblioteca de um lugar que outro aplicativo
-     *       poderia ter alterado;
-     *   <li>o SONAME do .so, que varia de pacote para pacote e vem do meta.json.
-     * </ul>
-     *
-     * <p>Sem escolha, nenhuma das variáveis é definida e o shim cai no driver do
-     * sistema — que é o comportamento certo, e não uma falha.
-     */
-    private static void prepararDriver(Context context) {
+    // Pass the selected library and its hook directory to the Vulkan loader.
+    private static void prepareDriver(Context context) {
         setenv("STRIKERS_VK_HOOK_DIR", context.getApplicationInfo().nativeLibraryDir);
 
-        Drivers.Driver d = Drivers.porId(context, new Preferencias(context)
-                .texto(Preferencias.DRIVER));
+        Drivers.Driver d = Drivers.findById(context, new GamePreferences(context)
+                .getString(GamePreferences.DRIVER));
         if (d == null) {
-            Log.i(TAG, "driver de vídeo: o do sistema");
+            Log.i(TAG, "Using the system Vulkan driver");
             return;
         }
-        setenv("STRIKERS_VK_DRIVER_DIR", d.pasta.getAbsolutePath() + "/");
+        setenv("STRIKERS_VK_DRIVER_DIR", d.directory.getAbsolutePath() + "/");
         setenv("STRIKERS_VK_DRIVER", d.soname);
     }
 

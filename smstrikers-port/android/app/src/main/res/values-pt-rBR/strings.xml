@@ -78,4 +78,5 @@
     <string name="drv_a8xx_desc">A compilação para a família 8xx, que é a do Snapdragon 8 Elite.</string>
     <string name="drv_general_desc">A compilação para as demais Adreno.</string>
     <string name="drv_qualcomm_desc">Um driver da própria Qualcomm, mais novo do que o do aparelho.</string>
+    <string name="hud_frame">QUADRO</string>
 </resources>

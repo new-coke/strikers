@@ -78,4 +78,5 @@
     <string name="drv_a8xx_desc">8xx 系向けのビルド。Snapdragon 8 Elite がこれです。</string>
     <string name="drv_general_desc">その他の Adreno 向けのビルド。</string>
     <string name="drv_qualcomm_desc">Qualcomm 自身のドライバで、端末のものより新しいもの。</string>
+    <string name="hud_frame">フレーム</string>
 </resources>

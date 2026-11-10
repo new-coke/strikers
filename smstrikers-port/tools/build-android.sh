@@ -42,9 +42,8 @@ fi
 echo "==> compile"
 # Expected to fail at the link on a clean tree: the stubs do not exist yet, and cannot, until every
 # object is there to be read.
-set +e
-"$CMAKE" --build "$BUILD" --parallel >"$BUILD/compile.log" 2>&1
-set -e
+COMPILE_STATUS=0
+"$CMAKE" --build "$BUILD" --parallel >"$BUILD/compile.log" 2>&1 || COMPILE_STATUS=$?
 DIAG='\.(c|cc|cpp|h|hpp)[:(][0-9]+[:,][0-9]+\)?: (fatal )?error:'
 if grep -qE "$DIAG" "$BUILD/compile.log"; then
     echo "==> COMPILE FAILED" >&2
@@ -62,6 +61,13 @@ if [ -n "$OTHER" ]; then
     exit 1
 fi
 
+if [ "$COMPILE_STATUS" -ne 0 ] &&
+        ! grep -qE '^FAILED: (\[code=[0-9]+\] )?libmain\.so[[:space:]]*$' "$BUILD/compile.log"; then
+    echo "==> COMPILE FAILED" >&2
+    tail -40 "$BUILD/compile.log" >&2
+    exit "$COMPILE_STATUS"
+fi
+
 echo "==> generate stubs"
 # In place, in src/platform/, exactly as tools/rebuild.sh does on every other platform: the file is
 # generated output that happens to be checked in, and it is per-object-format -- the copy in the
@@ -77,6 +83,18 @@ if [ ! -f "$LIB" ]; then
     echo "==> FAILED: no libmain.so produced" >&2
     exit 1
 fi
+
+# Java resolves these entry points by name at runtime.
+SYMBOLS=$(llvm-nm --dynamic --defined-only --format=posix "$LIB" | cut -d ' ' -f 1)
+for SYMBOL in SDL_main \
+    Java_io_github_newcoke_strikers_TouchGamepad_sendNative \
+    Java_io_github_newcoke_strikers_TouchGamepad_nativeIsActive \
+    Java_io_github_newcoke_strikers_FrameMetrics_readNative; do
+    if ! printf '%s\n' "$SYMBOLS" | grep -Fx "$SYMBOL" >/dev/null; then
+        echo "Missing Android entry point: $SYMBOL" >&2
+        exit 1
+    fi
+done
 
 echo "==> stage"
 STAGE="$BUILD/jniLibs/$ABI"
@@ -103,7 +121,8 @@ for _hook in libmain_hook.so libfile_redirect_hook.so libgsl_alloc_hook.so libho
     if [ -n "$_found" ]; then
         cp "$_found" "$STAGE/"
     else
-        echo "warning: $_hook nao foi produzido; o driver escolhido pelo jogador nao vai carregar" >&2
+        echo "Missing $_hook. Custom Vulkan drivers require this library." >&2
+        exit 1
     fi
 done
 # SDL is linked into libmain.so, so there is no libSDL3.so to stage; see tools/configure-android.sh.
@@ -111,4 +130,4 @@ done
 echo "==> ok: $STAGE"
 ls -l "$STAGE"
 echo
-echo "Next: cd android && ./gradlew assembleDebug"
+echo "Next: cd android && ./gradlew assembleRelease"

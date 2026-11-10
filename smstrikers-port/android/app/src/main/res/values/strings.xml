@@ -7,7 +7,7 @@
   values-pt-rBR/ with the rest.
 -->
 <resources>
-    <string name="app_name" translatable="false">Strikers 2.0 Settings Preview</string>
+    <string name="app_name" translatable="false">Strikers</string>
 
     <!-- The launcher -->
     <string name="setup_title" translatable="false">Super Mario Strikers</string>
@@ -103,4 +103,5 @@
     <string name="texture_import_hint">Choose a Dolphin-format ZIP containing PNG or DDS textures.</string>
     <string name="texture_import_failed">Could not import the pack. Check the ZIP and available storage.</string>
     <string name="texture_remove_failed">Could not remove the pack.</string>
+    <string name="hud_frame">FRAME</string>
 </resources>

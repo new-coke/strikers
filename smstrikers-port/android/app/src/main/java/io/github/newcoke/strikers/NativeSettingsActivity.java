@@ -12,17 +12,17 @@ import android.widget.Toast;
 
 @SuppressWarnings("deprecation")
 abstract class NativeSettingsActivity extends PreferenceActivity {
-    Preferencias prefs;
+    GamePreferences prefs;
 
     @Override
     protected void attachBaseContext(Context base) {
-        super.attachBaseContext(Idiomas.envolver(base));
+        super.attachBaseContext(AppLocale.wrap(base));
     }
 
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
-        prefs = new Preferencias(this);
+        prefs = new GamePreferences(this);
         StrikersHome.writeDefaultConfig(StrikersHome.homeDir(this));
         getListView().setFitsSystemWindows(true);
         if (getActionBar() != null) getActionBar().setDisplayHomeAsUpEnabled(true);

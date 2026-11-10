@@ -20,143 +20,111 @@ import java.util.Locale;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-/**
- * Os drivers de vídeo que o jogador instalou.
- *
- * <p>Um pacote de driver é o formato que a comunidade do libadrenotools usa: um
- * .zip com um {@code meta.json} e o {@code .so} do driver ao lado. O meta diz o
- * nome a mostrar e, o que importa de verdade, o SONAME do {@code .so} — que não
- * é adivinhável, varia de pacote para pacote.
- *
- * <p>ONDE O .so FICA, E POR QUE NÃO NA PASTA DO JOGO. O {@code dlopen} do Android
- * recusa carregar uma biblioteca de um lugar onde qualquer aplicativo poderia
- * tê-la trocado, e {@code /storage/emulated/0/Strikers} é exatamente esse tipo
- * de lugar. Então os pacotes podem ser deixados lá, mas a instalação copia o
- * conteúdo para a pasta privada do aplicativo, que é de onde ele carrega.
- */
+/** Manages libadrenotools ZIPs containing meta.json and a Vulkan driver library. */
 final class Drivers {
 
     private static final String TAG = "strikers";
 
-    /** Um driver instalado. */
     static final class Driver {
-        final String id;          // o nome da pasta
-        final String nome;
-        final String descricao;
-        final String soname;      // o que o adrenotools tem de carregar
-        final File pasta;
+        final String id;  // Installed folder name.
+        final String name;
+        final String description;
+        final String soname;
+        final File directory;
 
-        Driver(String id, String nome, String descricao, String soname, File pasta) {
+        Driver(String id, String name, String description, String soname, File directory) {
             this.id = id;
-            this.nome = nome;
-            this.descricao = descricao;
+            this.name = name;
+            this.description = description;
             this.soname = soname;
-            this.pasta = pasta;
+            this.directory = directory;
         }
     }
 
-    /** Um driver que dá para baixar. */
-    static final class Fonte {
-        final String nome;
-        final String descricao;
+    static final class Download {
+        final String name;
+        final String description;
         final String url;
+        final String installId;
 
-        Fonte(String nome, String descricao, String url) {
-            this.nome = nome;
-            this.descricao = descricao;
+        Download(String name, String description, String url, String installId) {
+            this.name = name;
+            this.description = description;
             this.url = url;
+            this.installId = installId;
         }
     }
 
-    /**
-     * A lista de onde baixar.
-     *
-     * <p>Curta e com a origem à vista de propósito: baixar e carregar código que
-     * roda dentro do processo do jogo não é coisa para esconder atrás de um
-     * botão anônimo. Se um endereço parar de responder — e vão parar, são
-     * lançamentos de terceiros — o caminho continua sendo baixar à mão e usar
-     * Importar.
-     */
-    static List<Fonte> fontes(Context ctx) {
-        List<Fonte> f = new ArrayList<>();
-        // OS NOMES NÃO SÃO TRADUZIDOS: "Turnip 26.0 — Adreno 8xx" é como o
-        // arquivo se chama lá na origem, e quem for conferir o endereço à mão
-        // procura essa palavra. As descrições são frases e essas sim traduzem.
-        f.add(new Fonte("Turnip 26.0 — Adreno 8xx",
+    static List<Download> downloads(Context ctx) {
+        List<Download> f = new ArrayList<>();
+        f.add(new Download("Turnip 26.0 — Adreno 8xx",
                 ctx.getString(R.string.drv_a8xx_desc),
                 "https://github.com/K11MCH1/AdrenoToolsDrivers/releases/download/v26.0.0-rc08/"
-              + "turnip_a8xx.zip"));
-        f.add(new Fonte("Turnip 26.0 — geral",
+              + "turnip_a8xx.zip", "turnip-26.0-adreno-8xx"));
+        // Keep the previous install ID so existing driver selections still resolve.
+        f.add(new Download("Turnip 26.0 — General",
                 ctx.getString(R.string.drv_general_desc),
                 "https://github.com/K11MCH1/AdrenoToolsDrivers/releases/download/v26.0.0-rc08/"
-              + "Turnip_v26.0.0_R8.zip"));
-        f.add(new Fonte("Qualcomm 840",
+              + "Turnip_v26.0.0_R8.zip", "turnip-26.0-geral"));
+        f.add(new Download("Qualcomm 840",
                 ctx.getString(R.string.drv_qualcomm_desc),
                 "https://github.com/K11MCH1/AdrenoToolsDrivers/releases/download/v840/"
-              + "Qualcomm_840_adpkg.zip"));
+              + "Qualcomm_840_adpkg.zip", "qualcomm-840"));
         return f;
     }
 
     private Drivers() {}
 
-    /** A pasta privada onde os drivers instalados vivem. */
-    static File instalados(Context ctx) {
+    // Android loads custom libraries from app-private storage.
+    static File installedDirectory(Context ctx) {
         File d = new File(ctx.getFilesDir(), "drivers");
         //noinspection ResultOfMethodCallIgnored
         d.mkdirs();
         return d;
     }
 
-    /** Onde o jogador pode largar os .zip sem precisar do seletor. */
-    static File caixaDeEntrada(Context ctx) {
-        File d = new File(StrikersHome.homeDir(ctx), "drivers");
-        //noinspection ResultOfMethodCallIgnored
-        d.mkdirs();
-        return d;
-    }
-
-    static List<Driver> lista(Context ctx) {
-        List<Driver> saida = new ArrayList<>();
-        File[] pastas = instalados(ctx).listFiles();
-        if (pastas == null) return saida;
-        for (File pasta : pastas) {
-            if (!pasta.isDirectory()) continue;
-            Driver d = ler(pasta);
-            if (d != null) saida.add(d);
+    static List<Driver> list(Context ctx) {
+        List<Driver> drivers = new ArrayList<>();
+        File[] directories = installedDirectory(ctx).listFiles();
+        if (directories == null) return drivers;
+        for (File directory : directories) {
+            if (!directory.isDirectory()) continue;
+            Driver d = readMetadata(directory);
+            if (d != null) drivers.add(d);
         }
-        Collections.sort(saida, (a, b) -> a.nome.compareToIgnoreCase(b.nome));
-        return saida;
+        Collections.sort(drivers, (a, b) -> a.name.compareToIgnoreCase(b.name));
+        return drivers;
     }
 
-    static Driver porId(Context ctx, String id) {
+    static Driver findById(Context ctx, String id) {
         if (id == null || id.isEmpty()) return null;
-        for (Driver d : lista(ctx)) {
+        for (Driver d : list(ctx)) {
             if (d.id.equals(id)) return d;
         }
         return null;
     }
 
-    private static Driver ler(File pasta) {
-        File meta = new File(pasta, "meta.json");
+    private static Driver readMetadata(File directory) {
+        File meta = new File(directory, "meta.json");
         if (!meta.isFile()) return null;
         try {
-            JSONObject j = new JSONObject(texto(meta));
+            JSONObject j = new JSONObject(readText(meta));
             String soname = j.optString("libraryName", "");
-            if (soname.isEmpty() || !new File(pasta, soname).isFile()) {
-                Log.w(TAG, "driver em " + pasta + " sem o .so que o meta.json anuncia");
+            if (soname.isEmpty() || !new File(directory, soname).isFile()) {
+                Log.w(TAG, "Driver in " + directory + " is missing the library named in meta.json");
                 return null;
             }
-            return new Driver(pasta.getName(),
-                    j.optString("name", pasta.getName()),
+            return new Driver(directory.getName(),
+                    j.optString("name", directory.getName()),
                     j.optString("description", ""),
-                    soname, pasta);
+                    soname, directory);
         } catch (Exception e) {
-            Log.w(TAG, "meta.json ilegível em " + pasta, e);
+            Log.w(TAG, "Could not read meta.json in " + directory, e);
             return null;
         }
     }
 
-    private static String texto(File f) throws IOException {
+    private static String readText(File f) throws IOException {
         try (InputStream in = new java.io.FileInputStream(f)) {
             java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
             byte[] b = new byte[8192];
@@ -166,101 +134,94 @@ final class Drivers {
         }
     }
 
-    /**
-     * Instala um pacote a partir de um fluxo de .zip. Devolve o driver ou null.
-     *
-     * <p>Extrai para uma pasta temporária e só renomeia no fim: um .zip truncado
-     * no meio da cópia deixaria um driver pela metade, e um driver pela metade é
-     * um jogo que não abre com uma mensagem que não ajuda.
-     */
-    static Driver instalar(Context ctx, InputStream zip, String nomeSugerido) {
-        File destino = new File(instalados(ctx), slug(nomeSugerido));
-        File temporaria = new File(instalados(ctx), ".tmp-" + System.currentTimeMillis());
+    // Stage and validate a complete package before replacing the installed copy.
+    static Driver install(Context ctx, InputStream zip, String suggestedName) {
+        File destination = new File(installedDirectory(ctx), slug(suggestedName));
+        File staging = new File(installedDirectory(ctx), ".tmp-" + System.currentTimeMillis());
         //noinspection ResultOfMethodCallIgnored
-        temporaria.mkdirs();
+        staging.mkdirs();
         try (ZipInputStream z = new ZipInputStream(zip)) {
             ZipEntry e;
             while ((e = z.getNextEntry()) != null) {
                 if (e.isDirectory()) continue;
-                // Só o nome do arquivo: um .zip pode trazer "../" no caminho, e
-                // extrair isso escreveria fora da pasta de destino.
-                String nome = new File(e.getName()).getName();
-                if (nome.isEmpty()) continue;
-                try (OutputStream out = new FileOutputStream(new File(temporaria, nome))) {
+                // Flatten entry paths so extraction stays inside the staging directory.
+                String name = new File(e.getName()).getName();
+                if (name.isEmpty()) continue;
+                try (OutputStream out = new FileOutputStream(new File(staging, name))) {
                     byte[] b = new byte[64 * 1024];
                     int n;
                     while ((n = z.read(b)) > 0) out.write(b, 0, n);
                 }
             }
         } catch (IOException e) {
-            Log.w(TAG, "não deu para extrair o driver", e);
-            apagar(temporaria);
+            Log.w(TAG, "Could not extract driver", e);
+            deleteTree(staging);
             return null;
         }
 
-        Driver lido = ler(temporaria);
-        if (lido == null) {
-            apagar(temporaria);
+        Driver staged = readMetadata(staging);
+        if (staged == null) {
+            deleteTree(staging);
             return null;
         }
-        apagar(destino);
-        if (!temporaria.renameTo(destino)) {
-            apagar(temporaria);
+        deleteTree(destination);
+        if (!staging.renameTo(destination)) {
+            deleteTree(staging);
             return null;
         }
-        return ler(destino);
+        return readMetadata(destination);
     }
 
-    /** Baixa e instala. Chamar fora da thread principal. */
-    static Driver baixar(Context ctx, Fonte fonte) {
+    // Performs network and disk I/O. Call from a worker thread.
+    static Driver download(Context ctx, Download source) {
         HttpURLConnection c = null;
         try {
-            c = (HttpURLConnection) new URL(fonte.url).openConnection();
+            c = (HttpURLConnection) new URL(source.url).openConnection();
             c.setInstanceFollowRedirects(true);
             c.setConnectTimeout(20000);
             c.setReadTimeout(60000);
             if (c.getResponseCode() / 100 != 2) {
-                Log.w(TAG, "download de " + fonte.url + " respondeu " + c.getResponseCode());
+                Log.w(TAG, "Download from " + source.url + " returned HTTP " + c.getResponseCode());
                 return null;
             }
             try (InputStream in = c.getInputStream()) {
-                return instalar(ctx, in, fonte.nome);
+                return install(ctx, in, source.installId);
             }
         } catch (Exception e) {
-            Log.w(TAG, "não deu para baixar " + fonte.url, e);
+            Log.w(TAG, "Could not download " + source.url, e);
             return null;
         } finally {
             if (c != null) c.disconnect();
         }
     }
 
-    static Driver importar(Context ctx, Uri uri) {
+    static Driver importZip(Context ctx, Uri uri) {
         try (InputStream in = ctx.getContentResolver().openInputStream(uri)) {
             if (in == null) return null;
-            String nome = uri.getLastPathSegment();
-            return instalar(ctx, in, nome != null ? nome : "driver");
+            String name = uri.getLastPathSegment();
+            return install(ctx, in, name != null ? name : "driver");
         } catch (Exception e) {
-            Log.w(TAG, "não deu para importar " + uri, e);
+            Log.w(TAG, "Could not import " + uri, e);
             return null;
         }
     }
 
-    static void remover(Context ctx, Driver d) {
-        apagar(d.pasta);
+    static void remove(Context ctx, Driver d) {
+        deleteTree(d.directory);
     }
 
-    private static void apagar(File f) {
+    private static void deleteTree(File f) {
         if (f == null || !f.exists()) return;
-        File[] filhos = f.listFiles();
-        if (filhos != null) {
-            for (File c : filhos) apagar(c);
+        File[] children = f.listFiles();
+        if (children != null) {
+            for (File c : children) deleteTree(c);
         }
         //noinspection ResultOfMethodCallIgnored
         f.delete();
     }
 
-    private static String slug(String nome) {
-        String s = nome == null ? "driver" : nome;
+    private static String slug(String name) {
+        String s = name == null ? "driver" : name;
         s = s.toLowerCase(Locale.ROOT).replaceAll("\\.zip$", "");
         s = s.replaceAll("[^a-z0-9._-]+", "-").replaceAll("^-+|-+$", "");
         return s.isEmpty() ? "driver" : s;

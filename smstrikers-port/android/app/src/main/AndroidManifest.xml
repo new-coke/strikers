@@ -2,8 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     android:installLocation="auto">
 
-    <!-- Dawn has one backend on Android and it is Vulkan, so a device without it cannot run this
-         at all; better for the store or the installer to say so than for the game to. -->
+    <!-- Dawn requires Vulkan on Android. -->
     <uses-feature
         android:name="android.hardware.vulkan.version"
         android:version="0x00400003"
@@ -59,7 +58,7 @@
             android:theme="@style/Theme.Strikers.Settings" />
 
         <activity
-            android:name=".TelaDrivers"
+            android:name=".DriverSettingsActivity"
             android:exported="false"
             android:label="@string/video_driver"
             android:theme="@style/Theme.Strikers.Settings" />

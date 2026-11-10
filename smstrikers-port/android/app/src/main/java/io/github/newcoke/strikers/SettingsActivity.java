@@ -26,46 +26,46 @@ public class SettingsActivity extends NativeSettingsActivity {
     }
 
     private void display(PreferenceGroup group) {
-        choice(group, R.string.res_internal, Preferencias.RES_LINHAS,
+        choice(group, R.string.res_internal, GamePreferences.RESOLUTION_LINES,
                 new String[]{getString(R.string.res_follow), getString(R.string.res_original),
                         "720", "1080", "1440", "2160"}, new int[]{0, 448, 720, 1080, 1440, 2160});
-        choice(group, R.string.fps_limit, Preferencias.FPS_LIMIT,
+        choice(group, R.string.fps_limit, GamePreferences.FPS_LIMIT,
                 new String[]{getString(R.string.fps_follow_display),
                         getString(R.string.fps_unlimited), "30", "60", "120"},
                 new int[]{-1, 0, 30, 60, 120});
-        toggle(group, R.string.vsync, R.string.vsync_help, Preferencias.VSYNC, true);
-        choice(group, R.string.aspect, Preferencias.PROPORCAO,
+        toggle(group, R.string.vsync, R.string.vsync_help, GamePreferences.VSYNC, true);
+        choice(group, R.string.aspect, GamePreferences.ASPECT_RATIO,
                 new String[]{getString(R.string.res_follow), "16:9", "4:3"}, new int[]{0, 1, 2});
-        choice(group, R.string.widen, Preferencias.ESTICAR,
+        choice(group, R.string.widen, GamePreferences.STRETCH_MENUS,
                 new String[]{getString(R.string.widen_fit), getString(R.string.widen_stretch)},
                 new int[]{0, 1});
-        choice(group, R.string.msaa, Preferencias.MSAA,
+        choice(group, R.string.msaa, GamePreferences.MSAA,
                 new String[]{getString(R.string.off), "4x"}, new int[]{1, 4});
-        choice(group, R.string.aniso, Preferencias.ANISO,
+        choice(group, R.string.aniso, GamePreferences.ANISO,
                 new String[]{"1x", "2x", "4x", "8x", "16x"}, new int[]{1, 2, 4, 8, 16});
         row(group, R.string.video_driver, R.string.drivers_restart_note,
-                () -> startActivity(new Intent(this, TelaDrivers.class)));
+                () -> startActivity(new Intent(this, DriverSettingsActivity.class)));
         row(group, R.string.texture_packs, R.string.texture_packs_summary,
                 () -> startActivity(new Intent(this, TexturePacksActivity.class)));
     }
 
     private void controls(PreferenceGroup group) {
-        slider(group, R.string.opacity, Preferencias.OPACIDADE, 25, 100);
-        slider(group, R.string.size, Preferencias.TAMANHO, 75, 130);
-        slider(group, R.string.deadzone, Preferencias.ZONA_MORTA, 0, 35);
-        toggle(group, R.string.dpad, 0, Preferencias.DIRECIONAL, false);
-        toggle(group, R.string.right_stick, 0, Preferencias.CSTICK, false);
+        slider(group, R.string.opacity, GamePreferences.TOUCH_OPACITY, 25, 100);
+        slider(group, R.string.size, GamePreferences.TOUCH_SIZE, 75, 130);
+        slider(group, R.string.deadzone, GamePreferences.TOUCH_DEADZONE, 0, 35);
+        toggle(group, R.string.dpad, 0, GamePreferences.SHOW_DPAD, false);
+        toggle(group, R.string.right_stick, 0, GamePreferences.CSTICK, false);
         row(group, getText(R.string.sec_controls), getText(R.string.controls_note), null);
     }
 
     private void game(PreferenceGroup group) {
-        toggle(group, R.string.unlock_all, R.string.unlock_all_help, Preferencias.DESBLOQUEAR, true);
-        toggle(group, R.string.hud, R.string.hud_help, Preferencias.HUD, false);
-        ListPreference language = list(group, R.string.language, Idiomas.nomes(this), Idiomas.CODIGOS,
-                prefs.texto(Preferencias.IDIOMA_APP));
+        toggle(group, R.string.unlock_all, R.string.unlock_all_help, GamePreferences.UNLOCK_ALL, true);
+        toggle(group, R.string.hud, R.string.hud_help, GamePreferences.HUD, false);
+        ListPreference language = list(group, R.string.language, AppLocale.displayNames(this), AppLocale.LANGUAGE_TAGS,
+                prefs.getString(GamePreferences.APP_LANGUAGE));
         language.setOnPreferenceChangeListener((item, value) -> {
-            if (!value.equals(prefs.texto(Preferencias.IDIOMA_APP))) {
-                prefs.definirTexto(Preferencias.IDIOMA_APP, value.toString());
+            if (!value.equals(prefs.getString(GamePreferences.APP_LANGUAGE))) {
+                prefs.setString(GamePreferences.APP_LANGUAGE, value.toString());
                 recreate();
             }
             return true;
@@ -77,9 +77,9 @@ public class SettingsActivity extends NativeSettingsActivity {
         toggle.setPersistent(false);
         toggle.setTitle(title);
         if (summary != 0) toggle.setSummary(summary);
-        toggle.setChecked(prefs.ligado(key));
+        toggle.setChecked(prefs.getBoolean(key));
         toggle.setOnPreferenceChangeListener((item, value) -> {
-            prefs.ligar(key, (boolean) value);
+            prefs.setBoolean(key, (boolean) value);
             if (nativeSetting) saveConfig();
             return true;
         });
@@ -89,9 +89,9 @@ public class SettingsActivity extends NativeSettingsActivity {
     private void choice(PreferenceGroup group, int title, String key, String[] names, int[] values) {
         String[] entries = new String[values.length];
         for (int i = 0; i < values.length; i++) entries[i] = Integer.toString(values[i]);
-        ListPreference option = list(group, title, names, entries, Integer.toString(prefs.numero(key)));
+        ListPreference option = list(group, title, names, entries, Integer.toString(prefs.getInt(key)));
         option.setOnPreferenceChangeListener((item, value) -> {
-            prefs.definir(key, Integer.parseInt(value.toString()));
+            prefs.setInt(key, Integer.parseInt(value.toString()));
             saveConfig();
             return true;
         });
@@ -114,19 +114,19 @@ public class SettingsActivity extends NativeSettingsActivity {
     private void slider(PreferenceGroup group, int title, String key, int min, int max) {
         Preference row = new Preference(this);
         row.setTitle(title);
-        row.setSummary(percent(prefs.numero(key)));
+        row.setSummary(percent(prefs.getInt(key)));
         row.setOnPreferenceClickListener(item -> {
             SeekBar seek = new SeekBar(this);
             seek.setMin(min);
             seek.setMax(max);
-            seek.setProgress(prefs.numero(key));
+            seek.setProgress(prefs.getInt(key));
             seek.setContentDescription(getText(title));
             AlertDialog dialog = new AlertDialog.Builder(this)
                     .setTitle(getString(R.string.setting_value, getText(title), percent(seek.getProgress())))
                     .setView(seek)
                     .setNegativeButton(android.R.string.cancel, null)
                     .setPositiveButton(android.R.string.ok, (window, which) -> {
-                        prefs.definir(key, seek.getProgress());
+                        prefs.setInt(key, seek.getProgress());
                         row.setSummary(percent(seek.getProgress()));
                     }).create();
             seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -147,6 +147,6 @@ public class SettingsActivity extends NativeSettingsActivity {
     }
 
     private void saveConfig() {
-        if (!Configuracao.gravar(this, prefs)) toast(R.string.ini_write_failed);
+        if (!GameConfig.writeSettings(this, prefs)) toast(R.string.ini_write_failed);
     }
 }
