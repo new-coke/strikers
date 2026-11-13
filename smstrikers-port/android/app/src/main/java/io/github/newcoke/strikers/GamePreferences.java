@@ -8,6 +8,10 @@ final class GamePreferences {
 
     // Keep the stored key names so upgrades retain existing settings.
     // Touch controls.
+    static final String TOUCH_LAYOUT = "touch_layout";
+    static final String TOUCH_STANDARD = "standard";
+    static final String TOUCH_COMPACT = "compact";
+    static final String TOUCH_TABLET = "tablet";
     static final String SHOW_DPAD = "direcional";
     static final String CSTICK = "cstick";
     static final String TOUCH_OPACITY = "opacidade";  // Percent.

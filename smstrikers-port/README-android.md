@@ -66,6 +66,16 @@ game start. Stick layout, deadzone, and rumble also use shared controller settin
 **Game default** clears the override for that option. During play,
 press **Guide** to open Settings when Android delivers that button to the app.
 
+**Touch layout** offers the existing Standard layout, smaller Compact phone
+controls, and Tablet reach, which brings the side controls inward. Size,
+opacity, deadzone, and optional controls can still be adjusted separately.
+
+**Performance presets** apply resolution, frame limit, and MSAA together.
+Battery uses the original render scale and a 30 FPS cap. Balanced uses a
+720-line render scale and a 60 FPS cap. High refresh uses the same render
+scale and restores the engine’s display-based limiter. All three turn MSAA
+off and leave VSync and anisotropic filtering available as manual settings.
+
 ## Texture packs
 
 Open **Settings → Video → Texture packs** and import a Dolphin-format ZIP with PNG or DDS

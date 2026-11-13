@@ -54,6 +54,14 @@ final class GameConfig {
         return new File(StrikersHome.homeDir(context), "strikers.ini");
     }
 
+    static boolean writePerformancePreset(Context context, String resolution, String fps) {
+        Map<String, String> keys = new LinkedHashMap<>();
+        keys.put("res_scale", resolution);
+        keys.put("fps_limit", fps);
+        keys.put("msaa", "1");
+        return rewrite(configFile(context), keys);
+    }
+
     static boolean writeTexturePack(Context context, String pack) {
         Map<String, String> keys = new LinkedHashMap<>();
         boolean off = TexturePacks.OFF.equals(pack);

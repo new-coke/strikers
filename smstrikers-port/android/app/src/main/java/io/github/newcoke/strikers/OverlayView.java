@@ -57,7 +57,8 @@ public class OverlayView extends View {
     private Control leftStick, cStick;
 
     private float opacity = 1f;
-    private float scale = 1f;
+    private String layout = GamePreferences.TOUCH_STANDARD;
+    private float size = 1f;
     private float deadzone = 0.08f;
     private boolean showDpad;
     private boolean showCStick;
@@ -81,7 +82,8 @@ public class OverlayView extends View {
 
     void applyPreferences(GamePreferences prefs) {
         opacity = prefs.getInt(GamePreferences.TOUCH_OPACITY) / 100f;
-        scale = prefs.getInt(GamePreferences.TOUCH_SIZE) / 100f;
+        layout = prefs.getString(GamePreferences.TOUCH_LAYOUT);
+        size = prefs.getInt(GamePreferences.TOUCH_SIZE) / 100f;
         deadzone = prefs.getInt(GamePreferences.TOUCH_DEADZONE) / 100f;
         showDpad = prefs.getBoolean(GamePreferences.SHOW_DPAD);
         showCStick = prefs.getBoolean(GamePreferences.CSTICK);
@@ -123,11 +125,15 @@ public class OverlayView extends View {
         if (w == 0 || h == 0) return;
 
         final float u = Math.min(w, h);
+        final boolean compact = GamePreferences.TOUCH_COMPACT.equals(layout);
+        final boolean tablet = GamePreferences.TOUCH_TABLET.equals(layout);
+        final float scale = size * (compact ? 0.85f : 1f);
+        final float reachInset = tablet ? u * 0.06f : 0f;
         final float r = u * 0.062f * scale;
         final float margin = u * 0.055f;
 
-        final float left = margin + leftInset;
-        final float right = w - margin - rightInset;
+        final float left = margin + leftInset + reachInset;
+        final float right = w - margin - rightInset - reachInset;
         final float top = margin + topInset;
         final float bottom = h - margin - bottomInset;
 

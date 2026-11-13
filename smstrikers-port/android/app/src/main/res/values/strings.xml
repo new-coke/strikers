@@ -113,4 +113,13 @@
     <string name="controller_deadzone">Controller stick deadzone</string>
     <string name="controller_rumble">Controller rumble</string>
     <string name="controller_rumble_strength">Rumble strength</string>
+    <string name="touch_layout">Touch layout</string>
+    <string name="touch_standard">Standard</string>
+    <string name="touch_compact">Compact phone</string>
+    <string name="touch_tablet">Tablet reach</string>
+    <string name="performance_presets">Performance presets</string>
+    <string name="performance_presets_help">Set resolution, frame limit, and anti-aliasing for the next game launch.</string>
+    <string name="performance_battery">Battery (448p, 30 FPS)</string>
+    <string name="performance_balanced">Balanced (720p, 60 FPS)</string>
+    <string name="performance_high_refresh">High refresh (720p, display refresh rate)</string>
 </resources>

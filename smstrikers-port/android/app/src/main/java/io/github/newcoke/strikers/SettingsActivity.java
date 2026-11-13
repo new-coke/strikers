@@ -27,6 +27,8 @@ public class SettingsActivity extends NativeSettingsActivity {
     }
 
     private void display(PreferenceGroup group) {
+        row(group, R.string.performance_presets, R.string.performance_presets_help,
+                this::choosePerformancePreset);
         choice(group, R.string.res_internal, "res_scale",
                 new String[]{getString(R.string.res_follow), getString(R.string.res_original),
                         "720", "1080", "1440", "2160"}, new String[]{"", "1.000", "1.607", "2.411", "3.214", "4.821"}, "");
@@ -50,7 +52,33 @@ public class SettingsActivity extends NativeSettingsActivity {
                 () -> startActivity(new Intent(this, TexturePacksActivity.class)));
     }
 
+    private void choosePerformancePreset() {
+        int[] labels = {R.string.performance_battery, R.string.performance_balanced,
+                R.string.performance_high_refresh};
+        String[] names = new String[labels.length];
+        for (int i = 0; i < labels.length; i++) names[i] = getString(labels[i]);
+        new AlertDialog.Builder(this).setTitle(R.string.performance_presets)
+                .setItems(names, (dialog, preset) -> {
+                    String resolution = preset == 0 ? "1.000" : "1.607";
+                    String fps = preset == 0 ? "30" : preset == 1 ? "60" : null;
+                    if (GameConfig.writePerformancePreset(this, resolution, fps)) recreate();
+                    else toast(R.string.ini_write_failed);
+                })
+                .setNegativeButton(android.R.string.cancel, null).show();
+    }
+
     private void controls(PreferenceGroup group) {
+        String layout = prefs.getString(GamePreferences.TOUCH_LAYOUT);
+        ListPreference layoutOption = list(group, getText(R.string.touch_layout),
+                new String[]{getString(R.string.touch_standard), getString(R.string.touch_compact),
+                        getString(R.string.touch_tablet)},
+                new String[]{GamePreferences.TOUCH_STANDARD, GamePreferences.TOUCH_COMPACT,
+                        GamePreferences.TOUCH_TABLET},
+                layout.isEmpty() ? GamePreferences.TOUCH_STANDARD : layout);
+        layoutOption.setOnPreferenceChangeListener((item, value) -> {
+            prefs.setString(GamePreferences.TOUCH_LAYOUT, value.toString());
+            return true;
+        });
         slider(group, R.string.opacity, GamePreferences.TOUCH_OPACITY, 25, 100);
         slider(group, R.string.size, GamePreferences.TOUCH_SIZE, 75, 130);
         slider(group, R.string.deadzone, GamePreferences.TOUCH_DEADZONE, 0, 35);
