@@ -315,11 +315,11 @@ file(GLOB_RECURSE PLATFORM_SOURCES CONFIGURE_DEPENDS
      "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/*.cpp"
      "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/*.c")
 
-# src/platform/vulkan_shim.c is not part of the game at all: it is its own shared library, and
+# src/platform/android/vulkan_shim.c is not part of the game at all: it is its own shared library, and
 # compiled in here it would export vkGetInstanceProcAddr from libmain.so, where nothing should find
 # a Vulkan entry point.
 list(REMOVE_ITEM PLATFORM_SOURCES
-     "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/vulkan_shim.c")
+     "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/android/vulkan_shim.c")
 
 # src/platform/operator_new.cpp is the one file in the tree that is not C++11.
 list(REMOVE_ITEM PLATFORM_SOURCES
@@ -550,11 +550,11 @@ if(ANDROID)
     set_target_properties(strikers PROPERTIES OUTPUT_NAME main)
 
     # The Vulkan stand-in: its own shared library, named libvulkan.so, so that Dawn's
-    # dlopen("libvulkan.so") finds it instead of the system loader. See src/platform/vulkan_shim.c.
+    # dlopen("libvulkan.so") finds it instead of the system loader. See src/platform/android/vulkan_shim.c.
     # Deliberately NOT linked to anything here -- it is loaded by name at runtime, by Dawn, and the
     # game has no reference to it.
     add_library(strikers_vulkan_shim SHARED
-        "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/vulkan_shim.c")
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/android/vulkan_shim.c")
     set_target_properties(strikers_vulkan_shim PROPERTIES OUTPUT_NAME vulkan)
     target_link_libraries(strikers_vulkan_shim PRIVATE log)
     # Hidden by default, so the one entry point is the only thing that answers.

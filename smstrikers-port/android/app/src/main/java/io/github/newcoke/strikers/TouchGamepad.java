@@ -1,6 +1,6 @@
 package io.github.newcoke.strikers;
 
-/** Sends overlay input to the SDL virtual gamepad in src/platform/touch.cpp. */
+/** Sends overlay input to the SDL virtual gamepad in src/platform/android/touch.cpp. */
 final class TouchGamepad {
 
     private TouchGamepad() {}

@@ -1,6 +1,6 @@
 package io.github.newcoke.strikers;
 
-/** Native frame timings. Keep the indices in sync with src/platform/hud_bridge.cpp. */
+/** Native frame timings. Keep the indices in sync with src/platform/android/hud_bridge.cpp. */
 final class FrameMetrics {
 
     private FrameMetrics() {}
