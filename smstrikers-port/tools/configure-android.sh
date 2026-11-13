@@ -30,7 +30,6 @@ ANDROID_SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-$LOCALAPPDATA/Android/Sdk}}"
 NDK_VERSION="${ANDROID_NDK_VERSION:-29.0.14206865}"
 NDK="${ANDROID_NDK_HOME:-$ANDROID_SDK/ndk/$NDK_VERSION}"
 API="${ANDROID_API:-28}"
-ABI="${ANDROID_ABI:-arm64-v8a}"
 
 if [ ! -f "$NDK/build/cmake/android.toolchain.cmake" ]; then
     echo "No NDK at $NDK." >&2
@@ -44,11 +43,10 @@ CMAKE="${CMAKE:-cmake}"
 PORT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$PORT"
 
-# Hermetic dependencies, for the same reason tools/configure.sh gives: Aurora asks find_package for
-# these before building its own, and on a cross build a host hit is worse than a miss.
+# Use Aurora’s bundled dependencies. Disable pkg-config so it cannot select host libraries.
 exec "$CMAKE" -S . -B "$BUILD" -G "$GENERATOR" \
     -DCMAKE_TOOLCHAIN_FILE="$NDK/build/cmake/android.toolchain.cmake" \
-    -DANDROID_ABI="$ABI" \
+    -DANDROID_ABI=arm64-v8a \
     -DANDROID_PLATFORM="android-$API" \
     -DANDROID_STL=c++_shared \
     -DCMAKE_BUILD_TYPE="$TYPE" \
@@ -62,6 +60,7 @@ exec "$CMAKE" -S . -B "$BUILD" -G "$GENERATOR" \
     -DCMAKE_DISABLE_FIND_PACKAGE_Freetype=ON \
     -DCMAKE_DISABLE_FIND_PACKAGE_zstd=ON \
     -DCMAKE_DISABLE_FIND_PACKAGE_SQLite3=ON \
+    -DCMAKE_DISABLE_FIND_PACKAGE_PkgConfig=ON \
     -DCMAKE_DISABLE_FIND_PACKAGE_absl=ON \
     -DAURORA_CACHE_USE_ZSTD=OFF \
     "$@"

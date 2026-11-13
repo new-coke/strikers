@@ -33,9 +33,7 @@ sdkmanager "ndk;29.0.14206865" "platforms;android-35" "build-tools;35.0.1"
 
 The native script builds the game, generates platform stubs, and stages ARM64
 libraries in `build-android/jniLibs/arm64-v8a/`. Gradle packages them at
-`android/app/build/outputs/apk/release/app-release.apk`. The native build
-regenerates the tracked `src/platform/stubs_generated.c` locally. Keep that
-generated change out of Android maintenance commits.
+`android/app/build/outputs/apk/release/app-release.apk`. Generated stubs stay in the native build directory.
 
 The game reports version `2.0.0` by default to match the upstream multiplayer
 handshake. When updating the fork, check the target upstream version and network

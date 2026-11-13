@@ -356,16 +356,20 @@ endif()
 if(NX)
     list(REMOVE_ITEM PLATFORM_SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/overlay.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/host.c"
-        "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/stubs_generated.c")
-    # The tree's stubs use host symbol names; the Switch rebuild writes ELF stubs here.
-    set(_nx_stubs "${CMAKE_CURRENT_BINARY_DIR}/stubs_generated.c")
-    if(NOT EXISTS "${_nx_stubs}")
-        file(WRITE "${_nx_stubs}" "// Filled by tools/switch/rebuild.sh.\n")
-    endif()
-    list(APPEND PLATFORM_SOURCES "${_nx_stubs}")
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/host.c")
 else()
     list(FILTER PLATFORM_SOURCES EXCLUDE REGEX "/src/platform/switch/")
+endif()
+
+if(NX OR ANDROID)
+    # Cross-builds generate ELF stubs in their own build directory.
+    list(REMOVE_ITEM PLATFORM_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/stubs_generated.c")
+    set(_cross_stubs "${CMAKE_CURRENT_BINARY_DIR}/stubs_generated.c")
+    if(NOT EXISTS "${_cross_stubs}")
+        file(WRITE "${_cross_stubs}" "// Filled by the platform build script.\n")
+    endif()
+    list(APPEND PLATFORM_SOURCES "${_cross_stubs}")
 endif()
 
 if(STRIKERS_AURORA)
@@ -676,13 +680,31 @@ elseif(NOT MSVC AND NOT NX)
 endif()
 
 if(STRIKERS_AURORA)
-    # Deliberately NOT aurora::os, Aurora's OS has no threads, and ours is already complete.
-    target_link_libraries(strikers PRIVATE
+    # The game uses its own OS implementation.
+    set(_strikers_aurora_targets
         aurora::core aurora::gx aurora::gd aurora::vi aurora::pad aurora::si
         aurora::card aurora::thp aurora::main)
+    target_link_libraries(strikers PRIVATE ${_strikers_aurora_targets})
+endif()
 
-    # Frame capture lives inside Aurora now (lib/aurora.cpp, namespace capture).
+if(ANDROID)
+    add_custom_target(strikers_android_scan DEPENDS strikers_scan)
+    add_dependencies(strikers_android_scan ${_strikers_aurora_targets})
 
+    set(_android_jni_dir "${CMAKE_CURRENT_BINARY_DIR}/jniLibs/arm64-v8a")
+    add_custom_target(strikers_android_stage
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${_android_jni_dir}"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:strikers>"
+            "$<TARGET_FILE:strikers_vulkan_shim>"
+            "$<TARGET_FILE:main_hook>"
+            "$<TARGET_FILE:file_redirect_hook>"
+            "$<TARGET_FILE:gsl_alloc_hook>"
+            "$<TARGET_FILE:hook_impl>"
+            "${CMAKE_SYSROOT}/usr/lib/aarch64-linux-android/libc++_shared.so"
+            "${_android_jni_dir}"
+        DEPENDS strikers strikers_vulkan_shim main_hook file_redirect_hook gsl_alloc_hook hook_impl
+        VERBATIM)
 endif()
 
 if(NX)

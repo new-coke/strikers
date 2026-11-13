@@ -52,7 +52,16 @@ jobs:
       - name: Build native libraries
         run: |
           export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION"
-          ./tools/build-android.sh
+          ./tools/build-android.sh 2>&1 | tee "$RUNNER_TEMP/strikers-android-build.log"
+          git diff --exit-code
+
+      - name: Upload native build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-native-build-log
+          path: ${{ runner.temp }}/strikers-android-build.log
+          if-no-files-found: ignore
 
       - name: Assemble APK
         run: ./android/gradlew -p android --no-daemon assembleRelease

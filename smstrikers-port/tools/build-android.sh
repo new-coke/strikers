@@ -16,7 +16,6 @@ cd "$PORT"
 ANDROID_SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-$LOCALAPPDATA/Android/Sdk}}"
 NDK_VERSION="${ANDROID_NDK_VERSION:-29.0.14206865}"
 NDK="${ANDROID_NDK_HOME:-$ANDROID_SDK/ndk/$NDK_VERSION}"
-ABI="${ANDROID_ABI:-arm64-v8a}"
 CMAKE="${CMAKE:-cmake}"
 PYTHON="${PYTHON:-python3}"
 
@@ -34,57 +33,24 @@ fi
 PATH="$NDK_BIN:$PATH"
 export PATH
 
-if [ ! -f "$BUILD/CMakeCache.txt" ]; then
-    echo "==> configure"
-    sh tools/configure-android.sh "$BUILD" "$TYPE"
-fi
+# Clear the staged payload before rebuilding so failures cannot package stale libraries.
+rm -f "$BUILD"/jniLibs/arm64-v8a/*.so
+
+echo "==> configure"
+sh tools/configure-android.sh "$BUILD" "$TYPE"
 
 echo "==> compile"
-# Expected to fail at the link on a clean tree: the stubs do not exist yet, and cannot, until every
-# object is there to be read.
-COMPILE_STATUS=0
-"$CMAKE" --build "$BUILD" --parallel >"$BUILD/compile.log" 2>&1 || COMPILE_STATUS=$?
-DIAG='\.(c|cc|cpp|h|hpp)[:(][0-9]+[:,][0-9]+\)?: (fatal )?error:'
-if grep -qE "$DIAG" "$BUILD/compile.log"; then
-    echo "==> COMPILE FAILED" >&2
-    grep -E "$DIAG" "$BUILD/compile.log" | head -20 >&2
-    exit 1
-fi
-OTHER=$(sed -n 's/^FAILED: \(\[code=[0-9]*\] \)\{0,1\}//p' "$BUILD/compile.log" \
-        | tr -d '\r' \
-        | sed 's/[[:space:]]*$//' \
-        | grep -vx 'libmain\.so' || true)
-if [ -n "$OTHER" ]; then
-    echo "==> COMPILE FAILED: a build step failed with no compiler diagnostic" >&2
-    echo "$OTHER" | sed 's/^/      /' | head -10 >&2
-    grep -A4 '^FAILED: ' "$BUILD/compile.log" | head -40 >&2
-    exit 1
-fi
-
-if [ "$COMPILE_STATUS" -ne 0 ] &&
-        ! grep -qE '^FAILED: (\[code=[0-9]+\] )?libmain\.so[[:space:]]*$' "$BUILD/compile.log"; then
-    echo "==> COMPILE FAILED" >&2
-    tail -40 "$BUILD/compile.log" >&2
-    exit "$COMPILE_STATUS"
-fi
+"$CMAKE" --build "$BUILD" --target strikers_android_scan
 
 echo "==> generate stubs"
-# In place, in src/platform/, exactly as tools/rebuild.sh does on every other platform: the file is
-# generated output that happens to be checked in, and it is per-object-format -- the copy in the
-# tree carries Mach-O's leading underscore on every symbol and satisfies nothing on ELF.
-STRIKERS_BUILD_DIR="$BUILD" "$PYTHON" tools/genstubs.py \
-    --noop '^GX|^snd|^AI|^AR'
+STRIKERS_SYMBOL_PREFIX= STRIKERS_BUILD_DIR="$BUILD" "$PYTHON" tools/genstubs.py \
+    --noop '^GX|^snd|^AI|^AR' --out "$BUILD/stubs_generated.c"
 
-echo "==> link"
-"$CMAKE" --build "$BUILD" --target strikers --parallel
-
-LIB="$BUILD/libmain.so"
-if [ ! -f "$LIB" ]; then
-    echo "==> FAILED: no libmain.so produced" >&2
-    exit 1
-fi
+echo "==> link and stage"
+"$CMAKE" --build "$BUILD" --target strikers_android_stage
 
 # Java resolves these entry points by name at runtime.
+LIB="$BUILD/jniLibs/arm64-v8a/libmain.so"
 SYMBOLS=$(llvm-nm --dynamic --defined-only --format=posix "$LIB" | cut -d ' ' -f 1)
 for SYMBOL in SDL_main \
     Java_io_github_newcoke_strikers_TouchGamepad_sendNative \
@@ -95,39 +61,3 @@ for SYMBOL in SDL_main \
         exit 1
     fi
 done
-
-echo "==> stage"
-STAGE="$BUILD/jniLibs/$ABI"
-mkdir -p "$STAGE"
-cp "$LIB" "$STAGE/"
-# libc++_shared.so has to travel with it. A plain CMake build does not copy it the way the Android
-# Gradle plugin's own CMake integration would, and without it the library does not load at all.
-CXXLIB="$NDK/toolchains/llvm/prebuilt/$NDK_HOST/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so"
-if [ ! -f "$CXXLIB" ]; then
-    echo "No libc++_shared.so at $CXXLIB" >&2
-    exit 1
-fi
-cp "$CXXLIB" "$STAGE/"
-# The Vulkan stand-in, which is what Dawn's dlopen("libvulkan.so") is meant to find; see
-# src/platform/vulkan_shim.c.
-if [ -f "$BUILD/libvulkan.so" ]; then
-    cp "$BUILD/libvulkan.so" "$STAGE/"
-fi
-# The adrenotools hooks. Nothing links against these: adrenotools loads them by name out of the
-# app's library directory, which is also why the APK has to extract its libraries rather than map
-# them from inside itself.
-for _hook in libmain_hook.so libfile_redirect_hook.so libgsl_alloc_hook.so libhook_impl.so; do
-    _found=$(find "$BUILD/_deps" -name "$_hook" -print -quit 2>/dev/null || true)
-    if [ -n "$_found" ]; then
-        cp "$_found" "$STAGE/"
-    else
-        echo "Missing $_hook. Custom Vulkan drivers require this library." >&2
-        exit 1
-    fi
-done
-# SDL is linked into libmain.so, so there is no libSDL3.so to stage; see tools/configure-android.sh.
-
-echo "==> ok: $STAGE"
-ls -l "$STAGE"
-echo
-echo "Next: cd android && ./gradlew assembleRelease"
