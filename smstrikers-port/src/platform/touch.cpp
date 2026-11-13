@@ -19,7 +19,7 @@ namespace {
 
 // The state the overlay last sent, and the only thing that crosses between the
 // two threads. Written from the UI thread inside the JNI call, read from the
-// game thread in PortTouchDraw: relaxed atomics rather than a lock, because a
+// game thread in PortTouchUpdate: relaxed atomics rather than a lock, because a
 // frame that reads the previous button state is a frame late and a frame late
 // is invisible, while a UI thread that blocks on the game's loop is a dropped
 // touch the player feels.
@@ -214,12 +214,7 @@ bool suppressed()
 
 } // namespace
 
-// The overlay is drawn by OverlayView on the Java side and the fingers never
-// reach here, so there is nothing to do with an SDL event. Kept because the
-// call site in main.cpp is the same on every platform.
-extern "C" void PortTouchEvent(const SDL_Event* event) { (void)event; }
-
-extern "C" void PortTouchDraw(void)
+extern "C" void PortTouchUpdate(void)
 {
     if (s_disabled || suppressed())
         return;
@@ -273,8 +268,7 @@ Java_io_github_newcoke_strikers_TouchGamepad_nativeIsActive(JNIEnv*, jclass)
 
 #else // !__ANDROID__ || !PORT_USE_AURORA
 
-extern "C" void PortTouchEvent(const SDL_Event* event) { (void)event; }
-extern "C" void PortTouchDraw(void) {}
+extern "C" void PortTouchUpdate(void) {}
 extern "C" int PortTouchActive(void) { return 0; }
 
 #endif

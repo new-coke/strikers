@@ -150,6 +150,12 @@ public class StrikersActivity extends SDLActivity {
     }
 
     @Override
+    protected void onPause() {
+        if (overlay != null) overlay.releaseAll();
+        super.onPause();
+    }
+
+    @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) enterImmersiveMode();

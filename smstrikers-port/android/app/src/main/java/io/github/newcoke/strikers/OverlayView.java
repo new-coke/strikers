@@ -117,6 +117,7 @@ public class OverlayView extends View {
 
     // Scale positions against the landscape bounds to keep controls within thumb reach.
     private void layoutControls(int w, int h) {
+        releaseAll();
         controls.clear();
         leftStick = cStick = null;
         if (w == 0 || h == 0) return;

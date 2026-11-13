@@ -770,10 +770,6 @@ static void PortPumpAuroraEvents()
         if (ev->type == AURORA_SDL_EVENT)
             PortPromptsEvent(&ev->sdl); // PORT: button prompts
 
-        // PORT: the on-screen controls, which are fingers on Android and nothing anywhere else.
-        if (ev->type == AURORA_SDL_EVENT)
-            PortTouchEvent(&ev->sdl);
-
         // PORT: the limiter follows the display the window is on, which can move or change mode.
         if (ev->type == AURORA_SDL_EVENT
             && (ev->sdl.type == SDL_EVENT_WINDOW_DISPLAY_CHANGED
@@ -1003,8 +999,8 @@ int main(int argc, char* argv[])
 
         // PORT: Between begin_frame and end_frame, which is the window in which Aurora's ImGui frame is open.
         PortOverlayDraw();
-        // PORT: the on-screen controls, in the same window and after the overlay so they are on top of it.
-        PortTouchDraw();
+        // PORT: submit Android touch input to the SDL virtual controller.
+        PortTouchUpdate();
 
         PortMaybeRequestCapture();
         // PORT: STRIKERS_CAPTURE_EVERY, a shot every N frames, so a long run can be watched rather than sampled once.
