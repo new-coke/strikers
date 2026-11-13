@@ -29,6 +29,9 @@ extern "C" void PortDebugFrame(void);   // PORT: defined in Game.cpp
 #include <stdio.h>   // PORT: snprintf
 #endif
 #include "port/benchmark.h"
+#if defined(__ANDROID__)
+void PortAndroidPublishFrameMetrics();
+#endif
 #include "port/lockstep.h"
 #include "port/online.h"
 #include "port/online_game.h"
@@ -1021,6 +1024,9 @@ int main(int argc, char* argv[])
         }
         aurora_end_frame();
         PortBenchFrameEnd();
+#if defined(__ANDROID__)
+        PortAndroidPublishFrameMetrics();
+#endif
         s_portFrame++;
 
         // Stop on the benchmark's own clock rather than a frame count: the question is always "how did it behave over N seconds".

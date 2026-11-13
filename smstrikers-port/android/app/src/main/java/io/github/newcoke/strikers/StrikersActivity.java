@@ -89,6 +89,7 @@ public class StrikersActivity extends SDLActivity {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         hud = new HudView(this);
+        hud.setVisibility(prefs.getBoolean(GamePreferences.HUD) ? View.VISIBLE : View.GONE);
         FrameLayout.LayoutParams hudLayout = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         hudLayout.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;

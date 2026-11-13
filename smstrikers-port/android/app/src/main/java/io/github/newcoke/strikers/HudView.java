@@ -53,17 +53,25 @@ public class HudView extends View {
 
         soc = Build.VERSION.SDK_INT >= 31 && Build.SOC_MODEL != null
                 && !"unknown".equals(Build.SOC_MODEL) ? Build.SOC_MODEL : Build.HARDWARE;
+    }
 
-        // Sample game timings at 4 Hz and poll system metrics once per second.
-        handler.post(new Runnable() {
-            private int tick;
-            @Override public void run() {
-                readFrameMetrics();
-                if (tick++ % 4 == 0) readSystemMetrics();
-                invalidate();
-                handler.postDelayed(this, 250);
-            }
-        });
+    // Sample game timings at 4 Hz and system metrics once per second while visible.
+    private final Runnable sample = new Runnable() {
+        private int tick;
+
+        @Override public void run() {
+            readFrameMetrics();
+            if (tick++ % 4 == 0) readSystemMetrics();
+            invalidate();
+            handler.postDelayed(this, 250);
+        }
+    };
+
+    @Override
+    public void onVisibilityAggregated(boolean visible) {
+        super.onVisibilityAggregated(visible);
+        handler.removeCallbacks(sample);
+        if (visible) handler.post(sample);
     }
 
     @Override
@@ -80,7 +88,7 @@ public class HudView extends View {
 
     @Override
     protected void onDetachedFromWindow() {
-        handler.removeCallbacksAndMessages(null);
+        handler.removeCallbacks(sample);
         super.onDetachedFromWindow();
     }
 
