@@ -23,33 +23,35 @@ final class GameConfig {
 
     private GameConfig() {}
 
-    static boolean writeSettings(Context ctx, GamePreferences prefs) {
-        Map<String, String> keys = new LinkedHashMap<>();
+    static String readSetting(Context context, String key, String fallback) {
+        AtomicFile file = new AtomicFile(configFile(context));
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(file.openRead(), StandardCharsets.UTF_8))) {
+            for (String line; (line = reader.readLine()) != null; ) {
+                String trimmed = line.trim();
+                if (trimmed.startsWith("#") || trimmed.startsWith(";")) continue;
+                if (!key.equals(keyOnLine(trimmed))) continue;
+                String value = trimmed.substring(trimmed.indexOf('=') + 1).trim();
+                if (value.length() >= 2 && (value.startsWith("\"") && value.endsWith("\"")
+                        || value.startsWith("'") && value.endsWith("'"))) {
+                    value = value.substring(1, value.length() - 1);
+                }
+                return value;
+            }
+        } catch (java.io.FileNotFoundException ignored) {
+            return fallback;
+        } catch (IOException e) {
+            Log.w(TAG, "Could not read game setting " + key, e);
+        }
+        return fallback;
+    }
 
-        // The engine scales from 448 lines. Zero uses its display-dependent default.
-        final int lines = prefs.getInt(GamePreferences.RESOLUTION_LINES);
-        keys.put("res_scale", lines <= 0 ? null : String.format(
-                java.util.Locale.ROOT, "%.3f", lines / 448f));
-        keys.put("msaa", Integer.toString(prefs.getInt(GamePreferences.MSAA)));
-        keys.put("aniso", Integer.toString(prefs.getInt(GamePreferences.ANISO)));
-        final int fps = prefs.getInt(GamePreferences.FPS_LIMIT);
-        keys.put("fps_limit", fps < 0 ? null : Integer.toString(fps));
-        keys.put("vsync", prefs.getBoolean(GamePreferences.VSYNC) ? "1" : "0");
-        keys.put("widen",
-                prefs.getInt(GamePreferences.STRETCH_MENUS) != 0 ? "stretch" : "fit");
-        final int aspect = prefs.getInt(GamePreferences.ASPECT_RATIO);
-        keys.put("aspect", aspect == 1 ? "16:9" : aspect == 2 ? "4:3" : null);
+    static boolean writeSetting(Context context, String key, String value) {
+        return rewrite(configFile(context), java.util.Collections.singletonMap(key, value));
+    }
 
-        keys.put("unlock_all", prefs.getBoolean(GamePreferences.UNLOCK_ALL) ? "1" : null);
-        keys.put("region", emptyToNull(prefs.getString(GamePreferences.DISC_REGION)));
-        keys.put("language", emptyToNull(prefs.getString(GamePreferences.GAME_LANGUAGE)));
-
-        // The Android HUD owns the performance display.
-        keys.put("overlay", null);
-
-        keys.put("backend", "vulkan");
-
-        return rewrite(new File(StrikersHome.homeDir(ctx), "strikers.ini"), keys);
+    private static File configFile(Context context) {
+        return new File(StrikersHome.homeDir(context), "strikers.ini");
     }
 
     static boolean writeTexturePack(Context context, String pack) {
@@ -57,11 +59,7 @@ final class GameConfig {
         boolean off = TexturePacks.OFF.equals(pack);
         keys.put("textures", off ? "0" : null);
         keys.put("texture_pack", off || pack.isEmpty() ? null : "\"" + pack + "\"");
-        return rewrite(new File(StrikersHome.homeDir(context), "strikers.ini"), keys);
-    }
-
-    private static String emptyToNull(String s) {
-        return s == null || s.isEmpty() ? null : s;
+        return rewrite(configFile(context), keys);
     }
 
     // Keep commented keys in place so users can find the available settings.
@@ -84,11 +82,13 @@ final class GameConfig {
 
         for (int i = 0; i < lines.size(); i++) {
             final String original = lines.get(i);
+            final String trimmed = original.trim();
             final String name = keyOnLine(original);
             if (name == null || !keys.containsKey(name)) continue;
             if (Boolean.TRUE.equals(written.get(name))) {
-                // The engine uses the last assignment, so disable duplicate keys.
-                lines.set(i, "#" + original);
+                if (!trimmed.startsWith("#") && !trimmed.startsWith(";")) {
+                    lines.set(i, "#" + original);
+                }
                 continue;
             }
             final String value = keys.get(name);
@@ -139,6 +139,7 @@ final class GameConfig {
             final char c = name.charAt(i);
             if (!Character.isLetterOrDigit(c) && c != '_') return null;
         }
-        return name.toLowerCase(java.util.Locale.ROOT);
+        String normalized = name.toLowerCase(java.util.Locale.ROOT);
+        return normalized.startsWith("strikers_") ? normalized.substring(9) : normalized;
     }
 }

@@ -26,23 +26,23 @@ public class SettingsActivity extends NativeSettingsActivity {
     }
 
     private void display(PreferenceGroup group) {
-        choice(group, R.string.res_internal, GamePreferences.RESOLUTION_LINES,
+        choice(group, R.string.res_internal, "res_scale",
                 new String[]{getString(R.string.res_follow), getString(R.string.res_original),
-                        "720", "1080", "1440", "2160"}, new int[]{0, 448, 720, 1080, 1440, 2160});
-        choice(group, R.string.fps_limit, GamePreferences.FPS_LIMIT,
+                        "720", "1080", "1440", "2160"}, new String[]{"", "1.000", "1.607", "2.411", "3.214", "4.821"}, "");
+        choice(group, R.string.fps_limit, "fps_limit",
                 new String[]{getString(R.string.fps_follow_display),
                         getString(R.string.fps_unlimited), "30", "60", "120"},
-                new int[]{-1, 0, 30, 60, 120});
-        toggle(group, R.string.vsync, R.string.vsync_help, GamePreferences.VSYNC, true);
-        choice(group, R.string.aspect, GamePreferences.ASPECT_RATIO,
-                new String[]{getString(R.string.res_follow), "16:9", "4:3"}, new int[]{0, 1, 2});
-        choice(group, R.string.widen, GamePreferences.STRETCH_MENUS,
+                new String[]{"", "0", "30", "60", "120"}, "");
+        toggle(group, R.string.vsync, R.string.vsync_help, "vsync", true);
+        choice(group, R.string.aspect, "aspect",
+                new String[]{getString(R.string.res_follow), "16:9", "4:3"}, new String[]{"", "16:9", "4:3"}, "");
+        choice(group, R.string.widen, "widen",
                 new String[]{getString(R.string.widen_fit), getString(R.string.widen_stretch)},
-                new int[]{0, 1});
-        choice(group, R.string.msaa, GamePreferences.MSAA,
-                new String[]{getString(R.string.off), "4x"}, new int[]{1, 4});
-        choice(group, R.string.aniso, GamePreferences.ANISO,
-                new String[]{"1x", "2x", "4x", "8x", "16x"}, new int[]{1, 2, 4, 8, 16});
+                new String[]{"fit", "stretch"}, "stretch");
+        choice(group, R.string.msaa, "msaa",
+                new String[]{getString(R.string.off), "4x"}, new String[]{"1", "4"}, "1");
+        choice(group, R.string.aniso, "aniso",
+                new String[]{"1x", "2x", "4x", "8x", "16x"}, new String[]{"1", "2", "4", "8", "16"}, "16");
         row(group, R.string.video_driver, R.string.drivers_restart_note,
                 () -> startActivity(new Intent(this, DriverSettingsActivity.class)));
         row(group, R.string.texture_packs, R.string.texture_packs_summary,
@@ -59,7 +59,7 @@ public class SettingsActivity extends NativeSettingsActivity {
     }
 
     private void game(PreferenceGroup group) {
-        toggle(group, R.string.unlock_all, R.string.unlock_all_help, GamePreferences.UNLOCK_ALL, true);
+        toggle(group, R.string.unlock_all, R.string.unlock_all_help, "unlock_all", true);
         toggle(group, R.string.hud, R.string.hud_help, GamePreferences.HUD, false);
         ListPreference language = list(group, R.string.language, AppLocale.displayNames(this), AppLocale.LANGUAGE_TAGS,
                 prefs.getString(GamePreferences.APP_LANGUAGE));
@@ -77,22 +77,36 @@ public class SettingsActivity extends NativeSettingsActivity {
         toggle.setPersistent(false);
         toggle.setTitle(title);
         if (summary != 0) toggle.setSummary(summary);
-        toggle.setChecked(prefs.getBoolean(key));
+        String current = nativeSetting ? GameConfig.readSetting(this, key, null) : null;
+        toggle.setChecked(nativeSetting
+                ? current != null && (key.equals("unlock_all") || enabled(current))
+                : prefs.getBoolean(key));
         toggle.setOnPreferenceChangeListener((item, value) -> {
+            if (nativeSetting) {
+                return saveSetting(key, (boolean) value ? "1" : key.equals("unlock_all") ? null : "0");
+            }
             prefs.setBoolean(key, (boolean) value);
-            if (nativeSetting) saveConfig();
             return true;
         });
         group.addPreference(toggle);
     }
 
-    private void choice(PreferenceGroup group, int title, String key, String[] names, int[] values) {
-        String[] entries = new String[values.length];
-        for (int i = 0; i < values.length; i++) entries[i] = Integer.toString(values[i]);
-        ListPreference option = list(group, title, names, entries, Integer.toString(prefs.getInt(key)));
+    private static boolean enabled(String value) {
+        try {
+            return Long.parseUnsignedLong(value) != 0;
+        } catch (NumberFormatException ignored) {
+            return false;
+        }
+    }
+
+    private void choice(PreferenceGroup group, int title, String key, String[] names,
+                        String[] values, String fallback) {
+        String selected = GameConfig.readSetting(this, key, fallback);
+        ListPreference option = list(group, title, names, values, selected);
+        if (option.findIndexOfValue(selected) < 0) option.setSummary(selected.replace("%", "%%"));
         option.setOnPreferenceChangeListener((item, value) -> {
-            prefs.setInt(key, Integer.parseInt(value.toString()));
-            saveConfig();
+            if (!saveSetting(key, value.toString().isEmpty() ? null : value.toString())) return false;
+            option.setSummary("%s");
             return true;
         });
     }
@@ -146,7 +160,9 @@ public class SettingsActivity extends NativeSettingsActivity {
         return java.text.NumberFormat.getPercentInstance().format(value / 100.0);
     }
 
-    private void saveConfig() {
-        if (!GameConfig.writeSettings(this, prefs)) toast(R.string.ini_write_failed);
+    private boolean saveSetting(String key, String value) {
+        if (GameConfig.writeSetting(this, key, value)) return true;
+        toast(R.string.ini_write_failed);
+        return false;
     }
 }
