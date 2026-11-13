@@ -108,4 +108,9 @@
     <string name="controller_bindings">Controller bindings</string>
     <string name="controller_default">Game default</string>
     <string name="controller_bindings_help">GameCube button mappings apply to all controllers, including the touch pad, when the game starts. Press Guide in-game to open Settings on controllers that expose it to Android.</string>
+    <string name="controller_swap_sticks">Stick layout</string>
+    <string name="controller_swapped">Swap left and right sticks</string>
+    <string name="controller_deadzone">Controller stick deadzone</string>
+    <string name="controller_rumble">Controller rumble</string>
+    <string name="controller_rumble_strength">Rumble strength</string>
 </resources>

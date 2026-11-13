@@ -62,6 +62,19 @@ public class SettingsActivity extends NativeSettingsActivity {
     private void controller(PreferenceGroup group) {
         row(group, getText(R.string.controller_bindings),
                 getText(R.string.controller_bindings_help), null);
+        choice(group, R.string.controller_swap_sticks, "pad_swap_sticks",
+                new String[]{getString(R.string.controller_default),
+                        getString(R.string.controller_swapped)}, new String[]{"", "1"}, "");
+        choice(group, R.string.controller_deadzone, "pad_deadzone",
+                new String[]{getString(R.string.controller_default), "0%", "10%", "15%",
+                        "20%", "24%", "30%", "40%"},
+                new String[]{"", "0", "0.10", "0.15", "0.20", "0.24", "0.30", "0.40"}, "");
+        choice(group, R.string.controller_rumble, "pad_rumble",
+                new String[]{getString(R.string.controller_default), getString(R.string.off)},
+                new String[]{"", "0"}, "");
+        choice(group, R.string.controller_rumble_strength, "pad_rumble_strength",
+                new String[]{getString(R.string.controller_default), "25%", "50%", "75%", "100%"},
+                new String[]{"", "25", "50", "75", "100"}, "");
         String[] buttons = {"", "a", "b", "x", "y", "leftshoulder", "rightshoulder",
                 "back", "start", "leftstick", "rightstick", "dpup", "dpdown", "dpleft", "dpright"};
         String[] labels = {getString(R.string.controller_default), "A ↓", "B →", "X ←", "Y ↑",
