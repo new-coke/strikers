@@ -59,6 +59,12 @@ from Settings.
 The on-screen pad and USB or Bluetooth controllers use the same SDL gamepad path. The on-screen pad
 hides when a physical controller connects.
 
+Open **Controller bindings** in Settings to map GameCube buttons to physical
+button positions. The choices use the same `pad_*` keys as the Switch port.
+They apply to all controllers, including the virtual touch pad, on the next
+game start. **Game default** clears the override for that button. During play,
+press **Guide** to open Settings when Android delivers that button to the app.
+
 ## Texture packs
 
 Open **Settings → Video → Texture packs** and import a Dolphin-format ZIP with PNG or DDS

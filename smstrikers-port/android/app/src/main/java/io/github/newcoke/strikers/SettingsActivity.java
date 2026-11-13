@@ -19,6 +19,7 @@ public class SettingsActivity extends NativeSettingsActivity {
         display(section(screen, R.string.sec_video));
         controls(section(screen, R.string.sec_controls));
         game(section(screen, R.string.sec_game));
+        controller(section(screen, R.string.controller_bindings));
         PreferenceGroup about = section(screen, R.string.sec_about);
         row(about, getText(R.string.game_folder), StrikersHome.homeDir(this).getAbsolutePath(), null);
         row(about, getText(R.string.setup_title), getText(R.string.about_note), null);
@@ -58,10 +59,35 @@ public class SettingsActivity extends NativeSettingsActivity {
         row(group, getText(R.string.sec_controls), getText(R.string.controls_note), null);
     }
 
+    private void controller(PreferenceGroup group) {
+        row(group, getText(R.string.controller_bindings),
+                getText(R.string.controller_bindings_help), null);
+        String[] buttons = {"", "a", "b", "x", "y", "leftshoulder", "rightshoulder",
+                "back", "start", "leftstick", "rightstick", "dpup", "dpdown", "dpleft", "dpright"};
+        String[] labels = {getString(R.string.controller_default), "A ↓", "B →", "X ←", "Y ↑",
+                "LB / L1", "RB / R1", "Back / Select", "Start", "L3", "R3", "D-pad ↑",
+                "D-pad ↓", "D-pad ←", "D-pad →"};
+        String[] keys = {"a", "b", "x", "y", "z", "start", "l", "r",
+                "dpad_up", "dpad_down", "dpad_left", "dpad_right"};
+        String[] targets = {"A", "B", "X", "Y", "Z", "Start", "L", "R",
+                "D-pad ↑", "D-pad ↓", "D-pad ←", "D-pad →"};
+        String[] triggerButtons = java.util.Arrays.copyOf(buttons, buttons.length + 2);
+        String[] triggerLabels = java.util.Arrays.copyOf(labels, labels.length + 2);
+        triggerButtons[buttons.length] = "lefttrigger";
+        triggerButtons[buttons.length + 1] = "righttrigger";
+        triggerLabels[labels.length] = "LT / L2";
+        triggerLabels[labels.length + 1] = "RT / R2";
+        for (int i = 0; i < keys.length; i++) {
+            boolean trigger = keys[i].equals("l") || keys[i].equals("r");
+            choice(group, targets[i], "pad_" + keys[i], trigger ? triggerLabels : labels,
+                    trigger ? triggerButtons : buttons, "");
+        }
+    }
+
     private void game(PreferenceGroup group) {
         toggle(group, R.string.unlock_all, R.string.unlock_all_help, "unlock_all", true);
         toggle(group, R.string.hud, R.string.hud_help, GamePreferences.HUD, false);
-        ListPreference language = list(group, R.string.language, AppLocale.displayNames(this), AppLocale.LANGUAGE_TAGS,
+        ListPreference language = list(group, getText(R.string.language), AppLocale.displayNames(this), AppLocale.LANGUAGE_TAGS,
                 prefs.getString(GamePreferences.APP_LANGUAGE));
         language.setOnPreferenceChangeListener((item, value) -> {
             if (!value.equals(prefs.getString(GamePreferences.APP_LANGUAGE))) {
@@ -101,6 +127,11 @@ public class SettingsActivity extends NativeSettingsActivity {
 
     private void choice(PreferenceGroup group, int title, String key, String[] names,
                         String[] values, String fallback) {
+        choice(group, getText(title), key, names, values, fallback);
+    }
+
+    private void choice(PreferenceGroup group, CharSequence title, String key, String[] names,
+                        String[] values, String fallback) {
         String selected = GameConfig.readSetting(this, key, fallback);
         ListPreference option = list(group, title, names, values, selected);
         if (option.findIndexOfValue(selected) < 0) option.setSummary(selected.replace("%", "%%"));
@@ -111,7 +142,7 @@ public class SettingsActivity extends NativeSettingsActivity {
         });
     }
 
-    private ListPreference list(PreferenceGroup group, int title, CharSequence[] labels,
+    private ListPreference list(PreferenceGroup group, CharSequence title, CharSequence[] labels,
                                 CharSequence[] values, String selected) {
         ListPreference option = new ListPreference(this);
         option.setPersistent(false);

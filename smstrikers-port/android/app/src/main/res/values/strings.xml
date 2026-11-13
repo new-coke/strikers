@@ -105,4 +105,7 @@
     <string name="texture_remove_failed">Could not remove the pack.</string>
     <string name="hud_frame">FRAME</string>
     <string name="forget_disc">Forget disc selection</string>
+    <string name="controller_bindings">Controller bindings</string>
+    <string name="controller_default">Game default</string>
+    <string name="controller_bindings_help">GameCube button mappings apply to all controllers, including the touch pad, when the game starts. Press Guide in-game to open Settings on controllers that expose it to Android.</string>
 </resources>

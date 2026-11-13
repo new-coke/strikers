@@ -14,6 +14,8 @@ import android.util.Log;
 
 import java.io.IOException;
 import android.view.Gravity;
+import android.view.InputDevice;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -81,10 +83,7 @@ public class StrikersActivity extends SDLActivity {
         prefs = new GamePreferences(this);
         overlay = new OverlayView(this);
         overlay.applyPreferences(prefs);
-        overlay.setSettingsListener(() -> {
-            overlay.releaseAll();
-            startActivity(new Intent(this, SettingsActivity.class));
-        });
+        overlay.setSettingsListener(this::openSettings);
         addContentView(overlay, new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
@@ -97,6 +96,22 @@ public class StrikersActivity extends SDLActivity {
         addContentView(hud, hudLayout);
 
         watchController();
+    }
+
+    private void openSettings() {
+        if (overlay != null) overlay.releaseAll();
+        startActivity(new Intent(this, SettingsActivity.class));
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        // Android may reserve Guide on some devices. Leave gameplay buttons to SDL.
+        if (overlay != null && event.isFromSource(InputDevice.SOURCE_GAMEPAD)
+                && event.getKeyCode() == KeyEvent.KEYCODE_BUTTON_MODE) {
+            if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) openSettings();
+            return true;
+        }
+        return super.dispatchKeyEvent(event);
     }
 
     private void enterImmersiveMode() {
