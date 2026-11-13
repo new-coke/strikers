@@ -52,6 +52,10 @@ void synchronize();
 #define PANEL_HAS_TYPING 1
 #endif
 
+#if defined(__ANDROID__)
+void PortAndroidShareRoomAddress(const char* address);
+#endif
+
 namespace online_panel
 {
 namespace
@@ -2115,7 +2119,14 @@ void draw_address(const OnlineState& st)
     const bool havePublic = pub != ONLINE_PUBLIC_NONE && st.publicAddress[0] != '\0';
     const float rows =
         pub == ONLINE_PUBLIC_NONE ? (showNetworks ? 30.0f : 23.0f) : (showNetworks ? 37.0f : 30.0f);
-    begin_screen("##online.address", text(T_INVITE), nullptr, pub == ONLINE_PUBLIC_LOOKING, rows);
+    float panelRows = rows;
+#if defined(__ANDROID__)
+    const char* shareAddress = havePublic ? st.publicAddress : room_where(st);
+    const bool canShare = host && s_showAddresses && shareAddress[0] != '\0';
+    if (canShare)
+        panelRows += 4.0f;
+#endif
+    begin_screen("##online.address", text(T_INVITE), nullptr, pub == ONLINE_PUBLIC_LOOKING, panelRows);
     const char* lan = room_where(st);
     if (pub == ONLINE_PUBLIC_NONE)
     {
@@ -2146,6 +2157,10 @@ void draw_address(const OnlineState& st)
         section(text(T_FOR_INTERNET));
         public_status(pub);
     }
+#if defined(__ANDROID__)
+    if (canShare && row("share", "Share room address"))
+        PortAndroidShareRoomAddress(shareAddress);
+#endif
     if (host && st.roomOtherAddressCount > 0)
     {
         ImGui::Dummy(ImVec2(0.0f, px() * 0.5f));

@@ -39,6 +39,9 @@
         android:isGame="true"
         android:appCategory="game">
 
+        <activity android:name=".TouchLayoutActivity"
+            android:exported="false" android:screenOrientation="sensorLandscape" />
+
         <activity
             android:name=".SetupActivity"
             android:exported="true"

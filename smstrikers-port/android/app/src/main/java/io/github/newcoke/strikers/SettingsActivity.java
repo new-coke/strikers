@@ -79,6 +79,8 @@ public class SettingsActivity extends NativeSettingsActivity {
             prefs.setString(GamePreferences.TOUCH_LAYOUT, value.toString());
             return true;
         });
+        row(group, R.string.touch_edit_positions, R.string.touch_edit_positions_help,
+                () -> startActivity(new Intent(this, TouchLayoutActivity.class)));
         slider(group, R.string.opacity, GamePreferences.TOUCH_OPACITY, 25, 100);
         slider(group, R.string.size, GamePreferences.TOUCH_SIZE, 75, 130);
         slider(group, R.string.deadzone, GamePreferences.TOUCH_DEADZONE, 0, 35);

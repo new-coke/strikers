@@ -98,6 +98,17 @@ public class StrikersActivity extends SDLActivity {
         watchController();
     }
 
+    // Called by the shared invite panel on the SDL thread.
+    public void shareRoomAddress(String address) {
+        runOnUiThread(() -> {
+            if (isFinishing() || isDestroyed()) return;
+            Intent share = new Intent(Intent.ACTION_SEND)
+                    .setType("text/plain")
+                    .putExtra(Intent.EXTRA_TEXT, address);
+            startActivity(Intent.createChooser(share, getText(R.string.share_room_address)));
+        });
+    }
+
     private void openSettings() {
         if (overlay != null) overlay.releaseAll();
         startActivity(new Intent(this, SettingsActivity.class));

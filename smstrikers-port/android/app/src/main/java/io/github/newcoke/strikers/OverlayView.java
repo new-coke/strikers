@@ -18,6 +18,9 @@ import java.util.List;
 /** Draws the touch gamepad and converts pointer input to virtual controller state. */
 public class OverlayView extends View {
 
+    private static final int CONTROL_ACCENT = 0xFFF2E9D4;
+    private static final int SETTINGS_ACCENT = 0xFFFFC552;
+
     private enum Role { BUTTON, LEFT_TRIGGER, RIGHT_TRIGGER, STICK, C_STICK, MENU }
 
     private enum Shape { CIRCLE, RECTANGLE, STICK }
@@ -56,6 +59,23 @@ public class OverlayView extends View {
     private float leftStickDx, leftStickDy, cStickDx, cStickDy;
     private Control leftStick, cStick;
 
+    private android.content.SharedPreferences positions;
+    private Control dragging;
+    private boolean editing;
+    private float dragX, dragY;
+
+    void enableEditing() {
+        editing = true;
+        opacity = Math.max(opacity, 0.75f);
+        showDpad = showCStick = true;
+    }
+
+    void resetPositions() {
+        positions.edit().clear().apply();
+        layoutControls(getWidth(), getHeight());
+        invalidate();
+    }
+
     private float opacity = 1f;
     private String layout = GamePreferences.TOUCH_STANDARD;
     private float size = 1f;
@@ -83,6 +103,7 @@ public class OverlayView extends View {
     void applyPreferences(GamePreferences prefs) {
         opacity = prefs.getInt(GamePreferences.TOUCH_OPACITY) / 100f;
         layout = prefs.getString(GamePreferences.TOUCH_LAYOUT);
+        positions = getContext().getSharedPreferences("touch_positions_" + layout, Context.MODE_PRIVATE);
         size = prefs.getInt(GamePreferences.TOUCH_SIZE) / 100f;
         deadzone = prefs.getInt(GamePreferences.TOUCH_DEADZONE) / 100f;
         showDpad = prefs.getBoolean(GamePreferences.SHOW_DPAD);
@@ -120,6 +141,7 @@ public class OverlayView extends View {
     // Scale positions against the landscape bounds to keep controls within thumb reach.
     private void layoutControls(int w, int h) {
         releaseAll();
+        dragging = null;
         controls.clear();
         leftStick = cStick = null;
         if (w == 0 || h == 0) return;
@@ -224,6 +246,13 @@ public class OverlayView extends View {
         menu.cy = bottom - centerButtonHeight / 2f;
         menu.radius = settingsRadius;
         controls.add(menu);
+        for (Control control : controls) {
+            String key = positionKey(control);
+            if (positions != null && positions.contains(key + "_x")) {
+                moveControl(control, leftInset + positions.getFloat(key + "_x", 0f) * usableWidth(),
+                        topInset + positions.getFloat(key + "_y", 0f) * usableHeight());
+            }
+        }
     }
 
     private Control face(String label, float cx, float cy, float radius, int buttonMask) {
@@ -252,12 +281,12 @@ public class OverlayView extends View {
         return Math.max(0, Math.min(255, Math.round(value * opacity)));
     }
 
-    private void paintControl(Canvas canvas, Path shape, float pressure) {
-        controlPaint.setColor(Color.BLACK);
-        controlPaint.setAlpha(alpha(105));
+    private void paintControl(Canvas canvas, Path shape, float pressure, int accent) {
+        controlPaint.setColor(0xFF151D29);
+        controlPaint.setAlpha(alpha(155));
         canvas.drawPath(shape, controlPaint);
-        controlPaint.setColor(Color.WHITE);
-        controlPaint.setAlpha(alpha(38 + 52 * pressure));
+        controlPaint.setColor(accent);
+        controlPaint.setAlpha(alpha(22 + 62 * pressure));
         canvas.drawPath(shape, controlPaint);
 
         final float d = Math.max(1f, getResources().getDisplayMetrics().density);
@@ -267,8 +296,8 @@ public class OverlayView extends View {
         controlPaint.setAlpha(alpha(46));
         canvas.drawPath(shape, controlPaint);
         controlPaint.setStrokeWidth(d);
-        controlPaint.setColor(Color.WHITE);
-        controlPaint.setAlpha(alpha(110 + 90 * pressure));
+        controlPaint.setColor(accent);
+        controlPaint.setAlpha(alpha(125 + 90 * pressure));
         canvas.drawPath(shape, controlPaint);
         controlPaint.setStyle(Paint.Style.FILL);
     }
@@ -277,7 +306,7 @@ public class OverlayView extends View {
         final float radius = c.bounds.height() * 0.42f;
         path.reset();
         path.addRoundRect(c.bounds, radius, radius, Path.Direction.CW);
-        paintControl(canvas, path, c.pressure);
+        paintControl(canvas, path, c.pressure, c.role == Role.MENU ? SETTINGS_ACCENT : CONTROL_ACCENT);
         final float textSize = c.bounds.height() * (c.label.length() > 2 ? 0.30f : 0.42f);
         drawLabel(canvas, c.label, c.bounds.centerX(), c.bounds.centerY(), textSize, c.pressure);
     }
@@ -285,7 +314,7 @@ public class OverlayView extends View {
     private void drawCircle(Canvas canvas, Control c) {
         path.reset();
         path.addCircle(c.cx, c.cy, c.radius, Path.Direction.CW);
-        paintControl(canvas, path, c.pressure);
+        paintControl(canvas, path, c.pressure, c.role == Role.MENU ? SETTINGS_ACCENT : CONTROL_ACCENT);
         if (c.role == Role.MENU) {
             drawSettingsIcon(canvas, c);
         } else {
@@ -335,7 +364,7 @@ public class OverlayView extends View {
         final float k = dist > maxTravel ? maxTravel / dist : 1f;
         path.reset();
         path.addCircle(c.cx + dx * k, c.cy + dy * k, c.radius * 0.56f, Path.Direction.CW);
-        paintControl(canvas, path, c.pressure);
+        paintControl(canvas, path, c.pressure, c.role == Role.MENU ? SETTINGS_ACCENT : CONTROL_ACCENT);
     }
 
     private void drawLabel(Canvas canvas, String s, float cx, float cy,
@@ -353,6 +382,7 @@ public class OverlayView extends View {
     // A pointer stays with the control it pressed until release or cancellation.
     @Override
     public boolean onTouchEvent(MotionEvent e) {
+        if (editing) return editTouch(e);
         final int action = e.getActionMasked();
         switch (action) {
             case MotionEvent.ACTION_DOWN:
@@ -382,8 +412,76 @@ public class OverlayView extends View {
         return true;
     }
 
+    private static String positionKey(Control control) {
+        return control.role.name() + "_" + control.buttonMask;
+    }
+
+    private int usableWidth() {
+        return Math.max(1, getWidth() - leftInset - rightInset);
+    }
+
+    private int usableHeight() {
+        return Math.max(1, getHeight() - topInset - bottomInset);
+    }
+
+    private void moveControl(Control control, float x, float y) {
+        boolean rectangle = control.shape == Shape.RECTANGLE;
+        float halfWidth = rectangle ? control.bounds.width() / 2f : control.radius;
+        float halfHeight = rectangle ? control.bounds.height() / 2f : control.radius;
+        x = Math.max(leftInset + halfWidth, Math.min(x, getWidth() - rightInset - halfWidth));
+        y = Math.max(topInset + halfHeight, Math.min(y, getHeight() - bottomInset - halfHeight));
+        if (rectangle) control.bounds.offsetTo(x - halfWidth, y - halfHeight);
+        else {
+            control.cx = x;
+            control.cy = y;
+        }
+    }
+
+    private boolean editTouch(MotionEvent event) {
+        float x = event.getX(), y = event.getY();
+        switch (event.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                for (int i = controls.size() - 1; i >= 0; --i) {
+                    Control control = controls.get(i);
+                    if (!control.contains(x, y)) continue;
+                    dragging = control;
+                    dragX = x - (control.shape == Shape.RECTANGLE ? control.bounds.centerX() : control.cx);
+                    dragY = y - (control.shape == Shape.RECTANGLE ? control.bounds.centerY() : control.cy);
+                    break;
+                }
+                break;
+            case MotionEvent.ACTION_MOVE:
+                if (dragging != null && event.getPointerCount() == 1) moveControl(dragging, x - dragX, y - dragY);
+                break;
+            case MotionEvent.ACTION_UP:
+                if (dragging != null) {
+                    float cx = dragging.shape == Shape.RECTANGLE ? dragging.bounds.centerX() : dragging.cx;
+                    float cy = dragging.shape == Shape.RECTANGLE ? dragging.bounds.centerY() : dragging.cy;
+                    String key = positionKey(dragging);
+                    positions.edit()
+                            .putFloat(key + "_x", (cx - leftInset) / usableWidth())
+                            .putFloat(key + "_y", (cy - topInset) / usableHeight()).apply();
+                    dragging = null;
+                    performClick();
+                }
+                break;
+            case MotionEvent.ACTION_POINTER_DOWN:
+            case MotionEvent.ACTION_CANCEL:
+                if (dragging != null) layoutControls(getWidth(), getHeight());
+                break;
+        }
+        invalidate();
+        return true;
+    }
+
+    @Override
+    public boolean performClick() {
+        return super.performClick();
+    }
+
     private void press(int pointerId, float x, float y) {
-        for (Control c : controls) {
+        for (int i = controls.size() - 1; i >= 0; --i) {
+            Control c = controls.get(i);
             if (c.pointerId < 0 && c.contains(x, y)) {
                 c.pointerId = pointerId;
                 if (c.shape == Shape.STICK) move(pointerId, x, y);
@@ -424,6 +522,7 @@ public class OverlayView extends View {
     }
 
     private void sendState() {
+        if (editing) return;
         int buttons = 0;
         int leftTrigger = 0, rightTrigger = 0;
         for (Control c : controls) {

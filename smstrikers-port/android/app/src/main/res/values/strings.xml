@@ -122,4 +122,8 @@
     <string name="performance_battery">Battery (448p, 30 FPS)</string>
     <string name="performance_balanced">Balanced (720p, 60 FPS)</string>
     <string name="performance_high_refresh">High refresh (720p, display refresh rate)</string>
+    <string name="touch_edit_positions">Move touch controls</string>
+    <string name="touch_edit_positions_help">Drag controls to arrange the selected layout. Positions save as you go.</string>
+    <string name="touch_reset_positions">Reset positions</string>
+    <string name="share_room_address">Share room address</string>
 </resources>
