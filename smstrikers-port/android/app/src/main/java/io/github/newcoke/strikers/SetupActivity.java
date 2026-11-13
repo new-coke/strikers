@@ -39,8 +39,7 @@ public class SetupActivity extends Activity {
         chooseDisc = findViewById(R.id.choose_disc);
         play = findViewById(R.id.play);
         chooseDisc.setOnClickListener(view -> chooseDisc());
-        play.setOnClickListener(view -> startActivity(
-                new Intent(this, StrikersActivity.class).setData(DiscSelection.uri(this))));
+        play.setOnClickListener(view -> launchGame());
         findViewById(R.id.settings).setOnClickListener(view ->
                 startActivity(new Intent(this, SettingsActivity.class)));
         updateDisc();
@@ -66,6 +65,46 @@ public class SetupActivity extends Activity {
         discName.setText(name != null ? name : getString(R.string.no_disc_selected));
         chooseDisc.setEnabled(!checkingDisc);
         play.setEnabled(!checkingDisc && name != null);
+    }
+
+    private void launchGame() {
+        Uri uri = DiscSelection.uri(this);
+        if (uri == null) {
+            if (StrikersHome.findLocalGameData(this) == null) {
+                updateDisc();
+                showDiscError(getString(R.string.disc_open_failed));
+                return;
+            }
+            startActivity(new Intent(this, StrikersActivity.class));
+            return;
+        }
+
+        checkingDisc = true;
+        updateDisc();
+        new Thread(() -> {
+            String error = null;
+            try {
+                DiscSelection.checkImage(this, uri);
+            } catch (IOException | SecurityException e) {
+                error = discErrorMessage(e);
+            }
+            String message = error;
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                checkingDisc = false;
+                updateDisc();
+                if (message == null) {
+                    startActivity(new Intent(this, StrikersActivity.class).setData(uri));
+                } else {
+                    chooseDisc.requestFocus();
+                    new AlertDialog.Builder(this).setTitle(R.string.disc_image)
+                            .setMessage(message)
+                            .setPositiveButton(R.string.disc_image, (dialog, which) -> chooseDisc())
+                            .setNegativeButton(android.R.string.cancel, null)
+                            .show();
+                }
+            });
+        }, "disc-launch-check").start();
     }
 
     private void chooseDisc() {
@@ -95,11 +134,8 @@ public class SetupActivity extends Activity {
             try {
                 DiscSelection.checkImage(this, uri);
                 DiscSelection.remember(this, uri, DiscSelection.displayName(this, uri), readGrant);
-            } catch (IOException e) {
-                error = e.getLocalizedMessage() != null
-                        ? e.getLocalizedMessage() : getString(R.string.disc_open_failed);
-            } catch (SecurityException e) {
-                error = getString(R.string.disc_open_failed);
+            } catch (IOException | SecurityException e) {
+                error = discErrorMessage(e);
             }
             String message = error;
             runOnUiThread(() -> {
@@ -110,6 +146,11 @@ public class SetupActivity extends Activity {
                 else play.requestFocus();
             });
         }, "disc-picker").start();
+    }
+
+    private String discErrorMessage(Exception error) {
+        String message = error instanceof IOException ? error.getLocalizedMessage() : null;
+        return message != null ? message : getString(R.string.disc_open_failed);
     }
 
     private void showDiscError(String message) {
