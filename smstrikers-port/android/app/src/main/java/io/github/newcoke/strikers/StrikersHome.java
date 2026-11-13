@@ -53,6 +53,8 @@ final class StrikersHome {
         Drivers.Driver d = Drivers.findById(context, new GamePreferences(context)
                 .getString(GamePreferences.DRIVER));
         if (d == null) {
+            setenv("STRIKERS_VK_DRIVER_DIR", "");
+            setenv("STRIKERS_VK_DRIVER", "");
             Log.i(TAG, "Using the system Vulkan driver");
             return;
         }
