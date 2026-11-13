@@ -1,6 +1,7 @@
 package io.github.newcoke.strikers;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
@@ -46,12 +47,22 @@ final class DiscSelection {
         Uri previous = uri(context);
         context.getContentResolver().takePersistableUriPermission(uri, readGrant);
         preferences(context).edit().putString(URI, uri.toString()).putString(NAME, name).apply();
-        if (previous != null && !previous.equals(uri)) {
-            try {
-                context.getContentResolver().releasePersistableUriPermission(previous, readGrant);
-            } catch (SecurityException ignored) {
-                // Android may already have revoked access to the previous image.
-            }
+        if (!uri.equals(previous)) release(context, previous);
+    }
+
+    static void forget(Context context) {
+        Uri previous = uri(context);
+        preferences(context).edit().remove(URI).remove(NAME).apply();
+        release(context, previous);
+    }
+
+    private static void release(Context context, Uri uri) {
+        if (uri == null) return;
+        try {
+            context.getContentResolver().releasePersistableUriPermission(
+                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        } catch (SecurityException ignored) {
+            // The provider may already have revoked the grant.
         }
     }
 

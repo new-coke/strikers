@@ -104,4 +104,5 @@
     <string name="texture_import_failed">Could not import the pack. Check the ZIP and available storage.</string>
     <string name="texture_remove_failed">Could not remove the pack.</string>
     <string name="hud_frame">FRAME</string>
+    <string name="forget_disc">Forget disc selection</string>
 </resources>

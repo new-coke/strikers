@@ -20,6 +20,7 @@ public class SetupActivity extends Activity {
 
     private Button chooseDisc;
     private Button play;
+    private Button forgetDisc;
     private TextView discName;
     private boolean checkingDisc;
     private String appLanguage;
@@ -38,6 +39,12 @@ public class SetupActivity extends Activity {
         discName = findViewById(R.id.disc_name);
         chooseDisc = findViewById(R.id.choose_disc);
         play = findViewById(R.id.play);
+        forgetDisc = findViewById(R.id.forget_disc);
+        forgetDisc.setOnClickListener(view -> {
+            DiscSelection.forget(this);
+            updateDisc();
+            chooseDisc.requestFocus();
+        });
         chooseDisc.setOnClickListener(view -> chooseDisc());
         play.setOnClickListener(view -> launchGame());
         findViewById(R.id.settings).setOnClickListener(view ->
@@ -63,6 +70,8 @@ public class SetupActivity extends Activity {
             if (local != null) name = local.getName();
         }
         discName.setText(name != null ? name : getString(R.string.no_disc_selected));
+        forgetDisc.setVisibility(DiscSelection.uri(this) == null ? View.GONE : View.VISIBLE);
+        forgetDisc.setEnabled(!checkingDisc);
         chooseDisc.setEnabled(!checkingDisc);
         play.setEnabled(!checkingDisc && name != null);
     }

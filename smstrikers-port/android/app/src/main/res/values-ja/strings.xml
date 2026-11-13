@@ -79,4 +79,5 @@
     <string name="drv_general_desc">その他の Adreno 向けのビルド。</string>
     <string name="drv_qualcomm_desc">Qualcomm 自身のドライバで、端末のものより新しいもの。</string>
     <string name="hud_frame">フレーム</string>
+    <string name="forget_disc">ディスクの選択を解除</string>
 </resources>

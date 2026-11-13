@@ -79,4 +79,5 @@
     <string name="drv_general_desc">Der Build für die übrigen Adrenos.</string>
     <string name="drv_qualcomm_desc">Ein Treiber von Qualcomm selbst, neuer als der des Geräts.</string>
     <string name="hud_frame">BILD</string>
+    <string name="forget_disc">Disc-Auswahl zurücksetzen</string>
 </resources>

@@ -79,4 +79,5 @@
     <string name="drv_general_desc">Сборка для остальных Adreno.</string>
     <string name="drv_qualcomm_desc">Драйвер самой Qualcomm, новее того, что стоит на устройстве.</string>
     <string name="hud_frame">КАДР</string>
+    <string name="forget_disc">Сбросить выбор диска</string>
 </resources>

@@ -79,4 +79,5 @@
     <string name="drv_general_desc">A compilação para as demais Adreno.</string>
     <string name="drv_qualcomm_desc">Um driver da própria Qualcomm, mais novo do que o do aparelho.</string>
     <string name="hud_frame">QUADRO</string>
+    <string name="forget_disc">Limpar seleção de disco</string>
 </resources>

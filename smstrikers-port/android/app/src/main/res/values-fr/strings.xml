@@ -79,4 +79,5 @@
     <string name="drv_general_desc">La version pour les autres Adreno.</string>
     <string name="drv_qualcomm_desc">Un pilote de Qualcomm elle-même, plus récent que celui de l\'appareil.</string>
     <string name="hud_frame">IMAGE</string>
+    <string name="forget_disc">Oublier la sélection du disque</string>
 </resources>

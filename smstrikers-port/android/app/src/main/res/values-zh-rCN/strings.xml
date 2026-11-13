@@ -79,4 +79,5 @@
     <string name="drv_general_desc">面向其他 Adreno 的构建。</string>
     <string name="drv_qualcomm_desc">高通自家的驱动，比设备上的更新。</string>
     <string name="hud_frame">帧</string>
+    <string name="forget_disc">清除光盘选择</string>
 </resources>
