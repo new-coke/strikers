@@ -7,12 +7,14 @@ import android.util.Log;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -24,6 +26,8 @@ import java.util.zip.ZipInputStream;
 final class Drivers {
 
     private static final String TAG = "strikers";
+    private static final int MAX_ENTRIES = 256;
+    private static final long MAX_ARCHIVE_BYTES = 256L * 1024 * 1024;
 
     static final class Driver {
         final String id;  // Installed folder name.
@@ -88,7 +92,7 @@ final class Drivers {
         File[] directories = installedDirectory(ctx).listFiles();
         if (directories == null) return drivers;
         for (File directory : directories) {
-            if (!directory.isDirectory()) continue;
+            if (directory.getName().startsWith(".") || !directory.isDirectory()) continue;
             Driver d = readMetadata(directory);
             if (d != null) drivers.add(d);
         }
@@ -110,7 +114,9 @@ final class Drivers {
         try {
             JSONObject j = new JSONObject(readText(meta));
             String soname = j.optString("libraryName", "");
-            if (soname.isEmpty() || !new File(directory, soname).isFile()) {
+            if (soname.isEmpty() || !new File(soname).getName().equals(soname)
+                    || !Files.isRegularFile(new File(directory, soname).toPath(),
+                            LinkOption.NOFOLLOW_LINKS)) {
                 Log.w(TAG, "Driver in " + directory + " is missing the library named in meta.json");
                 return null;
             }
@@ -129,47 +135,84 @@ final class Drivers {
             java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
             byte[] b = new byte[8192];
             int n;
-            while ((n = in.read(b)) > 0) out.write(b, 0, n);
+            while ((n = in.read(b)) != -1) {
+                if (out.size() + n > 64 * 1024) throw new IOException("Driver metadata is too large");
+                out.write(b, 0, n);
+            }
             return out.toString("UTF-8");
         }
     }
 
-    // Stage and validate a complete package before replacing the installed copy.
     static Driver install(Context ctx, InputStream zip, String suggestedName) {
-        File destination = new File(installedDirectory(ctx), slug(suggestedName));
-        File staging = new File(installedDirectory(ctx), ".tmp-" + System.currentTimeMillis());
-        //noinspection ResultOfMethodCallIgnored
-        staging.mkdirs();
-        try (ZipInputStream z = new ZipInputStream(zip)) {
-            ZipEntry e;
-            while ((e = z.getNextEntry()) != null) {
-                if (e.isDirectory()) continue;
-                // Flatten entry paths so extraction stays inside the staging directory.
-                String name = new File(e.getName()).getName();
-                if (name.isEmpty()) continue;
-                try (OutputStream out = new FileOutputStream(new File(staging, name))) {
-                    byte[] b = new byte[64 * 1024];
-                    int n;
-                    while ((n = z.read(b)) > 0) out.write(b, 0, n);
+        try {
+            return installArchive(installedDirectory(ctx), zip, suggestedName);
+        } catch (IOException e) {
+            Log.w(TAG, "Could not install driver", e);
+            return null;
+        }
+    }
+
+    static synchronized Driver installArchive(File root, InputStream input, String name)
+            throws IOException {
+        String id = slug(name);
+        if (id.startsWith(".")) throw new IOException("Invalid driver name");
+        File destination = new File(root, id);
+        File work = Files.createTempDirectory(root.toPath(), ".install-").toFile();
+        File staging = new File(work, "new");
+        File previous = new File(work, "previous");
+        boolean preserveBackup = false;
+        try {
+            Files.createDirectory(staging.toPath());
+            extract(input, staging);
+            Driver driver = readMetadata(staging);
+            if (driver == null) throw new IOException("Missing or invalid driver metadata");
+
+            if (destination.exists()) Files.move(destination.toPath(), previous.toPath());
+            preserveBackup = previous.exists();
+            try {
+                Files.move(staging.toPath(), destination.toPath());
+            } catch (IOException error) {
+                if (preserveBackup) {
+                    try {
+                        Files.move(previous.toPath(), destination.toPath());
+                        preserveBackup = false;
+                    } catch (IOException restoreError) {
+                        error.addSuppressed(restoreError);
+                        Log.e(TAG, "Previous driver retained at " + previous, restoreError);
+                    }
+                }
+                throw error;
+            }
+            preserveBackup = false;
+            return new Driver(id, driver.name, driver.description, driver.soname, destination);
+        } finally {
+            if (!preserveBackup) deleteTree(work);
+        }
+    }
+
+    private static void extract(InputStream input, File staging) throws IOException {
+        byte[] buffer = new byte[64 * 1024];
+        long bytes = 0;
+        int entries = 0;
+        try (ZipInputStream zip = new ZipInputStream(input)) {
+            for (ZipEntry entry; (entry = zip.getNextEntry()) != null; ) {
+                if (++entries > MAX_ENTRIES) throw new IOException("Too many driver ZIP entries");
+                // Preserve support for ZIPs with a top-level folder.
+                String name = new File(entry.getName()).getName();
+                if (name.isEmpty() || name.equals(".") || name.equals("..")) {
+                    throw new IOException("Invalid driver ZIP entry");
+                }
+                try (OutputStream out = entry.isDirectory() ? null : Files.newOutputStream(
+                        new File(staging, name).toPath(), StandardOpenOption.CREATE_NEW,
+                        StandardOpenOption.WRITE)) {
+                    for (int count; (count = zip.read(buffer)) != -1; ) {
+                        bytes += count;
+                        if (bytes > MAX_ARCHIVE_BYTES) throw new IOException("Driver ZIP is too large");
+                        if (out != null) out.write(buffer, 0, count);
+                    }
                 }
             }
-        } catch (IOException e) {
-            Log.w(TAG, "Could not extract driver", e);
-            deleteTree(staging);
-            return null;
         }
-
-        Driver staged = readMetadata(staging);
-        if (staged == null) {
-            deleteTree(staging);
-            return null;
-        }
-        deleteTree(destination);
-        if (!staging.renameTo(destination)) {
-            deleteTree(staging);
-            return null;
-        }
-        return readMetadata(destination);
     }
 
     // Performs network and disk I/O. Call from a worker thread.
@@ -206,13 +249,13 @@ final class Drivers {
         }
     }
 
-    static void remove(Context ctx, Driver d) {
+    static synchronized void remove(Driver d) {
         deleteTree(d.directory);
     }
 
     private static void deleteTree(File f) {
         if (f == null || !f.exists()) return;
-        File[] children = f.listFiles();
+        File[] children = Files.isSymbolicLink(f.toPath()) ? null : f.listFiles();
         if (children != null) {
             for (File c : children) deleteTree(c);
         }

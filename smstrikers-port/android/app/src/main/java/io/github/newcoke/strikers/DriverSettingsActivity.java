@@ -66,7 +66,7 @@ public class DriverSettingsActivity extends NativeSettingsActivity {
         new AlertDialog.Builder(this).setTitle(R.string.remove_item).setMessage(driver.name)
                 .setNegativeButton(android.R.string.cancel, null)
                 .setPositiveButton(android.R.string.ok, (dialog, which) -> {
-                    Drivers.remove(this, driver);
+                    Drivers.remove(driver);
                     if (driver.id.equals(prefs.getString(GamePreferences.DRIVER))) {
                         prefs.setString(GamePreferences.DRIVER, "");
                     }
