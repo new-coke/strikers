@@ -39,6 +39,11 @@ void PortPerspective(float consoleFov, float consoleRatio,
 
 // Whether to draw the 38-unit cinematic letterbox bars over a cutscene.
 int PortDrawCinematicBars(void);
+
+// What to do with a front-end element that was authored to span the whole 640-wide design frame
+// when the frame is wider than that. 1 stretches it across; 0 leaves it at its authored size,
+// centred, and carries its own edge colour out to the sides. See STRIKERS_WIDEN in aspect.c.
+int PortWidenStretch(void);
 float PortGetFrustumStretch(void);
 void  PortSetFrustumStretch(float stretch);       // [0,1]
 float PortGetCameraBlendOverride(void);           // < 0 means derived

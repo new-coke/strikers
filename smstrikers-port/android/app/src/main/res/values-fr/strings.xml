@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="disc_image">Image disque…</string>
+    <string name="no_disc_selected">Aucune image disque sélectionnée</string>
+    <string name="disc_open_failed">Impossible d’ouvrir l’image disque. Sélectionnez-la à nouveau.</string>
+    <string name="disc_requires_seek">Cette image ne peut pas être lue directement. Téléchargez une copie locale et sélectionnez-la.</string>
+    <string name="disc_format_unsupported">Sélectionnez une image disque de Super Mario Strikers (.iso, .gcm, .ciso ou .gcz).</string>
+    <string name="play">Jouer</string>
+
+    <string name="settings">Réglages</string>
+    <string name="video_driver">Pilote vidéo</string>
+    <string name="language">Langue</string>
+    <string name="language_system">Suivre le système</string>
+
+    <string name="done">Terminé</string>
+    <string name="sec_controls">Commandes</string>
+    <string name="sec_video">Vidéo</string>
+    <string name="sec_game">Jeu</string>
+    <string name="sec_about">À propos</string>
+    <string name="ini_write_failed">Impossible d\'écrire strikers.ini</string>
+
+    <string name="opacity">Opacité</string>
+    <string name="size">Taille</string>
+    <string name="deadzone">Zone morte</string>
+    <string name="deadzone_help">De combien le pouce peut glisser avant que le jeu voie un mouvement.</string>
+    <string name="dpad">Croix directionnelle</string>
+    <string name="right_stick">Stick droit</string>
+    <string name="controls_note">La disposition est celle de la Xbox 360 et le jeu est un jeu GameCube : LT devient L, RT devient R, LB et RB deviennent Z. L3, R3 et BACK n\'existent pas sur la manette de la console et ne font rien.</string>
+
+    <string name="res_internal">Résolution interne</string>
+    <string name="res_follow">Suivre l\'écran</string>
+    <string name="res_original">448 (d\'origine)</string>
+    <string name="res_help">Au-dessus de l\'écran c\'est du supersampling : cela lisse les bords et coûte du GPU.</string>
+    <string name="fps_limit">Limite d\'images</string>
+    <string name="fps_follow_display">Fréquence de l’écran</string>
+    <string name="fps_help">Par défaut, la limite suit la fréquence de rafraîchissement de l’écran. Une limite plus basse peut économiser la batterie.</string>
+    <string name="fps_unlimited">Sans limite</string>
+    <string name="vsync">Synchroniser avec l\'écran</string>
+    <string name="vsync_help">Désactivé, les images sont libres. Activé, la présentation attend la dalle — et alors la limite ci-dessus ne compte plus, c\'est la dalle qui décide.</string>
+    <string name="msaa">Anticrénelage</string>
+    <string name="off">Désactivé</string>
+    <string name="aniso">Filtrage anisotrope</string>
+    <string name="aniso_help">Netteté des textures vues de biais, comme la pelouse.</string>
+    <string name="widen">Fond large</string>
+    <string name="widen_fit">Garder les proportions</string>
+    <string name="widen_stretch">Étirer</string>
+    <string name="widen_help">Que faire des décors de menu sur un écran plus large que 4:3. Étirer remplit la largeur ; Garder les proportions les laisse à la taille dessinée et prolonge la couleur du bord vers les côtés.</string>
+    <string name="aspect">Proportions</string>
+    <string name="aspect_help">Suivre l\'écran utilise toute la largeur du téléphone. 4:3 est le format de la GameCube, avec des bandes sur les côtés — le cadrage d\'origine, et la référence à laquelle comparer quand quelque chose semble décalé.</string>
+    <string name="video_note">Le jeu les lit à l\'ouverture. Fermez et rouvrez le jeu pour qu\'ils s\'appliquent.</string>
+
+    <string name="unlock_all">Tout débloquer</string>
+    <string name="unlock_all_help">Tous les stades, équipes et coupes.</string>
+    <string name="hud">Panneau de performance</string>
+    <string name="hud_help">FPS, coût de l\'image, GPU, RAM et température, en haut de l\'écran.</string>
+    <string name="game_note">Tout débloquer est lu à l\'ouverture du jeu. Le panneau s\'applique tout de suite.</string>
+
+    <string name="driver_system">Celui du système</string>
+    <string name="game_folder">Dossier du jeu</string>
+    <string name="about_note">Au-dessus du portage natif de Yannick Suter et de ses contributeurs, avec Aurora pour GX/VI/PAD/CARD sur WebGPU et SDL3.\n\nProjet non officiel, sans lien avec Nintendo ni Next Level Games. Aucun fichier du jeu n\'accompagne cette application.</string>
+
+    <string name="drivers_intro">Turnip est le pilote Vulkan libre de Mesa pour les GPU Adreno. Sur un appareil dont le pilote d\'usine est ancien, il est souvent plus rapide ; sur un appareil récent, il ne change souvent rien. Changer de pilote n\'affecte pas le reste du système — cela ne vaut que pour cette application.</string>
+    <string name="sec_inuse">En service</string>
+    <string name="driver_system_sub">Celui que le fabricant de l\'appareil a installé.</string>
+    <string name="drivers_restart_note">Le changement s\'applique à la prochaine ouverture du jeu.</string>
+    <string name="sec_add">Ajouter</string>
+    <string name="import_zip">Importer un fichier .zip</string>
+    <string name="import_zip_sub">Un paquet de pilote au format de libadrenotools.</string>
+    <string name="drivers_download_note">Télécharger apporte du code tiers qui s\'exécute dans le jeu. Les adresses sont visibles à dessein. Si l\'une d\'elles cesse de répondre, téléchargez-la à la main et utilisez Importer.</string>
+    <string name="driver_removed">Pilote supprimé</string>
+    <string name="no_file_picker">Aucun sélecteur de fichiers sur l\'appareil</string>
+    <string name="installing">Installation…</string>
+    <string name="downloading">Téléchargement de %1$s…</string>
+    <string name="driver_failed">Raté. Le fichier n\'est pas un paquet de pilote, ou le téléchargement a échoué.</string>
+    <string name="driver_installed">%1$s installé et sélectionné</string>
+
+    <string name="drv_a8xx_desc">La version pour la famille 8xx, celle du Snapdragon 8 Elite.</string>
+    <string name="drv_general_desc">La version pour les autres Adreno.</string>
+    <string name="drv_qualcomm_desc">Un pilote de Qualcomm elle-même, plus récent que celui de l\'appareil.</string>
+    <string name="hud_frame">IMAGE</string>
+    <string name="forget_disc">Oublier la sélection du disque</string>
+</resources>

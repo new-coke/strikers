@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="disc_image">ディスクイメージ…</string>
+    <string name="no_disc_selected">ディスクイメージが選択されていません</string>
+    <string name="disc_open_failed">ディスクイメージを開けませんでした。もう一度選択してください。</string>
+    <string name="disc_requires_seek">このイメージは直接読み込めません。端末にダウンロードしてから選択してください。</string>
+    <string name="disc_format_unsupported">スーパーマリオストライカーズのディスクイメージ（.iso、.gcm、.ciso、.gcz）を選択してください。</string>
+    <string name="play">プレイ</string>
+
+    <string name="settings">設定</string>
+    <string name="video_driver">グラフィックドライバ</string>
+    <string name="language">言語</string>
+    <string name="language_system">システムに従う</string>
+
+    <string name="done">完了</string>
+    <string name="sec_controls">操作</string>
+    <string name="sec_video">映像</string>
+    <string name="sec_game">ゲーム</string>
+    <string name="sec_about">情報</string>
+    <string name="ini_write_failed">strikers.ini を書き込めませんでした</string>
+
+    <string name="opacity">不透明度</string>
+    <string name="size">サイズ</string>
+    <string name="deadzone">遊び</string>
+    <string name="deadzone_help">ゲームが動きとみなすまでに親指が滑ってよい距離。</string>
+    <string name="dpad">十字キー</string>
+    <string name="right_stick">右スティック</string>
+    <string name="controls_note">配置は Xbox 360 のもので、ゲームはゲームキューブ用です。LT が L、RT が R、LB と RB が Z になります。L3、R3、BACK は本体のコントローラーに存在せず、何もしません。</string>
+
+    <string name="res_internal">内部解像度</string>
+    <string name="res_follow">画面に合わせる</string>
+    <string name="res_original">448（オリジナル）</string>
+    <string name="res_help">画面より上はスーパーサンプリングです。輪郭がなめらかになり、GPU を消費します。</string>
+    <string name="fps_limit">フレーム上限</string>
+    <string name="fps_follow_display">画面に合わせる</string>
+    <string name="fps_help">既定では画面のリフレッシュレートに合わせます。上限を下げると電池の消費を抑えられます。</string>
+    <string name="fps_unlimited">制限なし</string>
+    <string name="vsync">画面と同期</string>
+    <string name="vsync_help">オフならフレームは自由に進みます。オンだと表示がパネルを待つので、上の上限は効かず、パネルが決めます。</string>
+    <string name="msaa">アンチエイリアス</string>
+    <string name="off">オフ</string>
+    <string name="aniso">異方性フィルタ</string>
+    <string name="aniso_help">芝生のように斜めから見るテクスチャの鮮明さ。</string>
+    <string name="widen">横長の背景</string>
+    <string name="widen_fit">比率を保つ</string>
+    <string name="widen_stretch">引き伸ばす</string>
+    <string name="widen_help">4:3 より横長の画面でメニューの絵をどう扱うか。引き伸ばすと幅いっぱいになり、比率を保つと描かれたままの大きさで端の色が左右へ伸びます。</string>
+    <string name="aspect">画面の比率</string>
+    <string name="aspect_help">画面に合わせると端末の幅をすべて使います。4:3 はゲームキューブ本来の形で、左右に帯が入ります — これが元の画角で、何かがずれて見えるときに見比べる基準です。</string>
+    <string name="video_note">ゲームは起動時にこれらを読みます。反映するにはゲームを閉じて開き直してください。</string>
+
+    <string name="unlock_all">すべて解放</string>
+    <string name="unlock_all_help">すべてのスタジアム、チーム、カップ。</string>
+    <string name="hud">パフォーマンスパネル</string>
+    <string name="hud_help">FPS、フレーム時間、GPU、RAM、温度を画面上部に表示。</string>
+    <string name="game_note">すべて解放はゲームの起動時に読まれます。パネルはすぐ反映されます。</string>
+
+    <string name="driver_system">システムのもの</string>
+    <string name="game_folder">ゲームフォルダ</string>
+    <string name="about_note">Yannick Suter と協力者によるネイティブ移植の上に、WebGPU と SDL3 上で GX/VI/PAD/CARD を担う Aurora を用いています。\n\n非公式のプロジェクトです。任天堂および Next Level Games とは無関係です。ゲームのファイルは同梱していません。</string>
+
+    <string name="drivers_intro">Turnip は Adreno GPU 向けの Mesa のオープンな Vulkan ドライバです。工場出荷時のドライバが古い端末では速くなることが多く、新しい端末では変わらないことが多いです。ドライバの変更はシステム全体には影響せず、このアプリだけに適用されます。</string>
+    <string name="sec_inuse">使用中</string>
+    <string name="driver_system_sub">端末のメーカーが入れたもの。</string>
+    <string name="drivers_restart_note">変更は次にゲームを開いたときから有効になります。</string>
+    <string name="sec_add">追加</string>
+    <string name="import_zip">.zip ファイルを取り込む</string>
+    <string name="import_zip_sub">libadrenotools 形式のドライバパッケージ。</string>
+    <string name="drivers_download_note">ダウンロードするとゲーム内で動く第三者のコードが入ります。アドレスはあえて見えるようにしてあります。どれかが応答しなくなったら、手動でダウンロードして「取り込む」を使ってください。</string>
+    <string name="driver_removed">ドライバを削除しました</string>
+    <string name="no_file_picker">この端末にはファイル選択アプリがありません</string>
+    <string name="installing">インストール中…</string>
+    <string name="downloading">%1$s をダウンロード中…</string>
+    <string name="driver_failed">できませんでした。ドライバパッケージではないか、ダウンロードに失敗しました。</string>
+    <string name="driver_installed">%1$s をインストールして選択しました</string>
+
+    <string name="drv_a8xx_desc">8xx 系向けのビルド。Snapdragon 8 Elite がこれです。</string>
+    <string name="drv_general_desc">その他の Adreno 向けのビルド。</string>
+    <string name="drv_qualcomm_desc">Qualcomm 自身のドライバで、端末のものより新しいもの。</string>
+    <string name="hud_frame">フレーム</string>
+    <string name="forget_disc">ディスクの選択を解除</string>
+</resources>

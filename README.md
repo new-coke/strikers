@@ -43,6 +43,8 @@ Download your platform's archive above or from [Releases](https://github.com/new
 
 The wiki also lists the supported discs and how to report a problem. [Troubleshooting](https://github.com/new-coke/strikers/wiki/Troubleshooting) covers issues you may have playing or installing the game.
 
+This fork provides an [Android build](smstrikers-port/README-android.md) for ARM64 devices. See the Android guide for the APK, setup, and device testing.
+
 ## Roadmap
 
 The [roadmap board](https://miro.com/app/board/uXjVEelphdQ=/?share_link_id=275053969981 ) lists planned features and how far along each one is.
@@ -56,6 +58,7 @@ The [roadmap board](https://miro.com/app/board/uXjVEelphdQ=/?share_link_id=27505
 - [Linux](https://github.com/new-coke/strikers/wiki/Development#linux-and-steam-deck)
 - [Steam Deck](https://github.com/new-coke/strikers/wiki/Development#linux-and-steam-deck)
 - [Nintendo Switch](https://github.com/new-coke/strikers/wiki/Development#nintendo-switch)
+- [Android](smstrikers-port/README-android.md)
 
 
 ## Notes

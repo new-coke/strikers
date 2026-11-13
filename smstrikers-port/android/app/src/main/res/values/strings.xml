@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The default language is ENGLISH and not Portuguese, even though the app was written in
+  Portuguese, because that is what values/ means: the strings any device falls back to when its
+  own language is not among the ones below. A Portuguese default would show Portuguese to a
+  Japanese phone, which is the one thing a fallback must not do. The Portuguese is in
+  values-pt-rBR/ with the rest.
+-->
+<resources>
+    <string name="app_name" translatable="false">Strikers</string>
+
+    <!-- The launcher -->
+    <string name="setup_title" translatable="false">Super Mario Strikers</string>
+    <string name="disc_image">Disc Image…</string>
+    <string name="no_disc_selected">No disc image selected</string>
+    <string name="disc_open_failed">Could not open the disc image. Select it again.</string>
+    <string name="disc_requires_seek">This image cannot be read directly. Download a local copy and select it.</string>
+    <string name="disc_format_unsupported">Choose a Super Mario Strikers disc image (.iso, .gcm, .ciso or .gcz).</string>
+    <string name="play">Play</string>
+
+    <string name="settings">Settings</string>
+    <string name="video_driver">Video driver</string>
+    <string name="language">Language</string>
+    <string name="language_system">Follow the system</string>
+
+    <!-- Settings -->
+    <string name="done">Done</string>
+    <string name="sec_controls">Controls</string>
+    <string name="sec_video">Video</string>
+    <string name="sec_game">Game</string>
+    <string name="sec_about">About</string>
+    <string name="ini_write_failed">Could not write strikers.ini</string>
+
+    <string name="opacity">Opacity</string>
+    <string name="size">Size</string>
+    <string name="deadzone">Dead zone</string>
+    <string name="deadzone_help">How far the thumb may slide before the game sees movement.</string>
+    <string name="dpad">D-pad</string>
+    <string name="right_stick">Right stick</string>
+    <string name="controls_note">The layout is the Xbox 360 one and the game is a GameCube game: LT becomes L, RT becomes R, LB and RB become Z. L3, R3 and BACK do not exist on the console controller and do nothing.</string>
+
+    <string name="res_internal">Internal resolution</string>
+    <string name="res_follow">Follow the screen</string>
+    <string name="res_original">448 (original)</string>
+    <string name="res_help">Above the screen it is supersampling: it smooths edges and costs GPU.</string>
+    <string name="fps_limit">Frame limit</string>
+    <string name="fps_follow_display">Follow display</string>
+    <string name="fps_help">By default, the frame limit follows the display refresh rate. A lower limit can save battery.</string>
+    <string name="fps_unlimited">No limit</string>
+    <string name="vsync">Sync to the screen</string>
+    <string name="vsync_help">Off leaves the frames free. On, presentation waits for the panel — and then the limit above does not matter, the panel decides.</string>
+    <string name="msaa">Anti-aliasing</string>
+    <string name="off">Off</string>
+    <string name="aniso">Anisotropic filter</string>
+    <string name="aniso_help">Sharpness of textures seen edge-on, like the pitch.</string>
+    <string name="widen">Wide background</string>
+    <string name="widen_fit">Keep proportions</string>
+    <string name="widen_stretch">Stretch</string>
+    <string name="widen_help">What to do with the menu art on a screen wider than 4:3. Stretch fills the width; Keep proportions leaves it at the size it was drawn and carries its edge colour out to the sides.</string>
+    <string name="aspect">Aspect ratio</string>
+    <string name="aspect_help">Follow the screen uses the whole width of the phone. 4:3 is the GameCube\'s own shape, with bars at the sides — the original framing, and the one to compare against when something looks out of place.</string>
+    <string name="video_note">The game reads these when it opens. Close and reopen the game for them to take effect.</string>
+
+    <string name="unlock_all">Unlock everything</string>
+    <string name="unlock_all_help">Every stadium, team and cup.</string>
+    <string name="hud">Performance panel</string>
+    <string name="hud_help">FPS, frame cost, GPU, RAM and temperature, at the top of the screen.</string>
+    <string name="game_note">Unlock everything is read when the game opens. The panel takes effect immediately.</string>
+
+    <string name="driver_system">The system one</string>
+    <string name="game_folder">Game folder</string>
+    <string name="about_note">On top of the native port by Yannick Suter and contributors, with Aurora for GX/VI/PAD/CARD over WebGPU and SDL3.\n\nAn unofficial project, unaffiliated with Nintendo or Next Level Games. No game files ship with this app.</string>
+
+    <!-- Drivers -->
+    <string name="drivers_intro">Turnip is Mesa\'s open Vulkan driver for Adreno GPUs. On a device whose factory driver is old it usually goes faster; on a new device it usually changes nothing. Changing the driver does not affect the rest of the system — it applies to this app only.</string>
+    <string name="sec_inuse">In use</string>
+    <string name="driver_system_sub">The one the device maker installed.</string>
+    <string name="drivers_restart_note">The change takes effect the next time the game opens.</string>
+    <string name="sec_add">Add</string>
+    <string name="import_zip">Import a .zip file</string>
+    <string name="import_zip_sub">A driver package in the libadrenotools format.</string>
+    <string name="drivers_download_note">Downloading brings third-party code that runs inside the game. The addresses are in plain sight on purpose. If one of them stops responding, download it by hand and use Import.</string>
+    <string name="driver_removed">Driver removed</string>
+    <string name="no_file_picker">No file picker on this device</string>
+    <string name="installing">Installing…</string>
+    <string name="downloading">Downloading %1$s…</string>
+    <string name="driver_failed">No luck. The file is not a driver package, or the download failed.</string>
+    <string name="driver_installed">%1$s installed and selected</string>
+
+    <string name="drv_a8xx_desc">The build for the 8xx family, which is the Snapdragon 8 Elite\'s.</string>
+    <string name="drv_general_desc">The build for the other Adrenos.</string>
+    <string name="drv_qualcomm_desc">A driver from Qualcomm itself, newer than the device\'s.</string>
+
+    <string name="setting_value">%1$s (%2$s)</string>
+    <string name="item_selected">Selected</string>
+    <string name="selected_item">Selected · %1$s</string>
+    <string name="use_item">Use</string>
+    <string name="remove_item">Remove</string>
+    <string name="texture_packs">Texture packs</string>
+    <string name="texture_packs_summary">Use replacement textures for the game.</string>
+    <string name="texture_packs_all">All packs</string>
+    <string name="texture_import">Import texture pack</string>
+    <string name="texture_import_hint">Choose a Dolphin-format ZIP containing PNG or DDS textures.</string>
+    <string name="texture_import_failed">Could not import the pack. Check the ZIP and available storage.</string>
+    <string name="texture_remove_failed">Could not remove the pack.</string>
+    <string name="hud_frame">FRAME</string>
+    <string name="forget_disc">Forget disc selection</string>
+    <string name="controller_bindings">Controller bindings</string>
+    <string name="controller_default">Game default</string>
+    <string name="controller_bindings_help">GameCube button mappings apply to all controllers, including the touch pad, when the game starts. Press Guide in-game to open Settings on controllers that expose it to Android.</string>
+    <string name="controller_swap_sticks">Stick layout</string>
+    <string name="controller_swapped">Swap left and right sticks</string>
+    <string name="controller_deadzone">Controller stick deadzone</string>
+    <string name="controller_rumble">Controller rumble</string>
+    <string name="controller_rumble_strength">Rumble strength</string>
+    <string name="touch_layout">Touch layout</string>
+    <string name="touch_standard">Standard</string>
+    <string name="touch_compact">Compact phone</string>
+    <string name="touch_tablet">Tablet reach</string>
+    <string name="performance_presets">Performance presets</string>
+    <string name="performance_presets_help">Set resolution, frame limit, and anti-aliasing for the next game launch.</string>
+    <string name="performance_battery">Battery (448p, 30 FPS)</string>
+    <string name="performance_balanced">Balanced (720p, 60 FPS)</string>
+    <string name="performance_high_refresh">High refresh (720p, display refresh rate)</string>
+    <string name="touch_edit_positions">Move touch controls</string>
+    <string name="touch_edit_positions_help">Drag controls to arrange the selected layout. Positions save as you go.</string>
+    <string name="touch_reset_positions">Reset positions</string>
+    <string name="share_room_address">Share room address</string>
+</resources>

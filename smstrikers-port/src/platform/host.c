@@ -230,10 +230,35 @@ int port_localtime(time_t when, struct tm* out)
 
 int port_executable_dir(char* buf, size_t size)
 {
-    // No portable answer here, and the two spellings share nothing: Darwin hands back a path that
-    // may be relative or contain symlinks and must be resolved, Linux exposes the resolved path as
-    // a symlink in /proc.
-#if defined(__APPLE__)
+    // No portable answer here, and the spellings share nothing: Darwin hands back a path that may
+    // be relative or contain symlinks and must be resolved, Linux exposes the resolved path as a
+    // symlink in /proc, and Android has no executable of its own to point at. /proc/self/exe there
+    // is /system/bin/app_process64, the zygote every application on the device is forked from: the
+    // same directory for all of them, and holding nothing of ours.
+    //
+    // So on Android the answer is supplied rather than discovered. The activity puts the app's
+    // private files directory in STRIKERS_HOME before it loads this library, and that directory is
+    // what "beside the game" means there; everything downstream, strikers.ini and the log and the
+    // button prompt artwork and the files/ scan in DVDInit, then works unchanged.
+#if defined(__ANDROID__)
+    {
+        const char* home = getenv("STRIKERS_HOME");
+        size_t n;
+        if (home == NULL || home[0] == 0)
+            return -1;
+        n = strlen(home);
+        if (n >= size)
+            return -1;
+        memcpy(buf, home, n + 1);
+        // No trailing separator, as the contract above says, so that the callers' "%s/%s" is right.
+        while (n > 1 && buf[n - 1] == '/')
+        {
+            n--;
+            buf[n] = 0;
+        }
+        return 0;
+    }
+#elif defined(__APPLE__)
     char raw[4096];
     uint32_t rawSize = (uint32_t)sizeof raw;
     if (_NSGetExecutablePath(raw, &rawSize) != 0)

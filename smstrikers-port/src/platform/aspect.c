@@ -289,6 +289,38 @@ void PortPerspective(float consoleFov, float consoleRatio,
     }
 }
 
+// Stretch menu backgrounds by default. Fit keeps their scale and extends the edge color.
+static int s_widenStretch = -1;
+
+int PortWidenStretch(void)
+{
+    const char* env;
+
+    if (s_widenStretch >= 0)
+        return s_widenStretch;
+
+    env = getenv("STRIKERS_WIDEN");
+    if (env == NULL || *env == '\0')
+    {
+        s_widenStretch = 1;
+        return s_widenStretch;
+    }
+
+    if (strcmp(env, "stretch") == 0 || strcmp(env, "1") == 0)
+        s_widenStretch = 1;
+    else if (strcmp(env, "fit") == 0 || strcmp(env, "0") == 0)
+        s_widenStretch = 0;
+    else
+    {
+        fprintf(stderr,
+                "[aspect] STRIKERS_WIDEN=\"%s\" not understood; using stretch.\n"
+                "         Expected \"fit\" or \"stretch\".\n",
+                env);
+        s_widenStretch = 1;
+    }
+    return s_widenStretch;
+}
+
 // The aspect at which the frame stops needing help to look cinematic.
 #define PORT_CINEMATIC_ASPECT 1.5f
 

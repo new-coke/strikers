@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The setup screen's palette, from the game's own pitch. -->
+    <color name="pitch">#FF0E3B1E</color>
+    <color name="ink">#FFF2F5F0</color>
+    <color name="ink_dim">#FFA8BDAE</color>
+    <color name="accent">#FFE8B31C</color>
+</resources>

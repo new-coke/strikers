@@ -7,6 +7,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef __ANDROID__
+#include <unistd.h>
+#endif
+
 #include "port/disc_reader.h"
 #include "port/host.h"
 
@@ -507,29 +511,28 @@ static void note_nkit(const unsigned char* head, size_t got)
                 "ordinary image.\n");
 }
 
-PortDisc* port_disc_open(const char* path, char* err, size_t errsize)
+static PortDisc* open_image_stream(FILE* stream, const char* path, char* err, size_t errsize)
 {
     unsigned char head[0x220];
     size_t got;
     PortDisc* d;
 
     err[0] = '\0';
-    d = (PortDisc*)calloc(1, sizeof *d);
-    if (d == NULL)
-    {
-        snprintf(err, errsize, "Out of memory.");
-        return NULL;
-    }
-
-    d->f = fopen(path, "rb");
-    if (d->f == NULL)
+    if (stream == NULL)
     {
         snprintf(err, errsize,
                  "That file could not be opened:\n\n  %s\n\nCheck the path and "
                  "that the file is readable.", path);
-        free(d);
         return NULL;
     }
+    d = (PortDisc*)calloc(1, sizeof *d);
+    if (d == NULL)
+    {
+        fclose(stream);
+        snprintf(err, errsize, "Out of memory.");
+        return NULL;
+    }
+    d->f = stream;
 
     got = fread(head, 1, sizeof head, d->f);
     if (got < 0x20)
@@ -596,6 +599,28 @@ PortDisc* port_disc_open(const char* path, char* err, size_t errsize)
     note_nkit(head, sizeof head);
     return d;
 }
+
+PortDisc* port_disc_open(const char* path, char* err, size_t errsize)
+{
+    return open_image_stream(fopen(path, "rb"), path, err, errsize);
+}
+
+#ifdef __ANDROID__
+PortDisc* port_disc_open_fd(int fd, char* err, size_t errsize)
+{
+    int copy = dup(fd);
+    FILE* stream = copy < 0 ? NULL : fdopen(copy, "rb");
+    if (stream == NULL && copy >= 0)
+        close(copy);
+    if (stream != NULL && disc_seek(stream, 0) != 0)
+    {
+        fclose(stream);
+        snprintf(err, errsize, "The selected image must support seeking. Choose a local copy.");
+        return NULL;
+    }
+    return open_image_stream(stream, "Selected disc image", err, errsize);
+}
+#endif
 
 static unsigned be32u(const unsigned char* p)
 {

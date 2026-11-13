@@ -181,16 +181,14 @@ static void index_image_fst(const char* path)
         image_fatal(path, err);
 }
 
-// Open `path` as a disc image and index it.
-static void open_image(const char* path)
+static void index_open_image(PortDisc* disc, const char* path, const char* err)
 {
-    char err[2048];
-
-    s_disc = port_disc_open(path, err, sizeof err);
-    if (s_disc == NULL)
+    if (disc == NULL)
         image_fatal(path, err);
+    s_disc = disc;
 
-    snprintf(s_root, sizeof s_root, "%s", path);
+    if (path != s_root)
+        snprintf(s_root, sizeof s_root, "%s", path);
     index_image_fst(path);
 
     // An image whose FST names no files would leave s_disc set and s_count 0, so DVDInit would scan
@@ -198,6 +196,13 @@ static void open_image(const char* path)
     // image branch.
     if (s_count == 0)
         image_fatal(path, "That image contains no files at all.");
+}
+
+static void open_image(const char* path)
+{
+    char err[2048];
+    PortDisc* disc = port_disc_open(path, err, sizeof err);
+    index_open_image(disc, path, err);
 }
 
 // A path names an image if it is a file rather than a directory.
@@ -244,9 +249,19 @@ void DVDInit(void)
     // too late; this runs *before* main.
     PortConfigLoad();
 
+#ifdef __ANDROID__
+    const char* selected = getenv("STRIKERS_ANDROID_DISC_FD");
+    if (selected != NULL && *selected != '\0')
+    {
+        char err[2048];
+        PortDisc* disc = port_disc_open_fd(atoi(selected), err, sizeof err);
+        index_open_image(disc, "Selected disc image", err);
+    }
+#endif
+
     const char* env = getenv("STRIKERS_DATA");
     const char* why = "STRIKERS_DATA / the 'data' key in strikers.ini";
-    if (env != NULL && *env != '\0')
+    if (s_count == 0 && env != NULL && *env != '\0')
     {
         snprintf(s_root, sizeof s_root, "%s", env);
         snprintf(tried[nTried], sizeof tried[0], "%s", s_root);

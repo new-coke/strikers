@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="disc_image">光盘镜像…</string>
+    <string name="no_disc_selected">未选择光盘镜像</string>
+    <string name="disc_open_failed">无法打开光盘镜像，请重新选择。</string>
+    <string name="disc_requires_seek">无法直接读取此镜像，请下载到本机后再选择。</string>
+    <string name="disc_format_unsupported">请选择《Super Mario Strikers》的光盘镜像（.iso、.gcm、.ciso 或 .gcz）。</string>
+    <string name="play">开始游戏</string>
+
+    <string name="settings">设置</string>
+    <string name="video_driver">显示驱动</string>
+    <string name="language">语言</string>
+    <string name="language_system">跟随系统</string>
+
+    <string name="done">完成</string>
+    <string name="sec_controls">按键</string>
+    <string name="sec_video">画面</string>
+    <string name="sec_game">游戏</string>
+    <string name="sec_about">关于</string>
+    <string name="ini_write_failed">无法写入 strikers.ini</string>
+
+    <string name="opacity">不透明度</string>
+    <string name="size">大小</string>
+    <string name="deadzone">死区</string>
+    <string name="deadzone_help">拇指滑动多少之后游戏才认为是移动。</string>
+    <string name="dpad">方向键</string>
+    <string name="right_stick">右摇杆</string>
+    <string name="controls_note">按键布局是 Xbox 360 的，而游戏是 GameCube 的：LT 作 L，RT 作 R，LB 和 RB 作 Z。L3、R3 和 BACK 在主机手柄上并不存在，按了不起作用。</string>
+
+    <string name="res_internal">内部分辨率</string>
+    <string name="res_follow">跟随屏幕</string>
+    <string name="res_original">448（原始）</string>
+    <string name="res_help">高于屏幕即为超采样：边缘更平滑，但更耗 GPU。</string>
+    <string name="fps_limit">帧数上限</string>
+    <string name="fps_follow_display">跟随屏幕</string>
+    <string name="fps_help">默认帧率上限跟随屏幕刷新率。降低上限可节省电量。</string>
+    <string name="fps_unlimited">不限制</string>
+    <string name="vsync">与屏幕同步</string>
+    <string name="vsync_help">关闭时帧数自由。开启后呈现要等屏幕，上面的上限就不起作用了，由屏幕说了算。</string>
+    <string name="msaa">抗锯齿</string>
+    <string name="off">关闭</string>
+    <string name="aniso">各向异性过滤</string>
+    <string name="aniso_help">斜看时贴图的清晰度，比如草坪。</string>
+    <string name="widen">宽屏背景</string>
+    <string name="widen_fit">保持比例</string>
+    <string name="widen_stretch">拉伸</string>
+    <string name="widen_help">在比 4:3 更宽的屏幕上如何处理菜单美术。拉伸会铺满宽度；保持比例则维持原本的尺寸，并把边缘颜色延伸到两侧。</string>
+    <string name="aspect">画面比例</string>
+    <string name="aspect_help">跟随屏幕会用满手机的宽度。4:3 是 GameCube 本身的比例，两侧留黑边 — 这是原始取景，也是某处看着错位时用来对照的基准。</string>
+    <string name="video_note">游戏在启动时读取这些设置。关闭并重新打开游戏才会生效。</string>
+
+    <string name="unlock_all">全部解锁</string>
+    <string name="unlock_all_help">所有球场、队伍和杯赛。</string>
+    <string name="hud">性能面板</string>
+    <string name="hud_help">FPS、每帧耗时、GPU、内存和温度，显示在屏幕顶部。</string>
+    <string name="game_note">全部解锁由游戏在启动时读取。面板立即生效。</string>
+
+    <string name="driver_system">系统自带</string>
+    <string name="game_folder">游戏文件夹</string>
+    <string name="about_note">基于 Yannick Suter 及贡献者的原生移植，使用 Aurora 在 WebGPU 与 SDL3 之上实现 GX/VI/PAD/CARD。\n\n非官方项目，与任天堂及 Next Level Games 无关。本应用不附带任何游戏文件。</string>
+
+    <string name="drivers_intro">Turnip 是 Mesa 面向 Adreno GPU 的开源 Vulkan 驱动。出厂驱动较旧的设备上通常更快；较新的设备上通常没有变化。更换驱动不影响系统其他部分 — 只对本应用生效。</string>
+    <string name="sec_inuse">使用中</string>
+    <string name="driver_system_sub">设备厂商安装的那个。</string>
+    <string name="drivers_restart_note">更改在下次打开游戏时生效。</string>
+    <string name="sec_add">添加</string>
+    <string name="import_zip">导入 .zip 文件</string>
+    <string name="import_zip_sub">符合 libadrenotools 格式的驱动包。</string>
+    <string name="drivers_download_note">下载会带来在游戏内运行的第三方代码。这些地址是特意摆出来的。如果其中某个不再响应，请手动下载并使用“导入”。</string>
+    <string name="driver_removed">已移除驱动</string>
+    <string name="no_file_picker">设备上没有文件选择器</string>
+    <string name="installing">正在安装…</string>
+    <string name="downloading">正在下载 %1$s…</string>
+    <string name="driver_failed">没成功。该文件不是驱动包，或者下载失败了。</string>
+    <string name="driver_installed">%1$s 已安装并选用</string>
+
+    <string name="drv_a8xx_desc">面向 8xx 系列的构建，也就是骁龙 8 至尊版那一代。</string>
+    <string name="drv_general_desc">面向其他 Adreno 的构建。</string>
+    <string name="drv_qualcomm_desc">高通自家的驱动，比设备上的更新。</string>
+    <string name="hud_frame">帧</string>
+    <string name="forget_disc">清除光盘选择</string>
+</resources>

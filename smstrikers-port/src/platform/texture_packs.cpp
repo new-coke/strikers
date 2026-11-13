@@ -157,8 +157,8 @@ extern "C" void PortTexturesInit(const char* userPath)
 {
     g_userPath = userPath != NULL ? userPath : "";
 
-#if defined(__SWITCH__)
-    // Title mode leaves about 3.2 GB, and disc_in_ram alone can take 1.4 GB of it.
+#if defined(__SWITCH__) || defined(__ANDROID__)
+    // Handheld builds share RAM with the rest of the system.
     unsigned long cacheMb = 512;
 #else
     unsigned long cacheMb = 4096;

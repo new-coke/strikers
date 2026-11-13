@@ -213,8 +213,8 @@ int main() { std::jthread t([](std::stop_token) {}); }
 
     add_subdirectory(extern/aurora EXCLUDE_FROM_ALL)
 
-    # The Switch has no Discord client.
-    if(NOT NX)
+    # Discord Rich Presence uses desktop IPC.
+    if(NOT NX AND NOT ANDROID)
         add_subdirectory(extern/borealis EXCLUDE_FROM_ALL)
     endif()
 
@@ -315,6 +315,12 @@ file(GLOB_RECURSE PLATFORM_SOURCES CONFIGURE_DEPENDS
      "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/*.cpp"
      "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/*.c")
 
+# src/platform/android/vulkan_shim.c is not part of the game at all: it is its own shared library, and
+# compiled in here it would export vkGetInstanceProcAddr from libmain.so, where nothing should find
+# a Vulkan entry point.
+list(REMOVE_ITEM PLATFORM_SOURCES
+     "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/android/vulkan_shim.c")
+
 # src/platform/operator_new.cpp is the one file in the tree that is not C++11.
 list(REMOVE_ITEM PLATFORM_SOURCES
      "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/operator_new.cpp")
@@ -327,7 +333,7 @@ set_target_properties(strikers_operators PROPERTIES
 # borealis headers need C++20, so discord.cpp is a target of its own.
 list(REMOVE_ITEM PLATFORM_SOURCES
      "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/discord.cpp")
-if(STRIKERS_AURORA AND NOT NX)
+if(STRIKERS_AURORA AND NOT NX AND NOT ANDROID)
     add_library(strikers_discord OBJECT
          "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/discord.cpp")
     set_target_properties(strikers_discord PROPERTIES
@@ -350,16 +356,20 @@ endif()
 if(NX)
     list(REMOVE_ITEM PLATFORM_SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/overlay.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/host.c"
-        "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/stubs_generated.c")
-    # The tree's stubs use host symbol names; the Switch rebuild writes ELF stubs here.
-    set(_nx_stubs "${CMAKE_CURRENT_BINARY_DIR}/stubs_generated.c")
-    if(NOT EXISTS "${_nx_stubs}")
-        file(WRITE "${_nx_stubs}" "// Filled by tools/switch/rebuild.sh.\n")
-    endif()
-    list(APPEND PLATFORM_SOURCES "${_nx_stubs}")
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/host.c")
 else()
     list(FILTER PLATFORM_SOURCES EXCLUDE REGEX "/src/platform/switch/")
+endif()
+
+if(NX OR ANDROID)
+    # Cross-builds generate ELF stubs in their own build directory.
+    list(REMOVE_ITEM PLATFORM_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/stubs_generated.c")
+    set(_cross_stubs "${CMAKE_CURRENT_BINARY_DIR}/stubs_generated.c")
+    if(NOT EXISTS "${_cross_stubs}")
+        file(WRITE "${_cross_stubs}" "// Filled by the platform build script.\n")
+    endif()
+    list(APPEND PLATFORM_SOURCES "${_cross_stubs}")
 endif()
 
 if(STRIKERS_AURORA)
@@ -521,7 +531,7 @@ endif()
 
 # The link test. Aurora, MusyX and the THP decoder are not wired up, so tools/genstubs.py supplies
 # an abort-on-call definition for each symbol they would provide.
-add_executable(strikers
+set(_strikers_objects
     $<TARGET_OBJECTS:strikers_game>
     $<TARGET_OBJECTS:strikers_ode>
     $<TARGET_OBJECTS:strikers_sdk>
@@ -530,6 +540,60 @@ add_executable(strikers
     $<TARGET_OBJECTS:strikers_musyx>
     $<TARGET_OBJECTS:strikers_monocypher>
 )
+
+if(ANDROID)
+    # An Android application has no executable of its own: the process is started by the runtime and
+    # the native side is a shared object it dlopen()s. SDL's activity loads the library named by
+    # getMainSharedObject(), "main" by default, and calls SDL_main in it, which SDL_main.h has
+    # already #defined main to be. So the same objects, linked as libmain.so.
+    add_library(strikers SHARED ${_strikers_objects})
+    set_target_properties(strikers PROPERTIES OUTPUT_NAME main)
+
+    # The Vulkan stand-in: its own shared library, named libvulkan.so, so that Dawn's
+    # dlopen("libvulkan.so") finds it instead of the system loader. See src/platform/android/vulkan_shim.c.
+    # Deliberately NOT linked to anything here -- it is loaded by name at runtime, by Dawn, and the
+    # game has no reference to it.
+    add_library(strikers_vulkan_shim SHARED
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/android/vulkan_shim.c")
+    set_target_properties(strikers_vulkan_shim PROPERTIES OUTPUT_NAME vulkan)
+    target_link_libraries(strikers_vulkan_shim PRIVATE log)
+    # Hidden by default, so the one entry point is the only thing that answers.
+    target_compile_options(strikers_vulkan_shim PRIVATE -fvisibility=hidden)
+
+    # libadrenotools, which is how a driver the system does not ship gets loaded at all: Android's
+    # linker will not dlopen a library outside the app's own namespace, and this sets up a namespace
+    # that can. Fetched rather than vendored, like Dawn and SDL, and pinned to a commit.
+    include(FetchContent)
+    FetchContent_Declare(adrenotools
+        GIT_REPOSITORY https://github.com/bylaws/libadrenotools.git
+        GIT_TAG 8fae8ce254dfc1344527e05301e43f37dea2df80
+        GIT_SUBMODULES_RECURSE TRUE
+        EXCLUDE_FROM_ALL
+    )
+    # C++20 for its directory only. This project is C++11 because the decompiled game is, and that
+    # standard leaks into anything added below it: adrenotools has a union with a default member
+    # initializer, which C++11 says is not an aggregate, so its brace initialisation does not
+    # compile. Saved and put back so nothing else inherits the change.
+    set(_saved_cxx_standard_adreno "${CMAKE_CXX_STANDARD}")
+    set(CMAKE_CXX_STANDARD 20)
+    FetchContent_MakeAvailable(adrenotools)
+    set(CMAKE_CXX_STANDARD "${_saved_cxx_standard_adreno}")
+    unset(_saved_cxx_standard_adreno)
+    target_link_libraries(strikers_vulkan_shim PRIVATE adrenotools)
+
+    # The hooks are separate shared objects that adrenotools loads by name out of the app's library
+    # directory, so they have to be packaged even though nothing links against them.
+    add_dependencies(strikers_vulkan_shim main_hook file_redirect_hook gsl_alloc_hook hook_impl)
+    add_dependencies(strikers strikers_vulkan_shim)
+
+    # SDL_main has no caller. It is what SDLActivity looks up by name once the library is loaded,
+    # so nothing inside the library references it -- and aurora::main is a static archive, whose
+    # members are pulled in only to satisfy a reference. Without this the link succeeds, the .so
+    # loads, and the app dies at "Failed to find function SDL_main". -u is the reference.
+    target_link_options(strikers PRIVATE "-Wl,-u,SDL_main")
+else()
+    add_executable(strikers ${_strikers_objects})
+endif()
 target_link_libraries(strikers PRIVATE port_flags)
 if(TARGET strikers_discord)
     target_sources(strikers PRIVATE $<TARGET_OBJECTS:strikers_discord>)
@@ -607,17 +671,40 @@ elseif(NOT MSVC AND NOT NX)
     file(WRITE "${_local_ops}" "{ local: _Znw*; _Zna*; _ZdlPv*; _ZdaPv*; };\n")
     target_link_options(strikers PRIVATE "-Wl,--version-script=${_local_ops}")
     # A bundled libstdc++ breaks Mesa's LLVM, so it is linked in; glibc 2.41 refuses executable stacks.
-    target_link_options(strikers PRIVATE -static-libstdc++ -static-libgcc -Wl,-z,noexecstack)
+    # Not on Android: the NDK ships libc++ only, and which of it is linked is ANDROID_STL's to say.
+    if(ANDROID)
+        target_link_options(strikers PRIVATE -Wl,-z,noexecstack)
+    else()
+        target_link_options(strikers PRIVATE -static-libstdc++ -static-libgcc -Wl,-z,noexecstack)
+    endif()
 endif()
 
 if(STRIKERS_AURORA)
-    # Deliberately NOT aurora::os, Aurora's OS has no threads, and ours is already complete.
-    target_link_libraries(strikers PRIVATE
+    # The game uses its own OS implementation.
+    set(_strikers_aurora_targets
         aurora::core aurora::gx aurora::gd aurora::vi aurora::pad aurora::si
         aurora::card aurora::thp aurora::main)
+    target_link_libraries(strikers PRIVATE ${_strikers_aurora_targets})
+endif()
 
-    # Frame capture lives inside Aurora now (lib/aurora.cpp, namespace capture).
+if(ANDROID)
+    add_custom_target(strikers_android_scan DEPENDS strikers_scan)
+    add_dependencies(strikers_android_scan ${_strikers_aurora_targets})
 
+    set(_android_jni_dir "${CMAKE_CURRENT_BINARY_DIR}/jniLibs/arm64-v8a")
+    add_custom_target(strikers_android_stage
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${_android_jni_dir}"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:strikers>"
+            "$<TARGET_FILE:strikers_vulkan_shim>"
+            "$<TARGET_FILE:main_hook>"
+            "$<TARGET_FILE:file_redirect_hook>"
+            "$<TARGET_FILE:gsl_alloc_hook>"
+            "$<TARGET_FILE:hook_impl>"
+            "${CMAKE_SYSROOT}/usr/lib/aarch64-linux-android/libc++_shared.so"
+            "${_android_jni_dir}"
+        DEPENDS strikers strikers_vulkan_shim main_hook file_redirect_hook gsl_alloc_hook hook_impl
+        VERBATIM)
 endif()
 
 if(NX)

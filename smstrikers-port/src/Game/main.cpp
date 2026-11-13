@@ -22,12 +22,16 @@
 extern "C" void PortDebugFrame(void);   // PORT: defined in Game.cpp
 #include "port/launch.h"
 #include "port/discord.h"
+#include "port/touch.h"     // PORT: the on-screen controls, Android only
 #include "port/shaders.h"   // PORT: the shader stage, held on the memory card screen
 #include <aurora/main.h>   // #define main aurora_main
 #include <aurora/event.h>
 #include <stdio.h>   // PORT: snprintf
 #endif
 #include "port/benchmark.h"
+#if defined(__ANDROID__)
+void PortAndroidPublishFrameMetrics();
+#endif
 #include "port/lockstep.h"
 #include "port/online.h"
 #include "port/online_game.h"
@@ -998,6 +1002,8 @@ int main(int argc, char* argv[])
 
         // PORT: Between begin_frame and end_frame, which is the window in which Aurora's ImGui frame is open.
         PortOverlayDraw();
+        // PORT: submit Android touch input to the SDL virtual controller.
+        PortTouchUpdate();
 
         PortMaybeRequestCapture();
         // PORT: STRIKERS_CAPTURE_EVERY, a shot every N frames, so a long run can be watched rather than sampled once.
@@ -1018,6 +1024,9 @@ int main(int argc, char* argv[])
         }
         aurora_end_frame();
         PortBenchFrameEnd();
+#if defined(__ANDROID__)
+        PortAndroidPublishFrameMetrics();
+#endif
         s_portFrame++;
 
         // Stop on the benchmark's own clock rather than a frame count: the question is always "how did it behave over N seconds".

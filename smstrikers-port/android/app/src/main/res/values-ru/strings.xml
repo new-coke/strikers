@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="disc_image">Образ диска…</string>
+    <string name="no_disc_selected">Образ диска не выбран</string>
+    <string name="disc_open_failed">Не удалось открыть образ диска. Выберите его снова.</string>
+    <string name="disc_requires_seek">Этот образ нельзя прочитать напрямую. Скачайте локальную копию и выберите её.</string>
+    <string name="disc_format_unsupported">Выберите образ диска Super Mario Strikers (.iso, .gcm, .ciso или .gcz).</string>
+    <string name="play">Играть</string>
+
+    <string name="settings">Настройки</string>
+    <string name="video_driver">Видеодрайвер</string>
+    <string name="language">Язык</string>
+    <string name="language_system">Как в системе</string>
+
+    <string name="done">Готово</string>
+    <string name="sec_controls">Управление</string>
+    <string name="sec_video">Графика</string>
+    <string name="sec_game">Игра</string>
+    <string name="sec_about">О программе</string>
+    <string name="ini_write_failed">Не удалось записать strikers.ini</string>
+
+    <string name="opacity">Прозрачность</string>
+    <string name="size">Размер</string>
+    <string name="deadzone">Мёртвая зона</string>
+    <string name="deadzone_help">Насколько палец может сдвинуться, прежде чем игра увидит движение.</string>
+    <string name="dpad">Крестовина</string>
+    <string name="right_stick">Правый стик</string>
+    <string name="controls_note">Раскладка от Xbox 360, а игра — с GameCube: LT становится L, RT становится R, LB и RB становятся Z. L3, R3 и BACK на консольном геймпаде отсутствуют и ничего не делают.</string>
+
+    <string name="res_internal">Внутреннее разрешение</string>
+    <string name="res_follow">Как у экрана</string>
+    <string name="res_original">448 (оригинал)</string>
+    <string name="res_help">Выше экрана — это суперсэмплинг: сглаживает края и нагружает GPU.</string>
+    <string name="fps_limit">Ограничение кадров</string>
+    <string name="fps_follow_display">По частоте экрана</string>
+    <string name="fps_help">По умолчанию предел соответствует частоте обновления экрана. Более низкий предел может снизить расход заряда.</string>
+    <string name="fps_unlimited">Без ограничения</string>
+    <string name="vsync">Синхронизация с экраном</string>
+    <string name="vsync_help">Выключено — кадры свободны. Включено — вывод ждёт матрицу, и тогда ограничение выше не важно: решает экран.</string>
+    <string name="msaa">Сглаживание</string>
+    <string name="off">Выключено</string>
+    <string name="aniso">Анизотропная фильтрация</string>
+    <string name="aniso_help">Чёткость текстур под углом, например газона.</string>
+    <string name="widen">Широкий фон</string>
+    <string name="widen_fit">Сохранять пропорции</string>
+    <string name="widen_stretch">Растянуть</string>
+    <string name="widen_help">Что делать с графикой меню на экране шире 4:3. «Растянуть» заполняет ширину; «Сохранять пропорции» оставляет её в нарисованном размере и вытягивает цвет края в стороны.</string>
+    <string name="aspect">Пропорции экрана</string>
+    <string name="aspect_help">«Как у экрана» использует всю ширину устройства. 4:3 — собственный формат GameCube, с полосами по бокам: исходное кадрирование и та мера, с которой стоит сравнивать, когда что-то выглядит смещённым.</string>
+    <string name="video_note">Игра читает это при запуске. Закройте и откройте игру снова, чтобы применить.</string>
+
+    <string name="unlock_all">Открыть всё</string>
+    <string name="unlock_all_help">Все стадионы, команды и кубки.</string>
+    <string name="hud">Панель производительности</string>
+    <string name="hud_help">FPS, время кадра, GPU, ОЗУ и температура — вверху экрана.</string>
+    <string name="game_note">«Открыть всё» игра читает при запуске. Панель включается сразу.</string>
+
+    <string name="driver_system">Системный</string>
+    <string name="game_folder">Папка игры</string>
+    <string name="about_note">Поверх нативного порта Yannick Suter и участников, с Aurora для GX/VI/PAD/CARD поверх WebGPU и SDL3.\n\nНеофициальный проект, не связанный с Nintendo и Next Level Games. Файлы игры в приложение не входят.</string>
+
+    <string name="drivers_intro">Turnip — открытый драйвер Vulkan от Mesa для GPU Adreno. На устройстве со старым заводским драйвером он обычно быстрее; на новом обычно ничего не меняет. Смена драйвера не затрагивает остальную систему — она действует только для этого приложения.</string>
+    <string name="sec_inuse">Используется</string>
+    <string name="driver_system_sub">Тот, что установил производитель устройства.</string>
+    <string name="drivers_restart_note">Замена вступит в силу при следующем запуске игры.</string>
+    <string name="sec_add">Добавить</string>
+    <string name="import_zip">Импортировать файл .zip</string>
+    <string name="import_zip_sub">Пакет драйвера в формате libadrenotools.</string>
+    <string name="drivers_download_note">Загрузка приносит сторонний код, который выполняется внутри игры. Адреса показаны намеренно. Если какой-то перестанет отвечать, скачайте вручную и воспользуйтесь импортом.</string>
+    <string name="driver_removed">Драйвер удалён</string>
+    <string name="no_file_picker">На устройстве нет выбора файлов</string>
+    <string name="installing">Установка…</string>
+    <string name="downloading">Загрузка %1$s…</string>
+    <string name="driver_failed">Не вышло. Это не пакет драйвера, либо загрузка не удалась.</string>
+    <string name="driver_installed">%1$s установлен и выбран</string>
+
+    <string name="drv_a8xx_desc">Сборка для семейства 8xx — это Snapdragon 8 Elite.</string>
+    <string name="drv_general_desc">Сборка для остальных Adreno.</string>
+    <string name="drv_qualcomm_desc">Драйвер самой Qualcomm, новее того, что стоит на устройстве.</string>
+    <string name="hud_frame">КАДР</string>
+    <string name="forget_disc">Сбросить выбор диска</string>
+</resources>

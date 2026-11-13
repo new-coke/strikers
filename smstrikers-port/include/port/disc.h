@@ -16,6 +16,10 @@ typedef struct PortDisc PortDisc;
 // finished, user-facing explanation into `err`; which names the format when it recognised one, and
 // says what to do about it.
 PortDisc* port_disc_open(const char* path, char* err, size_t errsize);
+#ifdef __ANDROID__
+// Keeps its own duplicate of the seekable Android document descriptor.
+PortDisc* port_disc_open_fd(int fd, char* err, size_t errsize);
+#endif
 long port_disc_read(PortDisc* disc, void* dst, size_t len,
                     unsigned long long offset);
 

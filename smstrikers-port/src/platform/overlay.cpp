@@ -1880,6 +1880,7 @@ void PortOverlayDraw(void)
     // and inside Aurora's frame, which is where shot has to ask for its readback.
     PortControlPoll();
     PortOnlinePanelDraw();
+
     const bool menu = s_menuOpen;
     if (!menu && !s_enabled)
         return;
@@ -1912,8 +1913,10 @@ void PortOverlayDraw(void)
             ImGui::Text("scene %s   stadium %s", s_scene, s_stadium);
             if (live.matchActive)
                 ImGui::Text("match %5.1fs   %d - %d", (double)s_clock, s_scoreHome, s_scoreAway);
+#if !defined(__ANDROID__)
             ImGui::Separator();
             ImGui::TextDisabled("F1 for the debug menu, F2 hides this");
+#endif
         }
         ImGui::End();
         return;
