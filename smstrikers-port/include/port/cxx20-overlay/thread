@@ -1,0 +1,11 @@
+// <thread> overlay: everything real first, then the port's <stop_token>, which is where the
+// std::jthread definition lives for toolchains that lack one (Apple libc++ before Xcode 16.3).
+// CMake only puts this directory on the include path after its jthread probes fail.
+#pragma once
+
+#include_next <thread>
+#include <version>
+
+#if !defined(__cpp_lib_jthread) || __cpp_lib_jthread < 201911L
+#include <stop_token>
+#endif

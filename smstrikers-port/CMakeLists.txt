@@ -117,17 +117,40 @@ int main() { std::jthread t([](std::stop_token) {}); }
             "${_saved_required_flags} -fexperimental-library")
         check_cxx_source_compiles("${_jthread_src}" PORT_JTHREAD_EXPERIMENTAL)
         if(NOT PORT_JTHREAD_EXPERIMENTAL)
-            message(FATAL_ERROR
-                "Aurora needs std::jthread and std::stop_token, and this "
-                "standard library has them neither plainly nor under "
-                "-fexperimental-library. A newer libc++ (Apple clang 17, or "
-                "Xcode 17) is required.")
+            # Apple libc++ before Xcode 16.3 has no <stop_token> at all, so a
+            # third probe tries the port's overlay headers, which provide
+            # std::jthread/stop_token/stop_callback over the pieces that do
+            # exist.
+            set(CMAKE_REQUIRED_FLAGS
+                "${_saved_required_flags} -I${CMAKE_CURRENT_SOURCE_DIR}/include/port/cxx20-overlay")
+            check_cxx_source_compiles("
+#include <thread>
+#include <stop_token>
+int main() {
+    std::jthread t([](std::stop_token token) {
+        std::stop_callback on_stop{token, [] {}};
+        while (!token.stop_requested()) {}
+    });
+    t.request_stop();
+}" PORT_JTHREAD_OVERLAY)
+            if(NOT PORT_JTHREAD_OVERLAY)
+                message(FATAL_ERROR
+                    "Aurora needs std::jthread and std::stop_token, and this "
+                    "standard library has them neither plainly nor under "
+                    "-fexperimental-library, and the overlay headers in "
+                    "include/port/cxx20-overlay failed to stand in. A newer "
+                    "libc++ (Apple clang 17, or Xcode 17) is required.")
+            endif()
+            message(STATUS "strikers: no std::jthread; using include/port/cxx20-overlay")
+            add_compile_options(
+                "$<$<COMPILE_LANGUAGE:CXX>:-I${CMAKE_CURRENT_SOURCE_DIR}/include/port/cxx20-overlay>")
+        else()
+            message(STATUS "strikers: libc++ needs -fexperimental-library for std::jthread")
+            add_compile_options(
+                "$<$<COMPILE_LANGUAGE:CXX>:-fexperimental-library>")
+            add_link_options(
+                "$<$<LINK_LANGUAGE:CXX>:-fexperimental-library>")
         endif()
-        message(STATUS "strikers: libc++ needs -fexperimental-library for std::jthread")
-        add_compile_options(
-            "$<$<COMPILE_LANGUAGE:CXX>:-fexperimental-library>")
-        add_link_options(
-            "$<$<LINK_LANGUAGE:CXX>:-fexperimental-library>")
     endif()
     set(CMAKE_REQUIRED_FLAGS "${_saved_required_flags}")
     unset(_saved_required_flags)
