@@ -588,6 +588,12 @@ if(APPLE)
     # Relink when the plist changes; a link option is not a dependency.
     set_property(TARGET strikers APPEND PROPERTY
         LINK_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/Info.plist")
+    # Stubs out MTLLogStateDescriptor when the deployment target predates macOS 14; see the
+    # file for why the prebuilt Dawn needs it. Like MusyX it stays out of port_flags: the
+    # prelude's `typedef int BOOL` (GameCube ABI) collides with the ObjC headers' BOOL.
+    enable_language(OBJC)
+    add_library(strikers_mtl_stub OBJECT src/platform/macos/mtl_stub.m)
+    target_sources(strikers PRIVATE $<TARGET_OBJECTS:strikers_mtl_stub>)
 endif()
 
 # zlib, for .gcz disc images (src/platform/disc.c).
