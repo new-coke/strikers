@@ -1,9 +1,16 @@
 #ifndef MSL_MEMORY_H_
 #define MSL_MEMORY_H_
 
+// PORT: on libc++, std::allocator and the uninitialized_* algorithms already exist as
+// std::__1's, which makes MSL's own ambiguous, so the real <memory> provides them instead.
+#if defined(_LIBCPP_VERSION)
+#include <memory>
+#endif
+
 namespace std
 {
 
+#if !defined(_LIBCPP_VERSION)
 template <class T>
 class allocator
 {
@@ -25,6 +32,7 @@ inline ForwardIt uninitialized_fill_n(ForwardIt first, Size count, const T& valu
     }
     return first;
 }
+#endif
 
 template <class InputIterator, class ForwardIterator>
 inline ForwardIterator __uninitialized_copy(InputIterator first, InputIterator last, ForwardIterator result)
@@ -58,11 +66,13 @@ struct __uninitialized_copy_helper<T, true, false>
     }
 };
 
+#if !defined(_LIBCPP_VERSION)
 template <class T>
 inline T* uninitialized_copy(T* first, T* last, T* result)
 {
     return __uninitialized_copy_helper<T, true, false>::uninitialized_copy(first, last, result);
 }
+#endif
 
 } // namespace std
 
