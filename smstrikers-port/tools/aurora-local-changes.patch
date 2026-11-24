@@ -5669,3 +5669,15 @@ index 18da654..f8ca5bd 100644
  template <typename T>
  void write_u32(std::vector<uint8_t>& bytes, size_t offset, T value) {
    const uint32_t word = static_cast<uint32_t>(value);
+diff --git a/lib/system_info.cpp b/lib/system_info.cpp
+index d004fbf4..285a8e29 100644
+--- a/lib/system_info.cpp
++++ b/lib/system_info.cpp
+@@ -16,6 +16,7 @@ typedef LONG NTSTATUS, *PNTSTATUS;
+ extern "C" NTSYSAPI NTSTATUS NTAPI RtlGetVersion(PRTL_OSVERSIONINFOEXW lpVersionInformation);
+ #elif __APPLE__
+ #include "sys/sysctl.h"
++#include <TargetConditionals.h>
+ #elif linux
+ #include <ranges>
+ #include <fstream>
