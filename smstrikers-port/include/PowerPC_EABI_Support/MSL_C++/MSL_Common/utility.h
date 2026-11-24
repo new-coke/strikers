@@ -1,6 +1,11 @@
 #ifndef MSL_UTILITY_H_
 #define MSL_UTILITY_H_
 
+// PORT: libc++ already defines std::pair (as std::__1::pair); defining MSL's own makes every
+// unqualified `pair` inside namespace std ambiguous, so use the real one instead.
+#if defined(_LIBCPP_VERSION)
+#include <utility>
+#else
 namespace std
 {
 template <class T1, class T2>
@@ -21,6 +26,7 @@ struct pair
     }
 };
 } // namespace std
+#endif
 
 namespace Metrowerks
 {

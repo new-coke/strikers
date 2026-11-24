@@ -117,17 +117,40 @@ int main() { std::jthread t([](std::stop_token) {}); }
             "${_saved_required_flags} -fexperimental-library")
         check_cxx_source_compiles("${_jthread_src}" PORT_JTHREAD_EXPERIMENTAL)
         if(NOT PORT_JTHREAD_EXPERIMENTAL)
-            message(FATAL_ERROR
-                "Aurora needs std::jthread and std::stop_token, and this "
-                "standard library has them neither plainly nor under "
-                "-fexperimental-library. A newer libc++ (Apple clang 17, or "
-                "Xcode 17) is required.")
+            # Apple libc++ before Xcode 16.3 has no <stop_token> at all, so a
+            # third probe tries the port's overlay headers, which provide
+            # std::jthread/stop_token/stop_callback over the pieces that do
+            # exist.
+            set(CMAKE_REQUIRED_FLAGS
+                "${_saved_required_flags} -I${CMAKE_CURRENT_SOURCE_DIR}/include/port/cxx20-overlay")
+            check_cxx_source_compiles("
+#include <thread>
+#include <stop_token>
+int main() {
+    std::jthread t([](std::stop_token token) {
+        std::stop_callback on_stop{token, [] {}};
+        while (!token.stop_requested()) {}
+    });
+    t.request_stop();
+}" PORT_JTHREAD_OVERLAY)
+            if(NOT PORT_JTHREAD_OVERLAY)
+                message(FATAL_ERROR
+                    "Aurora needs std::jthread and std::stop_token, and this "
+                    "standard library has them neither plainly nor under "
+                    "-fexperimental-library, and the overlay headers in "
+                    "include/port/cxx20-overlay failed to stand in. A newer "
+                    "libc++ (Apple clang 17, or Xcode 17) is required.")
+            endif()
+            message(STATUS "strikers: no std::jthread; using include/port/cxx20-overlay")
+            add_compile_options(
+                "$<$<COMPILE_LANGUAGE:CXX>:-I${CMAKE_CURRENT_SOURCE_DIR}/include/port/cxx20-overlay>")
+        else()
+            message(STATUS "strikers: libc++ needs -fexperimental-library for std::jthread")
+            add_compile_options(
+                "$<$<COMPILE_LANGUAGE:CXX>:-fexperimental-library>")
+            add_link_options(
+                "$<$<LINK_LANGUAGE:CXX>:-fexperimental-library>")
         endif()
-        message(STATUS "strikers: libc++ needs -fexperimental-library for std::jthread")
-        add_compile_options(
-            "$<$<COMPILE_LANGUAGE:CXX>:-fexperimental-library>")
-        add_link_options(
-            "$<$<LINK_LANGUAGE:CXX>:-fexperimental-library>")
     endif()
     set(CMAKE_REQUIRED_FLAGS "${_saved_required_flags}")
     unset(_saved_required_flags)
@@ -565,6 +588,12 @@ if(APPLE)
     # Relink when the plist changes; a link option is not a dependency.
     set_property(TARGET strikers APPEND PROPERTY
         LINK_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/Info.plist")
+    # Stubs out MTLLogStateDescriptor when the deployment target predates macOS 14; see the
+    # file for why the prebuilt Dawn needs it. Like MusyX it stays out of port_flags: the
+    # prelude's `typedef int BOOL` (GameCube ABI) collides with the ObjC headers' BOOL.
+    enable_language(OBJC)
+    add_library(strikers_mtl_stub OBJECT src/platform/macos/mtl_stub.m)
+    target_sources(strikers PRIVATE $<TARGET_OBJECTS:strikers_mtl_stub>)
 endif()
 
 # zlib, for .gcz disc images (src/platform/disc.c).

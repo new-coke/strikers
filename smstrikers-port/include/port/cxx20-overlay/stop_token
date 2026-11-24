@@ -1,0 +1,354 @@
+// <stop_token> overlay for a libc++ that predates C++20 stop tokens, which on Apple means every
+// SDK shipped before Xcode 16.3 (and Xcode 16.3+ needs -fexperimental-library until Xcode 26).
+// CMake puts this directory on the include path only after its plain and -fexperimental-library
+// probes for std::jthread have both failed, so reaching this file already means the toolchain has
+// no jthread. Where a real <stop_token> still exists further down the include path it is
+// forwarded to, and only std::jthread is defined here.
+#pragma once
+
+#include <version>
+// Everything below is C++20 (concepts, jthread); in an older-standard TU this header should be
+// inert, since such code could not name the types anyway.
+#if __cplusplus >= 202002L && (!defined(__cpp_lib_jthread) || __cpp_lib_jthread < 201911L)
+
+#if defined(__has_include_next) && __has_include_next(<stop_token>)
+#include_next <stop_token>
+#else
+#define PORT_JTHREAD_OVERLAY_STOP 1
+#endif
+
+// A forwarded-to <stop_token> can still leave us with nothing: Apple libc++ gates
+// std::stop_token behind a newer deployment target, so the header exists but is empty. If the
+// feature macro is still unset after it, fall back to the definitions below.
+#if !defined(PORT_JTHREAD_OVERLAY_STOP) && \
+    (!defined(__cpp_lib_jthread) || __cpp_lib_jthread < 201911L)
+#define PORT_JTHREAD_OVERLAY_STOP 1
+#endif
+
+// std::thread and std::this_thread::get_id are needed below, and this include is also how a TU
+// that opens with <stop_token> ends up with the overlay <thread> (and its std::jthread).
+#include <thread>
+#include <atomic>
+#include <condition_variable>
+#include <concepts>
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <tuple>
+#include <type_traits>
+#include <utility>
+
+namespace std {
+
+#if defined(PORT_JTHREAD_OVERLAY_STOP)
+
+struct nostopstate_t {
+  explicit nostopstate_t() = default;
+};
+inline constexpr nostopstate_t nostopstate{};
+
+class stop_token;
+class stop_source;
+template <class _Callback>
+class stop_callback;
+
+namespace __jthread_overlay {
+
+// State shared between a stop_source and the tokens minted from it. The callbacks form an
+// intrusive list: while registered a node's __prev_next points at the link holding it, and
+// request_stop() detaches the list under __mutex before running the callbacks, so a
+// ~stop_callback() can tell "still registered" (unlink, done) from "in flight" (wait for
+// __finished).
+struct __state {
+  struct __callback_base {
+    virtual ~__callback_base() = default;
+    virtual void __invoke() noexcept = 0;
+
+    __callback_base* __next = nullptr;
+    __callback_base** __prev_next = nullptr;
+
+    thread::id __executing_on;   // set under __state::__mutex while detaching
+    atomic<bool> __finished{false};
+    mutex __finished_m;
+    condition_variable __finished_cv;
+  };
+
+  mutex __mutex;
+  __callback_base* __callbacks = nullptr;
+  atomic<bool> __stop_requested{false};
+  atomic<int> __sources{0};
+};
+
+} // namespace __jthread_overlay
+
+class stop_token {
+public:
+  stop_token() noexcept = default;
+  explicit stop_token(nostopstate_t) noexcept {}
+
+  [[nodiscard]] bool stop_requested() const noexcept {
+    return __state != nullptr && __state->__stop_requested.load(memory_order_acquire);
+  }
+  // Loose: the standard also reports possible once a request has been made. Aurora only reads
+  // stop_requested(), and nothing here promises more.
+  [[nodiscard]] bool stop_possible() const noexcept {
+    return __state != nullptr && __state->__sources.load(memory_order_acquire) > 0;
+  }
+
+  friend bool operator==(const stop_token&, const stop_token&) = default;
+
+private:
+  explicit stop_token(shared_ptr<__jthread_overlay::__state> __s) noexcept : __state(std::move(__s)) {}
+
+  shared_ptr<__jthread_overlay::__state> __state;
+
+  friend class stop_source;
+  template <class _Callback>
+  friend class stop_callback;
+};
+
+class stop_source {
+public:
+  stop_source() : __state(make_shared<__jthread_overlay::__state>()) {
+    __state->__sources.store(1, memory_order_relaxed);
+  }
+  explicit stop_source(nostopstate_t) noexcept {}
+  ~stop_source() { __release(); }
+
+  stop_source(const stop_source& __o) noexcept : __state(__o.__state) {
+    if (__state != nullptr) {
+      __state->__sources.fetch_add(1, memory_order_relaxed);
+    }
+  }
+  stop_source(stop_source&&) noexcept = default;
+  stop_source& operator=(const stop_source& __o) noexcept {
+    if (this != &__o) {
+      __release();
+      __state = __o.__state;
+      if (__state != nullptr) {
+        __state->__sources.fetch_add(1, memory_order_relaxed);
+      }
+    }
+    return *this;
+  }
+  stop_source& operator=(stop_source&& __o) noexcept {
+    if (this != &__o) {
+      __release();
+      __state = std::move(__o.__state);
+    }
+    return *this;
+  }
+
+  void swap(stop_source& __o) noexcept { __state.swap(__o.__state); }
+
+  [[nodiscard]] stop_token get_token() const noexcept { return stop_token(__state); }
+  [[nodiscard]] bool stop_requested() const noexcept {
+    return __state != nullptr && __state->__stop_requested.load(memory_order_acquire);
+  }
+  [[nodiscard]] bool stop_possible() const noexcept { return __state != nullptr; }
+
+  bool request_stop() noexcept {
+    using __state_t = __jthread_overlay::__state;
+    if (__state == nullptr || __state->__stop_requested.exchange(true, memory_order_acq_rel)) {
+      return false;
+    }
+    __state_t::__callback_base* __detached;
+    {
+      lock_guard<mutex> __lk(__state->__mutex);
+      __detached = __state->__callbacks;
+      __state->__callbacks = nullptr;
+      for (auto* __n = __detached; __n != nullptr; __n = __n->__next) {
+        __n->__prev_next = nullptr;
+        __n->__executing_on = this_thread::get_id();
+      }
+    }
+    for (auto* __n = __detached; __n != nullptr; __n = __n->__next) {
+      __n->__invoke();
+      {
+        lock_guard<mutex> __lk(__n->__finished_m);
+        __n->__finished.store(true, memory_order_release);
+      }
+      __n->__finished_cv.notify_all();
+    }
+    return true;
+  }
+
+  friend bool operator==(const stop_source&, const stop_source&) = default;
+
+private:
+  void __release() noexcept {
+    if (__state != nullptr) {
+      __state->__sources.fetch_sub(1, memory_order_acq_rel);
+    }
+  }
+
+  shared_ptr<__jthread_overlay::__state> __state;
+};
+
+template <class _Callback>
+class stop_callback {
+  struct __node final : __jthread_overlay::__state::__callback_base {
+    template <class _Cb>
+    explicit __node(_Cb&& __cb) : __cb(static_cast<_Cb&&>(__cb)) {}
+    void __invoke() noexcept override { __cb(); }
+    _Callback __cb;
+  };
+
+public:
+  using callback_type = _Callback;
+
+  template <class _Cb>
+    requires constructible_from<_Callback, _Cb>
+  explicit stop_callback(const stop_token& __st,
+                         _Cb&& __cb) noexcept(is_nothrow_constructible_v<_Callback, _Cb>)
+      : __node_(static_cast<_Cb&&>(__cb)) {
+    __register(__st.__state.get());
+  }
+  template <class _Cb>
+    requires constructible_from<_Callback, _Cb>
+  explicit stop_callback(stop_token&& __st,
+                         _Cb&& __cb) noexcept(is_nothrow_constructible_v<_Callback, _Cb>)
+      : __node_(static_cast<_Cb&&>(__cb)) {
+    __register(__st.__state.get());
+  }
+
+  stop_callback(const stop_callback&) = delete;
+  stop_callback& operator=(const stop_callback&) = delete;
+
+  ~stop_callback() {
+    if (__state_ == nullptr) {
+      return;
+    }
+    {
+      lock_guard<mutex> __lk(__state_->__mutex);
+      if (__node_.__prev_next != nullptr) {
+        // Still registered: unlink and nothing runs it.
+        *__node_.__prev_next = __node_.__next;
+        if (__node_.__next != nullptr) {
+          __node_.__next->__prev_next = __node_.__prev_next;
+        }
+        return;
+      }
+      if (__node_.__finished.load(memory_order_acquire)) {
+        return;
+      }
+      if (__node_.__executing_on == this_thread::get_id()) {
+        // The callback is running on this thread, so the destructor must not block on it.
+        return;
+      }
+    }
+    // In flight on the requesting thread: wait until it has run, the same guarantee
+    // ~std::stop_callback() makes.
+    unique_lock<mutex> __lk(__node_.__finished_m);
+    __node_.__finished_cv.wait(__lk, [this] {
+      return __node_.__finished.load(memory_order_acquire);
+    });
+  }
+
+private:
+  void __register(__jthread_overlay::__state* __s) noexcept {
+    if (__s == nullptr) {
+      return;
+    }
+    {
+      lock_guard<mutex> __lk(__s->__mutex);
+      if (!__s->__stop_requested.load(memory_order_acquire)) {
+        __node_.__next = __s->__callbacks;
+        __node_.__prev_next = &__s->__callbacks;
+        if (__node_.__next != nullptr) {
+          __node_.__next->__prev_next = &__node_.__next;
+        }
+        __s->__callbacks = &__node_;
+        __state_ = __s;
+        return;
+      }
+    }
+    // Stop was already requested: the callback runs here and now, and nothing is registered.
+    __node_.__invoke();
+  }
+
+  __node __node_;
+  __jthread_overlay::__state* __state_ = nullptr;
+};
+
+template <class _Cb>
+stop_callback(const stop_token&, _Cb) -> stop_callback<_Cb>;
+template <class _Cb>
+stop_callback(stop_token&&, _Cb) -> stop_callback<_Cb>;
+
+#endif // PORT_JTHREAD_OVERLAY_STOP
+
+// std::jthread, over whichever stop tokens are in scope. Defined at the bottom of this header
+// rather than in the overlay <thread> so that a TU whose first include is <stop_token> still
+// gets it.
+class jthread {
+public:
+  using id = thread::id;
+  using native_handle_type = thread::native_handle_type;
+
+  jthread() noexcept = default;
+
+  template <class _Fp, class... _Args>
+    requires(!is_same_v<decay_t<_Fp>, jthread> &&
+             invocable<decay_t<_Fp>&, stop_token, decay_t<_Args>&...>)
+  explicit jthread(_Fp&& __f, _Args&&... __args) {
+    __thread_ = thread([__f_ = decay_t<_Fp>(static_cast<_Fp&&>(__f)),
+                        __args_ = tuple<decay_t<_Args>...>(static_cast<_Args&&>(__args)...),
+                        __token = __source_.get_token()]() mutable {
+      apply(
+          [&__f_, &__token](decay_t<_Args>&... __a) {
+            invoke(__f_, __token, __a...);
+          },
+          __args_);
+    });
+  }
+
+  ~jthread() { __request_join(); }
+
+  jthread(jthread&&) noexcept = default;
+  jthread& operator=(jthread&& __o) noexcept {
+    if (this != &__o) {
+      __request_join();
+      __source_ = std::move(__o.__source_);
+      __thread_ = std::move(__o.__thread_);
+    }
+    return *this;
+  }
+
+  jthread(const jthread&) = delete;
+  jthread& operator=(const jthread&) = delete;
+
+  void swap(jthread& __o) noexcept {
+    __source_.swap(__o.__source_);
+    __thread_.swap(__o.__thread_);
+  }
+
+  [[nodiscard]] bool joinable() const noexcept { return __thread_.joinable(); }
+  void join() { __thread_.join(); }
+  void detach() { __thread_.detach(); }
+  [[nodiscard]] id get_id() const noexcept { return __thread_.get_id(); }
+  [[nodiscard]] native_handle_type native_handle() { return __thread_.native_handle(); }
+  [[nodiscard]] static unsigned int hardware_concurrency() noexcept {
+    return thread::hardware_concurrency();
+  }
+
+  [[nodiscard]] stop_source get_stop_source() noexcept { return __source_; }
+  [[nodiscard]] stop_token get_stop_token() const noexcept { return __source_.get_token(); }
+  bool request_stop() noexcept { return __source_.request_stop(); }
+
+private:
+  void __request_join() noexcept {
+    if (__thread_.joinable()) {
+      __source_.request_stop();
+      __thread_.join();
+    }
+  }
+
+  // Declared before the thread so its token exists when the lambda captures it.
+  stop_source __source_;
+  thread __thread_;
+};
+
+} // namespace std
+
+#endif // no std::jthread

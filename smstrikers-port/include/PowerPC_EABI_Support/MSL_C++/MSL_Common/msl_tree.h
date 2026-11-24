@@ -173,7 +173,7 @@ void __red_black_tree<N>::rotate_right(node_base* x, node_base*& root)
 }
 
 template <class T, class Compare, class Allocator>
-class __tree : private __red_black_tree<1>
+class __msl_tree : private __red_black_tree<1>
 {
 public:
     struct node : public __red_black_tree<1>::node_base
@@ -191,8 +191,8 @@ public:
         }
     };
 
-    __tree(const Compare& comp, const Allocator& alloc);
-    ~__tree();
+    __msl_tree(const Compare& comp, const Allocator& alloc);
+    ~__msl_tree();
     Allocator& alloc();
     std::allocator<node>& node_alloc();
     void clear();
@@ -213,7 +213,7 @@ private:
 };
 
 template <class T, class Compare, class Allocator>
-__tree<T, Compare, Allocator>::__tree(const Compare& comp, const Allocator& alloc)
+__msl_tree<T, Compare, Allocator>::__msl_tree(const Compare& comp, const Allocator& alloc)
     : alloc_()
     , node_alloc_()
     , comp_(comp, (node*)&node_alloc_.second())
@@ -222,7 +222,7 @@ __tree<T, Compare, Allocator>::__tree(const Compare& comp, const Allocator& allo
 
 template <class T, class Compare, class Allocator>
 inline
-__tree<T, Compare, Allocator>::~__tree()
+__msl_tree<T, Compare, Allocator>::~__msl_tree()
 {
     node* n = (node*)node_alloc_.second().left_;
     if (n != 0)
@@ -231,21 +231,21 @@ __tree<T, Compare, Allocator>::~__tree()
 
 template <class T, class Compare, class Allocator>
 inline
-Allocator& __tree<T, Compare, Allocator>::alloc()
+Allocator& __msl_tree<T, Compare, Allocator>::alloc()
 {
     return alloc_.first();
 }
 
 template <class T, class Compare, class Allocator>
 inline
-std::allocator<typename __tree<T, Compare, Allocator>::node>&
-__tree<T, Compare, Allocator>::node_alloc()
+std::allocator<typename __msl_tree<T, Compare, Allocator>::node>&
+__msl_tree<T, Compare, Allocator>::node_alloc()
 {
     return node_alloc_.first();
 }
 
 template <class T, class Compare, class Allocator>
-void __tree<T, Compare, Allocator>::clear()
+void __msl_tree<T, Compare, Allocator>::clear()
 {
     node* n = (node*)node_alloc_.second().left_;
     if (n != 0)
@@ -258,7 +258,7 @@ void __tree<T, Compare, Allocator>::clear()
 }
 
 template <class T, class Compare, class Allocator>
-void __tree<T, Compare, Allocator>::destroy(node* __p)
+void __msl_tree<T, Compare, Allocator>::destroy(node* __p)
 {
     if (__p->left_ != 0)
         destroy(static_cast<node*>(__p->left_));
@@ -270,8 +270,8 @@ void __tree<T, Compare, Allocator>::destroy(node* __p)
 
 template <class T, class Compare, class Allocator>
 template <class Key>
-typename __tree<T, Compare, Allocator>::iterator
-__tree<T, Compare, Allocator>::find(const Key& x)
+typename __msl_tree<T, Compare, Allocator>::iterator
+__msl_tree<T, Compare, Allocator>::find(const Key& x)
 {
     node* i = (node*)node_alloc_.second().left_;
     node* j = (node*)&node_alloc_.second();
@@ -296,7 +296,7 @@ __tree<T, Compare, Allocator>::find(const Key& x)
 
 template <class T, class Compare, class Allocator>
 template <class Key, class Value>
-T& __tree<T, Compare, Allocator>::find_or_insert(const Key& key)
+T& __msl_tree<T, Compare, Allocator>::find_or_insert(const Key& key)
 {
     node* prev = 0;
     node* p = (node*)&node_alloc_.second();
@@ -331,8 +331,8 @@ T& __tree<T, Compare, Allocator>::find_or_insert(const Key& key)
 }
 
 template <class T, class Compare, class Allocator>
-typename __tree<T, Compare, Allocator>::node*
-__tree<T, Compare, Allocator>::insert_node_at(node* p, bool leftchild, bool is_leftmost, const T& x)
+typename __msl_tree<T, Compare, Allocator>::node*
+__msl_tree<T, Compare, Allocator>::insert_node_at(node* p, bool leftchild, bool is_leftmost, const T& x)
 {
     if (alloc_.second() > 0xfffffffeU)
     {
@@ -377,7 +377,7 @@ public:
         Compare comp;
     };
 
-    typedef typename __tree<pair<const Key, Value>, value_compare, Allocator>::iterator iterator;
+    typedef typename __msl_tree<pair<const Key, Value>, value_compare, Allocator>::iterator iterator;
 
     map()
         : tree_(value_compare(), Allocator())
@@ -389,7 +389,7 @@ public:
         return tree_.find(x);
     }
 
-    __tree<pair<const Key, Value>, value_compare, Allocator> tree_;
+    __msl_tree<pair<const Key, Value>, value_compare, Allocator> tree_;
 };
 
 } // namespace std

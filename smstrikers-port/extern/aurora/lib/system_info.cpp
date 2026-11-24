@@ -16,6 +16,7 @@ typedef LONG NTSTATUS, *PNTSTATUS;
 extern "C" NTSYSAPI NTSTATUS NTAPI RtlGetVersion(PRTL_OSVERSIONINFOEXW lpVersionInformation);
 #elif __APPLE__
 #include "sys/sysctl.h"
+#include <TargetConditionals.h>
 #elif linux
 #include <ranges>
 #include <fstream>
